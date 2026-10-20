@@ -60,9 +60,11 @@
   .ringhero .t { position:absolute; inset:0; display:grid; place-content:center; text-align:center; }
   .ringhero b { font-family:var(--head); font-size:2.1rem; line-height:1; }
   .ringhero span { font-size:.76rem; color:var(--muted); }
-  .kpi { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; background:rgba(14,14,16,.55); border-radius:22px; padding:14px 18px; position:relative; z-index:1; }
+  .rp { display:block; color:var(--muted); font-size:.74rem; font-variant-numeric:tabular-nums; }
+  .hint { color:var(--muted); font-size:.8rem; margin-top:8px; }
+  .kpi { display:grid; grid-template-columns:repeat(auto-fit,minmax(105px,1fr)); gap:10px 6px; background:rgba(14,14,16,.55); border-radius:22px; padding:14px 18px; position:relative; z-index:1; }
   .kpi div { min-width:0; }
-  .kpi b { display:block; font-family:var(--head); font-size:1.6rem; line-height:1.1; }
+  .kpi b { display:block; font-family:var(--head); font-size:1.6rem; line-height:1.1; white-space:nowrap; }
   .kpi span { display:flex; align-items:center; gap:6px; font-size:.74rem; color:var(--muted); margin-top:4px; }
   .kpi i { width:9px; height:9px; border-radius:3px; flex:none; }
 
@@ -166,7 +168,7 @@
       </div>
       <div>
         <div class="kode card" style="border-radius:99px">
-          <span id="labelKode">Nama pengisi</span>
+          <span id="labelKode">Nama & anggaran</span>
           <input id="kode" type="password" placeholder="Kode akses" autocomplete="off">
           <button class="btn" id="btnKode">Buka</button>
         </div>
@@ -229,7 +231,10 @@
   const NADA = { kosong: 'bad', kurang: 'warn', lengkap: 'ok' };
   const idn = n => Number(n).toLocaleString('id-ID');
 
-  let lokasi = [], pengisi = new Map(), punyaNama = false;
+  const rp = n => 'Rp' + idn(n);
+  const rpRingkas = n => n >= 1e9 ? 'Rp' + (n / 1e9).toFixed(2).replace('.', ',') + ' M' : n >= 1e6 ? 'Rp' + (n / 1e6).toFixed(1).replace('.', ',') + ' jt' : rp(n);
+
+  let lokasi = [], pengisi = new Map(), punyaNama = false, anggaran = null;
   let sel = null, status = 'semua', fBagian = '', terbukaHP = false;
 
   async function ambilSemua(path) {
@@ -253,6 +258,19 @@
       if (b.length < 1000) break;
     }
     return out;
+  }
+  async function ambilAnggaran(kode) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/anggaran_lokasi?limit=1000`, {
+      method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ kode })
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const peta = new Map(); let total = 0;
+    for (const x of await r.json()) {
+      if (!peta.has(x.lokasi_form)) peta.set(x.lokasi_form, { total: 0, per: {} });
+      const a = peta.get(x.lokasi_form), n = Number(x.anggaran) || 0;
+      a.per[x.bagian_kerja] = n; a.total += n; total += n;
+    }
+    return peta.size ? { peta, total } : null;
   }
   function kelompokkanPengisi(baris) {
     pengisi = new Map();
@@ -331,7 +349,8 @@
        </svg><div class="t"><b>${p.toFixed(1).replace('.', ',')}%</b><span>sudah mengisi</span></div>`;
     $('kpi').innerHTML = [
       [idn(T), 'Target anggota', '#8aa4ff'], [idn(I), 'Sudah mengisi', 'var(--accent)'],
-      [n('kurang'), 'Lokasi masih kurang', 'var(--orange)'], [n('kosong'), 'Belum ada yang isi', 'var(--bad)']
+      [n('kurang'), 'Lokasi masih kurang', 'var(--orange)'], [n('kosong'), 'Belum ada yang isi', 'var(--bad)'],
+      ...(anggaran ? [[rpRingkas(anggaran.total), 'Total anggaran RAB', 'var(--green)']] : [])
     ].map(([a, b, c]) => `<div><b>${a}</b><span><i style="background:${c}"></i>${b}</span></div>`).join('');
     $('totalKurang').textContent = idn(T - I);
     $('pctKurang').textContent = `${(100 - p).toFixed(1).replace('.', ',')}% dari target`;
@@ -374,7 +393,7 @@
       '</tbody></table></div>' + (punyaNama ? '' : '<p class="muted">Nama disembunyikan. Masukkan kode akses di kanan atas untuk melihatnya.</p>');
   }
   function renderDetail() {
-    const el = $('detail'), l = lokasi.find(x => x.lokasi === sel);
+    const el = $('detail'), l = lokasi.find(x => x.lokasi === sel), ang = l && anggaran && anggaran.peta.get(l.lokasi);
     el.classList.toggle('open', terbukaHP && !!l);
     if (!l) { el.innerHTML = '<div class="kosongnya">Pilih lokasi di daftar untuk melihat rinciannya.</div>'; return; }
     const awal = l.status === 'lengkap' ? `<b>✓ Semua anggota sudah mengisi</b><div>${l.target} dari ${l.target} orang.</div>`
@@ -386,10 +405,12 @@
          <button class="btn back" id="back">‹ Kembali</button>
          <div class="row"><h2>${esc(l.client)}</h2><span class="badge ${NADA[l.status]}">${LABEL[l.status]} · ${l.persen}%</span></div>
          <div class="bar ${NADA[l.status]}" style="height:9px;margin-top:12px"><i style="width:${l.persen}%"></i></div>
+         ${ang ? `<div class="row" style="margin-top:10px"><span class="muted">Anggaran RAB lokasi ini</span><b class="num" style="color:var(--green);font-size:1.15rem">${rp(ang.total)}</b></div>`
+               : '<div class="hint">🔒 Nama pengisi dan anggaran RAB tampil setelah kode akses dimasukkan.</div>'}
        </div>
        <div class="dbody">
          <div class="notif ${NADA[l.status]}">${awal}</div>
-         ${l.bagian.map(b => `<div class="bagian"><span>${esc(b.nama)}</span>
+         ${l.bagian.map(b => `<div class="bagian"><span>${esc(b.nama)}${ang && ang.per[b.nama] != null ? `<span class="rp">${rp(ang.per[b.nama])} · ${b.target} orang</span>` : ''}</span>
             <div class="bar ${b.isi >= b.target ? 'ok' : 'warn'}"><i style="width:${b.target ? 100 * b.isi / b.target : 0}%"></i></div>
             <span class="${b.isi >= b.target ? 'penuh' : 'kurang'}">${b.isi >= b.target ? '✓ ' + b.isi + '/' + b.target : 'kurang ' + (b.target - b.isi) + ' · ' + b.isi + '/' + b.target}</span></div>`).join('')}
          <div class="tt"><span>Daftar pengisi</span>
@@ -403,17 +424,18 @@
       const data = await ambilNama(kode);
       if (!data.length) { if (!senyap) $('pesan').textContent = 'Kode salah.'; return false; }
       punyaNama = true; kelompokkanPengisi(data);
-      $('labelKode').textContent = 'Nama pengisi: terbuka'; $('kode').hidden = true; $('btnKode').textContent = 'Kunci';
+      try { anggaran = await ambilAnggaran(kode); } catch (e) { anggaran = null; }
+      $('labelKode').textContent = 'Nama & anggaran: terbuka'; $('kode').hidden = true; $('btnKode').textContent = 'Kunci';
       $('pesan').textContent = '';
       try { sessionStorage.setItem('kodeNama', kode); } catch (e) {}
-      renderDetail(); return true;
+      ringkasan(); renderDetail(); return true;
     } catch (e) { if (!senyap) $('pesan').textContent = 'Gagal: ' + e.message; return false; }
   }
   async function kunciNama() {
-    punyaNama = false; try { sessionStorage.removeItem('kodeNama'); } catch (e) {}
+    punyaNama = false; anggaran = null; try { sessionStorage.removeItem('kodeNama'); } catch (e) {}
     kelompokkanPengisi(await ambilSemua('ukuran_publik?select=*&order=id'));
-    $('labelKode').textContent = 'Nama pengisi'; $('kode').hidden = false; $('kode').value = ''; $('btnKode').textContent = 'Buka';
-    renderDetail();
+    $('labelKode').textContent = 'Nama & anggaran'; $('kode').hidden = false; $('kode').value = ''; $('btnKode').textContent = 'Buka';
+    ringkasan(); renderDetail();
   }
   const pilih = k => { sel = k; fBagian = ''; terbukaHP = true; renderDaftar(); };
   const keDaftar = () => $('bawah').scrollIntoView({ behavior: 'smooth' });
