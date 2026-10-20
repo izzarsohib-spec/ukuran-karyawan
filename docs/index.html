@@ -53,7 +53,10 @@
   .top { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:14px; }
   .hero { position:relative; padding:28px; min-height:330px; display:flex; flex-direction:column; justify-content:space-between; gap:18px; overflow:hidden; }
   .hero small { color:var(--muted); font-size:.78rem; }
-  .hero h2 { font-size:2.25rem; line-height:1.08; max-width:380px; margin:8px 0 18px; }
+  .hero h2 { font-size:2.25rem; line-height:1.08; max-width:380px; margin:8px 0 16px; }
+  .rabtotal { margin:0 0 18px; }
+  .rabtotal small { display:block; color:var(--muted); font-size:.78rem; }
+  .rabtotal b { display:block; font-size:1.9rem; line-height:1.15; color:var(--green); }
   .cta { background:#fff; color:#111; border:0; border-radius:14px; padding:12px 26px; font-weight:600; }
   .cta:hover { background:var(--accent); }
   .ringhero { position:absolute; right:26px; top:22px; width:min(40%,210px); aspect-ratio:1; }
@@ -168,7 +171,7 @@
       </div>
       <div>
         <div class="kode card" style="border-radius:99px">
-          <span id="labelKode">Nama & anggaran</span>
+          <span id="labelKode">Nama pengisi</span>
           <input id="kode" type="password" placeholder="Kode akses" autocomplete="off">
           <button class="btn" id="btnKode">Buka</button>
         </div>
@@ -181,6 +184,7 @@
         <div>
           <small>Ukuran seragam karyawan</small>
           <h2>Pantau kelengkapan data tiap lokasi</h2>
+          <div class="rabtotal"><small>Total anggaran RAB seluruh lokasi</small><b class="num" id="rabTotal">-</b></div>
           <button class="cta" id="cta">Lihat yang kurang</button>
         </div>
         <div class="ringhero" id="ringhero"></div>
@@ -259,13 +263,9 @@
     }
     return out;
   }
-  async function ambilAnggaran(kode) {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/anggaran_lokasi?limit=1000`, {
-      method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ kode })
-    });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
+  function susunAnggaran(baris) {
     const peta = new Map(); let total = 0;
-    for (const x of await r.json()) {
+    for (const x of baris) {
       if (!peta.has(x.lokasi_form)) peta.set(x.lokasi_form, { total: 0, per: {} });
       const a = peta.get(x.lokasi_form), n = Number(x.anggaran) || 0;
       a.per[x.bagian_kerja] = n; a.total += n; total += n;
@@ -350,8 +350,8 @@
     $('kpi').innerHTML = [
       [idn(T), 'Target anggota', '#8aa4ff'], [idn(I), 'Sudah mengisi', 'var(--accent)'],
       [n('kurang'), 'Lokasi masih kurang', 'var(--orange)'], [n('kosong'), 'Belum ada yang isi', 'var(--bad)'],
-      ...(anggaran ? [[rpRingkas(anggaran.total), 'Total anggaran RAB', 'var(--green)']] : [])
     ].map(([a, b, c]) => `<div><b>${a}</b><span><i style="background:${c}"></i>${b}</span></div>`).join('');
+    $('rabTotal').textContent = anggaran ? rp(anggaran.total) : '-';
     $('totalKurang').textContent = idn(T - I);
     $('pctKurang').textContent = `${(100 - p).toFixed(1).replace('.', ',')}% dari target`;
     const w = [...lokasi].sort((a, b) => b.kurang - a.kurang)[0];
@@ -406,7 +406,8 @@
          <div class="row"><h2>${esc(l.client)}</h2><span class="badge ${NADA[l.status]}">${LABEL[l.status]} · ${l.persen}%</span></div>
          <div class="bar ${NADA[l.status]}" style="height:9px;margin-top:12px"><i style="width:${l.persen}%"></i></div>
          ${ang ? `<div class="row" style="margin-top:10px"><span class="muted">Anggaran RAB lokasi ini</span><b class="num" style="color:var(--green);font-size:1.15rem">${rp(ang.total)}</b></div>`
-               : '<div class="hint">🔒 Nama pengisi dan anggaran RAB tampil setelah kode akses dimasukkan.</div>'}
+               : ''}
+         ${punyaNama ? '' : '<div class="hint">🔒 Nama pengisi tampil setelah kode akses dimasukkan.</div>'}
        </div>
        <div class="dbody">
          <div class="notif ${NADA[l.status]}">${awal}</div>
@@ -424,17 +425,16 @@
       const data = await ambilNama(kode);
       if (!data.length) { if (!senyap) $('pesan').textContent = 'Kode salah.'; return false; }
       punyaNama = true; kelompokkanPengisi(data);
-      try { anggaran = await ambilAnggaran(kode); } catch (e) { anggaran = null; }
-      $('labelKode').textContent = 'Nama & anggaran: terbuka'; $('kode').hidden = true; $('btnKode').textContent = 'Kunci';
+      $('labelKode').textContent = 'Nama pengisi: terbuka'; $('kode').hidden = true; $('btnKode').textContent = 'Kunci';
       $('pesan').textContent = '';
       try { sessionStorage.setItem('kodeNama', kode); } catch (e) {}
       ringkasan(); renderDetail(); return true;
     } catch (e) { if (!senyap) $('pesan').textContent = 'Gagal: ' + e.message; return false; }
   }
   async function kunciNama() {
-    punyaNama = false; anggaran = null; try { sessionStorage.removeItem('kodeNama'); } catch (e) {}
+    punyaNama = false; try { sessionStorage.removeItem('kodeNama'); } catch (e) {}
     kelompokkanPengisi(await ambilSemua('ukuran_publik?select=*&order=id'));
-    $('labelKode').textContent = 'Nama & anggaran'; $('kode').hidden = false; $('kode').value = ''; $('btnKode').textContent = 'Buka';
+    $('labelKode').textContent = 'Nama pengisi'; $('kode').hidden = false; $('kode').value = ''; $('btnKode').textContent = 'Buka';
     ringkasan(); renderDetail();
   }
   const pilih = k => { sel = k; fBagian = ''; terbukaHP = true; renderDaftar(); };
@@ -456,10 +456,12 @@
 
   (async () => {
     try {
-      const [prog, publik] = await Promise.all([
+      const [prog, publik, rab] = await Promise.all([
         ambilSemua('progres_pengisian?select=*&order=lokasi_form,bagian_kerja'),
-        ambilSemua('ukuran_publik?select=*&order=id')
+        ambilSemua('ukuran_publik?select=*&order=id'),
+        ambilSemua('anggaran_publik?select=*&order=lokasi_form,bagian_kerja').catch(() => [])
       ]);
+      anggaran = susunAnggaran(rab);
       susunLokasi(prog); kelompokkanPengisi(publik); ringkasan(); renderDaftar();
       let tersimpan = null; try { tersimpan = sessionStorage.getItem('kodeNama'); } catch (e) {}
       if (tersimpan) bukaNama(tersimpan, true);
