@@ -3,94 +3,226 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Data Ukuran Seragam</title>
+<title>Dashboard Ukuran Seragam</title>
 <style>
-  :root { --bg:#f6f7f9; --card:#fff; --text:#1c2430; --muted:#6b7686; --line:#e3e7ed; --accent:#1f6feb; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#12161c; --card:#1a2028; --text:#e6ebf2; --muted:#8c97a6; --line:#2a323d; --accent:#5aa0ff; } }
-  * { box-sizing: border-box; }
+  :root { --bg:#f6f7f9; --card:#fff; --text:#1c2430; --muted:#6b7686; --line:#e3e7ed; --accent:#1f6feb;
+          --ok:#1a7f4b; --ok-bg:#e3f5ea; --warn:#b4540a; --warn-bg:#fff1e0; --bad:#b42318; --bad-bg:#fde8e6; --track:#e9edf2; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#12161c; --card:#1a2028; --text:#e6ebf2; --muted:#8c97a6; --line:#2a323d; --accent:#5aa0ff;
+          --ok:#5fd18f; --ok-bg:#16301f; --warn:#f0a15a; --warn-bg:#3a2a14; --bad:#ff8a80; --bad-bg:#3b1c19; --track:#2a323d; } }
+  * { box-sizing:border-box; }
   body { margin:0; font:15px/1.5 system-ui, sans-serif; background:var(--bg); color:var(--text); }
-  main { max-width:1100px; margin:0 auto; padding:20px 16px 40px; }
+  main { max-width:1100px; margin:0 auto; padding:20px 16px 48px; }
   h1 { font-size:1.4rem; margin:0 0 4px; }
   p.sub { margin:0 0 16px; color:var(--muted); }
-  .bar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .top { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:flex-start; }
+  .kode { display:flex; gap:6px; align-items:center; font-size:.85rem; color:var(--muted); }
+  .kode input { width:130px; flex:none; padding:6px 8px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:12px 0 16px; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .stat b { display:block; font-size:1.5rem; line-height:1.2; }
+  .stat span { color:var(--muted); font-size:.82rem; }
+  .bar { height:8px; background:var(--track); border-radius:99px; overflow:hidden; }
+  .bar i { display:block; height:100%; background:var(--accent); border-radius:99px; }
+  .bar.ok i { background:var(--ok); } .bar.warn i { background:var(--warn); } .bar.bad i { background:var(--bad); }
+  .filters { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
   input, select, button { font:inherit; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--text); }
-  input { flex:1 1 220px; }
-  .wrap { overflow-x:auto; background:var(--card); border:1px solid var(--line); border-radius:10px; }
-  table { width:100%; border-collapse:collapse; }
-  th, td { padding:9px 12px; text-align:left; white-space:nowrap; border-bottom:1px solid var(--line); }
-  th { color:var(--muted); font-weight:600; font-size:.85rem; position:sticky; top:0; background:var(--card); }
-  tr:last-child td { border-bottom:0; }
-  .foot { display:flex; justify-content:space-between; align-items:center; margin-top:12px; color:var(--muted); }
-  button:disabled { opacity:.4; }
+  #cari { flex:1 1 260px; }
+  button { cursor:pointer; } button:disabled { opacity:.4; cursor:default; }
+  .loc { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:10px; }
+  .loc h3 { margin:0; font-size:1rem; }
+  .row { display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
+  .badge { font-size:.78rem; padding:2px 9px; border-radius:99px; font-weight:600; white-space:nowrap; }
+  .badge.ok { background:var(--ok-bg); color:var(--ok); } .badge.warn { background:var(--warn-bg); color:var(--warn); } .badge.bad { background:var(--bad-bg); color:var(--bad); }
+  .notif { margin-top:10px; padding:10px 12px; border-radius:8px; font-size:.92rem; }
+  .notif.warn { background:var(--warn-bg); color:var(--warn); } .notif.bad { background:var(--bad-bg); color:var(--bad); } .notif.ok { background:var(--ok-bg); color:var(--ok); }
+  .notif ul { margin:6px 0 0; padding-left:18px; } .notif li { margin:2px 0; }
+  .tog { margin-top:10px; font-size:.88rem; }
+  .wrap { overflow-x:auto; margin-top:10px; border:1px solid var(--line); border-radius:8px; }
+  table { width:100%; border-collapse:collapse; font-size:.88rem; }
+  th, td { padding:7px 10px; text-align:left; white-space:nowrap; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; font-size:.8rem; } tr:last-child td { border-bottom:0; }
+  .muted { color:var(--muted); } .center { text-align:center; margin:16px 0; }
+  #pesan { font-size:.82rem; margin-top:4px; }
 </style>
 </head>
 <body>
 <main>
-  <h1>Data Ukuran Seragam</h1>
-  <p class="sub" id="info">Memuat data…</p>
-  <div class="bar">
-    <input id="cari" type="search" placeholder="Cari lokasi atau bagian kerja…">
-    <select id="lokasi"><option value="">Semua lokasi</option></select>
+  <div class="top">
+    <div>
+      <h1>Dashboard Ukuran Seragam</h1>
+      <p class="sub" id="info">Memuat data…</p>
+    </div>
+    <div>
+      <div class="kode">
+        <span id="labelKode">Nama pengisi:</span>
+        <input id="kode" type="password" placeholder="Kode akses" autocomplete="off">
+        <button id="btnKode">Buka</button>
+      </div>
+      <div id="pesan" class="muted"></div>
+    </div>
   </div>
-  <div class="wrap">
-    <table>
-      <thead><tr><th>Lokasi</th><th>Bagian kerja</th><th>Baju</th><th>Celana</th><th>Sepatu</th><th>Diisi</th></tr></thead>
-      <tbody id="isi"></tbody>
-    </table>
+
+  <div class="cards" id="ringkas"></div>
+
+  <div class="filters">
+    <input id="cari" type="search" placeholder="Cari lokasi, misalnya: pengadilan negeri kudus">
+    <select id="status">
+      <option value="semua">Semua status</option>
+      <option value="kurang">Masih kurang</option>
+      <option value="kosong">Belum ada yang isi</option>
+      <option value="lengkap">Sudah lengkap</option>
+    </select>
   </div>
-  <div class="foot">
-    <span id="hal"></span>
-    <span><button id="prev">‹ Sebelumnya</button> <button id="next">Berikutnya ›</button></span>
-  </div>
+
+  <div id="daftar"></div>
+  <div class="center"><button id="lagi" hidden>Tampilkan lebih banyak</button></div>
 </main>
 <script>
-  // Anon key memang publik; aksesnya dibatasi oleh view `ukuran_publik` (tanpa nama).
+  // Anon key memang publik; aksesnya dibatasi di Supabase (view agregat tanpa nama, nama hanya lewat kode akses).
   const SUPABASE_URL = 'https://vqcusagijiavaoljfrib.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxY3VzYWdpamlhdmFvbGpmcmliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0OTIzOTksImV4cCI6MjEwODA2ODM5OX0.VeslVR4UHv26LCMbkO7KP0k96r8lg7-NNLjY30iMyFk';
-  const PER = 50;
-  let data = [], hal = 0;
-
+  const H = { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` };
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const URUT = { kosong: 0, kurang: 1, lengkap: 2 };
+  const LABEL = { kosong: 'Belum ada yang isi', kurang: 'Masih kurang', lengkap: 'Lengkap' };
+  const NADA = { kosong: 'bad', kurang: 'warn', lengkap: 'ok' };
 
-  async function muat() {
-    const semua = [];
-    for (let from = 0; ; from += 1000) {
-      const r = await fetch(`${SUPABASE_URL}/rest/v1/ukuran_publik?select=*&order=lokasi.asc,waktu.desc`, {
-        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, Range: `${from}-${from + 999}` }
-      });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      const b = await r.json();
-      semua.push(...b);
+  let lokasi = [], pengisi = new Map(), punyaNama = false, batas = 20;
+  const terbuka = new Set();
+
+  async function ambilSemua(path) {
+    const out = [];
+    for (let dari = 0; ; dari += 1000) {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { headers: { ...H, Range: `${dari}-${dari + 999}` } });
+      if (!r.ok) throw new Error(`${path.split('?')[0]} HTTP ${r.status}`);
+      const b = await r.json(); out.push(...b);
       if (b.length < 1000) break;
     }
-    data = semua;
-    const lok = [...new Set(data.map(d => d.lokasi).filter(Boolean))].sort();
-    $('lokasi').innerHTML = '<option value="">Semua lokasi</option>' + lok.map(l => `<option>${esc(l)}</option>`).join('');
-    render();
+    return out;
   }
 
-  function saring() {
-    const q = $('cari').value.trim().toLowerCase(), l = $('lokasi').value;
-    return data.filter(d => (!l || d.lokasi === l) && (!q || (d.lokasi + ' ' + d.bagian_kerja).toLowerCase().includes(q)));
+  async function ambilNama(kode) {
+    const out = [];
+    for (let off = 0; ; off += 1000) {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/daftar_nama?limit=1000&offset=${off}`, {
+        method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ kode })
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const b = await r.json(); out.push(...b);
+      if (b.length < 1000) break;
+    }
+    return out;
+  }
+
+  function kelompokkanPengisi(baris) {
+    pengisi = new Map();
+    for (const p of baris) { if (!pengisi.has(p.lokasi)) pengisi.set(p.lokasi, []); pengisi.get(p.lokasi).push(p); }
+  }
+
+  function susunLokasi(prog) {
+    const peta = new Map();
+    for (const r of prog) {
+      if (!peta.has(r.lokasi_form)) peta.set(r.lokasi_form, { client: r.client, lokasi: r.lokasi_form, bagian: [], target: 0, isi: 0 });
+      const l = peta.get(r.lokasi_form), isi = Math.min(r.sudah_isi, r.target);
+      l.bagian.push({ nama: r.bagian_kerja, target: r.target, isi });
+      l.target += r.target; l.isi += isi;
+    }
+    lokasi = [...peta.values()].map(l => {
+      l.kurang = l.target - l.isi;
+      l.persen = l.target ? Math.round(1000 * l.isi / l.target) / 10 : 0;
+      l.status = l.isi >= l.target ? 'lengkap' : l.isi === 0 ? 'kosong' : 'kurang';
+      l.kunci = (l.client + ' ' + l.lokasi).toLowerCase();
+      return l;
+    });
+  }
+
+  function ringkasan() {
+    const T = lokasi.reduce((a, l) => a + l.target, 0), I = lokasi.reduce((a, l) => a + l.isi, 0);
+    const n = s => lokasi.filter(l => l.status === s).length;
+    const kartu = (angka, ket) => `<div class="stat"><b>${angka}</b><span>${ket}</span></div>`;
+    $('ringkas').innerHTML =
+      `<div class="stat" style="grid-column:span 2"><b>${T ? (100 * I / T).toFixed(1) : 0}%</b><span>${I.toLocaleString('id-ID')} dari ${T.toLocaleString('id-ID')} anggota sudah mengisi</span>
+         <div class="bar" style="margin-top:8px"><i style="width:${T ? 100 * I / T : 0}%"></i></div></div>` +
+      kartu(n('lengkap'), 'Lokasi lengkap') + kartu(n('kurang'), 'Lokasi masih kurang') + kartu(n('kosong'), 'Belum ada yang isi');
+    $('info').textContent = `${lokasi.length} lokasi dipantau`;
+  }
+
+  function tabelPengisi(l) {
+    const data = pengisi.get(l.lokasi) || [];
+    if (!data.length) return '<p class="muted">Belum ada yang mengisi di lokasi ini.</p>';
+    const urut = [...data].sort((a, b) => (a.bagian_kerja || '').localeCompare(b.bagian_kerja || '') || (a.nama || '').localeCompare(b.nama || ''));
+    return `<div class="wrap"><table><thead><tr>${punyaNama ? '<th>Nama</th>' : ''}<th>Bagian kerja</th><th>Baju</th><th>Celana</th><th>Sepatu</th><th>Diisi</th></tr></thead><tbody>` +
+      urut.map(p => `<tr>${punyaNama ? `<td>${esc(p.nama)}</td>` : ''}<td>${esc(p.bagian_kerja)}</td><td>${esc(p.ukuran_baju)}</td><td>${esc(p.ukuran_celana)}</td><td>${esc(p.ukuran_sepatu)}</td><td>${p.waktu ? new Date(p.waktu).toLocaleDateString('id-ID') : ''}</td></tr>`).join('') +
+      '</tbody></table></div>' + (punyaNama ? '' : '<p class="muted" style="font-size:.8rem">Nama disembunyikan. Masukkan kode akses di kanan atas untuk melihatnya.</p>');
+  }
+
+  function notif(l) {
+    if (l.status === 'lengkap') return `<div class="notif ok">✓ Semua anggota (${l.target} orang) sudah mengisi.</div>`;
+    const awal = l.status === 'kosong' ? `Belum ada satu pun yang mengisi dari ${l.target} anggota.` : `Kekurangan ${l.kurang} orang: ${l.isi} dari ${l.target} anggota baru mengisi.`;
+    const rinci = l.bagian.filter(b => b.isi < b.target).map(b => `<li>${esc(b.nama)}: kurang <b>${b.target - b.isi}</b> orang (${b.isi}/${b.target})</li>`).join('');
+    return `<div class="notif ${l.status === 'kosong' ? 'bad' : 'warn'}">⚠ ${awal}<ul>${rinci}</ul></div>`;
   }
 
   function render() {
-    const f = saring(), maks = Math.max(0, Math.ceil(f.length / PER) - 1);
-    hal = Math.min(hal, maks);
-    $('info').textContent = `${f.length} data dari ${new Set(f.map(d => d.lokasi)).size} lokasi`;
-    $('isi').innerHTML = f.slice(hal * PER, hal * PER + PER).map(d =>
-      `<tr><td>${esc(d.lokasi)}</td><td>${esc(d.bagian_kerja)}</td><td>${esc(d.ukuran_baju)}</td><td>${esc(d.ukuran_celana)}</td><td>${esc(d.ukuran_sepatu)}</td><td>${d.waktu ? new Date(d.waktu).toLocaleDateString('id-ID') : ''}</td></tr>`).join('')
-      || '<tr><td colspan="6">Belum ada data.</td></tr>';
-    $('hal').textContent = `Halaman ${hal + 1} dari ${maks + 1}`;
-    $('prev').disabled = hal === 0; $('next').disabled = hal >= maks;
+    const q = $('cari').value.trim().toLowerCase().split(/\s+/).filter(Boolean), st = $('status').value;
+    const f = lokasi.filter(l => q.every(w => l.kunci.includes(w)) && (st === 'semua' || l.status === st))
+      .sort((a, b) => q.length ? a.client.localeCompare(b.client) : (URUT[a.status] - URUT[b.status]) || (a.persen - b.persen) || a.client.localeCompare(b.client));
+    const auto = q.length && f.length <= 3;
+    $('daftar').innerHTML = f.slice(0, batas).map(l => {
+      const buka = auto || terbuka.has(l.lokasi);
+      return `<div class="loc">
+        <div class="row"><h3>${esc(l.client)}</h3><span class="badge ${NADA[l.status]}">${LABEL[l.status]} · ${l.persen}%</span></div>
+        <div class="bar ${NADA[l.status]}"><i style="width:${l.persen}%"></i></div>
+        ${notif(l)}
+        ${auto ? '' : `<button class="tog" data-k="${esc(l.lokasi)}">${buka ? 'Sembunyikan' : 'Lihat'} daftar pengisi (${(pengisi.get(l.lokasi) || []).length})</button>`}
+        ${buka ? tabelPengisi(l) : ''}
+      </div>`;
+    }).join('') || '<p class="muted center">Lokasi tidak ditemukan di data acuan.</p>';
+    $('lagi').hidden = f.length <= batas;
+    $('lagi').textContent = `Tampilkan lebih banyak (${f.length - batas} lagi)`;
   }
 
-  $('cari').oninput = () => { hal = 0; render(); };
-  $('lokasi').onchange = () => { hal = 0; render(); };
-  $('prev').onclick = () => { hal--; render(); };
-  $('next').onclick = () => { hal++; render(); };
-  muat().catch(e => { $('info').textContent = 'Gagal memuat data: ' + e.message; });
+  async function bukaNama(kode, senyap) {
+    try {
+      const data = await ambilNama(kode);
+      if (!data.length) { if (!senyap) $('pesan').textContent = 'Kode salah.'; return false; }
+      punyaNama = true; kelompokkanPengisi(data);
+      $('labelKode').textContent = 'Nama pengisi: terbuka'; $('kode').hidden = true; $('btnKode').textContent = 'Kunci';
+      $('pesan').textContent = '';
+      try { sessionStorage.setItem('kodeNama', kode); } catch (e) {}
+      render(); return true;
+    } catch (e) { if (!senyap) $('pesan').textContent = 'Gagal: ' + e.message; return false; }
+  }
+
+  async function kunciNama() {
+    punyaNama = false; try { sessionStorage.removeItem('kodeNama'); } catch (e) {}
+    kelompokkanPengisi(await ambilSemua('ukuran_publik?select=*&order=id'));
+    $('labelKode').textContent = 'Nama pengisi:'; $('kode').hidden = false; $('kode').value = ''; $('btnKode').textContent = 'Buka';
+    render();
+  }
+
+  $('btnKode').onclick = () => punyaNama ? kunciNama() : bukaNama($('kode').value.trim(), false);
+  $('kode').onkeydown = e => { if (e.key === 'Enter') $('btnKode').click(); };
+  $('cari').oninput = () => { batas = 20; render(); };
+  $('status').onchange = () => { batas = 20; render(); };
+  $('lagi').onclick = () => { batas += 20; render(); };
+  $('daftar').onclick = e => {
+    const k = e.target.dataset && e.target.dataset.k; if (!k) return;
+    terbuka.has(k) ? terbuka.delete(k) : terbuka.add(k); render();
+  };
+
+  (async () => {
+    try {
+      const [prog, publik] = await Promise.all([
+        ambilSemua('progres_pengisian?select=*&order=lokasi_form,bagian_kerja'),
+        ambilSemua('ukuran_publik?select=*&order=id')
+      ]);
+      susunLokasi(prog); kelompokkanPengisi(publik); ringkasan(); render();
+      let tersimpan = null; try { tersimpan = sessionStorage.getItem('kodeNama'); } catch (e) {}
+      if (tersimpan) bukaNama(tersimpan, true);
+    } catch (e) { $('info').textContent = 'Gagal memuat data: ' + e.message; }
+  })();
 </script>
 </body>
 </html>
