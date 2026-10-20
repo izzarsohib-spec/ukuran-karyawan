@@ -5,77 +5,148 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dashboard Ukuran Seragam</title>
 <style>
-  :root { --bg:#f6f7f9; --card:#fff; --text:#1c2430; --muted:#6b7686; --line:#e3e7ed; --accent:#1f6feb;
-          --ok:#1a7f4b; --ok-bg:#e3f5ea; --warn:#b4540a; --warn-bg:#fff1e0; --bad:#b42318; --bad-bg:#fde8e6; --track:#e9edf2; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#12161c; --card:#1a2028; --text:#e6ebf2; --muted:#8c97a6; --line:#2a323d; --accent:#5aa0ff;
-          --ok:#5fd18f; --ok-bg:#16301f; --warn:#f0a15a; --warn-bg:#3a2a14; --bad:#ff8a80; --bad-bg:#3b1c19; --track:#2a323d; } }
+  :root {
+    --bg1:#dfe9ff; --bg2:#f3e6ff; --blob1:#7aa8ff; --blob2:#c58cff; --blob3:#6fe3c1;
+    --glass:rgba(255,255,255,.52); --glass2:rgba(255,255,255,.72); --stroke:rgba(255,255,255,.75);
+    --shadow:0 10px 36px rgba(60,72,140,.16);
+    --text:#18202e; --muted:#5d6a7d; --line:rgba(24,32,46,.10); --accent:#3b6df0; --track:rgba(24,32,46,.10);
+    --ok:#12804a; --ok-bg:rgba(30,170,100,.16); --warn:#a85a07; --warn-bg:rgba(245,158,40,.20); --bad:#b42318; --bad-bg:rgba(240,70,60,.16);
+  }
+  @media (prefers-color-scheme: dark) { :root {
+    --bg1:#0a0f1f; --bg2:#170f2b; --blob1:#2f55c9; --blob2:#7a3fc4; --blob3:#127a68;
+    --glass:rgba(28,36,56,.52); --glass2:rgba(28,36,56,.78); --stroke:rgba(255,255,255,.13);
+    --shadow:0 10px 36px rgba(0,0,0,.4);
+    --text:#e9eefb; --muted:#9aa6bd; --line:rgba(255,255,255,.10); --accent:#6c9bff; --track:rgba(255,255,255,.12);
+    --ok:#5fd18f; --ok-bg:rgba(60,200,120,.18); --warn:#f5b066; --warn-bg:rgba(245,158,40,.18); --bad:#ff8f84; --bad-bg:rgba(255,90,80,.18);
+  } }
   * { box-sizing:border-box; }
-  body { margin:0; font:15px/1.5 system-ui, sans-serif; background:var(--bg); color:var(--text); }
-  main { max-width:1100px; margin:0 auto; padding:20px 16px 48px; }
-  h1 { font-size:1.4rem; margin:0 0 4px; }
-  p.sub { margin:0 0 16px; color:var(--muted); }
-  .top { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:flex-start; }
-  .kode { display:flex; gap:6px; align-items:center; font-size:.85rem; color:var(--muted); }
-  .kode input { width:130px; flex:none; padding:6px 8px; }
-  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:12px 0 16px; }
-  .stat { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
-  .stat b { display:block; font-size:1.5rem; line-height:1.2; }
-  .stat span { color:var(--muted); font-size:.82rem; }
-  .bar { height:8px; background:var(--track); border-radius:99px; overflow:hidden; }
-  .bar i { display:block; height:100%; background:var(--accent); border-radius:99px; }
+  html, body { margin:0; }
+  body { font:15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color:var(--text); min-height:100vh;
+         background:linear-gradient(135deg,var(--bg1),var(--bg2)); background-attachment:fixed; }
+  body::before, body::after { content:""; position:fixed; z-index:-1; border-radius:50%; filter:blur(90px); opacity:.55; pointer-events:none; }
+  body::before { width:46vw; height:46vw; left:-10vw; top:-12vw; background:var(--blob1); animation:gerak 22s ease-in-out infinite alternate; }
+  body::after { width:40vw; height:40vw; right:-8vw; bottom:-12vw; background:var(--blob2); animation:gerak 26s ease-in-out infinite alternate-reverse; }
+  @keyframes gerak { to { transform:translate(6vw,5vw) scale(1.12); } }
+  @media (prefers-reduced-motion: reduce) { body::before, body::after { animation:none; } }
+
+  .glass { background:var(--glass); border:1px solid var(--stroke); border-radius:20px; box-shadow:var(--shadow);
+           -webkit-backdrop-filter:blur(20px) saturate(160%); backdrop-filter:blur(20px) saturate(160%); }
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))) { .glass { background:var(--glass2); } }
+
+  main { max-width:1280px; margin:0 auto; padding:18px 16px 24px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  h1 { font-size:1.35rem; margin:0; letter-spacing:-.01em; }
+  .sub { color:var(--muted); font-size:.88rem; }
+  .kode { display:flex; gap:6px; align-items:center; padding:6px 8px 6px 12px; border-radius:99px; font-size:.84rem; color:var(--muted); }
+  .kode input { width:120px; border:0; background:transparent; padding:4px 6px; color:var(--text); outline:none; }
+  .kode input::placeholder { color:var(--muted); }
+  #pesan { font-size:.8rem; color:var(--bad); text-align:right; margin-top:4px; min-height:1em; }
+
+  button { font:inherit; color:inherit; cursor:pointer; }
+  .btn { border:1px solid var(--stroke); background:var(--glass2); border-radius:99px; padding:5px 14px; font-size:.84rem; }
+  .btn:hover { border-color:var(--accent); }
+
+  .ringkas { display:grid; grid-template-columns:minmax(260px,1.3fr) repeat(3,minmax(110px,1fr)); gap:12px; margin-bottom:14px; }
+  .big { display:flex; align-items:center; gap:16px; padding:14px 18px; }
+  .big svg { flex:none; }
+  .big b { font-size:1.9rem; line-height:1.1; display:block; }
+  .big span { color:var(--muted); font-size:.85rem; }
+  .tile { padding:14px 16px; text-align:left; border:1px solid var(--stroke); }
+  .tile b { display:block; font-size:1.7rem; line-height:1.15; }
+  .tile span { font-size:.82rem; color:var(--muted); }
+  .tile.on { outline:2px solid var(--accent); }
+  .tile.ok b { color:var(--ok); } .tile.warn b { color:var(--warn); } .tile.bad b { color:var(--bad); }
+
+  .layout { display:grid; grid-template-columns:minmax(300px,380px) 1fr; gap:14px; height:calc(100vh - 262px); min-height:500px; }
+  .panel { display:flex; flex-direction:column; min-height:0; overflow:hidden; }
+  .tools { padding:12px; display:grid; gap:8px; border-bottom:1px solid var(--line); }
+  .search { display:flex; align-items:center; gap:8px; background:var(--glass2); border:1px solid var(--stroke); border-radius:12px; padding:0 12px; }
+  .search input { flex:1; border:0; background:transparent; padding:10px 0; font:inherit; color:var(--text); outline:none; min-width:0; }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; }
+  .chip { border:1px solid var(--stroke); background:transparent; border-radius:99px; padding:3px 11px; font-size:.8rem; color:var(--muted); }
+  .chip.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .scroll { overflow-y:auto; min-height:0; flex:1; padding:8px; scrollbar-width:thin; }
+  .item { display:block; width:100%; text-align:left; border:1px solid transparent; background:transparent; border-radius:14px; padding:10px 12px; margin-bottom:4px; }
+  .item:hover { background:var(--glass2); }
+  .item.sel { background:var(--glass2); border-color:var(--accent); }
+  .item .nm { font-weight:600; font-size:.92rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .item .mt { display:flex; justify-content:space-between; font-size:.78rem; color:var(--muted); margin-top:3px; }
+  .bar { height:6px; background:var(--track); border-radius:99px; overflow:hidden; margin-top:6px; }
+  .bar i { display:block; height:100%; border-radius:99px; background:var(--accent); transition:width .4s; }
   .bar.ok i { background:var(--ok); } .bar.warn i { background:var(--warn); } .bar.bad i { background:var(--bad); }
-  .filters { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
-  input, select, button { font:inherit; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--text); }
-  #cari { flex:1 1 260px; }
-  button { cursor:pointer; } button:disabled { opacity:.4; cursor:default; }
-  .loc { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:10px; }
-  .loc h3 { margin:0; font-size:1rem; }
-  .row { display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
-  .badge { font-size:.78rem; padding:2px 9px; border-radius:99px; font-weight:600; white-space:nowrap; }
+  .kosongnya { padding:30px 12px; text-align:center; color:var(--muted); }
+
+  .detail { padding:0; }
+  .dhead { padding:16px 18px 12px; border-bottom:1px solid var(--line); }
+  .dhead h2 { margin:0; font-size:1.2rem; letter-spacing:-.01em; }
+  .back { display:none; margin-bottom:8px; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .badge { font-size:.76rem; padding:2px 10px; border-radius:99px; font-weight:600; white-space:nowrap; }
   .badge.ok { background:var(--ok-bg); color:var(--ok); } .badge.warn { background:var(--warn-bg); color:var(--warn); } .badge.bad { background:var(--bad-bg); color:var(--bad); }
-  .notif { margin-top:10px; padding:10px 12px; border-radius:8px; font-size:.92rem; }
-  .notif.warn { background:var(--warn-bg); color:var(--warn); } .notif.bad { background:var(--bad-bg); color:var(--bad); } .notif.ok { background:var(--ok-bg); color:var(--ok); }
-  .notif ul { margin:6px 0 0; padding-left:18px; } .notif li { margin:2px 0; }
-  .tog { margin-top:10px; font-size:.88rem; }
-  .wrap { overflow-x:auto; margin-top:10px; border:1px solid var(--line); border-radius:8px; }
-  table { width:100%; border-collapse:collapse; font-size:.88rem; }
-  th, td { padding:7px 10px; text-align:left; white-space:nowrap; border-bottom:1px solid var(--line); }
-  th { color:var(--muted); font-weight:600; font-size:.8rem; } tr:last-child td { border-bottom:0; }
-  .muted { color:var(--muted); } .center { text-align:center; margin:16px 0; }
-  #pesan { font-size:.82rem; margin-top:4px; }
+  .dbody { padding:14px 18px 18px; }
+  .notif { border-radius:14px; padding:12px 14px; margin-bottom:14px; }
+  .notif.ok { background:var(--ok-bg); color:var(--ok); } .notif.warn { background:var(--warn-bg); color:var(--warn); } .notif.bad { background:var(--bad-bg); color:var(--bad); }
+  .notif b { font-size:1rem; }
+  .bagian { display:grid; grid-template-columns:minmax(120px,1.4fr) 2fr auto; gap:12px; align-items:center; padding:7px 0; font-size:.88rem; }
+  .bagian .bar { margin:0; height:8px; }
+  .kurang { font-weight:700; color:var(--warn); white-space:nowrap; } .penuh { color:var(--ok); font-weight:600; white-space:nowrap; }
+  .tt { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:16px 0 8px; font-weight:600; flex-wrap:wrap; }
+  .tt select { border:1px solid var(--stroke); background:var(--glass2); color:var(--text); border-radius:10px; padding:5px 8px; font:inherit; font-size:.82rem; max-width:100%; }
+  .wrap { overflow:auto; max-height:320px; border:1px solid var(--line); border-radius:12px; }
+  table { width:100%; border-collapse:collapse; font-size:.86rem; }
+  th, td { padding:7px 12px; text-align:left; white-space:nowrap; border-bottom:1px solid var(--line); }
+  th { position:sticky; top:0; background:var(--glass2); color:var(--muted); font-size:.76rem; font-weight:600; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); }
+  tr:last-child td { border-bottom:0; }
+  .muted { color:var(--muted); font-size:.82rem; }
+
+  @media (max-width: 900px) {
+    .ringkas { grid-template-columns:1fr 1fr 1fr; } .big { grid-column:1 / -1; }
+    .layout { display:block; height:auto; min-height:0; }
+    .panel.list { max-height:none; }
+    .panel.list .scroll { max-height:56vh; }
+    .panel.detail { display:none; position:fixed; inset:0; z-index:20; border-radius:0; overflow:auto; background:var(--glass2); }
+    .panel.detail.open { display:block; }
+    .back { display:inline-block; }
+    .bagian { grid-template-columns:1fr auto; } .bagian .bar { grid-column:1 / -1; grid-row:2; }
+  }
 </style>
 </head>
 <body>
 <main>
-  <div class="top">
+  <header>
     <div>
       <h1>Dashboard Ukuran Seragam</h1>
-      <p class="sub" id="info">Memuat data…</p>
+      <div class="sub" id="info">Memuat data…</div>
     </div>
     <div>
-      <div class="kode">
-        <span id="labelKode">Nama pengisi:</span>
+      <div class="kode glass" style="border-radius:99px">
+        <span id="labelKode">Nama pengisi</span>
         <input id="kode" type="password" placeholder="Kode akses" autocomplete="off">
-        <button id="btnKode">Buka</button>
+        <button class="btn" id="btnKode">Buka</button>
       </div>
-      <div id="pesan" class="muted"></div>
+      <div id="pesan"></div>
     </div>
-  </div>
+  </header>
 
-  <div class="cards" id="ringkas"></div>
+  <section class="ringkas">
+    <div class="big glass" id="big"></div>
+    <button class="tile ok glass" data-s="lengkap"><b id="nLengkap">-</b><span>Lokasi lengkap</span></button>
+    <button class="tile warn glass" data-s="kurang"><b id="nKurang">-</b><span>Masih kurang</span></button>
+    <button class="tile bad glass" data-s="kosong"><b id="nKosong">-</b><span>Belum ada yang isi</span></button>
+  </section>
 
-  <div class="filters">
-    <input id="cari" type="search" placeholder="Cari lokasi, misalnya: pengadilan negeri kudus">
-    <select id="status">
-      <option value="semua">Semua status</option>
-      <option value="kurang">Masih kurang</option>
-      <option value="kosong">Belum ada yang isi</option>
-      <option value="lengkap">Sudah lengkap</option>
-    </select>
-  </div>
-
-  <div id="daftar"></div>
-  <div class="center"><button id="lagi" hidden>Tampilkan lebih banyak</button></div>
+  <section class="layout">
+    <div class="panel list glass">
+      <div class="tools">
+        <label class="search"><span aria-hidden="true">🔍</span>
+          <input id="cari" type="search" placeholder="Cari lokasi, mis. pengadilan negeri kudus">
+        </label>
+        <div class="chips" id="chips"></div>
+      </div>
+      <div class="scroll" id="daftar"></div>
+    </div>
+    <div class="panel detail glass" id="detail"></div>
+  </section>
 </main>
 <script>
   // Anon key memang publik; aksesnya dibatasi di Supabase (view agregat tanpa nama, nama hanya lewat kode akses).
@@ -88,8 +159,8 @@
   const LABEL = { kosong: 'Belum ada yang isi', kurang: 'Masih kurang', lengkap: 'Lengkap' };
   const NADA = { kosong: 'bad', kurang: 'warn', lengkap: 'ok' };
 
-  let lokasi = [], pengisi = new Map(), punyaNama = false, batas = 20;
-  const terbuka = new Set();
+  let lokasi = [], pengisi = new Map(), punyaNama = false;
+  let sel = null, status = 'semua', fBagian = '', terbukaHP = false;
 
   async function ambilSemua(path) {
     const out = [];
@@ -101,7 +172,6 @@
     }
     return out;
   }
-
   async function ambilNama(kode) {
     const out = [];
     for (let off = 0; ; off += 1000) {
@@ -114,15 +184,14 @@
     }
     return out;
   }
-
   function kelompokkanPengisi(baris) {
     pengisi = new Map();
     for (const p of baris) { if (!pengisi.has(p.lokasi)) pengisi.set(p.lokasi, []); pengisi.get(p.lokasi).push(p); }
   }
-
   function susunLokasi(prog) {
     const peta = new Map();
     for (const r of prog) {
+      if (r.target <= 0) continue; // bagian tanpa anggota tidak dipantau
       if (!peta.has(r.lokasi_form)) peta.set(r.lokasi_form, { client: r.client, lokasi: r.lokasi_form, bagian: [], target: 0, isi: 0 });
       const l = peta.get(r.lokasi_form), isi = Math.min(r.sudah_isi, r.target);
       l.bagian.push({ nama: r.bagian_kerja, target: r.target, isi });
@@ -138,49 +207,77 @@
   }
 
   function ringkasan() {
-    const T = lokasi.reduce((a, l) => a + l.target, 0), I = lokasi.reduce((a, l) => a + l.isi, 0);
-    const n = s => lokasi.filter(l => l.status === s).length;
-    const kartu = (angka, ket) => `<div class="stat"><b>${angka}</b><span>${ket}</span></div>`;
-    $('ringkas').innerHTML =
-      `<div class="stat" style="grid-column:span 2"><b>${T ? (100 * I / T).toFixed(1) : 0}%</b><span>${I.toLocaleString('id-ID')} dari ${T.toLocaleString('id-ID')} anggota sudah mengisi</span>
-         <div class="bar" style="margin-top:8px"><i style="width:${T ? 100 * I / T : 0}%"></i></div></div>` +
-      kartu(n('lengkap'), 'Lokasi lengkap') + kartu(n('kurang'), 'Lokasi masih kurang') + kartu(n('kosong'), 'Belum ada yang isi');
+    const T = lokasi.reduce((a, l) => a + l.target, 0), I = lokasi.reduce((a, l) => a + l.isi, 0), p = T ? 100 * I / T : 0;
+    const n = s => lokasi.filter(l => l.status === s).length, C = 2 * Math.PI * 40;
+    $('big').innerHTML =
+      `<svg width="104" height="104" viewBox="0 0 104 104" aria-hidden="true">
+         <circle cx="52" cy="52" r="40" fill="none" stroke="var(--track)" stroke-width="10"/>
+         <circle cx="52" cy="52" r="40" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round"
+           stroke-dasharray="${(C * p / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 52 52)"/>
+       </svg>
+       <div><b>${p.toFixed(1)}%</b><span>${I.toLocaleString('id-ID')} dari ${T.toLocaleString('id-ID')} anggota<br>sudah mengisi</span></div>`;
+    $('nLengkap').textContent = n('lengkap'); $('nKurang').textContent = n('kurang'); $('nKosong').textContent = n('kosong');
     $('info').textContent = `${lokasi.length} lokasi dipantau`;
   }
 
+  function tersaring() {
+    const q = $('cari').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    return lokasi.filter(l => q.every(w => l.kunci.includes(w)) && (status === 'semua' || l.status === status))
+      .sort((a, b) => q.length ? a.client.localeCompare(b.client) : (URUT[a.status] - URUT[b.status]) || (a.persen - b.persen) || a.client.localeCompare(b.client));
+  }
+
+  function renderChips() {
+    const jml = s => s === 'semua' ? lokasi.length : lokasi.filter(l => l.status === s).length;
+    $('chips').innerHTML = [['semua', 'Semua'], ['kurang', 'Kurang'], ['kosong', 'Kosong'], ['lengkap', 'Lengkap']]
+      .map(([s, t]) => `<button class="chip ${status === s ? 'on' : ''}" data-s="${s}">${t} ${jml(s)}</button>`).join('');
+    document.querySelectorAll('.tile').forEach(t => t.classList.toggle('on', t.dataset.s === status));
+  }
+
+  function renderDaftar() {
+    const f = tersaring();
+    if (!f.some(l => l.lokasi === sel)) { sel = f.length ? f[0].lokasi : null; fBagian = ''; }
+    $('daftar').innerHTML = f.map(l =>
+      `<button class="item ${l.lokasi === sel ? 'sel' : ''}" data-k="${esc(l.lokasi)}">
+         <div class="nm">${esc(l.client)}</div>
+         <div class="bar ${NADA[l.status]}"><i style="width:${l.persen}%"></i></div>
+         <div class="mt"><span>${l.isi}/${l.target} · ${l.persen}%</span><span>${l.kurang > 0 ? 'kurang ' + l.kurang : '✓ lengkap'}</span></div>
+       </button>`).join('') || '<div class="kosongnya">Lokasi tidak ditemukan di data acuan.</div>';
+    renderChips(); renderDetail();
+  }
+
   function tabelPengisi(l) {
-    const data = pengisi.get(l.lokasi) || [];
-    if (!data.length) return '<p class="muted">Belum ada yang mengisi di lokasi ini.</p>';
+    let data = pengisi.get(l.lokasi) || [];
+    if (fBagian) data = data.filter(p => p.bagian_kerja === fBagian);
+    if (!data.length) return '<p class="muted">Belum ada yang mengisi.</p>';
     const urut = [...data].sort((a, b) => (a.bagian_kerja || '').localeCompare(b.bagian_kerja || '') || (a.nama || '').localeCompare(b.nama || ''));
     return `<div class="wrap"><table><thead><tr>${punyaNama ? '<th>Nama</th>' : ''}<th>Bagian kerja</th><th>Baju</th><th>Celana</th><th>Sepatu</th><th>Diisi</th></tr></thead><tbody>` +
       urut.map(p => `<tr>${punyaNama ? `<td>${esc(p.nama)}</td>` : ''}<td>${esc(p.bagian_kerja)}</td><td>${esc(p.ukuran_baju)}</td><td>${esc(p.ukuran_celana)}</td><td>${esc(p.ukuran_sepatu)}</td><td>${p.waktu ? new Date(p.waktu).toLocaleDateString('id-ID') : ''}</td></tr>`).join('') +
-      '</tbody></table></div>' + (punyaNama ? '' : '<p class="muted" style="font-size:.8rem">Nama disembunyikan. Masukkan kode akses di kanan atas untuk melihatnya.</p>');
+      '</tbody></table></div>' + (punyaNama ? '' : '<p class="muted">Nama disembunyikan. Masukkan kode akses di kanan atas untuk melihatnya.</p>');
   }
 
-  function notif(l) {
-    if (l.status === 'lengkap') return `<div class="notif ok">✓ Semua anggota (${l.target} orang) sudah mengisi.</div>`;
-    const awal = l.status === 'kosong' ? `Belum ada satu pun yang mengisi dari ${l.target} anggota.` : `Kekurangan ${l.kurang} orang: ${l.isi} dari ${l.target} anggota baru mengisi.`;
-    const rinci = l.bagian.filter(b => b.isi < b.target).map(b => `<li>${esc(b.nama)}: kurang <b>${b.target - b.isi}</b> orang (${b.isi}/${b.target})</li>`).join('');
-    return `<div class="notif ${l.status === 'kosong' ? 'bad' : 'warn'}">⚠ ${awal}<ul>${rinci}</ul></div>`;
-  }
-
-  function render() {
-    const q = $('cari').value.trim().toLowerCase().split(/\s+/).filter(Boolean), st = $('status').value;
-    const f = lokasi.filter(l => q.every(w => l.kunci.includes(w)) && (st === 'semua' || l.status === st))
-      .sort((a, b) => q.length ? a.client.localeCompare(b.client) : (URUT[a.status] - URUT[b.status]) || (a.persen - b.persen) || a.client.localeCompare(b.client));
-    const auto = q.length && f.length <= 3;
-    $('daftar').innerHTML = f.slice(0, batas).map(l => {
-      const buka = auto || terbuka.has(l.lokasi);
-      return `<div class="loc">
-        <div class="row"><h3>${esc(l.client)}</h3><span class="badge ${NADA[l.status]}">${LABEL[l.status]} · ${l.persen}%</span></div>
-        <div class="bar ${NADA[l.status]}"><i style="width:${l.persen}%"></i></div>
-        ${notif(l)}
-        ${auto ? '' : `<button class="tog" data-k="${esc(l.lokasi)}">${buka ? 'Sembunyikan' : 'Lihat'} daftar pengisi (${(pengisi.get(l.lokasi) || []).length})</button>`}
-        ${buka ? tabelPengisi(l) : ''}
-      </div>`;
-    }).join('') || '<p class="muted center">Lokasi tidak ditemukan di data acuan.</p>';
-    $('lagi').hidden = f.length <= batas;
-    $('lagi').textContent = `Tampilkan lebih banyak (${f.length - batas} lagi)`;
+  function renderDetail() {
+    const el = $('detail'), l = lokasi.find(x => x.lokasi === sel);
+    el.classList.toggle('open', terbukaHP && !!l);
+    if (!l) { el.innerHTML = '<div class="kosongnya">Pilih lokasi di daftar untuk melihat rinciannya.</div>'; return; }
+    const awal = l.status === 'lengkap' ? `<b>✓ Semua anggota sudah mengisi</b><div>${l.target} dari ${l.target} orang.</div>`
+      : l.status === 'kosong' ? `<b>⚠ Belum ada yang mengisi</b><div>${l.target} anggota belum mengisi sama sekali.</div>`
+      : `<b>⚠ Kekurangan ${l.kurang} orang</b><div>${l.isi} dari ${l.target} anggota baru mengisi.</div>`;
+    const pilihan = l.bagian.map(b => `<option value="${esc(b.nama)}" ${fBagian === b.nama ? 'selected' : ''}>${esc(b.nama)}</option>`).join('');
+    el.innerHTML =
+      `<div class="dhead">
+         <button class="btn back" id="back">‹ Kembali</button>
+         <div class="row"><h2>${esc(l.client)}</h2><span class="badge ${NADA[l.status]}">${LABEL[l.status]} · ${l.persen}%</span></div>
+         <div class="bar ${NADA[l.status]}" style="height:9px;margin-top:10px"><i style="width:${l.persen}%"></i></div>
+       </div>
+       <div class="dbody">
+         <div class="notif ${NADA[l.status]}">${awal}</div>
+         ${l.bagian.map(b => `<div class="bagian"><span>${esc(b.nama)}</span>
+            <div class="bar ${b.isi >= b.target ? 'ok' : 'warn'}"><i style="width:${b.target ? 100 * b.isi / b.target : 0}%"></i></div>
+            <span class="${b.isi >= b.target ? 'penuh' : 'kurang'}">${b.isi >= b.target ? '✓ ' + b.isi + '/' + b.target : 'kurang ' + (b.target - b.isi) + ' · ' + b.isi + '/' + b.target}</span></div>`).join('')}
+         <div class="tt"><span>Daftar pengisi</span>
+           <select id="fb"><option value="">Semua bagian kerja</option>${pilihan}</select></div>
+         ${tabelPengisi(l)}
+       </div>`;
   }
 
   async function bukaNama(kode, senyap) {
@@ -191,26 +288,28 @@
       $('labelKode').textContent = 'Nama pengisi: terbuka'; $('kode').hidden = true; $('btnKode').textContent = 'Kunci';
       $('pesan').textContent = '';
       try { sessionStorage.setItem('kodeNama', kode); } catch (e) {}
-      render(); return true;
+      renderDetail(); return true;
     } catch (e) { if (!senyap) $('pesan').textContent = 'Gagal: ' + e.message; return false; }
   }
-
   async function kunciNama() {
     punyaNama = false; try { sessionStorage.removeItem('kodeNama'); } catch (e) {}
     kelompokkanPengisi(await ambilSemua('ukuran_publik?select=*&order=id'));
-    $('labelKode').textContent = 'Nama pengisi:'; $('kode').hidden = false; $('kode').value = ''; $('btnKode').textContent = 'Buka';
-    render();
+    $('labelKode').textContent = 'Nama pengisi'; $('kode').hidden = false; $('kode').value = ''; $('btnKode').textContent = 'Buka';
+    renderDetail();
   }
 
   $('btnKode').onclick = () => punyaNama ? kunciNama() : bukaNama($('kode').value.trim(), false);
   $('kode').onkeydown = e => { if (e.key === 'Enter') $('btnKode').click(); };
-  $('cari').oninput = () => { batas = 20; render(); };
-  $('status').onchange = () => { batas = 20; render(); };
-  $('lagi').onclick = () => { batas += 20; render(); };
+  $('cari').oninput = () => { terbukaHP = false; renderDaftar(); };
+  const setStatus = s => { status = (status === s && s !== 'semua') ? 'semua' : s; terbukaHP = false; renderDaftar(); };
+  $('chips').onclick = e => { const s = e.target.dataset && e.target.dataset.s; if (s) { status = s; terbukaHP = false; renderDaftar(); } };
+  document.querySelectorAll('.tile').forEach(t => t.onclick = () => setStatus(t.dataset.s));
   $('daftar').onclick = e => {
-    const k = e.target.dataset && e.target.dataset.k; if (!k) return;
-    terbuka.has(k) ? terbuka.delete(k) : terbuka.add(k); render();
+    const b = e.target.closest('.item'); if (!b) return;
+    sel = b.dataset.k; fBagian = ''; terbukaHP = true; renderDaftar();
   };
+  $('detail').onclick = e => { if (e.target.id === 'back') { terbukaHP = false; renderDetail(); } };
+  $('detail').onchange = e => { if (e.target.id === 'fb') { fBagian = e.target.value; renderDetail(); } };
 
   (async () => {
     try {
@@ -218,7 +317,7 @@
         ambilSemua('progres_pengisian?select=*&order=lokasi_form,bagian_kerja'),
         ambilSemua('ukuran_publik?select=*&order=id')
       ]);
-      susunLokasi(prog); kelompokkanPengisi(publik); ringkasan(); render();
+      susunLokasi(prog); kelompokkanPengisi(publik); ringkasan(); renderDaftar();
       let tersimpan = null; try { tersimpan = sessionStorage.getItem('kodeNama'); } catch (e) {}
       if (tersimpan) bukaNama(tersimpan, true);
     } catch (e) { $('info').textContent = 'Gagal memuat data: ' + e.message; }
