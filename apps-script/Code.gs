@@ -56,6 +56,24 @@ function sinkronSemua() {
   Logger.log('Sinkron selesai: ' + rows.length + ' baris');
 }
 
+// Periksa tiap langkah dan laporkan statusnya (tanpa menampilkan rahasia).
+function diagnosa() {
+  var out = {};
+  try {
+    var p = PropertiesService.getScriptProperties();
+    out.SUPABASE_URL_terisi = !!p.getProperty('SUPABASE_URL');
+    out.SUPABASE_SERVICE_KEY_terisi = !!p.getProperty('SUPABASE_SERVICE_KEY');
+  } catch (e) { out.properties_error = String(e); }
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    out.spreadsheet = ss.getName();
+    out.jumlah_tab = ss.getSheets().length;
+  } catch (e) { out.spreadsheet_error = String(e); }
+  try { out.akun_penjalan = Session.getEffectiveUser().getEmail(); } catch (e) { out.akun_error = String(e); }
+  Logger.log(JSON.stringify(out, null, 2));
+  return out;
+}
+
 // Jalankan sekali untuk membuat jadwal otomatis (tiap 1 jam).
 function pasangJadwal() {
   ScriptApp.getProjectTriggers().forEach(function (t) { ScriptApp.deleteTrigger(t); });
