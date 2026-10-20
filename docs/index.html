@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Ukuran Seragam</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --text:#1c2430; --muted:#6b7686; --line:#e3e7ed; --accent:#1f6feb; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#12161c; --card:#1a2028; --text:#e6ebf2; --muted:#8c97a6; --line:#2a323d; --accent:#5aa0ff; } }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.5 system-ui, sans-serif; background:var(--bg); color:var(--text); }
+  main { max-width:1100px; margin:0 auto; padding:20px 16px 40px; }
+  h1 { font-size:1.4rem; margin:0 0 4px; }
+  p.sub { margin:0 0 16px; color:var(--muted); }
+  .bar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  input, select, button { font:inherit; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--text); }
+  input { flex:1 1 220px; }
+  .wrap { overflow-x:auto; background:var(--card); border:1px solid var(--line); border-radius:10px; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { padding:9px 12px; text-align:left; white-space:nowrap; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; font-size:.85rem; position:sticky; top:0; background:var(--card); }
+  tr:last-child td { border-bottom:0; }
+  .foot { display:flex; justify-content:space-between; align-items:center; margin-top:12px; color:var(--muted); }
+  button:disabled { opacity:.4; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Data Ukuran Seragam</h1>
+  <p class="sub" id="info">Memuat data…</p>
+  <div class="bar">
+    <input id="cari" type="search" placeholder="Cari lokasi atau bagian kerja…">
+    <select id="lokasi"><option value="">Semua lokasi</option></select>
+  </div>
+  <div class="wrap">
+    <table>
+      <thead><tr><th>Lokasi</th><th>Bagian kerja</th><th>Baju</th><th>Celana</th><th>Sepatu</th><th>Diisi</th></tr></thead>
+      <tbody id="isi"></tbody>
+    </table>
+  </div>
+  <div class="foot">
+    <span id="hal"></span>
+    <span><button id="prev">‹ Sebelumnya</button> <button id="next">Berikutnya ›</button></span>
+  </div>
+</main>
+<script>
+  // Anon key memang publik; aksesnya dibatasi oleh view `ukuran_publik` (tanpa nama).
+  const SUPABASE_URL = 'https://vqcusagijiavaoljfrib.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxY3VzYWdpamlhdmFvbGpmcmliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0OTIzOTksImV4cCI6MjEwODA2ODM5OX0.VeslVR4UHv26LCMbkO7KP0k96r8lg7-NNLjY30iMyFk';
+  const PER = 50;
+  let data = [], hal = 0;
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  async function muat() {
+    const semua = [];
+    for (let from = 0; ; from += 1000) {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/ukuran_publik?select=*&order=lokasi.asc,waktu.desc`, {
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, Range: `${from}-${from + 999}` }
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const b = await r.json();
+      semua.push(...b);
+      if (b.length < 1000) break;
+    }
+    data = semua;
+    const lok = [...new Set(data.map(d => d.lokasi).filter(Boolean))].sort();
+    $('lokasi').innerHTML = '<option value="">Semua lokasi</option>' + lok.map(l => `<option>${esc(l)}</option>`).join('');
+    render();
+  }
+
+  function saring() {
+    const q = $('cari').value.trim().toLowerCase(), l = $('lokasi').value;
+    return data.filter(d => (!l || d.lokasi === l) && (!q || (d.lokasi + ' ' + d.bagian_kerja).toLowerCase().includes(q)));
+  }
+
+  function render() {
+    const f = saring(), maks = Math.max(0, Math.ceil(f.length / PER) - 1);
+    hal = Math.min(hal, maks);
+    $('info').textContent = `${f.length} data dari ${new Set(f.map(d => d.lokasi)).size} lokasi`;
+    $('isi').innerHTML = f.slice(hal * PER, hal * PER + PER).map(d =>
+      `<tr><td>${esc(d.lokasi)}</td><td>${esc(d.bagian_kerja)}</td><td>${esc(d.ukuran_baju)}</td><td>${esc(d.ukuran_celana)}</td><td>${esc(d.ukuran_sepatu)}</td><td>${d.waktu ? new Date(d.waktu).toLocaleDateString('id-ID') : ''}</td></tr>`).join('')
+      || '<tr><td colspan="6">Belum ada data.</td></tr>';
+    $('hal').textContent = `Halaman ${hal + 1} dari ${maks + 1}`;
+    $('prev').disabled = hal === 0; $('next').disabled = hal >= maks;
+  }
+
+  $('cari').oninput = () => { hal = 0; render(); };
+  $('lokasi').onchange = () => { hal = 0; render(); };
+  $('prev').onclick = () => { hal--; render(); };
+  $('next').onclick = () => { hal++; render(); };
+  muat().catch(e => { $('info').textContent = 'Gagal memuat data: ' + e.message; });
+</script>
+</body>
+</html>
