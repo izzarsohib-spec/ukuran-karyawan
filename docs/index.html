@@ -483,6 +483,7 @@
             <div class="sums" style="margin-top:18px">
               <div><span>Total beli</span><b class="num" id="sBeli">Rp0</b></div>
               <div><span>Total jual</span><b class="num" id="sJual">Rp0</b></div>
+              <div><span id="sTerpakaiL">Sudah dibelanjakan sebelumnya</span><b class="num" id="sTerpakai">Rp0</b></div>
               <div><span>Sisa RAB</span><b class="num" id="sSisa">Rp0</b></div>
               <div><span>Total untung</span><b class="num" id="sUntung">Rp0</b></div>
             </div>
@@ -790,6 +791,8 @@
     `<optgroup label="${esc(k)}">` + HARGA.filter(h => h.kat === k).map(h => `<option value="${h.no}" ${String(h.no) === String(no) ? 'selected' : ''}>${esc(h.nama)}</option>`).join('') + '</optgroup>').join('');
   let mSel = '', terbukaMinta = false, mStatusF = 'semua';
   const mAnggota = () => { const l = lokasi.find(x => x.lokasi === mSel); return l && l.bagian.find(b => b.nama === $('mBagian').value); };
+  // permintaan yang ditolak/revisi tidak dihitung, karena akan dibuat ulang
+  const terpakaiSebelumnya = (lok, bag) => { const a = daftarMinta.filter(p => p.lokasi_form === lok && p.bagian_kerja === bag && stReq(p) !== 'ditolak'); return { n: a.length, t: a.reduce((s, p) => s + Number(p.total_beli || 0), 0) }; };
   const mRab = () => { const a = anggaran && anggaran.peta.get(mSel); return a && a.per[$('mBagian').value] || 0; };
 
   // memilih lokasi di daftar: form dikosongkan hanya kalau lokasinya berganti
@@ -828,10 +831,11 @@
       tr.querySelector('.tb').textContent = h ? rp(tb) : '-'; tr.querySelector('.tj').textContent = h ? rp(tj) : '-';
       beli += tb; jual += tj;
     });
-    const rab = mRab(), sisa = rab - beli, untung = (jual - beli) + sisa;
+    const rab = mRab(), lalu = terpakaiSebelumnya(mSel, $('mBagian').value), sisa = rab - lalu.t - beli, untung = (jual - beli) + sisa;
     const set = (id, v) => { $(id).textContent = (v < 0 ? '-' : '') + rp(Math.abs(v)); $(id).classList.toggle('neg', v < 0); };
-    set('sBeli', beli); set('sJual', jual); set('sSisa', sisa); set('sUntung', untung);
-    $('mPeringatan').textContent = rab && beli > rab ? `Total beli melebihi RAB sebesar ${rp(beli - rab)}.` : '';
+    set('sBeli', beli); set('sJual', jual); set('sTerpakai', lalu.t); set('sSisa', sisa); set('sUntung', untung);
+    $('sTerpakaiL').textContent = lalu.n ? `Sudah dibelanjakan (${lalu.n} permintaan sebelumnya)` : 'Sudah dibelanjakan sebelumnya';
+    $('mPeringatan').textContent = rab && beli > rab - lalu.t ? `Total beli melebihi sisa RAB sebesar ${rp(beli - (rab - lalu.t))}.` : '';
   }
   $('mBagian').onchange = infoMinta;
   $('mTambah').onclick = () => { baris.push({ no: '', qty: '' }); renderBaris(); };
@@ -1093,9 +1097,9 @@
           [{ content: 'TOTAL', colSpan: 3, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(semua.reduce((a, s) => a + s.rab, 0)), styles: { halign: 'right', fontStyle: 'bold' } }]],
         columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 92 }, 3: { cellWidth: 120 } } });
       y += 24; huruf('bold'); doc.text('Ringkasan permintaan: ' + bag, L, y); y += 8;
-      const sisa = rab - beli;
+      const lalu = terpakaiSebelumnya(l.lokasi, bag), sisa = rab - lalu.t - beli;
       tabel({ startY: y, margin: { top: 92, bottom: 110, left: L, right: PW - R },
-        body: [['Anggaran (RAB) bagian ini', rpPdf(rab)], ['Total belanja (harga beli)', rpPdf(beli)], ['Sisa RAB', (sisa < 0 ? '-' : '') + rpPdf(Math.abs(sisa))], ['Total penjualan (harga jual)', rpPdf(jual)]].map(r => [r[0], { content: r[1], styles: { halign: 'right' } }]),
+        body: [['Anggaran (RAB) bagian ini', rpPdf(rab)], ...(lalu.t ? [['Sudah dibelanjakan sebelumnya (' + lalu.n + ' permintaan)', rpPdf(lalu.t)]] : []), ['Total belanja (harga beli)', rpPdf(beli)], ['Sisa RAB', (sisa < 0 ? '-' : '') + rpPdf(Math.abs(sisa))], ['Total penjualan (harga jual)', rpPdf(jual)]].map(r => [r[0], { content: r[1], styles: { halign: 'right' } }]),
         columnStyles: { 1: { cellWidth: 140 } } });
     }
     if (rb) return await gabungPdf(doc.output('arraybuffer'), rb.buf);
