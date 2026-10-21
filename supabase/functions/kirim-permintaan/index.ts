@@ -1,4 +1,4 @@
-﻿// Menerima permintaan seragam dari web (terbuka, tanpa kode akses), menyimpan ke tabel `permintaan`,
+// Menerima permintaan seragam dari web (terbuka, tanpa kode akses), menyimpan ke tabel `permintaan`,
 // lalu mengirim ringkasan + lampiran PDF ke atasan lewat ntfy.
 // Harga, RAB, dan jumlah anggota diambil ulang dari database; hanya no item, qty, memo, dan PDF yang dipercaya dari web.
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
   const { lokasi_form, bagian, items, memo, pdf } = body ?? {};
   if (!lokasi_form || !bagian || !Array.isArray(items) || !items.length || !pdf)
     return balas({ error: 'Data permintaan belum lengkap' }, 400);
-  if (items.length > 100 || String(pdf).length > 4_000_000) return balas({ error: 'Permintaan terlalu besar' }, 413);
+  if (items.length > 100 || String(pdf).length > 8_000_000) return balas({ error: 'Permintaan terlalu besar' }, 413);
 
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   // tanpa kode akses: batasi jumlah kiriman supaya atasan tidak kebanjiran notifikasi
