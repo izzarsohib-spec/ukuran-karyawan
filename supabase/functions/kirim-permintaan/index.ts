@@ -29,13 +29,13 @@ Deno.serve(async (req) => {
 
   let body: any;
   try { body = await req.json(); } catch { return balas({ error: 'Data tidak terbaca' }, 400); }
-  const { lokasi_form, bagian, items, memo, jpg, pdf } = body ?? {};
-  // lampiran utama: gambar JPG (semua halaman surat disusun jadi satu gambar); PDF hanya sebagai cadangan
-  const lampiran = String(jpg ?? pdf ?? ''), jenis = jpg ? 'jpg' : 'pdf';
-  if (!lokasi_form || !bagian || !Array.isArray(items) || !items.length || !lampiran)
+  const { lokasi_form, bagian, items, memo, halaman, jpg } = body ?? {};
+  // lampiran: satu gambar JPG per halaman surat (`halaman`); `jpg` (satu gambar) tetap diterima agar versi web lama tidak rusak
+  const gambar: string[] = Array.isArray(halaman) ? halaman.map(String) : jpg ? [String(jpg)] : [];
+  if (!lokasi_form || !bagian || !Array.isArray(items) || !items.length || !gambar.length)
     return balas({ error: 'Data permintaan belum lengkap' }, 400);
-  if (jenis === 'jpg' && !lampiran.startsWith('/9j/')) return balas({ error: 'Gambar tidak valid' }, 400);
-  if (items.length > 100 || lampiran.length > 8_000_000) return balas({ error: 'Permintaan terlalu besar' }, 413);
+  if (gambar.length > 40 || gambar.some((g) => !g.startsWith('/9j/'))) return balas({ error: 'Gambar tidak valid' }, 400);
+  if (items.length > 100 || gambar.reduce((a, g) => a + g.length, 0) > 14_000_000) return balas({ error: 'Permintaan terlalu besar' }, 413);
 
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   // tanpa kode akses: batasi jumlah kiriman supaya pimpinan tidak kebanjiran notifikasi
@@ -81,22 +81,24 @@ Deno.serve(async (req) => {
     `Sisa RAB: ${rp(sisa)}`,
     `Untung: ${rp(untung)}`,
   ];
-  const ekor = ['', 'Perlu persetujuan: Pak Yasir dan Pak Ferry', ...(catatan ? ['', `Catatan: ${catatan}`] : [])];
+  const ekor = ['', 'Perlu persetujuan: Pak Yasir dan Pak Ferry', 'Ketuk notifikasi ini untuk membuka surat lengkap.', ...(catatan ? ['', `Catatan: ${catatan}`] : [])];
   const daftar = baris.map((b) => `- ${b.qty} x ${b.nama} | beli ${rp(b.beli)} | jual ${rp(b.jual)}`);
-  const susun = (n: number) => [...kepala, '', 'Belanja:', ...daftar.slice(0, n), ...(n < daftar.length ? [`... dan ${daftar.length - n} item lainnya (lihat PDF)`] : []), ...ekor].join('\n');
+  const susun = (n: number) => [...kepala, '', 'Belanja:', ...daftar.slice(0, n), ...(n < daftar.length ? [`... dan ${daftar.length - n} item lainnya (lihat surat)`] : []), ...ekor].join('\n');
   let teks = susun(daftar.length);
   for (let n = daftar.length; teks.length > 2800 && n > 0; n--) teks = susun(n - 1);
 
-  const namaFile = `Permintaan ${prog.client} - ${bagian}.${jenis}`.replace(/[^\w .()-]/g, '');
-  const bin = Uint8Array.from(atob(lampiran), (c) => c.charCodeAt(0));
-
-  // ntfy.sh gratis membatasi lampiran 2 MB per file (dan 20 MB per 3 jam per IP), terlalu kecil untuk gambar tajam.
-  // Jadi gambar disimpan di Supabase Storage (nama acak, tidak bisa ditebak) dan notifikasi hanya memuat tautannya.
-  const lokasiBerkas = `${baru.id}-${acak().slice(0, 24)}.${jenis}`;
-  const { error: eUp } = await db.storage.from('lampiran-surat').upload(lokasiBerkas, bin, { contentType: jenis === 'jpg' ? 'image/jpeg' : 'application/pdf', upsert: false });
-  if (eUp) return balas({ error: `Tersimpan (no. ${baru.id}) tetapi lampiran gagal disimpan`, id: baru.id }, 500);
-  const urlLampiran = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/lampiran-surat/${lokasiBerkas}`;
-  await db.from('permintaan').update({ lampiran_url: urlLampiran }).eq('id', baru.id);
+  // ntfy.sh gratis membatasi lampiran 2 MB per file, dan penampil gambar HP menciutkan gambar yang sangat panjang sehingga huruf pecah.
+  // Jadi tiap halaman disimpan di Supabase Storage (folder acak, tidak bisa ditebak) dan notifikasi membuka halaman web surat
+  // (surat.html) yang menampilkan semua halaman selebar layar. Tidak ada lampiran gambar di notifikasi.
+  const folder = `${baru.id}-${acak().slice(0, 24)}`;
+  for (let i = 0; i < gambar.length; i++) {
+    const { error: eUp } = await db.storage.from('lampiran-surat').upload(`${folder}/${String(i + 1).padStart(2, '0')}.jpg`,
+      Uint8Array.from(atob(gambar[i]), (c) => c.charCodeAt(0)), { contentType: 'image/jpeg', upsert: false });
+    if (eUp) return balas({ error: `Tersimpan (no. ${baru.id}) tetapi halaman surat gagal disimpan`, id: baru.id }, 500);
+  }
+  const WEB = Deno.env.get('WEB_URL') ?? 'https://izzarsohib-spec.github.io/ukuran-karyawan';
+  const urlSurat = `${WEB}/surat.html?f=${folder}&n=${gambar.length}&j=${encodeURIComponent(`${prog.client} - ${bagian}`)}`;
+  await db.from('permintaan').update({ lampiran_url: urlSurat }).eq('id', baru.id);
 
   const hasil: Record<string, number> = {};
   for (const p of PIMPINAN) {
@@ -106,12 +108,10 @@ Deno.serve(async (req) => {
         method: 'POST',
         headers: {
           Title: kodekan(`Permintaan seragam: ${prog.client} (untuk ${p.nama})`.slice(0, 120)),
-          Attach: urlLampiran, // gambar tampil di notifikasi
-          Click: urlLampiran, // mengetuk notifikasi membuka gambar ukuran penuh
-          Filename: namaFile,
+          Click: urlSurat, // mengetuk notifikasi langsung membuka surat lengkap
           Priority: '4',
           Tags: 'package',
-          Actions: `http, Setujui ${p.nama}, ${url('setuju')}, method=POST, clear=true; http, Tolak/Revisi ${p.nama}, ${url('tolak')}, method=POST, clear=true`,
+          Actions: `http, Setujui ${p.nama}, ${url('setuju')}, method=POST, clear=true; http, Tolak/Revisi ${p.nama}, ${url('tolak')}, method=POST, clear=true; view, Buka surat, ${urlSurat}`,
         },
         body: teks,
       });

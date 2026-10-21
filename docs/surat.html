@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light dark">
+<title>Surat Permintaan Seragam</title>
+<style>
+  :root { --bg:#e9e9ec; --kartu:#fff; --teks:#1b1b1f; --redup:#6b6b73; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#121214; --teks:#ececf0; --redup:#9a9aa4; } }
+  * { box-sizing:border-box; }
+  html, body { margin:0; background:var(--bg); color:var(--teks); font:15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { position:sticky; top:0; z-index:5; padding:10px 14px; background:var(--bg); border-bottom:1px solid rgba(128,128,128,.25); }
+  header b { display:block; font-size:.98rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  header span { color:var(--redup); font-size:.78rem; }
+  main { max-width:960px; margin:0 auto; padding:8px 0 40px; }
+  figure { margin:0 0 10px; }
+  figcaption { color:var(--redup); font-size:.72rem; padding:6px 14px 3px; }
+  /* tiap halaman selebar layar; huruf tajam karena gambar aslinya 1700 px. Cubit untuk memperbesar tetap bisa. */
+  img { display:block; width:100%; height:auto; background:var(--kartu); touch-action:pan-x pan-y pinch-zoom; }
+  .info { padding:30px 16px; text-align:center; color:var(--redup); }
+</style>
+</head>
+<body>
+<header><b id="judul">Surat permintaan seragam</b><span id="sub">Memuat…</span></header>
+<main id="isi"></main>
+<script>
+  // Alamat berkas di Supabase Storage (bucket publik, nama folder acak). Parameter: f = folder, n = jumlah halaman, j = judul.
+  const BASE = 'https://vqcusagijiavaoljfrib.supabase.co/storage/v1/object/public/lampiran-surat/';
+  const q = new URLSearchParams(location.search);
+  const f = q.get('f') || '', n = Math.floor(Number(q.get('n')) || 0), j = (q.get('j') || '').slice(0, 160);
+  const isi = document.getElementById('isi');
+  if (!/^\d+-[a-f0-9]{24}$/.test(f) || n < 1 || n > 60) {
+    document.getElementById('sub').textContent = '';
+    isi.innerHTML = '<div class="info">Tautan surat tidak valid.</div>';
+  } else {
+    if (j) { document.getElementById('judul').textContent = j; document.title = j; }
+    document.getElementById('sub').textContent = `${n} halaman · cubit untuk memperbesar`;
+    for (let i = 1; i <= n; i++) {
+      const fig = document.createElement('figure'), cap = document.createElement('figcaption'), img = new Image();
+      cap.textContent = `Halaman ${i} dari ${n}`;
+      img.alt = `Halaman ${i} dari ${n}`; img.decoding = 'async'; if (i > 2) img.loading = 'lazy';
+      img.src = `${BASE}${f}/${String(i).padStart(2, '0')}.jpg`;
+      img.onerror = () => { fig.innerHTML = `<div class="info">Halaman ${i} tidak dapat dimuat.</div>`; };
+      fig.append(cap, img); isi.append(fig);
+    }
+  }
+</script>
+</body>
+</html>

@@ -173,7 +173,7 @@
   .pvbar a { color:var(--muted); font-size:.82rem; }
   .pvbar .cta { padding:8px 18px; }
   .pvbody { flex:1; overflow:auto; background:#2a2a2e; padding:12px; }
-  .pvbody img { display:block; width:100%; max-width:900px; margin:0 auto; background:#fff; }
+  .pvbody img { display:block; width:100%; max-width:900px; margin:0 auto 12px; background:#fff; }
   .badge.neu { background:var(--panel2); color:var(--muted); }
   .bar.neu i { background:var(--muted); }
   .formminta { margin:0; padding:20px; border-top:1px solid var(--stroke); }
@@ -354,7 +354,7 @@
               <input type="file" id="mRabFile" accept=".pdf,application/pdf">
               <div class="hint" id="mRabInfo">Tanpa file, halaman RAB dibuat otomatis dari data anggaran.</div>
             </div>
-            <div class="hint" style="margin-top:10px">PDF berisi 5 halaman: Memo, PO, Daftar Harga, Data Ukuran, RAB. Dikirim ke pimpinan sebagai satu gambar JPG panjang. Periksa dulu lewat Preview.</div>
+            <div class="hint" style="margin-top:10px">PDF berisi 5 halaman: Memo, PO, Daftar Harga, Data Ukuran, RAB. Pimpinan membuka surat lewat tautan di notifikasi ntfy. Periksa dulu lewat Preview.</div>
             <button class="btn" id="mPreview" style="width:100%;margin-top:14px;border-radius:14px;padding:11px">Preview surat</button>
             <button class="cta" id="mKirim" style="width:100%;margin-top:10px">Kirim ke Pak Yasir &amp; Pak Ferry</button>
             <div class="hint" id="mStatus" role="status"></div>
@@ -369,11 +369,10 @@
   <div class="pvbox">
     <div class="pvbar">
       <div class="jd"><b id="pvJudul"></b><span id="pvInfo"></span></div>
-      <a id="pvTab" href="#" target="_blank" rel="noopener">Buka di tab baru</a>
       <button class="btn" id="pvTutup">Tutup</button>
       <button class="cta" id="pvKirim">Kirim ke Pak Yasir &amp; Pak Ferry</button>
     </div>
-    <div class="pvbody"><img id="pvImg" alt="Preview surat yang akan dikirim"></div>
+    <div class="pvbody" id="pvHalaman"></div>
   </div>
 </div>
 <script src="harga.js"></script>
@@ -745,39 +744,32 @@
     return r.json();
   }
   const siapkanPdf = async d => buatPdf(d, { ukuran: await ambilUkuran(d.l, d.bag), rab: mRabBerkas });
-  // Semua halaman PDF disusun ke bawah menjadi SATU gambar JPG (lampiran ntfy hanya boleh satu per notifikasi).
-  // Resolusi tinggi (lebar 1700 px, sekitar 205 dpi) supaya huruf kecil tetap tajam saat diperbesar di HP.
-  async function pdfKeJpg(pdfB64) {
+  // Tiap halaman PDF diubah jadi satu gambar JPG beresolusi tinggi (lebar 1700 px, sekitar 205 dpi). Pimpinan membukanya lewat
+  // halaman web surat.html yang menampilkan semua halaman selebar layar, jadi tidak perlu di-zoom.
+  async function pdfKeHalaman(pdfB64) {
     if (!window.pdfjsLib) {
       await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
       window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
     const dok = await window.pdfjsLib.getDocument({ data: Uint8Array.from(atob(pdfB64), c => c.charCodeAt(0)) }).promise;
-    const halamanPdf = [];
-    for (let i = 1; i <= dok.numPages; i++) halamanPdf.push(await dok.getPage(i));
-    const lebar0 = halamanPdf[0].getViewport({ scale: 1 }).width;
-    // coba lebar 1700 px; kalau peramban gagal membuat kanvas sebesar itu, turunkan bertahap
-    for (let LEBAR = 1700; LEBAR >= 900; LEBAR = Math.round(LEBAR * 0.8)) {
-      const hal = halamanPdf.map(pg => { const v0 = pg.getViewport({ scale: 1 }); return { pg, skala: LEBAR / lebar0, tinggi: v0.height * LEBAR / lebar0 }; });
-      const total = hal.reduce((a, x) => a + x.tinggi, 0);
-      const faktor = Math.min(1, 32000 / total, Math.sqrt(100e6 / (LEBAR * total))); // batas tinggi dan luas kanvas peramban
-      const cv = document.createElement('canvas'); cv.width = Math.floor(LEBAR * faktor); cv.height = Math.ceil(total * faktor);
-      const cx = cv.getContext('2d'); if (!cx) continue;
+    const LEBAR = 1700, kanvas = [];
+    for (let i = 1; i <= dok.numPages; i++) {
+      const pg = await dok.getPage(i), v0 = pg.getViewport({ scale: 1 }), v = pg.getViewport({ scale: LEBAR / v0.width });
+      const cv = document.createElement('canvas'); cv.width = Math.ceil(v.width); cv.height = Math.ceil(v.height);
+      const cx = cv.getContext('2d'); if (!cx) throw new Error('Peramban gagal membuat gambar surat. Coba gunakan Chrome atau Edge di komputer.');
       cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
-      let y = 0;
-      for (const x of hal) {
-        const v = x.pg.getViewport({ scale: x.skala * faktor }), pc = document.createElement('canvas'); pc.width = Math.ceil(v.width); pc.height = Math.ceil(v.height);
-        await x.pg.render({ canvasContext: pc.getContext('2d'), viewport: v }).promise;
-        cx.drawImage(pc, 0, y); y += pc.height;
-      }
-      // kualitas tinggi dulu; turun sedikit hanya bila file terlalu besar (batas lampiran ntfy 15 MB, batas aman kiriman 3,6 MB)
-      let kualitas = 0.92, blob = null;
-      do { blob = await new Promise(ok => cv.toBlob(ok, 'image/jpeg', kualitas)); kualitas -= 0.05; } while (blob && blob.size > 3.6 * 1024 * 1024 && kualitas > 0.7);
-      if (!blob) continue;
-      const b64 = await new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(',')[1]); fr.readAsDataURL(blob); });
-      return { blob, b64, halaman: dok.numPages, kb: Math.max(1, Math.round(blob.size / 1024)), px: `${cv.width} × ${cv.height}` };
+      await pg.render({ canvasContext: cx, viewport: v }).promise; kanvas.push(cv);
     }
-    throw new Error('Peramban gagal membuat gambar surat. Coba gunakan Chrome atau Edge di komputer.');
+    // kualitas tinggi dulu; turun sedikit hanya bila total terlalu besar (batas aman kiriman sekitar 5,5 MB)
+    let kualitas = 0.9, blobs;
+    for (;;) {
+      blobs = await Promise.all(kanvas.map(cv => new Promise(ok => cv.toBlob(ok, 'image/jpeg', kualitas))));
+      if (blobs.some(b => !b)) throw new Error('Peramban gagal membuat gambar surat.');
+      if (blobs.reduce((a, b) => a + b.size, 0) <= 5.5 * 1048576 || kualitas <= 0.68) break;
+      kualitas -= 0.06;
+    }
+    const b64s = await Promise.all(blobs.map(blob => new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(',')[1]); fr.readAsDataURL(blob); })));
+    return { blobs, b64s, halaman: dok.numPages, mb: blobs.reduce((a, b) => a + b.size, 0) / 1048576, px: `${kanvas[0].width} × ${kanvas[0].height}` };
   }
 
   async function buatPdf({ l, bag, isi, beli, jual, rab }, ekstra = {}) {
@@ -957,15 +949,15 @@
     if (rb) return await gabungPdf(doc.output('arraybuffer'), rb.buf);
     return doc.output('datauristring').split(',')[1];
   }
-  // jpgSiap = gambar yang sudah dilihat di preview, supaya yang terkirim sama persis dengan yang diperiksa
-  async function kirimKeAtasan(d, jpgSiap, tombol) {
+  // halamanSiap = gambar halaman yang sudah dilihat di preview, supaya yang terkirim sama persis dengan yang diperiksa
+  async function kirimKeAtasan(d, halamanSiap, tombol) {
     const st = $('mStatus'), label = tombol.textContent; tombol.disabled = true; tombol.textContent = 'Mengirim…'; st.style.color = ''; st.textContent = '';
     let sukses = false;
     try {
-      const jpg = jpgSiap || (await pdfKeJpg(await siapkanPdf(d))).b64;
+      const halaman = halamanSiap || (await pdfKeHalaman(await siapkanPdf(d))).b64s;
       const r = await fetch(`${SUPABASE_URL}/functions/v1/kirim-permintaan`, {
         method: 'POST', headers: { ...H, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lokasi_form: d.l.lokasi, bagian: d.bag, items: d.isi.map(x => ({ no: x.h.no, qty: x.q })), memo: $('mMemo').value.trim(), jpg })
+        body: JSON.stringify({ lokasi_form: d.l.lokasi, bagian: d.bag, items: d.isi.map(x => ({ no: x.h.no, qty: x.q })), memo: $('mMemo').value.trim(), halaman })
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
@@ -1072,28 +1064,27 @@
   $('stMuat').onclick = muatStatus;
 
   // ---- preview surat sebelum dikirim ----
-  let pvUrl = '', pvData = null;
+  let pvUrls = [], pvData = null;
   function tutupPreview() {
-    $('pvModal').hidden = true; $('pvImg').removeAttribute('src'); document.body.style.overflow = '';
-    if (pvUrl) { URL.revokeObjectURL(pvUrl); pvUrl = ''; } pvData = null;
+    $('pvModal').hidden = true; $('pvHalaman').innerHTML = ''; document.body.style.overflow = '';
+    pvUrls.forEach(u => URL.revokeObjectURL(u)); pvUrls = []; pvData = null;
   }
   $('mPreview').onclick = async () => {
     const d = ambilIsian(); if (!d) return;
     const btn = $('mPreview'), st = $('mStatus'); btn.disabled = true; btn.textContent = 'Menyiapkan preview…'; st.style.color = ''; st.textContent = '';
     try {
-      const g = await pdfKeJpg(await siapkanPdf(d));
-      if (pvUrl) URL.revokeObjectURL(pvUrl);
-      pvUrl = URL.createObjectURL(g.blob); pvData = { d, jpg: g.b64 };
-      $('pvJudul').textContent = `${d.l.client} · ${d.bag}`; $('pvInfo').textContent = `Gambar JPG yang akan dikirim · ${g.halaman} halaman · ${g.px} px · ${(g.kb / 1024).toFixed(1).replace('.', ',')} MB`;
-      $('pvTab').href = pvUrl; $('pvImg').src = pvUrl; $('pvModal').hidden = false; document.body.style.overflow = 'hidden';
-      $('pvModal').querySelector('.pvbody').scrollTop = 0;
+      const g = await pdfKeHalaman(await siapkanPdf(d));
+      pvUrls.forEach(u => URL.revokeObjectURL(u)); pvUrls = g.blobs.map(b => URL.createObjectURL(b)); pvData = { d, halaman: g.b64s };
+      $('pvJudul').textContent = `${d.l.client} · ${d.bag}`; $('pvInfo').textContent = `Surat yang akan dikirim · ${g.halaman} halaman · ${g.px} px per halaman · ${g.mb.toFixed(1).replace('.', ',')} MB`;
+      $('pvHalaman').innerHTML = pvUrls.map((u, i) => `<img src="${u}" alt="Halaman ${i + 1} dari ${pvUrls.length}">`).join('');
+      $('pvModal').hidden = false; document.body.style.overflow = 'hidden'; $('pvHalaman').scrollTop = 0;
     } catch (e) { st.style.color = 'var(--bad)'; st.textContent = 'Gagal: ' + e.message; }
     btn.disabled = false; btn.textContent = 'Preview surat';
   };
   $('pvTutup').onclick = tutupPreview;
   $('pvModal').onclick = e => { if (e.target.id === 'pvModal') tutupPreview(); };
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('pvModal').hidden) tutupPreview(); });
-  $('pvKirim').onclick = async () => { if (!pvData) return; const { d, jpg } = pvData; if (await kirimKeAtasan(d, jpg, $('pvKirim'))) tutupPreview(); };
+  $('pvKirim').onclick = async () => { if (!pvData) return; const { d, halaman } = pvData; if (await kirimKeAtasan(d, halaman, $('pvKirim'))) tutupPreview(); };
   renderBaris();
   tampil(location.hash.slice(1));
 
