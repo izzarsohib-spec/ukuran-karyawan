@@ -132,6 +132,14 @@
 
   .page[hidden] { display:none; }
   .mobnav { display:none; }
+  .segera { padding:48px 24px; text-align:center; color:var(--muted); }
+  .modul { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px; }
+  .mk { text-align:left; padding:20px 22px; display:flex; flex-direction:column; gap:6px; min-height:150px; color:var(--text); }
+  .mk:hover { border-color:var(--orange); }
+  .mk small { color:var(--muted); font-size:.78rem; }
+  .mk b.num { font-size:1.9rem; line-height:1.1; }
+  .mk .ket { color:var(--muted); font-size:.82rem; margin-top:auto; }
+  .mk.mati { opacity:.55; }
   .pcard { padding:20px 22px; margin-bottom:14px; }
   .pcard h3 { font-size:1.05rem; margin-bottom:14px; }
   .pcard .row h3 { margin:0; }
@@ -157,8 +165,8 @@
   @media (max-width: 980px) {
     .fgrid { grid-template-columns:1fr 1fr; }
     .sums { grid-template-columns:1fr 1fr; }
-    .mobnav { display:flex; gap:6px; margin-bottom:14px; }
-    .mobnav button { flex:1; border:1px solid var(--stroke); background:transparent; border-radius:99px; padding:8px; color:var(--muted); }
+    .mobnav { display:flex; gap:6px; margin-bottom:14px; overflow-x:auto; scrollbar-width:none; }
+    .mobnav button { flex:none; padding:8px 14px !important; border:1px solid var(--stroke); background:transparent; border-radius:99px; padding:8px; color:var(--muted); }
     .mobnav button.on { background:#fff; color:#111; border-color:#fff; font-weight:600; }
     .side { display:none; }
     .shell { margin:0; border-radius:0; border:0; }
@@ -185,15 +193,29 @@
 <div class="shell">
   <aside class="side">
     <div class="logo"></div>
-    <button class="on" data-pg="monitor" title="Monitoring pengisian" aria-label="Monitoring pengisian"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></button>
+    <button class="on" data-pg="ringkasan" title="Ringkasan" aria-label="Ringkasan"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></button>
+    <button data-pg="monitor" title="Monitoring pengisian" aria-label="Monitoring pengisian"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></button>
     <button data-pg="permintaan" title="Permintaan seragam" aria-label="Permintaan seragam"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></button>
+    <button data-pg="pengiriman" title="Pengiriman" aria-label="Pengiriman"><svg viewBox="0 0 24 24"><path d="M2 6h12v10H2zM14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg></button>
+    <button data-pg="inventaris" title="Inventaris" aria-label="Inventaris"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg></button>
+    <button data-pg="tagihan" title="Tagihan" aria-label="Tagihan"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></button>
     <div class="sp"></div>
     <button id="sKunci" title="Kode akses nama" aria-label="Kode akses nama"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
   </aside>
 
   <div class="content">
-   <nav class="mobnav" id="mobnav"><button class="on" data-pg="monitor">Monitoring</button><button data-pg="permintaan">Permintaan</button></nav>
-   <div class="page" id="pg-monitor">
+   <nav class="mobnav" id="mobnav"><button class="on" data-pg="ringkasan">Ringkasan</button><button data-pg="monitor">Monitoring</button><button data-pg="permintaan">Permintaan</button><button data-pg="pengiriman">Pengiriman</button><button data-pg="inventaris">Inventaris</button><button data-pg="tagihan">Tagihan</button></nav>
+
+   <div class="page" id="pg-ringkasan">
+    <header><div><h1>Ringkasan</h1><div class="sub">Semua modul seragam dalam satu tempat</div></div></header>
+    <div class="modul" id="modul"></div>
+   </div>
+
+   <div class="page" id="pg-pengiriman" hidden><header><div><h1>Pengiriman</h1><div class="sub">Pengiriman seragam ke lokasi</div></div></header><div class="card segera">Halaman ini akan segera diisi.</div></div>
+   <div class="page" id="pg-inventaris" hidden><header><div><h1>Inventaris</h1><div class="sub">Stok seragam dan perlengkapan</div></div></header><div class="card segera">Halaman ini akan segera diisi.</div></div>
+   <div class="page" id="pg-tagihan" hidden><header><div><h1>Tagihan</h1><div class="sub">Tagihan dan invoice per lokasi</div></div></header><div class="card segera">Halaman ini akan segera diisi.</div></div>
+
+   <div class="page" id="pg-monitor" hidden>
     <header>
       <div>
         <h1>Monitoring Pengisian</h1>
@@ -434,7 +456,7 @@
     $('worst').dataset.k = w ? w.lokasi : '';
     $('worst').innerHTML = w ? `<small>Kekurangan terbesar</small><b>${esc(w.client)}</b><small>kurang ${w.kurang} orang · ${w.isi}/${w.target}</small>` : '<small>Tidak ada data</small>';
     $('info').textContent = `${lokasi.length} lokasi dipantau`;
-    gambarGrafik();
+    gambarGrafik(); renderRingkasan();
   }
 
   function tersaring() {
@@ -528,9 +550,21 @@
   $('sKunci').onclick = () => { tampil('monitor'); window.scrollTo({ top: 0, behavior: 'smooth' }); $('kode').hidden ? $('btnKode').focus() : $('kode').focus(); };
 
   // ---- sub halaman ----
-  const HALAMAN = ['monitor', 'permintaan'];
+  const HALAMAN = ['ringkasan', 'monitor', 'permintaan', 'pengiriman', 'inventaris', 'tagihan'];
+  function renderRingkasan() {
+    const T = lokasi.reduce((a, l) => a + l.target, 0), I = lokasi.reduce((a, l) => a + l.isi, 0);
+    const kurang = lokasi.filter(l => l.status !== 'lengkap').length;
+    const kartu = (pg, judul, angka, ket, mati) => `<button class="mk card ${mati ? 'mati' : ''}" data-pg="${pg}"><small>${judul}</small><b class="num">${angka}</b><span class="ket">${ket}</span></button>`;
+    $('modul').innerHTML = [
+      kartu('monitor', 'Monitoring Pengisian', T ? (100 * I / T).toFixed(1).replace('.', ',') + '%' : '-', T ? `${idn(I)} dari ${idn(T)} anggota sudah mengisi · ${kurang} lokasi belum lengkap` : 'Memuat…'),
+      kartu('permintaan', 'Permintaan Seragam', anggaran ? rpRingkas(anggaran.total) : '-', `Total RAB · ${HARGA.length} item di daftar harga`),
+      kartu('pengiriman', 'Pengiriman', '–', 'Belum aktif', true),
+      kartu('inventaris', 'Inventaris', '–', 'Belum aktif', true),
+      kartu('tagihan', 'Tagihan', '–', 'Belum aktif', true),
+    ].join('');
+  }
   function tampil(pg) {
-    if (!HALAMAN.includes(pg)) pg = 'monitor';
+    if (!HALAMAN.includes(pg)) pg = 'ringkasan';
     for (const h of HALAMAN) $('pg-' + h).hidden = h !== pg;
     document.querySelectorAll('[data-pg]').forEach(b => b.classList.toggle('on', b.dataset.pg === pg));
     if (location.hash !== '#' + pg) history.replaceState(null, '', '#' + pg);
@@ -632,7 +666,7 @@
       anggaran = susunAnggaran(rab);
       try {
         const hs = await ambilSemua('harga_seragam?select=*&order=no');
-        if (hs.length) { HARGA = hs.map(h => ({ no: h.no, kat: h.kategori, nama: h.nama, beli: h.harga_beli, jual: h.harga_jual })); renderBaris(); }
+        if (hs.length) { HARGA = hs.map(h => ({ no: h.no, kat: h.kategori, nama: h.nama, beli: h.harga_beli, jual: h.harga_jual })); renderBaris(); renderRingkasan(); }
       } catch (e) { /* pakai harga.js */ }
       susunLokasi(prog); kelompokkanPengisi(publik); ringkasan(); renderDaftar(); renderLokasiMinta();
       let tersimpan = null; try { tersimpan = sessionStorage.getItem('kodeNama'); } catch (e) {}
