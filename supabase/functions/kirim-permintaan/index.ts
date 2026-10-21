@@ -89,21 +89,31 @@ Deno.serve(async (req) => {
 
   const namaFile = `Permintaan ${prog.client} - ${bagian}.${jenis}`.replace(/[^\w .()-]/g, '');
   const bin = Uint8Array.from(atob(lampiran), (c) => c.charCodeAt(0));
+
+  // ntfy.sh gratis membatasi lampiran 2 MB per file (dan 20 MB per 3 jam per IP), terlalu kecil untuk gambar tajam.
+  // Jadi gambar disimpan di Supabase Storage (nama acak, tidak bisa ditebak) dan notifikasi hanya memuat tautannya.
+  const lokasiBerkas = `${baru.id}-${acak().slice(0, 24)}.${jenis}`;
+  const { error: eUp } = await db.storage.from('lampiran-surat').upload(lokasiBerkas, bin, { contentType: jenis === 'jpg' ? 'image/jpeg' : 'application/pdf', upsert: false });
+  if (eUp) return balas({ error: `Tersimpan (no. ${baru.id}) tetapi lampiran gagal disimpan`, id: baru.id }, 500);
+  const urlLampiran = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/lampiran-surat/${lokasiBerkas}`;
+  await db.from('permintaan').update({ lampiran_url: urlLampiran }).eq('id', baru.id);
+
   const hasil: Record<string, number> = {};
   for (const p of PIMPINAN) {
     const url = (a: string) => `${Deno.env.get('SUPABASE_URL')}/functions/v1/keputusan?id=${baru.id}&p=${p.kunci}&t=${token[p.kunci]}&a=${a}`;
     try {
       const r = await fetch(`https://ntfy.sh/${p.topik()}`, {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           Title: kodekan(`Permintaan seragam: ${prog.client} (untuk ${p.nama})`.slice(0, 120)),
-          Message: kodekan(teks),
+          Attach: urlLampiran, // gambar tampil di notifikasi
+          Click: urlLampiran, // mengetuk notifikasi membuka gambar ukuran penuh
           Filename: namaFile,
           Priority: '4',
           Tags: 'package',
           Actions: `http, Setujui ${p.nama}, ${url('setuju')}, method=POST, clear=true; http, Tolak/Revisi ${p.nama}, ${url('tolak')}, method=POST, clear=true`,
         },
-        body: bin,
+        body: teks,
       });
       hasil[p.kunci] = r.status;
     } catch { hasil[p.kunci] = 0; }

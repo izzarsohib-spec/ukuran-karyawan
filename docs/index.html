@@ -746,30 +746,38 @@
   }
   const siapkanPdf = async d => buatPdf(d, { ukuran: await ambilUkuran(d.l, d.bag), rab: mRabBerkas });
   // Semua halaman PDF disusun ke bawah menjadi SATU gambar JPG (lampiran ntfy hanya boleh satu per notifikasi).
+  // Resolusi tinggi (lebar 1700 px, sekitar 205 dpi) supaya huruf kecil tetap tajam saat diperbesar di HP.
   async function pdfKeJpg(pdfB64) {
     if (!window.pdfjsLib) {
       await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
       window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
     const dok = await window.pdfjsLib.getDocument({ data: Uint8Array.from(atob(pdfB64), c => c.charCodeAt(0)) }).promise;
-    const LEBAR = 900; // piksel; huruf kecil di Daftar Harga tetap terbaca saat gambar diperbesar
-    const hal = [];
-    for (let i = 1; i <= dok.numPages; i++) { const pg = await dok.getPage(i), v0 = pg.getViewport({ scale: 1 }); hal.push({ pg, skala: LEBAR / v0.width, tinggi: v0.height * LEBAR / v0.width }); }
-    const total = hal.reduce((a, x) => a + x.tinggi, 0);
-    const faktor = Math.min(1, Math.sqrt(14e6 / (LEBAR * total)), 30000 / total); // batas kanvas peramban (iPhone sekitar 16 juta piksel)
-    const cv = document.createElement('canvas'); cv.width = Math.floor(LEBAR * faktor); cv.height = Math.ceil(total * faktor);
-    const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
-    let y = 0;
-    for (const x of hal) {
-      const v = x.pg.getViewport({ scale: x.skala * faktor }), pc = document.createElement('canvas'); pc.width = Math.ceil(v.width); pc.height = Math.ceil(v.height);
-      await x.pg.render({ canvasContext: pc.getContext('2d'), viewport: v }).promise;
-      cx.drawImage(pc, 0, y); y += pc.height;
+    const halamanPdf = [];
+    for (let i = 1; i <= dok.numPages; i++) halamanPdf.push(await dok.getPage(i));
+    const lebar0 = halamanPdf[0].getViewport({ scale: 1 }).width;
+    // coba lebar 1700 px; kalau peramban gagal membuat kanvas sebesar itu, turunkan bertahap
+    for (let LEBAR = 1700; LEBAR >= 900; LEBAR = Math.round(LEBAR * 0.8)) {
+      const hal = halamanPdf.map(pg => { const v0 = pg.getViewport({ scale: 1 }); return { pg, skala: LEBAR / lebar0, tinggi: v0.height * LEBAR / lebar0 }; });
+      const total = hal.reduce((a, x) => a + x.tinggi, 0);
+      const faktor = Math.min(1, 32000 / total, Math.sqrt(100e6 / (LEBAR * total))); // batas tinggi dan luas kanvas peramban
+      const cv = document.createElement('canvas'); cv.width = Math.floor(LEBAR * faktor); cv.height = Math.ceil(total * faktor);
+      const cx = cv.getContext('2d'); if (!cx) continue;
+      cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+      let y = 0;
+      for (const x of hal) {
+        const v = x.pg.getViewport({ scale: x.skala * faktor }), pc = document.createElement('canvas'); pc.width = Math.ceil(v.width); pc.height = Math.ceil(v.height);
+        await x.pg.render({ canvasContext: pc.getContext('2d'), viewport: v }).promise;
+        cx.drawImage(pc, 0, y); y += pc.height;
+      }
+      // kualitas tinggi dulu; turun sedikit hanya bila file terlalu besar (batas lampiran ntfy 15 MB, batas aman kiriman 3,6 MB)
+      let kualitas = 0.92, blob = null;
+      do { blob = await new Promise(ok => cv.toBlob(ok, 'image/jpeg', kualitas)); kualitas -= 0.05; } while (blob && blob.size > 3.6 * 1024 * 1024 && kualitas > 0.7);
+      if (!blob) continue;
+      const b64 = await new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(',')[1]); fr.readAsDataURL(blob); });
+      return { blob, b64, halaman: dok.numPages, kb: Math.max(1, Math.round(blob.size / 1024)), px: `${cv.width} × ${cv.height}` };
     }
-    // ntfy otomatis menampilkan gambar kecil (sekitar 1 MB); turunkan kualitas seperlunya agar muat
-    let kualitas = 0.86, blob;
-    do { blob = await new Promise(ok => cv.toBlob(ok, 'image/jpeg', kualitas)); kualitas -= 0.07; } while (blob.size > 1024 * 1024 && kualitas > 0.55);
-    const b64 = await new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(',')[1]); fr.readAsDataURL(blob); });
-    return { blob, b64, halaman: dok.numPages, kb: Math.max(1, Math.round(blob.size / 1024)) };
+    throw new Error('Peramban gagal membuat gambar surat. Coba gunakan Chrome atau Edge di komputer.');
   }
 
   async function buatPdf({ l, bag, isi, beli, jual, rab }, ekstra = {}) {
@@ -1076,7 +1084,7 @@
       const g = await pdfKeJpg(await siapkanPdf(d));
       if (pvUrl) URL.revokeObjectURL(pvUrl);
       pvUrl = URL.createObjectURL(g.blob); pvData = { d, jpg: g.b64 };
-      $('pvJudul').textContent = `${d.l.client} · ${d.bag}`; $('pvInfo').textContent = `Gambar JPG yang akan dikirim · ${g.halaman} halaman · ${g.kb.toLocaleString('id-ID')} KB`;
+      $('pvJudul').textContent = `${d.l.client} · ${d.bag}`; $('pvInfo').textContent = `Gambar JPG yang akan dikirim · ${g.halaman} halaman · ${g.px} px · ${(g.kb / 1024).toFixed(1).replace('.', ',')} MB`;
       $('pvTab').href = pvUrl; $('pvImg').src = pvUrl; $('pvModal').hidden = false; document.body.style.overflow = 'hidden';
       $('pvModal').querySelector('.pvbody').scrollTop = 0;
     } catch (e) { st.style.color = 'var(--bad)'; st.textContent = 'Gagal: ' + e.message; }
