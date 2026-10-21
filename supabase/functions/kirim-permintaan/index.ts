@@ -1,5 +1,6 @@
 // Menerima permintaan seragam dari web (terbuka, tanpa kode akses), menyimpan ke tabel `permintaan`,
-// lalu mengirim ringkasan + lampiran PDF ke atasan lewat ntfy.
+// lalu mengirim ringkasan + lampiran PDF ke DUA pimpinan lewat ntfy. Tiap pimpinan menerima notifikasinya sendiri
+// dengan tombol Setujui dan Tolak/Revisi (ntfy hanya mengizinkan maksimal 3 tombol per notifikasi).
 // Harga, RAB, dan jumlah anggota diambil ulang dari database; hanya no item, qty, memo, dan PDF yang dipercaya dari web.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
@@ -13,6 +14,14 @@ const balas = (obj: unknown, status = 200) =>
 const rp = (n: number) => 'Rp' + Math.round(n).toLocaleString('id-ID');
 // header HTTP hanya ASCII, jadi teks UTF-8 dikodekan RFC 2047 (didukung ntfy)
 const kodekan = (s: string) => '=?UTF-8?B?' + btoa(String.fromCharCode(...new TextEncoder().encode(s))) + '?=';
+const acak = () => crypto.randomUUID().replaceAll('-', '') + crypto.randomUUID().replaceAll('-', '');
+
+// Topik terpisah per pimpinan (NTFY_TOPIC = Pak Yasir, NTFY_TOPIC_FERRY = Pak Ferry). Jika NTFY_TOPIC_FERRY tidak diisi,
+// keduanya masuk ke topik yang sama sebagai dua notifikasi.
+const PIMPINAN = [
+  { kunci: 'yasir', nama: 'Pak Yasir', topik: () => Deno.env.get('NTFY_TOPIC')! },
+  { kunci: 'ferry', nama: 'Pak Ferry', topik: () => Deno.env.get('NTFY_TOPIC_FERRY') || Deno.env.get('NTFY_TOPIC')! },
+] as const;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
@@ -26,7 +35,7 @@ Deno.serve(async (req) => {
   if (items.length > 100 || String(pdf).length > 8_000_000) return balas({ error: 'Permintaan terlalu besar' }, 413);
 
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-  // tanpa kode akses: batasi jumlah kiriman supaya atasan tidak kebanjiran notifikasi
+  // tanpa kode akses: batasi jumlah kiriman supaya pimpinan tidak kebanjiran notifikasi
   const { count: baruSaja } = await db.from('permintaan').select('id', { count: 'exact', head: true }).gte('dibuat', new Date(Date.now() - 10 * 60_000).toISOString());
   if ((baruSaja ?? 0) >= 20) return balas({ error: 'Terlalu banyak permintaan dalam 10 menit terakhir, coba lagi nanti' }, 429);
 
@@ -49,47 +58,58 @@ Deno.serve(async (req) => {
   const sisa = rab - tBeli, untung = (tJual - tBeli) + sisa;
   const catatan = String(memo ?? '').slice(0, 1000);
 
-  // token sekali-pakai per permintaan: hanya penerima notifikasi yang punya tautan keputusan
-  const token = crypto.randomUUID().replaceAll('-', '') + crypto.randomUUID().replaceAll('-', '');
+  // token sekali-pakai per permintaan DAN per pimpinan: hanya penerima notifikasi yang punya tautan keputusannya
+  const token: Record<string, string> = { yasir: acak(), ferry: acak() };
   const { data: baru, error: eIns } = await db.from('permintaan').insert({
     lokasi_form, client: prog.client, bagian_kerja: bagian, jumlah_anggota: prog.target, rab,
-    items: baris, total_beli: tBeli, total_jual: tJual, untung, memo: catatan, token_keputusan: token,
+    items: baris, total_beli: tBeli, total_jual: tJual, untung, memo: catatan,
+    token_yasir: token.yasir, token_ferry: token.ferry,
   }).select('id').single();
   if (eIns) return balas({ error: 'Gagal menyimpan permintaan' }, 500);
 
-  const teks = [
+  // Angka-angka penting ditaruh PALING ATAS supaya tetap terbaca walau notifikasi dipersingkat; daftar item di bawahnya.
+  const kepala = [
     `${prog.client}`,
     `Bagian: ${bagian} (${prog.target} anggota)`,
+    '',
     `Anggaran RAB: ${rp(rab)}`,
-    '',
-    'Belanja:',
-    ...baris.map((b) => `- ${b.qty} x ${b.nama} | beli ${rp(b.beli)} | jual ${rp(b.jual)}`),
-    '',
     `Total beli: ${rp(tBeli)}`,
     `Total jual: ${rp(tJual)}`,
     `Sisa RAB: ${rp(sisa)}`,
     `Untung: ${rp(untung)}`,
-    ...(catatan ? ['', `Catatan: ${catatan}`] : []),
-  ].join('\n').slice(0, 3000);
+  ];
+  const ekor = ['', 'Perlu persetujuan: Pak Yasir dan Pak Ferry', ...(catatan ? ['', `Catatan: ${catatan}`] : [])];
+  const daftar = baris.map((b) => `- ${b.qty} x ${b.nama} | beli ${rp(b.beli)} | jual ${rp(b.jual)}`);
+  const susun = (n: number) => [...kepala, '', 'Belanja:', ...daftar.slice(0, n), ...(n < daftar.length ? [`... dan ${daftar.length - n} item lainnya (lihat PDF)`] : []), ...ekor].join('\n');
+  let teks = susun(daftar.length);
+  for (let n = daftar.length; teks.length > 2800 && n > 0; n--) teks = susun(n - 1);
 
   const namaFile = `Permintaan ${prog.client} - ${bagian}.pdf`.replace(/[^\w .()-]/g, '');
   const bin = Uint8Array.from(atob(String(pdf)), (c) => c.charCodeAt(0));
-  const r = await fetch(`https://ntfy.sh/${Deno.env.get('NTFY_TOPIC')}`, {
-    method: 'PUT',
-    headers: {
-      Title: kodekan(`Permintaan seragam: ${prog.client}`.slice(0, 120)),
-      Message: kodekan(teks),
-      Filename: namaFile,
-      Priority: '4',
-      Tags: 'package',
-      Actions: ['setuju|Setujui', 'tolak|Tolak/Revisi']
-        .map((a) => `http, ${a.split('|')[1]}, ${Deno.env.get('SUPABASE_URL')}/functions/v1/keputusan?id=${baru.id}&t=${token}&a=${a.split('|')[0]}, method=POST, clear=true`)
-        .join('; '),
-    },
-    body: bin,
-  });
-  if (!r.ok) return balas({ error: `Tersimpan (no. ${baru.id}) tetapi gagal terkirim ke ntfy (${r.status})`, id: baru.id }, 502);
-
-  await db.from('permintaan').update({ terkirim: true }).eq('id', baru.id);
-  return balas({ ok: true, id: baru.id });
+  const hasil: Record<string, number> = {};
+  for (const p of PIMPINAN) {
+    const url = (a: string) => `${Deno.env.get('SUPABASE_URL')}/functions/v1/keputusan?id=${baru.id}&p=${p.kunci}&t=${token[p.kunci]}&a=${a}`;
+    try {
+      const r = await fetch(`https://ntfy.sh/${p.topik()}`, {
+        method: 'PUT',
+        headers: {
+          Title: kodekan(`Permintaan seragam: ${prog.client} (untuk ${p.nama})`.slice(0, 120)),
+          Message: kodekan(teks),
+          Filename: namaFile,
+          Priority: '4',
+          Tags: 'package',
+          Actions: `http, Setujui ${p.nama}, ${url('setuju')}, method=POST, clear=true; http, Tolak/Revisi ${p.nama}, ${url('tolak')}, method=POST, clear=true`,
+        },
+        body: bin,
+      });
+      hasil[p.kunci] = r.status;
+    } catch { hasil[p.kunci] = 0; }
+  }
+  const ok = (k: string) => hasil[k] >= 200 && hasil[k] < 300;
+  await db.from('permintaan').update({ terkirim_yasir: ok('yasir'), terkirim_ferry: ok('ferry'), terkirim: ok('yasir') && ok('ferry') }).eq('id', baru.id);
+  if (!(ok('yasir') && ok('ferry'))) {
+    const gagal = PIMPINAN.filter((p) => !ok(p.kunci)).map((p) => p.nama).join(' dan ');
+    return balas({ error: `Tersimpan (no. ${baru.id}) tetapi notifikasi ke ${gagal} gagal terkirim`, id: baru.id }, 502);
+  }
+  return balas({ ok: true, id: baru.id, ntfy: hasil });
 });

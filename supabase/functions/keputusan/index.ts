@@ -1,22 +1,50 @@
-// Dipanggil dari tombol di notifikasi ntfy atasan (Setujui / Tolak/Revisi).
-// verify_jwt dimatikan karena ntfy tidak bisa mengirim JWT; keamanan lewat token acak per permintaan.
+// Dipanggil dari tombol di notifikasi ntfy pimpinan (Setujui / Tolak/Revisi).
+// Ada dua pimpinan (Pak Yasir, Pak Ferry); masing-masing punya token sendiri dan memutuskan sekali.
+// Status akhir: ditolak jika salah satu menolak; disetujui jika keduanya setuju; selain itu menunggu.
+// verify_jwt dimatikan karena ntfy tidak bisa mengirim JWT; keamanan lewat token acak per permintaan per pimpinan.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const teks = (s: string, status = 200) => new Response(s, { status, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+const NAMA: Record<string, string> = { yasir: 'Pak Yasir', ferry: 'Pak Ferry' };
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return teks('Gunakan tombol di notifikasi ntfy.', 405);
-  const u = new URL(req.url), id = Number(u.searchParams.get('id')), t = u.searchParams.get('t') ?? '', a = u.searchParams.get('a');
-  const status = a === 'setuju' ? 'disetujui' : a === 'tolak' ? 'ditolak' : null;
-  if (!id || t.length < 32 || !status) return teks('Permintaan tidak valid.', 400);
+  const u = new URL(req.url), id = Number(u.searchParams.get('id')), t = u.searchParams.get('t') ?? '', a = u.searchParams.get('a'), p = u.searchParams.get('p');
+  const keputusan = a === 'setuju' ? 'disetujui' : a === 'tolak' ? 'ditolak' : null;
+  if (!id || t.length < 32 || !keputusan) return teks('Permintaan tidak valid.', 400);
 
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-  const { data: p } = await db.from('permintaan').select('status,client').eq('id', id).eq('token_keputusan', t).maybeSingle();
-  if (!p) return teks('Tautan tidak dikenali.', 403);
-  if (p.status !== 'menunggu') return teks(`Sudah diputuskan: ${p.status}.`, 409);
+  const { data: r } = await db.from('permintaan')
+    .select('client,bagian_kerja,status_yasir,status_ferry,token_yasir,token_ferry,token_keputusan').eq('id', id).maybeSingle();
+  if (!r) return teks('Tautan tidak dikenali.', 403);
+  const lokasi = `${r.client} - ${r.bagian_kerja}`;
 
-  const { error } = await db.from('permintaan').update({ status, diputuskan: new Date().toISOString() })
-    .eq('id', id).eq('token_keputusan', t).eq('status', 'menunggu');
+  // tautan lama (sebelum ada dua pimpinan): tanpa parameter p, memutuskan untuk keduanya sekaligus
+  if (!p) {
+    if (!r.token_keputusan || r.token_keputusan !== t) return teks('Tautan tidak dikenali.', 403);
+    if (r.status_yasir !== 'menunggu' || r.status_ferry !== 'menunggu') return teks('Sudah diputuskan.', 409);
+    const now = new Date().toISOString();
+    await db.from('permintaan').update({ status: keputusan, status_yasir: keputusan, status_ferry: keputusan, diputuskan: now, diputuskan_yasir: now, diputuskan_ferry: now }).eq('id', id);
+    return teks(`Tercatat: ${keputusan} (${lokasi}).`);
+  }
+
+  if (p !== 'yasir' && p !== 'ferry') return teks('Permintaan tidak valid.', 400);
+  const tokenSah = p === 'yasir' ? r.token_yasir : r.token_ferry;
+  if (!tokenSah || tokenSah !== t) return teks('Tautan tidak dikenali.', 403);
+  const sebelum = p === 'yasir' ? r.status_yasir : r.status_ferry;
+  if (sebelum !== 'menunggu') return teks(`${NAMA[p]} sudah memutuskan: ${sebelum}.`, 409);
+
+  const now = new Date().toISOString();
+  const lain = p === 'yasir' ? r.status_ferry : r.status_yasir;
+  const akhir = keputusan === 'ditolak' || lain === 'ditolak' ? 'ditolak' : keputusan === 'disetujui' && lain === 'disetujui' ? 'disetujui' : 'menunggu';
+  const ubah: Record<string, unknown> = p === 'yasir' ? { status_yasir: keputusan, diputuskan_yasir: now } : { status_ferry: keputusan, diputuskan_ferry: now };
+  ubah.status = akhir; ubah.diputuskan = akhir === 'menunggu' ? null : now;
+  const { error } = await db.from('permintaan').update(ubah).eq('id', id).eq(p === 'yasir' ? 'status_yasir' : 'status_ferry', 'menunggu');
   if (error) return teks('Gagal menyimpan keputusan.', 500);
-  return teks(`Tercatat: ${status} (${p.client}).`);
+  // jika kedua pimpinan menekan hampir bersamaan, hitung ulang status akhir dari data terbaru
+  const { data: s } = await db.from('permintaan').select('status_yasir,status_ferry').eq('id', id).single();
+  const fin = s && (s.status_yasir === 'ditolak' || s.status_ferry === 'ditolak') ? 'ditolak' : s && s.status_yasir === 'disetujui' && s.status_ferry === 'disetujui' ? 'disetujui' : 'menunggu';
+  if (fin !== akhir) await db.from('permintaan').update({ status: fin, diputuskan: fin === 'menunggu' ? null : now }).eq('id', id);
+  const sisa = fin === 'menunggu' ? ` Menunggu ${NAMA[p === 'yasir' ? 'ferry' : 'yasir']}.` : fin === 'disetujui' ? ' Disetujui oleh kedua pimpinan.' : '';
+  return teks(`Tercatat: ${NAMA[p]} ${keputusan} (${lokasi}).${sisa}`);
 });

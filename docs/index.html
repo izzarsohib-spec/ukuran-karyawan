@@ -156,10 +156,10 @@
   .tabelminta .r { font-variant-numeric:tabular-nums; }
   .x { border:0; background:transparent; color:var(--bad); border-radius:10px; padding:6px 10px; }
   .x:hover { background:var(--bad-bg); }
-  .sums { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+  .sums { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px; }
   .sums div { background:rgba(14,14,16,.55); border-radius:18px; padding:14px 16px; min-width:0; }
   .sums span { display:block; font-size:.74rem; color:var(--muted); }
-  .sums b { display:block; font-size:1.35rem; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sums b { display:block; font-size:clamp(1rem,1.9vw,1.3rem); line-height:1.2; margin-top:4px; white-space:normal; overflow-wrap:break-word; }
   .neg { color:var(--bad); }
   .rabbox { margin-top:18px; padding:14px 16px; border:1px dashed var(--stroke); border-radius:16px; }
   .rabbox .row { margin-bottom:8px; }
@@ -212,6 +212,7 @@
     .wrap { max-height:none; }
   }
   @media (max-width: 520px) { .gap { grid-template-columns:1fr; } }
+  @media (max-width: 560px) { .sums { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -354,7 +355,7 @@
             </div>
             <div class="hint" style="margin-top:10px">PDF berisi 5 halaman: Memo, PO, Daftar Harga, Data Ukuran, RAB. Periksa dulu lewat Preview sebelum dikirim.</div>
             <button class="btn" id="mPreview" style="width:100%;margin-top:14px;border-radius:14px;padding:11px">Preview surat</button>
-            <button class="cta" id="mKirim" style="width:100%;margin-top:10px">Kirim ke atasan (ntfy + PDF)</button>
+            <button class="cta" id="mKirim" style="width:100%;margin-top:10px">Kirim ke Pak Yasir &amp; Pak Ferry</button>
             <div class="hint" id="mStatus" role="status"></div>
           </div>
         </div>
@@ -369,7 +370,7 @@
       <div class="jd"><b id="pvJudul"></b><span id="pvInfo"></span></div>
       <a id="pvTab" href="#" target="_blank" rel="noopener">Buka di tab baru</a>
       <button class="btn" id="pvTutup">Tutup</button>
-      <button class="cta" id="pvKirim">Kirim ke atasan</button>
+      <button class="cta" id="pvKirim">Kirim ke Pak Yasir &amp; Pak Ferry</button>
     </div>
     <iframe id="pvFrame" title="Preview surat" src="about:blank"></iframe>
   </div>
@@ -612,7 +613,7 @@
     const kartu = (pg, judul, angka, ket, mati) => `<button class="mk card ${mati ? 'mati' : ''}" data-pg="${pg}"><small>${judul}</small><b class="num">${angka}</b><span class="ket">${ket}</span></button>`;
     $('modul').innerHTML = [
       kartu('monitor', 'Monitoring Pengisian', T ? (100 * I / T).toFixed(1).replace('.', ',') + '%' : '-', T ? `${idn(I)} dari ${idn(T)} anggota sudah mengisi · ${kurang} lokasi belum lengkap` : 'Memuat…'),
-      kartu('permintaan', 'Permintaan Seragam', anggaran ? rpRingkas(anggaran.total) : '-', statusMuat ? `Total RAB · ${daftarMinta.filter(p => p.status === 'menunggu').length} menunggu · ${daftarMinta.filter(p => p.status === 'disetujui').length} disetujui · ${daftarMinta.filter(p => p.status === 'ditolak').length} ditolak/revisi` : `Total RAB · ${HARGA.length} item di daftar harga`),
+      kartu('permintaan', 'Permintaan Seragam', anggaran ? rpRingkas(anggaran.total) : '-', statusMuat ? `Total RAB · ${daftarMinta.filter(p => !['disetujui', 'ditolak'].includes(stReq(p))).length} menunggu · ${daftarMinta.filter(p => stReq(p) === 'disetujui').length} disetujui · ${daftarMinta.filter(p => stReq(p) === 'ditolak').length} ditolak/revisi` : `Total RAB · ${HARGA.length} item di daftar harga`),
       kartu('pengiriman', 'Pengiriman', '–', 'Belum aktif', true),
       kartu('inventaris', 'Inventaris', '–', 'Belum aktif', true),
       kartu('tagihan', 'Tagihan', '–', 'Belum aktif', true),
@@ -933,7 +934,7 @@
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
-      st.style.color = 'var(--ok)'; st.textContent = `✓ Terkirim ke atasan (permintaan no. ${j.id}).`;
+      st.style.color = 'var(--ok)'; st.textContent = `✓ Terkirim ke Pak Yasir dan Pak Ferry (permintaan no. ${j.id}). Perlu persetujuan keduanya.`;
       baris = [{ no: '', qty: '' }]; $('mMemo').value = ''; renderBaris(); kosongkanRab(); muatStatus(); sukses = true;
     } catch (e) { st.style.color = 'var(--bad)'; st.textContent = 'Gagal: ' + e.message; }
     tombol.disabled = false; tombol.textContent = label;
@@ -941,9 +942,15 @@
   }
   $('mKirim').onclick = () => { const d = ambilIsian(); if (d) kirimKeAtasan(d, null, $('mKirim')); };
   // ---- status permintaan per lokasi (belum dibuat / menunggu / disetujui / ditolak-revisi) ----
-  const ST = { menunggu: ['Menunggu persetujuan', 'warn'], disetujui: ['Disetujui', 'ok'], ditolak: ['Ditolak / Revisi', 'bad'] };
-  const LS = { belum: ['Belum dibuat', 'neu'], sebagian: ['Belum lengkap', 'warn'], menunggu: ['Menunggu', 'warn'], disetujui: ['Disetujui', 'ok'], ditolak: ['Ditolak / Revisi', 'bad'], terkunci: ['', 'neu'] };
-  const URUT_LS = { ditolak: 0, belum: 1, sebagian: 2, menunggu: 3, disetujui: 4, terkunci: 5 };
+  // Dua pimpinan harus menyetujui. Status satu permintaan dihitung dari keputusan Pak Yasir dan Pak Ferry.
+  const ST = { menunggu: ['Menunggu Pak Yasir & Pak Ferry', 'warn'], setuju_yasir: ['Disetujui Pak Yasir · menunggu Pak Ferry', 'warn'], setuju_ferry: ['Disetujui Pak Ferry · menunggu Pak Yasir', 'warn'], disetujui: ['Disetujui Pak Yasir & Pak Ferry', 'ok'], ditolak: ['Ditolak / Revisi', 'bad'] };
+  const stYasir = p => p.status_yasir || p.status, stFerry = p => p.status_ferry || p.status;
+  const stReq = p => { const y = stYasir(p), f = stFerry(p); return y === 'ditolak' || f === 'ditolak' ? 'ditolak' : y === 'disetujui' && f === 'disetujui' ? 'disetujui' : y === 'disetujui' ? 'setuju_yasir' : f === 'disetujui' ? 'setuju_ferry' : 'menunggu'; };
+  const labelReq = p => { const k = stReq(p); return k !== 'ditolak' ? ST[k] : ['Ditolak / Revisi · ' + [stYasir(p) === 'ditolak' ? 'Pak Yasir' : '', stFerry(p) === 'ditolak' ? 'Pak Ferry' : ''].filter(Boolean).join(' & '), 'bad']; };
+  const putusanReq = x => [['Pak Yasir', stYasir(x), x.diputuskan_yasir || (x.status_yasir ? null : x.diputuskan), x.terkirim_yasir ?? x.terkirim], ['Pak Ferry', stFerry(x), x.diputuskan_ferry || (x.status_ferry ? null : x.diputuskan), x.terkirim_ferry ?? x.terkirim]]
+    .map(([n, st, t, kirim]) => `<div class="rl"><span>${n}</span><span class="badge ${st === 'disetujui' ? 'ok' : st === 'ditolak' ? 'bad' : 'warn'}">${st === 'disetujui' ? 'Disetujui' : st === 'ditolak' ? 'Ditolak / Revisi' : 'Menunggu'}${t ? ' · ' + tglP(t) : ''}${kirim === false ? ' · gagal terkirim' : ''}</span></div>`).join('');
+  const LS = { belum: ['Belum dibuat', 'neu'], sebagian: ['Belum lengkap', 'warn'], menunggu: ['Menunggu', 'warn'], setuju_yasir: ['Disetujui Pak Yasir', 'warn'], setuju_ferry: ['Disetujui Pak Ferry', 'warn'], disetujui: ['Disetujui', 'ok'], ditolak: ['Ditolak / Revisi', 'bad'], terkunci: ['', 'neu'] };
+  const URUT_LS = { ditolak: 0, belum: 1, sebagian: 2, menunggu: 3, setuju_yasir: 4, setuju_ferry: 5, disetujui: 6, terkunci: 7 };
   let daftarMinta = [], statusMuat = false, terbaru = new Map(), riwBuka = new Set();
   const tglP = d => new Date(d).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   const rpMin = n => (n < 0 ? '-' : '') + rp(Math.abs(n));
@@ -963,7 +970,10 @@
   }
   function infoLok(l) {
     const per = l.bagian.map(b => terbaru.get(l.lokasi + '|' + b.nama)), ada = per.filter(Boolean);
-    const s = !ada.length ? 'belum' : ada.some(p => p.status === 'ditolak') ? 'ditolak' : ada.some(p => p.status === 'menunggu') ? 'menunggu' : ada.length < per.length ? 'sebagian' : 'disetujui';
+    const sr = ada.map(stReq), tunda = sr.filter(x => x !== 'disetujui');
+    const s = !ada.length ? 'belum' : sr.includes('ditolak') ? 'ditolak'
+      : tunda.length ? (tunda.every(x => x === 'setuju_yasir') ? 'setuju_yasir' : tunda.every(x => x === 'setuju_ferry') ? 'setuju_ferry' : 'menunggu')
+      : ada.length < per.length ? 'sebagian' : 'disetujui';
     return { s, ada: ada.length, total: per.length, per };
   }
   function renderDaftarMinta() {
@@ -973,7 +983,7 @@
       .sort((a, b) => q.length ? a.client.localeCompare(b.client) : (URUT_LS[a.mi.s] - URUT_LS[b.mi.s]) || a.client.localeCompare(b.client));
     if (!f.some(l => l.lokasi === mSel)) setLokasiMinta(f.length ? f[0].lokasi : '');
     const n = s => s === 'semua' ? semua.length : semua.filter(l => l.mi.s === s).length;
-    const chips = [['semua', 'Semua'], ['belum', 'Belum dibuat'], ['sebagian', 'Belum lengkap'], ['menunggu', 'Menunggu'], ['disetujui', 'Disetujui'], ['ditolak', 'Ditolak / Revisi']];
+    const chips = [['semua', 'Semua'], ['belum', 'Belum dibuat'], ['sebagian', 'Belum lengkap'], ['menunggu', 'Menunggu'], ['setuju_yasir', 'Disetujui Pak Yasir'], ['setuju_ferry', 'Disetujui Pak Ferry'], ['disetujui', 'Disetujui (keduanya)'], ['ditolak', 'Ditolak / Revisi']];
     $('mChips').innerHTML = chips.map(([s, t]) => `<button class="chip ${mStatusF === s ? 'on' : ''}" data-s="${s}">${t} ${n(s)}</button>`).join('');
     $('infoMinta').textContent = semua.length ? `${semua.length} lokasi · ${n('belum')} belum dibuat · ${n('menunggu')} menunggu · ${n('disetujui')} disetujui · ${n('ditolak')} ditolak/revisi` : 'Memuat data…';
     $('mDaftar').innerHTML = f.map(l => {
@@ -994,12 +1004,13 @@
     const mi = l.mi || infoLok(l), [lbl, cls] = LS[mi.s], ang = anggaran && anggaran.peta.get(l.lokasi);
     const bagian = l.bagian.map((b, i) => {
       const p = mi.per[i], k = l.lokasi + '|' + b.nama, riw = daftarMinta.filter(x => x.lokasi_form === l.lokasi && x.bagian_kerja === b.nama);
-      const badge = p ? `<span class="badge ${ST[p.status][1]}">${ST[p.status][0]}</span>` : '<span class="badge neu">Belum dibuat</span>';
+      const badge = p ? (([t, c]) => `<span class="badge ${c}">${t}</span>`)(labelReq(p)) : '<span class="badge neu">Belum dibuat</span>';
       const buka = riwBuka.has(k);
       return `<div class="bgr"><div class="row"><div><b>${esc(b.nama)}</b><div class="muted">${b.target} orang${ang && ang.per[b.nama] != null ? ' · RAB ' + rp(ang.per[b.nama]) : ''}</div></div>
-          <div class="bgact">${badge}<button class="btn" data-buat="${esc(b.nama)}">${p ? (p.status === 'ditolak' ? 'Revisi / buat ulang' : 'Buat lagi') : 'Buat permintaan'}</button></div></div>
+          <div class="bgact">${badge}<button class="btn" data-buat="${esc(b.nama)}">${p ? (stReq(p) === 'ditolak' ? 'Revisi / buat ulang' : 'Buat lagi') : 'Buat permintaan'}</button></div></div>
         ${riw.length ? `<button class="riw" data-riw="${esc(k)}">${buka ? '▾' : '▸'} Riwayat permintaan (${riw.length})</button>` : ''}
-        ${buka ? riw.map(x => `<div class="rwi"><div class="row"><span>${tglP(x.dibuat)}${x.terkirim ? '' : ' · <span style="color:var(--bad)">gagal terkirim</span>'}</span><span class="badge ${ST[x.status][1]}">${ST[x.status][0]}${x.diputuskan ? ' · ' + tglP(x.diputuskan) : ''}</span></div>
+        ${buka ? riw.map(x => `<div class="rwi"><div class="row"><span>${tglP(x.dibuat)}</span><span class="badge ${labelReq(x)[1]}">${labelReq(x)[0]}</span></div>
+            ${putusanReq(x)}
             ${(x.items || []).map(i => `<div class="rl"><span>${i.qty} × ${esc(i.nama)}</span><span>beli ${rp(i.beli)} · jual ${rp(i.jual)}</span></div>`).join('')}
             <div class="rl"><b>Total beli ${rp(x.total_beli)} · jual ${rp(x.total_jual)}</b><b class="${x.untung < 0 ? 'neg' : ''}">Untung ${rpMin(x.untung)}</b></div>${x.memo ? `<div class="rl"><span>Catatan: ${esc(x.memo)}</span></div>` : ''}</div>`).join('') : ''}</div>`;
     }).join('');
