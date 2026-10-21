@@ -161,6 +161,23 @@
   .sums span { display:block; font-size:.74rem; color:var(--muted); }
   .sums b { display:block; font-size:clamp(1rem,1.9vw,1.3rem); line-height:1.2; margin-top:4px; white-space:normal; overflow-wrap:break-word; }
   .neg { color:var(--bad); }
+  .stkode { display:flex; gap:8px; max-width:340px; } .stkode input { margin-top:0 !important; }
+  .kuotas { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:8px; margin-bottom:14px; }
+  .kq { border:1px solid var(--stroke); border-radius:14px; padding:10px 12px; background:rgba(255,255,255,.05); }
+  .kq b { display:block; font-size:.8rem; line-height:1.25; min-height:2.5em; }
+  .kq .kv { display:block; font-family:var(--head); font-size:1.3rem; margin:2px 0 6px; }
+  .kq.kurang { border-color:var(--warn); background:var(--warn-bg); } .kq.lebih { border-color:var(--bad); background:var(--bad-bg); } .kq.pas { border-color:var(--ok); background:var(--ok-bg); }
+  .kq .kb { display:flex; gap:6px; flex-wrap:wrap; } .kq .kb .btn { padding:2px 10px; font-size:.72rem; }
+  .pplot { max-height:62vh; }
+  .pplot td { vertical-align:top; white-space:normal; }
+  .pit { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:5px 0; border-bottom:1px dashed var(--stroke); }
+  .pit:last-child { border-bottom:0; }
+  .pil { display:flex; align-items:center; gap:6px; flex:1 1 220px; font-size:.84rem; min-width:0; }
+  .pil input { width:auto !important; margin:0 !important; }
+  .pit .pq { width:64px !important; margin:0 !important; padding:5px 8px !important; }
+  .pit select { width:auto !important; margin:0 !important; padding:5px 8px !important; font-size:.8rem !important; }
+  .pit select.kosong { border-color:var(--bad); }
+  .pus { display:flex; gap:6px; flex-wrap:wrap; }
   .rabbox { margin-top:18px; padding:14px 16px; border:1px dashed var(--stroke); border-radius:16px; }
   .rabbox .row { margin-bottom:8px; }
   .pvm { position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.74); display:grid; place-items:center; padding:2vh 2vw; }
@@ -223,6 +240,7 @@
     <button class="on" data-pg="ringkasan" title="Ringkasan" aria-label="Ringkasan"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></button>
     <button data-pg="monitor" title="Monitoring pengisian" aria-label="Monitoring pengisian"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></button>
     <button data-pg="permintaan" title="Permintaan seragam" aria-label="Permintaan seragam"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></button>
+    <button data-pg="ploting" title="Ploting seragam" aria-label="Ploting seragam"><svg viewBox="0 0 24 24"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></button>
     <button data-pg="pengiriman" title="Pengiriman" aria-label="Pengiriman"><svg viewBox="0 0 24 24"><path d="M2 6h12v10H2zM14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg></button>
     <button data-pg="inventaris" title="Inventaris" aria-label="Inventaris"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg></button>
     <button data-pg="tagihan" title="Tagihan" aria-label="Tagihan"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></button>
@@ -231,11 +249,27 @@
   </aside>
 
   <div class="content">
-   <nav class="mobnav" id="mobnav"><button class="on" data-pg="ringkasan">Ringkasan</button><button data-pg="monitor">Monitoring</button><button data-pg="permintaan">Permintaan</button><button data-pg="pengiriman">Pengiriman</button><button data-pg="inventaris">Inventaris</button><button data-pg="tagihan">Tagihan</button></nav>
+   <nav class="mobnav" id="mobnav"><button class="on" data-pg="ringkasan">Ringkasan</button><button data-pg="monitor">Monitoring</button><button data-pg="permintaan">Permintaan</button><button data-pg="ploting">Ploting</button><button data-pg="pengiriman">Pengiriman</button><button data-pg="inventaris">Inventaris</button><button data-pg="tagihan">Tagihan</button></nav>
 
    <div class="page" id="pg-ringkasan">
     <header><div><h1>Ringkasan</h1><div class="sub">Semua modul seragam dalam satu tempat</div></div></header>
     <div class="modul" id="modul"></div>
+   </div>
+
+   <div class="page" id="pg-ploting" hidden>
+    <header><div><h1>Ploting Seragam</h1><div class="sub" id="infoPlot">Memuat data…</div></div></header>
+    <section class="bawah card">
+      <div class="bar-top">
+        <h3>Daftar lokasi</h3>
+        <label class="search"><span aria-hidden="true">🔍</span><input id="pCari" type="search" placeholder="Cari lokasi, mis. bps cilacap"></label>
+        <button class="btn" id="pMuat">Muat ulang</button>
+      </div>
+      <div class="chips" id="pChips" style="margin-bottom:14px"></div>
+      <div class="layout">
+        <div class="list"><div class="scroll" id="pDaftar"></div></div>
+        <div class="detail" id="pDetail"><div id="pHead"></div><div class="pcard formminta" id="pEditor" hidden></div></div>
+      </div>
+    </section>
    </div>
 
    <div class="page" id="pg-pengiriman" hidden><header><div><h1>Pengiriman</h1><div class="sub">Pengiriman seragam ke lokasi</div></div></header><div class="card segera">Halaman ini akan segera diisi.</div></div>
@@ -606,7 +640,7 @@
   $('sKunci').onclick = () => { tampil('monitor'); window.scrollTo({ top: 0, behavior: 'smooth' }); $('kode').hidden ? $('btnKode').focus() : $('kode').focus(); };
 
   // ---- sub halaman ----
-  const HALAMAN = ['ringkasan', 'monitor', 'permintaan', 'pengiriman', 'inventaris', 'tagihan'];
+  const HALAMAN = ['ringkasan', 'monitor', 'permintaan', 'ploting', 'pengiriman', 'inventaris', 'tagihan'];
   function renderRingkasan() {
     const T = lokasi.reduce((a, l) => a + l.target, 0), I = lokasi.reduce((a, l) => a + l.isi, 0);
     const kurang = lokasi.filter(l => l.status !== 'lengkap').length;
@@ -614,6 +648,7 @@
     $('modul').innerHTML = [
       kartu('monitor', 'Monitoring Pengisian', T ? (100 * I / T).toFixed(1).replace('.', ',') + '%' : '-', T ? `${idn(I)} dari ${idn(T)} anggota sudah mengisi · ${kurang} lokasi belum lengkap` : 'Memuat…'),
       kartu('permintaan', 'Permintaan Seragam', anggaran ? rpRingkas(anggaran.total) : '-', statusMuat ? `Total RAB · ${daftarMinta.filter(p => !['disetujui', 'ditolak'].includes(stReq(p))).length} menunggu · ${daftarMinta.filter(p => stReq(p) === 'disetujui').length} disetujui · ${daftarMinta.filter(p => stReq(p) === 'ditolak').length} ditolak/revisi` : `Total RAB · ${HARGA.length} item di daftar harga`),
+      kartu('ploting', 'Ploting Seragam', statusMuat ? `${ringkasPlot().sudah} / ${ringkasPlot().total}` : '-', statusMuat ? 'bagian yang sudah disetujui, sudah diplot ke karyawan' : 'Memuat…'),
       kartu('pengiriman', 'Pengiriman', '–', 'Belum aktif', true),
       kartu('inventaris', 'Inventaris', '–', 'Belum aktif', true),
       kartu('tagihan', 'Tagihan', '–', 'Belum aktif', true),
@@ -625,7 +660,7 @@
     document.querySelectorAll('[data-pg]').forEach(b => b.classList.toggle('on', b.dataset.pg === pg));
     if (location.hash !== '#' + pg) history.replaceState(null, '', '#' + pg);
     window.scrollTo({ top: 0 });
-    if (pg === 'permintaan') muatStatus();
+    if (pg === 'permintaan' || pg === 'ploting') muatStatus();
   }
   document.addEventListener('click', e => { const b = e.target.closest('[data-pg]'); if (b) tampil(b.dataset.pg); });
   window.addEventListener('hashchange', () => tampil(location.hash.slice(1)));
@@ -989,7 +1024,7 @@
       if (!r.ok) throw new Error('HTTP ' + r.status);
       daftarMinta = await r.json(); statusMuat = true;
     } catch (e) { daftarMinta = []; susunStatus(); renderDaftarMinta(); $('infoMinta').textContent = 'Gagal memuat status: ' + e.message; return; }
-    susunStatus(); renderDaftarMinta(); renderRingkasan();
+    susunStatus(); renderDaftarMinta(); renderPlotList(); renderRingkasan();
   }
   function susunStatus() { // daftar sudah urut terbaru dulu, jadi yang pertama per bagian adalah permintaan terakhir
     terbaru = new Map();
@@ -1085,6 +1120,286 @@
   $('pvModal').onclick = e => { if (e.target.id === 'pvModal') tutupPreview(); };
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('pvModal').hidden) tutupPreview(); });
   $('pvKirim').onclick = async () => { if (!pvData) return; const { d, halaman } = pvData; if (await kirimKeAtasan(d, halaman, $('pvKirim'))) tutupPreview(); };
+  // ================= PLOTING SERAGAM =================
+  // Seragam yang sudah disetujui kedua pimpinan dibagikan ke tiap karyawan (nama dan ukuran dari isian Google Form), lalu dibuat
+  // PO + lampiran ukuran untuk vendor. Konsepnya sama dengan "Isi Ukuran" di panel admin lama: kuota tiap item harus pas dulu.
+  const UK_BAJU = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'L4', 'L5', 'L6', 'L7'];
+  const rentang = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => String(a + i));
+  const UK_CELANA = rentang(27, 50), UK_SEPATU = rentang(36, 47);
+  // ukuran yang dibutuhkan sebuah item: setelan (baju + celana), baju saja, celana saja, sepatu, atau tanpa ukuran (aksesoris)
+  function jenisUkuran(no, nama) {
+    const n = String(nama || '').toUpperCase(), h = HARGA.find(x => String(x.no) === String(no)), kat = h ? h.kat : '';
+    if (/^CELANA/.test(n)) return { baju: false, celana: true, sepatu: false };
+    if (kat === 'Sepatu' || /SEPATU/.test(n)) return { baju: false, celana: false, sepatu: true };
+    if (kat === 'Aksesoris') return { baju: false, celana: false, sepatu: false };
+    if (/^(KAOS|ATASAN|BAJU)/.test(n) || kat === 'Baju saja') return { baju: true, celana: false, sepatu: false };
+    return { baju: true, celana: true, sepatu: false };
+  }
+  let pSel = '', pBagian = '', terbukaPlot = false, pStatusF = 'semua', pData = null;
+  const kodePlot = () => { try { return sessionStorage.getItem('kodeNama') || ''; } catch (e) { return ''; } };
+  async function rpc(nama, body) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${nama}`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(/kode/i.test(j.message || '') ? 'KODE' : (j.message || 'HTTP ' + r.status));
+    return j;
+  }
+  // permintaan terakhir yang sudah disetujui kedua pimpinan, per lokasi + bagian
+  function setujuTerakhir() { const m = new Map(); for (const p of daftarMinta) { if (stReq(p) !== 'disetujui') continue; const k = p.lokasi_form + '|' + p.bagian_kerja; if (!m.has(k)) m.set(k, p); } return m; }
+  function ringkasPlot() { const s = [...setujuTerakhir().values()]; return { total: s.length, sudah: s.filter(p => p.diploting_pada).length }; }
+  function infoPlot(l, setuju) {
+    const per = l.bagian.map(b => setuju.get(l.lokasi + '|' + b.nama)).filter(Boolean), sudah = per.filter(p => p.diploting_pada).length;
+    return { s: !per.length ? 'kosong' : sudah === per.length ? 'selesai' : sudah ? 'sebagian' : 'belum', total: per.length, sudah };
+  }
+  const LP = { belum: ['Belum diplot', 'warn'], sebagian: ['Sebagian diplot', 'warn'], selesai: ['Sudah diplot', 'ok'] };
+  const URUT_LP = { belum: 0, sebagian: 1, selesai: 2 };
+
+  function renderPlotList() {
+    const setuju = setujuTerakhir();
+    const semua = lokMinta().map(l => { l.pi = infoPlot(l, setuju); return l; }).filter(l => l.pi.s !== 'kosong');
+    const q = $('pCari').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const f = semua.filter(l => q.every(w => l.kunci.includes(w)) && (pStatusF === 'semua' || l.pi.s === pStatusF))
+      .sort((a, b) => q.length ? a.client.localeCompare(b.client) : (URUT_LP[a.pi.s] - URUT_LP[b.pi.s]) || a.client.localeCompare(b.client));
+    if (!f.some(l => l.lokasi === pSel)) { pSel = f.length ? f[0].lokasi : ''; pBagian = ''; pData = null; }
+    const n = s => s === 'semua' ? semua.length : semua.filter(l => l.pi.s === s).length;
+    $('pChips').innerHTML = [['semua', 'Semua'], ['belum', 'Belum diplot'], ['sebagian', 'Sebagian diplot'], ['selesai', 'Sudah diplot']]
+      .map(([s, t]) => `<button class="chip ${pStatusF === s ? 'on' : ''}" data-s="${s}">${t} ${n(s)}</button>`).join('');
+    $('infoPlot').textContent = statusMuat ? (semua.length ? `${semua.length} lokasi punya permintaan yang sudah disetujui · ${n('belum') + n('sebagian')} belum selesai diplot` : 'Belum ada permintaan yang disetujui Pak Yasir dan Pak Ferry') : 'Memuat data…';
+    $('pDaftar').innerHTML = f.map(l => {
+      const [lbl, cls] = LP[l.pi.s], pct = l.pi.total ? 100 * l.pi.sudah / l.pi.total : 0;
+      return `<button class="item ${l.lokasi === pSel ? 'sel' : ''}" data-k="${esc(l.lokasi)}"><div class="nm">${esc(l.client)}</div>
+         <div class="bar ${cls}"><i style="width:${pct}%"></i></div>
+         <div class="mt"><span>${l.pi.sudah}/${l.pi.total} bagian diplot</span><span class="badge ${cls}">${lbl}</span></div></button>`;
+    }).join('') || `<div class="kosongnya">${semua.length ? 'Lokasi tidak ditemukan.' : 'Belum ada permintaan yang sudah disetujui kedua pimpinan.'}</div>`;
+    renderPlotDetail();
+  }
+  function renderPlotDetail() {
+    const l = lokasi.find(x => x.lokasi === pSel);
+    $('pDetail').classList.toggle('open', terbukaPlot && !!l);
+    if (!l) { $('pHead').innerHTML = '<div class="kosongnya">Pilih lokasi di daftar untuk memplot seragam ke karyawan.</div>'; $('pEditor').hidden = true; return; }
+    const setuju = setujuTerakhir(), mi = l.pi || infoPlot(l, setuju), [lbl, cls] = LP[mi.s] || ['', 'neu'];
+    const bagian = l.bagian.map(b => {
+      const p = setuju.get(l.lokasi + '|' + b.nama);
+      if (!p) return `<div class="bgr"><div class="row"><div><b>${esc(b.nama)}</b><div class="muted">${b.target} orang</div></div><span class="badge neu">Belum ada permintaan yang disetujui</span></div></div>`;
+      const qtyTotal = (p.items || []).reduce((a, i) => a + (Number(i.qty) || 0), 0);
+      return `<div class="bgr"><div class="row"><div><b>${esc(b.nama)}</b><div class="muted">${b.target} orang · permintaan no. ${p.id} · ${(p.items || []).length} item, ${qtyTotal} pcs</div></div>
+          <div class="bgact"><span class="badge ${p.diploting_pada ? 'ok' : 'warn'}">${p.diploting_pada ? 'Sudah diplot · ' + tglP(p.diploting_pada) : 'Belum diplot'}</span>
+          <button class="btn" data-plot="${esc(b.nama)}">${p.diploting_pada ? 'Ubah ploting' : 'Plot seragam'}</button></div></div></div>`;
+    }).join('');
+    $('pHead').innerHTML = `<div class="dhead"><button class="btn back" id="pBack">‹ Kembali</button>
+      <div class="row"><h2>${esc(l.client)}</h2><span class="badge ${cls}">${lbl}</span></div></div><div class="dbody">${bagian}</div>`;
+    if (!pData || pData.l.lokasi !== l.lokasi) $('pEditor').hidden = true;
+  }
+
+  // ---- membuka editor ploting untuk satu bagian kerja ----
+  function tampilKodePlot(pesan) {
+    const ed = $('pEditor'); ed.hidden = false;
+    ed.innerHTML = `<h3 style="margin:0 0 8px">Buka data karyawan</h3><p class="muted" style="margin:0 0 10px">Ploting memuat nama karyawan, jadi dibuka dengan kode akses.</p>
+      <div class="stkode"><input id="pKode" type="password" placeholder="Kode akses" autocomplete="off"><button class="btn" id="pBukaKode">Buka</button></div>
+      <div class="hint" style="color:var(--bad)">${esc(pesan || '')}</div>`;
+    ed.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  async function bukaPlot(namaBagian) {
+    const l = lokasi.find(x => x.lokasi === pSel), p = setujuTerakhir().get(pSel + '|' + namaBagian), ed = $('pEditor');
+    if (!l || !p) return;
+    pBagian = namaBagian; ed.hidden = false; ed.innerHTML = '<div class="hint">Memuat data karyawan…</div>'; ed.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const kode = kodePlot(); if (!kode) return tampilKodePlot();
+    try {
+      const mentah = await rpc('daftar_ukuran', { kode, p_lokasi: l.lokasi, p_bagian: namaBagian });
+      const tersimpan = p.diploting_pada ? await rpc('ambil_ploting', { kode, p_permintaan: p.id }) : [];
+      susunPlot(l, namaBagian, p, mentah, tersimpan);
+    } catch (e) {
+      if (e.message === 'KODE') { try { sessionStorage.removeItem('kodeNama'); } catch (x) {} tampilKodePlot('Kode akses salah.'); }
+      else ed.innerHTML = `<div class="hint" style="color:var(--bad)">Gagal memuat: ${esc(e.message)}</div>`;
+    }
+  }
+  function susunPlot(l, bagian, p, mentah, tersimpan) {
+    const gabung = new Map();
+    for (const it of p.items || []) { const k = String(it.no); if (!gabung.has(k)) gabung.set(k, { no: it.no, nama: it.nama, qty: 0, beli: it.beli, jual: it.jual }); gabung.get(k).qty += Number(it.qty) || 0; }
+    const items = [...gabung.values()].map(i => ({ ...i, uk: jenisUkuran(i.no, i.nama) }));
+    const unik = new Map(); for (const k of mentah) unik.set(String(k.nama || '').trim().toUpperCase(), k); // nama kembar (isi dua kali) dipakai yang terakhir
+    const kar = [...unik.values()].map(k => ({ nama: String(k.nama || '').trim(), ref: { baju: String(k.ukuran_baju || '').trim().toUpperCase(), celana: String(k.ukuran_celana || '').trim(), sepatu: String(k.ukuran_sepatu || '').trim() }, alloc: {} }));
+    for (const t of tersimpan) { // isi ulang dari ploting yang sudah tersimpan
+      let kk = kar.find(x => x.nama.toUpperCase() === String(t.nama).toUpperCase());
+      if (!kk) { kk = { nama: t.nama, ref: { baju: '', celana: '', sepatu: '' }, alloc: {} }; kar.push(kk); }
+      kk.alloc[t.item_no] = { qty: t.qty, baju: t.ukuran_baju || '', celana: t.ukuran_celana || '', sepatu: t.ukuran_sepatu || '' };
+    }
+    pData = { l, bagian, p, items, kar, tersimpan: !!p.diploting_pada, kotor: false };
+    renderPlotEditor();
+  }
+  const opsiUk = (daftar, pilih) => '<option value="">Pilih</option>' + daftar.map(o => `<option ${o === pilih ? 'selected' : ''}>${o}</option>`).join('');
+  function pilihanUkuran(it, a) {
+    return (it.uk.baju ? `<select class="ub" title="Ukuran baju">${opsiUk(UK_BAJU, a.baju)}</select>` : '') + (it.uk.celana ? `<select class="uc" title="Ukuran celana">${opsiUk(UK_CELANA, a.celana)}</select>` : '')
+      + (it.uk.sepatu ? `<select class="us" title="Ukuran sepatu">${opsiUk(UK_SEPATU, a.sepatu)}</select>` : '') + (!it.uk.baju && !it.uk.celana && !it.uk.sepatu ? '<span class="muted">tanpa ukuran</span>' : '');
+  }
+  function barisKar(k, i) {
+    return `<tr data-i="${i}"><td><b>${esc(k.nama)}</b><div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></td><td>` +
+      pData.items.map(it => { const a = k.alloc[it.no];
+        return `<div class="pit" data-no="${it.no}"><label class="pil"><input type="checkbox" class="pc" ${a ? 'checked' : ''}> ${esc(it.nama)}</label><input class="pq" type="number" min="1" value="${a ? a.qty : 1}" ${a ? '' : 'disabled'}><span class="pus">${a ? pilihanUkuran(it, a) : ''}</span></div>`; }).join('') + '</td></tr>';
+  }
+  function renderPlotEditor() {
+    const { items, kar, bagian, p } = pData, ed = $('pEditor'); ed.hidden = false;
+    ed.innerHTML = `<div class="row" style="margin-bottom:6px"><h3 style="margin:0">Ploting: ${esc(bagian)}</h3><button class="btn" id="pTutup">Tutup</button></div>
+      <div class="muted" style="margin-bottom:12px">${kar.length} karyawan dari isian Google Form · permintaan no. ${p.id}${p.diploting_pada ? ' · tersimpan ' + tglP(p.diploting_pada) : ''}</div>
+      <div class="kuotas">${items.map(it => `<div class="kq" id="kq-${it.no}"><b>${esc(it.nama)}</b><span class="kv"><span class="kt">0</span> / ${it.qty}</span>
+        <div class="kb"><button class="btn" data-auto="${it.no}">Bagi rata</button><button class="btn" data-kosong="${it.no}">Kosongkan</button></div></div>`).join('')}</div>
+      <div class="wrap pplot"><table><thead><tr><th style="min-width:200px">Karyawan</th><th>Seragam yang diterima</th></tr></thead><tbody>${kar.length ? kar.map(barisKar).join('') : '<tr><td colspan="2" class="kosongnya">Belum ada karyawan yang mengisi ukuran di Google Form untuk bagian ini.</td></tr>'}</tbody></table></div>
+      <div class="hint" id="pPesan"></div>
+      <button class="cta" id="pSimpan" style="width:100%;margin-top:14px" disabled>Selesaikan kuota dulu</button>
+      <div class="hint" id="pStatus" role="status"></div>
+      <button class="btn" id="pPo" style="width:100%;margin-top:10px;border-radius:14px;padding:10px" disabled>Unduh PO &amp; Lampiran Ukuran (PDF)</button>`;
+    hitungPlot();
+  }
+  function hitungPlot() {
+    const { items, kar } = pData; let pas = true, kosongUk = 0;
+    for (const it of items) {
+      const tot = kar.reduce((a, k) => a + (k.alloc[it.no] ? Number(k.alloc[it.no].qty) || 0 : 0), 0), kartu = $('kq-' + it.no);
+      kartu.querySelector('.kt').textContent = tot; kartu.className = 'kq ' + (tot < it.qty ? 'kurang' : tot > it.qty ? 'lebih' : 'pas');
+      if (tot !== it.qty) pas = false;
+    }
+    document.querySelectorAll('#pEditor .pit').forEach(div => {
+      const k = kar[div.closest('tr').dataset.i], a = k && k.alloc[div.dataset.no]; if (!a) return;
+      div.querySelectorAll('select').forEach(sel => { const kosong = !sel.value; sel.classList.toggle('kosong', kosong); if (kosong) kosongUk++; });
+    });
+    $('pPesan').textContent = kosongUk ? `${kosongUk} pilihan ukuran belum diisi.` : '';
+    const siap = pas && !kosongUk, btn = $('pSimpan');
+    btn.disabled = !siap; btn.textContent = !pas ? 'Selesaikan kuota dulu' : kosongUk ? 'Lengkapi ukuran dulu' : 'Simpan ploting';
+    $('pPo').disabled = !(pData.tersimpan && !pData.kotor);
+    $('pPo').title = $('pPo').disabled ? 'Simpan ploting dulu' : '';
+  }
+  const tandaiKotor = () => { pData.kotor = true; $('pStatus').textContent = ''; hitungPlot(); };
+  function ubahCentang(div, tr, cek) {
+    const k = pData.kar[tr.dataset.i], it = pData.items.find(x => String(x.no) === div.dataset.no), q = div.querySelector('.pq');
+    if (cek) { // ukuran awal dari isian Google Form kalau cocok dengan pilihan yang ada
+      const a = { qty: 1, baju: it.uk.baju && UK_BAJU.includes(k.ref.baju) ? k.ref.baju : '', celana: it.uk.celana && UK_CELANA.includes(k.ref.celana) ? k.ref.celana : '', sepatu: it.uk.sepatu && UK_SEPATU.includes(k.ref.sepatu) ? k.ref.sepatu : '' };
+      k.alloc[it.no] = a; q.disabled = false; q.value = 1; div.querySelector('.pus').innerHTML = pilihanUkuran(it, a);
+    } else { delete k.alloc[it.no]; q.disabled = true; q.value = 1; div.querySelector('.pus').innerHTML = ''; }
+  }
+  function bagiRata(no, kosongkan) {
+    const it = pData.items.find(x => String(x.no) === String(no)), n = pData.kar.length;
+    pData.kar.forEach((k, i) => {
+      const tr = document.querySelector(`#pEditor tr[data-i="${i}"]`), div = tr && tr.querySelector(`.pit[data-no="${no}"]`); if (!div) return;
+      const cb = div.querySelector('.pc'); if (cb.checked) { cb.checked = false; ubahCentang(div, tr, false); }
+      const qty = kosongkan || !n ? 0 : Math.floor(it.qty / n) + (i < it.qty % n ? 1 : 0);
+      if (qty > 0) { cb.checked = true; ubahCentang(div, tr, true); k.alloc[it.no].qty = qty; div.querySelector('.pq').value = qty; }
+    });
+    tandaiKotor();
+  }
+  async function simpanPlot() {
+    const { items, kar, p } = pData, btn = $('pSimpan'), st = $('pStatus'), label = btn.textContent;
+    const rincian = [];
+    for (const k of kar) for (const it of items) { const a = k.alloc[it.no]; if (a) rincian.push({ nama: k.nama, item_no: it.no, item_nama: it.nama, qty: Number(a.qty), baju: a.baju, celana: a.celana, sepatu: a.sepatu }); }
+    btn.disabled = true; btn.textContent = 'Menyimpan…'; st.style.color = ''; st.textContent = '';
+    try {
+      const n = await rpc('simpan_ploting', { kode: kodePlot(), p_permintaan: p.id, p_rincian: rincian });
+      pData.tersimpan = true; pData.kotor = false; st.style.color = 'var(--ok)'; st.textContent = `✓ Ploting tersimpan (${n} baris).`;
+      await muatStatus();
+      const baru = daftarMinta.find(x => x.id === p.id); if (baru) pData.p = baru;
+    } catch (e) { st.style.color = 'var(--bad)'; st.textContent = 'Gagal: ' + (e.message === 'KODE' ? 'kode akses salah.' : e.message); }
+    btn.textContent = label; hitungPlot();
+  }
+  $('pEditor').onchange = e => {
+    const div = e.target.closest('.pit'); if (!div || !pData) return; const tr = div.closest('tr'), k = pData.kar[tr.dataset.i];
+    if (e.target.classList.contains('pc')) ubahCentang(div, tr, e.target.checked);
+    else if (k.alloc[div.dataset.no]) { const a = k.alloc[div.dataset.no]; if (e.target.classList.contains('ub')) a.baju = e.target.value; else if (e.target.classList.contains('uc')) a.celana = e.target.value; else if (e.target.classList.contains('us')) a.sepatu = e.target.value; }
+    tandaiKotor();
+  };
+  $('pEditor').oninput = e => {
+    if (!e.target.classList.contains('pq') || !pData) return;
+    const div = e.target.closest('.pit'), k = pData.kar[div.closest('tr').dataset.i], a = k.alloc[div.dataset.no]; if (a) a.qty = Math.max(1, Math.floor(Number(e.target.value)) || 1);
+    tandaiKotor();
+  };
+  $('pEditor').onclick = async e => {
+    const t = e.target;
+    if (t.id === 'pTutup') { $('pEditor').hidden = true; pData = null; return; }
+    if (t.id === 'pSimpan') return simpanPlot();
+    if (t.id === 'pPo') return unduhPo(t);
+    if (t.id === 'pBukaKode') { const v = $('pKode').value.trim(); if (v) { try { sessionStorage.setItem('kodeNama', v); } catch (x) {} bukaPlot(pBagian); } return; }
+    if (t.dataset.auto) return bagiRata(t.dataset.auto, false);
+    if (t.dataset.kosong) return bagiRata(t.dataset.kosong, true);
+  };
+  $('pEditor').onkeydown = e => { if (e.key === 'Enter' && e.target.id === 'pKode') $('pBukaKode').click(); };
+  $('pDaftar').onclick = e => { const b = e.target.closest('.item'); if (b) { terbukaPlot = true; if (pSel !== b.dataset.k) { pSel = b.dataset.k; pData = null; $('pEditor').hidden = true; } renderPlotList(); } };
+  $('pHead').onclick = e => {
+    if (e.target.id === 'pBack') { terbukaPlot = false; renderPlotDetail(); return; }
+    const bt = e.target.closest('[data-plot]'); if (bt) bukaPlot(bt.dataset.plot);
+  };
+  $('pChips').onclick = e => { const s = e.target.dataset && e.target.dataset.s; if (s) { pStatusF = s; terbukaPlot = false; renderPlotList(); } };
+  $('pCari').oninput = () => { terbukaPlot = false; renderPlotList(); };
+  $('pMuat').onclick = muatStatus;
+
+  // ---- PO + lampiran ukuran untuk vendor (PDF) ----
+  async function unduhPo(tombol) {
+    const label = tombol.textContent, st = $('pStatus'); tombol.disabled = true; tombol.textContent = 'Menyiapkan…'; st.style.color = ''; st.textContent = '';
+    try {
+      const b64 = await buatPdfPo(pData), a = document.createElement('a');
+      a.href = 'data:application/pdf;base64,' + b64; a.download = `PO ${pData.l.client} - ${pData.bagian}.pdf`.replace(/[\\/:*?"<>|]/g, '');
+      document.body.appendChild(a); a.click(); a.remove(); st.style.color = 'var(--ok)'; st.textContent = '✓ PO dan lampiran ukuran diunduh.';
+    } catch (e) { st.style.color = 'var(--bad)'; st.textContent = 'Gagal: ' + e.message; }
+    tombol.textContent = label; hitungPlot();
+  }
+  async function buatPdfPo({ l, bagian, p, items, kar }) {
+    if (!window.jspdf) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    if (!(window.jspdf && window.jspdf.jsPDF.API.autoTable)) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
+    const [kop, kaki] = await Promise.all([muatGambar('aset/kop-surat.png'), muatGambar('aset/kaki-surat.png')]);
+    const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' }), PW = 595.28, L = 40, R = PW - 40, W = R - L, BIRU = [0, 112, 192], BAWAH = 742;
+    const now = new Date(), tgl = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }), noPo = `${String(p.id).padStart(3, '0')}/PO/RAY/${now.getMonth() + 1}/${now.getFullYear()}`;
+    const rpPdf = n => 'Rp' + Math.round(n).toLocaleString('id-ID');
+    const dipasang = new Set();
+    const pasang = () => {
+      const n = doc.internal.getCurrentPageInfo().pageNumber; if (dipasang.has(n)) return; dipasang.add(n);
+      if (kop) doc.addImage(kop, 'PNG', L, 14, W, W * 112 / 1030); if (kaki) doc.addImage(kaki, 'PNG', L, 758, W, W * 92 / 1030);
+      doc.setDrawColor(...BIRU); doc.setLineWidth(2.2); doc.line(L, 74, R, 74); doc.line(L, 752, R, 752);
+      doc.setFont('times', 'bold'); doc.setFontSize(9.5); doc.setTextColor(255, 0, 0); doc.text('HEAD OFFICE :', PW / 2, 768, { align: 'center' });
+      doc.setFont('times', 'normal'); doc.setTextColor(0, 0, 0);
+      doc.text('Jl. Sidodadi RT. 03 RW. 04 Kel. Mijen Kec. Mijen Semarang', PW / 2, 781, { align: 'center' }); doc.text('Telp. 024-76640213, 085 848484 222 - 085641220696', PW / 2, 794, { align: 'center' });
+      doc.setTextColor(0, 0, 255); doc.text('Email : raymitraperkasa@yahoo.co.id', PW / 2, 807, { align: 'center' }); doc.setTextColor(0, 0, 0);
+    };
+    let y = 0; const huruf = (g = 'normal', u = 10.5) => { doc.setFont('times', g); doc.setFontSize(u); doc.setTextColor(0, 0, 0); };
+    const cek = t => { if (y + t > BAWAH) { doc.addPage(); pasang(); y = 100; } };
+    const tabel = o => { doc.autoTable({ theme: 'plain', margin: { top: 92, bottom: 110, left: L, right: PW - R }, didDrawPage: pasang,
+      styles: { font: 'times', fontSize: 9.5, cellPadding: { top: 2.6, bottom: 2.6, left: 4, right: 4 }, lineColor: [0, 0, 0], lineWidth: 0.5, textColor: 0 }, headStyles: { fontStyle: 'bold', halign: 'center', fillColor: false }, ...o }); y = doc.lastAutoTable.finalY; };
+    const ttd = (kolom, yy) => { huruf(); kolom.forEach(k => doc.text(k.label, k.x, yy, { align: 'center' }));
+      kolom.forEach(k => { huruf('bold'); doc.text(k.t[0], k.x, yy + 58, { align: 'center' }); const w = doc.getTextWidth(k.t[0]); doc.setLineWidth(0.6); doc.setDrawColor(0, 0, 0); doc.line(k.x - w / 2, yy + 60, k.x + w / 2, yy + 60);
+        huruf('bold', 8.5); doc.setTextColor(153, 153, 153); doc.text(k.t[1], k.x, yy + 72, { align: 'center' }); huruf(); }); };
+    // --- Purchase Order ---
+    pasang(); huruf('bold', 14); doc.text('PURCHASE ORDER (PO)', PW / 2, 104, { align: 'center' }); y = 134;
+    [['Tanggal', tgl], ['No. PO', noPo], ['Lokasi', l.client + ' - ' + bagian]].forEach(([k, v], i) => { huruf('bold'); doc.text(k, L, y + i * 14); huruf(); doc.text(v, L + 62, y + i * 14); });
+    huruf('bold'); doc.text('Detail Pesanan :', L, y + 46); y += 54;
+    const total = items.reduce((a, i) => a + (Number(i.beli) || 0) * i.qty, 0);
+    tabel({ startY: y, margin: { top: 92, bottom: 110, left: L + 28, right: PW - R + 28 }, styles: { font: 'times', fontSize: 10, cellPadding: { top: 2.6, bottom: 2.6, left: 4, right: 4 }, lineColor: [0, 0, 0], lineWidth: 0.5, textColor: 0 },
+      head: [['No', 'Deskripsi Barang', 'Ukuran', 'Qty', 'Harga Beli', 'Total']],
+      body: [...items.map((it, i) => [{ content: i + 1, styles: { halign: 'center' } }, it.nama, { content: 'Terlampir', styles: { halign: 'center', fontStyle: 'italic' } }, { content: it.qty, styles: { halign: 'center' } }, { content: rpPdf(it.beli || 0), styles: { halign: 'right' } }, { content: rpPdf((it.beli || 0) * it.qty), styles: { halign: 'right' } }]),
+        [{ content: 'SUBTOTAL', colSpan: 5, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(total), styles: { halign: 'right', fontStyle: 'bold' } }]],
+      columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 58 }, 3: { cellWidth: 34 }, 4: { cellWidth: 66 }, 5: { cellWidth: 72 } } });
+    y += 28; cek(170); huruf(); doc.text('Syarat & Ketentuan:', L, y); y += 14;
+    doc.text('- Detail Ukuran', L, y); doc.text(': Rincian nama dan ukuran (size) terlampir dalam lembar spesifikasi.', L + 110, y); y += 14;
+    doc.text('- Waktu Pengiriman', L, y); const kirim = doc.splitTextToSize(': Vendor wajib menyelesaikan dan mengirimkan barang maksimal 1 (satu) bulan terhitung sejak PO ini ditandatangani (Maksimal tanggal: ..................................).', W - 110);
+    doc.text(kirim, L + 110, y); y += kirim.length * 13 + 10; doc.text('Mohon dokumen ini ditandatangani sebagai bukti persetujuan kerja sama.', L, y); y += 30;
+    const kol = W / 4; ttd([{ x: L + kol * 0.5, label: 'Pemesan,', t: TTD.pic }, { x: L + kol * 1.5, label: 'Mengetahui,', t: TTD.dir }, { x: L + kol * 2.5, label: 'Mengetahui,', t: TTD.dirut }, { x: L + kol * 3.5, label: 'Penyedia,', t: TTD.vendor }], y);
+    // --- Lampiran data ukuran per karyawan ---
+    doc.addPage(); pasang(); huruf('bold', 13); doc.text('LAMPIRAN DATA UKURAN SERAGAM', PW / 2, 108, { align: 'center' });
+    huruf(); doc.text('Lokasi', L, 134); doc.text(': ' + l.client, L + 42, 134); doc.text('Bagian', L, 148); doc.text(': ' + bagian, L + 42, 148);
+    const gabungUk = (k, jenis) => [...new Set(Object.values(k.alloc).map(a => a[jenis]).filter(Boolean))].join(' / ') || '-';
+    const baris = kar.filter(k => Object.keys(k.alloc).length).map((k, i) => [{ content: i + 1, styles: { halign: 'center' } }, k.nama, bagian,
+      { content: gabungUk(k, 'baju'), styles: { halign: 'center' } }, { content: gabungUk(k, 'celana'), styles: { halign: 'center' } }, { content: gabungUk(k, 'sepatu'), styles: { halign: 'center' } },
+      items.filter(it => k.alloc[it.no]).map(it => `${it.nama} (${k.alloc[it.no].qty} pcs)`).join('; ')]);
+    tabel({ startY: 158, head: [['NO', 'NAMA', 'JABATAN', 'BAJU', 'CELANA', 'SEPATU', 'KETERANGAN']],
+      body: baris.length ? baris : [[{ content: 'Belum ada karyawan yang menerima seragam.', colSpan: 7, styles: { halign: 'center', fontStyle: 'italic' } }]],
+      columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 88 }, 2: { cellWidth: 78 }, 3: { cellWidth: 34 }, 4: { cellWidth: 52 }, 5: { cellWidth: 50 } } });
+    y += 26; cek(92); ttd([{ x: L + W * 0.25, label: 'Pemesan,', t: TTD.pic }, { x: L + W * 0.75, label: 'Penyedia,', t: TTD.vendor }], y);
+    // --- Rekap jumlah per ukuran (untuk produksi vendor) ---
+    const rekap = [];
+    for (const it of items) for (const [jenis, nama] of [['baju', 'Baju'], ['celana', 'Celana'], ['sepatu', 'Sepatu']]) {
+      if (!it.uk[jenis]) continue; const hitung = new Map();
+      for (const k of kar) { const a = k.alloc[it.no]; if (a && a[jenis]) hitung.set(a[jenis], (hitung.get(a[jenis]) || 0) + Number(a.qty)); }
+      [...hitung.entries()].sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'id', { numeric: true })).forEach(([uk, n]) => rekap.push([it.nama, nama, { content: uk, styles: { halign: 'center' } }, { content: n, styles: { halign: 'center' } }]));
+    }
+    for (const it of items) if (!it.uk.baju && !it.uk.celana && !it.uk.sepatu) rekap.push([it.nama, 'Tanpa ukuran', { content: '-', styles: { halign: 'center' } }, { content: it.qty, styles: { halign: 'center' } }]);
+    if (rekap.length) { doc.addPage(); pasang(); huruf('bold', 13); doc.text('REKAPITULASI JUMLAH PER UKURAN', PW / 2, 108, { align: 'center' }); huruf(); doc.text('Lokasi', L, 134); doc.text(': ' + l.client + ' - ' + bagian, L + 42, 134);
+      tabel({ startY: 148, margin: { top: 92, bottom: 110, left: L + 28, right: PW - R + 28 }, head: [['ITEM', 'JENIS', 'UKURAN', 'JUMLAH']], body: rekap, columnStyles: { 1: { cellWidth: 80 }, 2: { cellWidth: 60 }, 3: { cellWidth: 60 } } }); }
+    return doc.output('datauristring').split(',')[1];
+  }
+
   renderBaris();
   tampil(location.hash.slice(1));
 
