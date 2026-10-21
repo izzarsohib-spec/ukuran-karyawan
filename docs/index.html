@@ -172,7 +172,8 @@
   .pvbar .jd span { color:var(--muted); font-size:.78rem; }
   .pvbar a { color:var(--muted); font-size:.82rem; }
   .pvbar .cta { padding:8px 18px; }
-  .pvbox iframe { flex:1; width:100%; border:0; background:#fff; }
+  .pvbody { flex:1; overflow:auto; background:#2a2a2e; padding:12px; }
+  .pvbody img { display:block; width:100%; max-width:900px; margin:0 auto; background:#fff; }
   .badge.neu { background:var(--panel2); color:var(--muted); }
   .bar.neu i { background:var(--muted); }
   .formminta { margin:0; padding:20px; border-top:1px solid var(--stroke); }
@@ -353,7 +354,7 @@
               <input type="file" id="mRabFile" accept=".pdf,application/pdf">
               <div class="hint" id="mRabInfo">Tanpa file, halaman RAB dibuat otomatis dari data anggaran.</div>
             </div>
-            <div class="hint" style="margin-top:10px">PDF berisi 5 halaman: Memo, PO, Daftar Harga, Data Ukuran, RAB. Periksa dulu lewat Preview sebelum dikirim.</div>
+            <div class="hint" style="margin-top:10px">PDF berisi 5 halaman: Memo, PO, Daftar Harga, Data Ukuran, RAB. Dikirim ke pimpinan sebagai satu gambar JPG panjang. Periksa dulu lewat Preview.</div>
             <button class="btn" id="mPreview" style="width:100%;margin-top:14px;border-radius:14px;padding:11px">Preview surat</button>
             <button class="cta" id="mKirim" style="width:100%;margin-top:10px">Kirim ke Pak Yasir &amp; Pak Ferry</button>
             <div class="hint" id="mStatus" role="status"></div>
@@ -372,7 +373,7 @@
       <button class="btn" id="pvTutup">Tutup</button>
       <button class="cta" id="pvKirim">Kirim ke Pak Yasir &amp; Pak Ferry</button>
     </div>
-    <iframe id="pvFrame" title="Preview surat" src="about:blank"></iframe>
+    <div class="pvbody"><img id="pvImg" alt="Preview surat yang akan dikirim"></div>
   </div>
 </div>
 <script src="harga.js"></script>
@@ -744,6 +745,32 @@
     return r.json();
   }
   const siapkanPdf = async d => buatPdf(d, { ukuran: await ambilUkuran(d.l, d.bag), rab: mRabBerkas });
+  // Semua halaman PDF disusun ke bawah menjadi SATU gambar JPG (lampiran ntfy hanya boleh satu per notifikasi).
+  async function pdfKeJpg(pdfB64) {
+    if (!window.pdfjsLib) {
+      await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+    const dok = await window.pdfjsLib.getDocument({ data: Uint8Array.from(atob(pdfB64), c => c.charCodeAt(0)) }).promise;
+    const LEBAR = 900; // piksel; huruf kecil di Daftar Harga tetap terbaca saat gambar diperbesar
+    const hal = [];
+    for (let i = 1; i <= dok.numPages; i++) { const pg = await dok.getPage(i), v0 = pg.getViewport({ scale: 1 }); hal.push({ pg, skala: LEBAR / v0.width, tinggi: v0.height * LEBAR / v0.width }); }
+    const total = hal.reduce((a, x) => a + x.tinggi, 0);
+    const faktor = Math.min(1, Math.sqrt(14e6 / (LEBAR * total)), 30000 / total); // batas kanvas peramban (iPhone sekitar 16 juta piksel)
+    const cv = document.createElement('canvas'); cv.width = Math.floor(LEBAR * faktor); cv.height = Math.ceil(total * faktor);
+    const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+    let y = 0;
+    for (const x of hal) {
+      const v = x.pg.getViewport({ scale: x.skala * faktor }), pc = document.createElement('canvas'); pc.width = Math.ceil(v.width); pc.height = Math.ceil(v.height);
+      await x.pg.render({ canvasContext: pc.getContext('2d'), viewport: v }).promise;
+      cx.drawImage(pc, 0, y); y += pc.height;
+    }
+    // ntfy otomatis menampilkan gambar kecil (sekitar 1 MB); turunkan kualitas seperlunya agar muat
+    let kualitas = 0.86, blob;
+    do { blob = await new Promise(ok => cv.toBlob(ok, 'image/jpeg', kualitas)); kualitas -= 0.07; } while (blob.size > 1024 * 1024 && kualitas > 0.55);
+    const b64 = await new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(',')[1]); fr.readAsDataURL(blob); });
+    return { blob, b64, halaman: dok.numPages, kb: Math.max(1, Math.round(blob.size / 1024)) };
+  }
 
   async function buatPdf({ l, bag, isi, beli, jual, rab }, ekstra = {}) {
     if (!window.jspdf) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
@@ -922,15 +949,15 @@
     if (rb) return await gabungPdf(doc.output('arraybuffer'), rb.buf);
     return doc.output('datauristring').split(',')[1];
   }
-  // pdfSiap = PDF yang sudah dilihat di preview, supaya yang terkirim sama persis dengan yang diperiksa
-  async function kirimKeAtasan(d, pdfSiap, tombol) {
+  // jpgSiap = gambar yang sudah dilihat di preview, supaya yang terkirim sama persis dengan yang diperiksa
+  async function kirimKeAtasan(d, jpgSiap, tombol) {
     const st = $('mStatus'), label = tombol.textContent; tombol.disabled = true; tombol.textContent = 'Mengirim…'; st.style.color = ''; st.textContent = '';
     let sukses = false;
     try {
-      const pdf = pdfSiap || await siapkanPdf(d);
+      const jpg = jpgSiap || (await pdfKeJpg(await siapkanPdf(d))).b64;
       const r = await fetch(`${SUPABASE_URL}/functions/v1/kirim-permintaan`, {
         method: 'POST', headers: { ...H, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lokasi_form: d.l.lokasi, bagian: d.bag, items: d.isi.map(x => ({ no: x.h.no, qty: x.q })), memo: $('mMemo').value.trim(), pdf })
+        body: JSON.stringify({ lokasi_form: d.l.lokasi, bagian: d.bag, items: d.isi.map(x => ({ no: x.h.no, qty: x.q })), memo: $('mMemo').value.trim(), jpg })
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
@@ -1039,25 +1066,26 @@
   // ---- preview surat sebelum dikirim ----
   let pvUrl = '', pvData = null;
   function tutupPreview() {
-    $('pvModal').hidden = true; $('pvFrame').src = 'about:blank'; document.body.style.overflow = '';
+    $('pvModal').hidden = true; $('pvImg').removeAttribute('src'); document.body.style.overflow = '';
     if (pvUrl) { URL.revokeObjectURL(pvUrl); pvUrl = ''; } pvData = null;
   }
   $('mPreview').onclick = async () => {
     const d = ambilIsian(); if (!d) return;
     const btn = $('mPreview'), st = $('mStatus'); btn.disabled = true; btn.textContent = 'Menyiapkan preview…'; st.style.color = ''; st.textContent = '';
     try {
-      const pdf = await siapkanPdf(d), bin = Uint8Array.from(atob(pdf), c => c.charCodeAt(0));
+      const g = await pdfKeJpg(await siapkanPdf(d));
       if (pvUrl) URL.revokeObjectURL(pvUrl);
-      pvUrl = URL.createObjectURL(new Blob([bin], { type: 'application/pdf' })); pvData = { d, pdf };
-      $('pvJudul').textContent = `${d.l.client} · ${d.bag}`; $('pvInfo').textContent = `Preview lampiran PDF · ${Math.max(1, Math.round(bin.length / 1024)).toLocaleString('id-ID')} KB`;
-      $('pvTab').href = pvUrl; $('pvFrame').src = pvUrl; $('pvModal').hidden = false; document.body.style.overflow = 'hidden';
+      pvUrl = URL.createObjectURL(g.blob); pvData = { d, jpg: g.b64 };
+      $('pvJudul').textContent = `${d.l.client} · ${d.bag}`; $('pvInfo').textContent = `Gambar JPG yang akan dikirim · ${g.halaman} halaman · ${g.kb.toLocaleString('id-ID')} KB`;
+      $('pvTab').href = pvUrl; $('pvImg').src = pvUrl; $('pvModal').hidden = false; document.body.style.overflow = 'hidden';
+      $('pvModal').querySelector('.pvbody').scrollTop = 0;
     } catch (e) { st.style.color = 'var(--bad)'; st.textContent = 'Gagal: ' + e.message; }
     btn.disabled = false; btn.textContent = 'Preview surat';
   };
   $('pvTutup').onclick = tutupPreview;
   $('pvModal').onclick = e => { if (e.target.id === 'pvModal') tutupPreview(); };
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('pvModal').hidden) tutupPreview(); });
-  $('pvKirim').onclick = async () => { if (!pvData) return; const { d, pdf } = pvData; if (await kirimKeAtasan(d, pdf, $('pvKirim'))) tutupPreview(); };
+  $('pvKirim').onclick = async () => { if (!pvData) return; const { d, jpg } = pvData; if (await kirimKeAtasan(d, jpg, $('pvKirim'))) tutupPreview(); };
   renderBaris();
   tampil(location.hash.slice(1));
 

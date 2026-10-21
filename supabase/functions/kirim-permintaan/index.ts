@@ -1,5 +1,5 @@
 // Menerima permintaan seragam dari web (terbuka, tanpa kode akses), menyimpan ke tabel `permintaan`,
-// lalu mengirim ringkasan + lampiran PDF ke DUA pimpinan lewat ntfy. Tiap pimpinan menerima notifikasinya sendiri
+// lalu mengirim ringkasan + lampiran gambar surat (JPG) ke DUA pimpinan lewat ntfy. Tiap pimpinan menerima notifikasinya sendiri
 // dengan tombol Setujui dan Tolak/Revisi (ntfy hanya mengizinkan maksimal 3 tombol per notifikasi).
 // Harga, RAB, dan jumlah anggota diambil ulang dari database; hanya no item, qty, memo, dan PDF yang dipercaya dari web.
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -29,10 +29,13 @@ Deno.serve(async (req) => {
 
   let body: any;
   try { body = await req.json(); } catch { return balas({ error: 'Data tidak terbaca' }, 400); }
-  const { lokasi_form, bagian, items, memo, pdf } = body ?? {};
-  if (!lokasi_form || !bagian || !Array.isArray(items) || !items.length || !pdf)
+  const { lokasi_form, bagian, items, memo, jpg, pdf } = body ?? {};
+  // lampiran utama: gambar JPG (semua halaman surat disusun jadi satu gambar); PDF hanya sebagai cadangan
+  const lampiran = String(jpg ?? pdf ?? ''), jenis = jpg ? 'jpg' : 'pdf';
+  if (!lokasi_form || !bagian || !Array.isArray(items) || !items.length || !lampiran)
     return balas({ error: 'Data permintaan belum lengkap' }, 400);
-  if (items.length > 100 || String(pdf).length > 8_000_000) return balas({ error: 'Permintaan terlalu besar' }, 413);
+  if (jenis === 'jpg' && !lampiran.startsWith('/9j/')) return balas({ error: 'Gambar tidak valid' }, 400);
+  if (items.length > 100 || lampiran.length > 8_000_000) return balas({ error: 'Permintaan terlalu besar' }, 413);
 
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   // tanpa kode akses: batasi jumlah kiriman supaya pimpinan tidak kebanjiran notifikasi
@@ -84,8 +87,8 @@ Deno.serve(async (req) => {
   let teks = susun(daftar.length);
   for (let n = daftar.length; teks.length > 2800 && n > 0; n--) teks = susun(n - 1);
 
-  const namaFile = `Permintaan ${prog.client} - ${bagian}.pdf`.replace(/[^\w .()-]/g, '');
-  const bin = Uint8Array.from(atob(String(pdf)), (c) => c.charCodeAt(0));
+  const namaFile = `Permintaan ${prog.client} - ${bagian}.${jenis}`.replace(/[^\w .()-]/g, '');
+  const bin = Uint8Array.from(atob(lampiran), (c) => c.charCodeAt(0));
   const hasil: Record<string, number> = {};
   for (const p of PIMPINAN) {
     const url = (a: string) => `${Deno.env.get('SUPABASE_URL')}/functions/v1/keputusan?id=${baru.id}&p=${p.kunci}&t=${token[p.kunci]}&a=${a}`;
