@@ -225,6 +225,17 @@
   .szc { font-size:.74rem; padding:1px 9px; border-radius:99px; background:var(--panel2); }
   .szc.ok { background:var(--ok-bg); color:var(--ok); } .szc.tipis { background:var(--warn-bg); color:var(--warn); } .szc.nol { background:var(--bad-bg); color:var(--bad); }
   .szc b { font-weight:700; }
+  .mxg { display:flex; align-items:stretch; gap:10px; margin:6px 0; }
+  .mxg > .mxl { width:78px; flex:none; display:flex; flex-direction:column; justify-content:center; font-size:.8rem; font-weight:700; }
+  .mxg > .mxl span { font-weight:400; font-size:.72rem; color:var(--muted); }
+  .mxs { display:flex; flex-wrap:wrap; gap:6px; }
+  .mxc { min-width:50px; padding:5px 8px 6px; border-radius:11px; background:var(--panel); border:1px solid var(--stroke); text-align:center; line-height:1.15; }
+  .mxc small { display:block; font-size:.7rem; color:var(--muted); letter-spacing:.03em; }
+  .mxc b { display:block; font-family:var(--head); font-size:1.12rem; margin-top:2px; }
+  .mxc.tipis { background:var(--warn-bg); border-color:transparent; } .mxc.tipis b { color:var(--warn); }
+  .mxc.nol { background:var(--bad-bg); border-color:transparent; } .mxc.nol b { color:var(--bad); }
+  .mxt { text-align:right; white-space:nowrap; } .mxt b { font-family:var(--head); font-size:1.5rem; display:block; line-height:1.1; }
+  .vend { display:inline-block; font-size:.7rem; padding:1px 8px; border-radius:99px; background:var(--panel2); color:var(--muted); margin-top:4px; }
   .rabbox { margin-top:18px; padding:14px 16px; border:1px dashed var(--stroke); border-radius:16px; }
   .rabbox .row { margin-bottom:8px; }
   .pvm { position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.74); display:grid; place-items:center; padding:2vh 2vw; }
@@ -340,9 +351,10 @@
     <section class="top mini" id="md-inventaris"></section>
     <section class="card pcard" id="iForm" hidden>
       <h3>Barang masuk dari supplier</h3>
+      <div class="hint" style="margin:0 0 10px">Seragam, baju, dan sepatu dipesan ke vendor <b>Wahyu Ardianto</b>. Aksesoris dipesan <b>Online</b>.</div>
       <div class="fgrid" style="grid-template-columns:1fr 1.4fr 1.4fr 1.6fr">
-        <label>Tanggal<input type="date" id="iTgl"></label><label>Supplier<input id="iSup" placeholder="Nama supplier"></label>
-        <label>No. surat jalan / faktur supplier<input id="iDok"></label><label>Keterangan<input id="iKet" placeholder="opsional"></label></div>
+        <label>Tanggal<input type="date" id="iTgl"></label><label>Supplier<select id="iSup"><option>Wahyu Ardianto</option><option>Online</option></select></label>
+        <label><span id="iDokL">No. surat jalan / faktur Wahyu Ardianto</span><input id="iDok"></label><label>Keterangan<input id="iKet" placeholder="opsional"></label></div>
       <div class="row" style="margin:16px 0 8px"><b>Barang yang masuk</b><button class="btn" id="iTambah">+ Tambah baris</button></div>
       <div class="wrap tabelminta"><table><thead><tr><th style="min-width:250px">Barang</th><th>Jenis</th><th>Ukuran</th><th style="width:96px">Qty</th><th></th></tr></thead><tbody id="iBaris"></tbody></table></div>
       <div class="hint" id="iPesan"></div>
@@ -1556,8 +1568,13 @@
   }
 
   // ----------------- INVENTARIS -----------------
-  let iTab = 'stok', iKat = 'semua', iAda = false, iJenis = 'semua', iBaris = [];
+  let iTab = 'stok', iKat = 'semua', iAda = true, iJenis = 'semua', iBaris = [];
   const saldoItem = no => stok.filter(s => s.item_no === no);
+  // urutan ukuran yang wajar: S M L XL ... untuk baju, angka naik untuk celana dan sepatu
+  const URUT_BAJU = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL', 'L4', 'L5', 'L6', 'L7'];
+  const rankUk = (j, u) => { if (j !== 'baju') return 0; const i = URUT_BAJU.indexOf(String(u).toUpperCase()); return i < 0 ? 99 : i; };
+  const vendorKat = k => k === 'Aksesoris' ? 'Dipesan online' : 'Vendor Wahyu Ardianto';
+  const supplierKat = k => k === 'Aksesoris' ? 'Online' : 'Wahyu Ardianto';
   function renderInventaris() {
     const totalPcs = stok.reduce((a, s) => a + Number(s.saldo), 0), tipis = stok.filter(s => s.saldo > 0 && s.saldo <= 2).length, habis = stok.filter(s => s.saldo <= 0).length;
     $('infoInv').textContent = hilirMuat ? `${idn(totalPcs)} pcs di gudang · ${new Set(stok.map(s => s.item_no)).size} jenis barang pernah masuk · ${tipis} ukuran menipis · ${habis} ukuran habis` : 'Memuat data…';
@@ -1566,13 +1583,15 @@
     if (iTab === 'stok') {
       const kats = ['semua', ...new Set(HARGA.map(h => h.kat))];
       $('iChips').innerHTML = kats.map(k => `<button class="chip ${iKat === k ? 'on' : ''}" data-k="${esc(k)}">${k === 'semua' ? 'Semua kategori' : esc(k)}</button>`).join('') + `<button class="chip ${iAda ? 'on' : ''}" data-ada="1">Hanya yang ada stok</button>`;
-      $('iHead').innerHTML = '<tr><th style="min-width:260px">Barang</th><th>Stok per ukuran</th></tr>';
+      $('iHead').innerHTML = '<tr><th style="min-width:230px">Barang</th><th>Stok per ukuran</th><th class="r">Total</th></tr>';
       const baris = HARGA.filter(h => (iKat === 'semua' || h.kat === iKat) && q.every(w => h.nama.toLowerCase().includes(w))).map(h => ({ h, s: saldoItem(h.no) })).filter(x => !iAda || x.s.some(s => s.saldo > 0));
       $('iBody').innerHTML = baris.map(({ h, s }) => {
-        const per = ['baju', 'celana', 'sepatu', '-'].map(j => ({ j, l: s.filter(x => x.jenis_ukuran === j).sort((a, b) => bandingUk(a.ukuran, b.ukuran)) })).filter(x => x.l.length);
-        return `<tr><td><b>${esc(h.nama)}</b><div class="muted">${esc(h.kat)}</div></td><td>${per.length ? per.map(({ j, l }) =>
-          `<div class="szg"><b>${NAMA_JENIS[j]}</b>${l.map(x => `<span class="szc ${x.saldo <= 0 ? 'nol' : x.saldo <= 2 ? 'tipis' : 'ok'}" title="masuk ${x.masuk} · keluar ${x.keluar}">${j === '-' ? '' : esc(x.ukuran) + ' '}<b>${x.saldo}</b></span>`).join('')}<span class="muted">total ${l.reduce((a, x) => a + Number(x.saldo), 0)}</span></div>`).join('') : '<span class="muted">belum ada stok</span>'}</td></tr>`;
-      }).join('') || '<tr><td colspan="2" class="kosongnya">Tidak ada barang yang cocok.</td></tr>';
+        const per = ['baju', 'celana', 'sepatu', '-'].map(j => ({ j, l: s.filter(x => x.jenis_ukuran === j).sort((a, b) => rankUk(j, a.ukuran) - rankUk(j, b.ukuran) || bandingUk(a.ukuran, b.ukuran)) })).filter(x => x.l.length);
+        const total = s.reduce((a, x) => a + Number(x.saldo), 0);
+        return `<tr><td><b>${esc(h.nama)}</b><div class="muted">${esc(h.kat)}</div><span class="vend">${vendorKat(h.kat)}</span></td><td>${per.length ? per.map(({ j, l }) =>
+          `<div class="mxg"><div class="mxl">${j === '-' ? 'Stok' : NAMA_JENIS[j]}<span>${j === '-' ? 'jumlah barang' : idn(l.reduce((a, x) => a + Number(x.saldo), 0)) + ' pcs'}</span></div><div class="mxs">${l.map(x => `<div class="mxc ${x.saldo <= 0 ? 'nol' : x.saldo <= 2 ? 'tipis' : ''}" title="masuk ${x.masuk} · keluar ${x.keluar}">${j === '-' ? '<small>pcs</small>' : `<small>${esc(x.ukuran)}</small>`}<b>${x.saldo}</b></div>`).join('')}</div></div>`).join('') : '<span class="muted">belum ada stok</span>'}</td>
+          <td class="mxt"><b>${idn(total)}</b><span class="muted">pcs</span></td></tr>`;
+      }).join('') || '<tr><td colspan="3" class="kosongnya">Tidak ada barang yang cocok.</td></tr>';
     } else {
       $('iChips').innerHTML = [['semua', 'Semua'], ['masuk', 'Masuk dari supplier'], ['keluar', 'Keluar (pengiriman)']].map(([k, n]) => `<button class="chip ${iJenis === k ? 'on' : ''}" data-j="${k}">${n}</button>`).join('');
       $('iHead').innerHTML = '<tr><th>Tanggal</th><th>Jenis</th><th>Barang</th><th>Ukuran</th><th class="r">Qty</th><th>Supplier / tujuan</th><th>Dokumen</th></tr>';
@@ -1597,7 +1616,8 @@
     }).join('');
   }
   const barisMasukBaru = () => ({ no: '', jenis: '', ukuran: '', qty: '' });
-  function bukaFormMasuk() { iBaris = [barisMasukBaru()]; $('iTgl').value = tgl0(); ['iSup', 'iDok', 'iKet'].forEach(id => { $(id).value = ''; }); $('iPesan').textContent = ''; renderBarisMasuk(); $('iForm').hidden = false; $('iForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  function bukaFormMasuk() { iBaris = [barisMasukBaru()]; $('iTgl').value = tgl0(); ['iDok', 'iKet'].forEach(id => { $(id).value = ''; }); $('iSup').value = 'Wahyu Ardianto'; $('iDokL').textContent = 'No. surat jalan / faktur Wahyu Ardianto'; $('iPesan').textContent = ''; renderBarisMasuk(); $('iForm').hidden = false; $('iForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  $('iSup').onchange = () => { $('iDokL').textContent = $('iSup').value === 'Online' ? 'No. pesanan / invoice online' : 'No. surat jalan / faktur Wahyu Ardianto'; };
   $('iMasukBtn').onclick = bukaFormMasuk; $('iBatal').onclick = () => { $('iForm').hidden = true; };
   $('iTambah').onclick = () => { iBaris.push(barisMasukBaru()); renderBarisMasuk(); };
   $('iBaris').onchange = e => {
@@ -1610,8 +1630,9 @@
   $('iBaris').onclick = e => { if (!e.target.classList.contains('x')) return; if (iBaris.length === 1) iBaris = [barisMasukBaru()]; else iBaris.splice(e.target.closest('tr').dataset.n, 1); renderBarisMasuk(); };
   $('iSimpan').onclick = async () => {
     const ps = $('iPesan'), btn = $('iSimpan'); ps.style.color = 'var(--bad)';
-    if (!$('iSup').value.trim()) { ps.textContent = 'Nama supplier wajib diisi.'; return; }
     const baris = iBaris.filter(b => b.no || b.qty || b.jenis);
+    const salah = baris.map(b => HARGA.find(x => String(x.no) === String(b.no))).find(h => h && supplierKat(h.kat) !== $('iSup').value);
+    if (salah) { ps.textContent = `${salah.nama} (${salah.kat}) dipesan ${salah.kat === 'Aksesoris' ? 'secara online' : 'ke Wahyu Ardianto'}. Ubah supplier atau pisahkan ke penerimaan lain.`; return; }
     if (!baris.length || baris.some(b => !b.no || !b.jenis || (b.jenis !== '-' && !b.ukuran) || !(Number(b.qty) > 0))) { ps.textContent = 'Lengkapi barang, jenis, ukuran, dan qty di setiap baris.'; return; }
     btn.disabled = true; btn.textContent = 'Menyimpan…'; ps.textContent = '';
     try {
