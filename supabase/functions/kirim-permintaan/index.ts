@@ -1,4 +1,4 @@
-// Menerima permintaan seragam dari web, memeriksa kode akses, menyimpan ke tabel `permintaan`,
+﻿// Menerima permintaan seragam dari web (terbuka, tanpa kode akses), menyimpan ke tabel `permintaan`,
 // lalu mengirim ringkasan + lampiran PDF ke atasan lewat ntfy.
 // Harga, RAB, dan jumlah anggota diambil ulang dari database; hanya no item, qty, memo, dan PDF yang dipercaya dari web.
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -20,14 +20,15 @@ Deno.serve(async (req) => {
 
   let body: any;
   try { body = await req.json(); } catch { return balas({ error: 'Data tidak terbaca' }, 400); }
-  const { kode, lokasi_form, bagian, items, memo, pdf } = body ?? {};
-  if (!kode || !lokasi_form || !bagian || !Array.isArray(items) || !items.length || !pdf)
+  const { lokasi_form, bagian, items, memo, pdf } = body ?? {};
+  if (!lokasi_form || !bagian || !Array.isArray(items) || !items.length || !pdf)
     return balas({ error: 'Data permintaan belum lengkap' }, 400);
   if (items.length > 100 || String(pdf).length > 4_000_000) return balas({ error: 'Permintaan terlalu besar' }, 413);
 
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-  const { data: ok } = await db.rpc('cek_kode', { kode: String(kode) });
-  if (ok !== true) return balas({ error: 'Kode akses salah' }, 403);
+  // tanpa kode akses: batasi jumlah kiriman supaya atasan tidak kebanjiran notifikasi
+  const { count: baruSaja } = await db.from('permintaan').select('id', { count: 'exact', head: true }).gte('dibuat', new Date(Date.now() - 10 * 60_000).toISOString());
+  if ((baruSaja ?? 0) >= 20) return balas({ error: 'Terlalu banyak permintaan dalam 10 menit terakhir, coba lagi nanti' }, 429);
 
   const nos = items.map((i: any) => Number(i.no));
   const [{ data: harga }, { data: ang }, { data: prog }] = await Promise.all([

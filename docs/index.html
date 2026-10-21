@@ -161,13 +161,22 @@
   .sums span { display:block; font-size:.74rem; color:var(--muted); }
   .sums b { display:block; font-size:1.35rem; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .neg { color:var(--bad); }
-  .stkode { display:flex; gap:8px; max-width:340px; } .stkode input { margin-top:0 !important; }
-  #stBody tr.ar { cursor:pointer; } #stBody tr.ar:hover td { background:rgba(255,255,255,.05); }
-  #stBody td.det { white-space:normal; background:rgba(14,14,16,.5); font-size:.82rem; color:var(--muted); }
-  #stBody td.det div { display:flex; justify-content:space-between; gap:12px; padding:2px 0; }
+  .badge.neu { background:var(--panel2); color:var(--muted); }
+  .bar.neu i { background:var(--muted); }
+  .formminta { margin:0; padding:20px; border-top:1px solid var(--stroke); }
+  .formminta .fgrid { grid-template-columns:2fr 1fr 2fr; }
+  .bgr { padding:12px 0; border-bottom:1px solid var(--stroke); }
+  .bgr:last-child { border-bottom:0; }
+  .bgact { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .bgact .btn { padding:4px 12px; }
+  .riw { border:0; background:transparent; color:var(--muted); font-size:.78rem; padding:6px 0 0; }
+  .riw:hover { color:var(--text); }
+  .rwi { margin-top:8px; padding:10px 12px; background:rgba(14,14,16,.5); border-radius:14px; font-size:.8rem; }
+  .rl { display:flex; justify-content:space-between; gap:12px; padding:2px 0; color:var(--muted); flex-wrap:wrap; }
+  .rl b { color:var(--text); font-weight:600; }
 
   @media (max-width: 980px) {
-    .fgrid { grid-template-columns:1fr 1fr; }
+    .fgrid, .formminta .fgrid { grid-template-columns:1fr 1fr; }
     .sums { grid-template-columns:1fr 1fr; }
     .mobnav { display:flex; gap:6px; margin-bottom:14px; overflow-x:auto; scrollbar-width:none; }
     .mobnav button { flex:none; padding:8px 14px !important; border:1px solid var(--stroke); background:transparent; border-radius:99px; padding:8px; color:var(--muted); }
@@ -283,60 +292,52 @@
     <header>
       <div>
         <h1>Permintaan Seragam</h1>
-        <div class="sub" id="infoMinta">Susun pesanan seragam per lokasi dan bagian kerja</div>
+        <div class="sub" id="infoMinta">Memuat data…</div>
       </div>
-      <button class="btn" id="mReset">Kosongkan form</button>
     </header>
 
-    <section class="card pcard">
-      <h3>Info proyek &amp; anggaran (RAB)</h3>
-      <div class="fgrid">
-        <label>Lokasi<select id="mLokasi"><option value="">Memuat…</option></select></label>
-        <label>Bagian kerja<select id="mBagian"><option value="">Pilih lokasi dulu</option></select></label>
-        <label>Jumlah anggota<input id="mJml" readonly></label>
-        <label>Total anggaran (RAB)<input id="mRab" readonly class="hi"></label>
+    <section class="bawah card" id="mBawah">
+      <div class="bar-top">
+        <h3>Daftar lokasi</h3>
+        <label class="search"><span aria-hidden="true">🔍</span>
+          <input id="mCari" type="search" placeholder="Cari lokasi, mis. pengadilan negeri kudus">
+        </label>
+        <button class="btn" id="stMuat">Muat ulang</button>
       </div>
-    </section>
+      <div class="chips" id="mChips" style="margin-bottom:14px"></div>
+      <div class="layout">
+        <div class="list"><div class="scroll" id="mDaftar"></div></div>
+        <div class="detail" id="mDetail">
+          <div id="mDHead"></div>
+          <div class="pcard formminta" id="mForm" hidden>
+            <div class="row" style="margin-bottom:14px"><h3 style="margin:0">Buat permintaan</h3><button class="btn" id="mReset">Kosongkan form</button></div>
+            <div class="fgrid">
+              <label>Bagian kerja<select id="mBagian"><option value="">Pilih lokasi</option></select></label>
+              <label>Jumlah anggota<input id="mJml" readonly></label>
+              <label>Total anggaran (RAB)<input id="mRab" readonly class="hi"></label>
+            </div>
 
-    <section class="card pcard">
-      <div class="row" style="margin-bottom:12px"><h3>Rincian item pesanan</h3><button class="btn" id="mTambah">+ Tambah baris</button></div>
-      <div class="wrap tabelminta"><table>
-        <thead><tr><th style="min-width:280px">Jenis item</th><th class="r">Harga beli</th><th class="r">Harga jual</th><th style="width:96px">Qty</th><th class="r">Total beli</th><th class="r">Total jual</th><th></th></tr></thead>
-        <tbody id="mBody"></tbody>
-      </table></div>
-    </section>
+            <div class="row" style="margin:18px 0 10px"><b>Rincian item pesanan</b><button class="btn" id="mTambah">+ Tambah baris</button></div>
+            <div class="wrap tabelminta"><table>
+              <thead><tr><th style="min-width:240px">Jenis item</th><th class="r">Harga beli</th><th class="r">Harga jual</th><th style="width:96px">Qty</th><th class="r">Total beli</th><th class="r">Total jual</th><th></th></tr></thead>
+              <tbody id="mBody"></tbody>
+            </table></div>
 
-    <section class="card pcard">
-      <h3>Memo / catatan khusus</h3>
-      <textarea id="mMemo" rows="3" placeholder="Pesan untuk gudang, vendor, atau catatan tentang RAB…"></textarea>
-    </section>
+            <label style="display:block;margin-top:18px;font-size:.76rem;color:var(--muted)">Memo / catatan khusus
+              <textarea id="mMemo" rows="3" placeholder="Pesan untuk gudang, vendor, atau catatan tentang RAB…" style="margin-top:5px"></textarea></label>
 
-    <section class="card pcard">
-      <div class="sums">
-        <div><span>Total beli</span><b class="num" id="sBeli">Rp0</b></div>
-        <div><span>Total jual</span><b class="num" id="sJual">Rp0</b></div>
-        <div><span>Sisa RAB</span><b class="num" id="sSisa">Rp0</b></div>
-        <div><span>Total untung</span><b class="num" id="sUntung">Rp0</b></div>
-      </div>
-      <div class="hint" id="mPeringatan"></div>
-      <button class="cta" id="mKirim" style="width:100%;margin-top:14px">Kirim ke atasan (ntfy + PDF)</button>
-      <div class="hint" id="mStatus" role="status"></div>
-      <button class="btn" id="mMemoXlsx" style="width:100%;margin-top:10px;border-radius:14px;padding:10px">Unduh memo (.xlsx)</button>
-    </section>
-
-    <section class="card pcard" id="stCard">
-      <div class="row" style="margin-bottom:12px"><h3>Status permintaan</h3><button class="btn" id="stMuat">Muat ulang</button></div>
-      <div id="stKunci">
-        <p class="muted" style="margin:0 0 10px">Daftar permintaan memuat angka belanja dan untung, jadi dibuka dengan kode akses.</p>
-        <div class="stkode"><input id="stKode" type="password" placeholder="Kode akses" autocomplete="off"><button class="btn" id="stBuka">Buka</button></div>
-        <div class="hint" id="stPesan" style="color:var(--bad)"></div>
-      </div>
-      <div id="stIsi" hidden>
-        <div class="chips" id="stChips" style="margin-bottom:12px"></div>
-        <div class="wrap tabelminta"><table>
-          <thead><tr><th>Lokasi / bagian</th><th>Dikirim</th><th class="r">RAB</th><th class="r">Total beli</th><th class="r">Untung</th><th>Status</th></tr></thead>
-          <tbody id="stBody"></tbody>
-        </table></div>
+            <div class="sums" style="margin-top:18px">
+              <div><span>Total beli</span><b class="num" id="sBeli">Rp0</b></div>
+              <div><span>Total jual</span><b class="num" id="sJual">Rp0</b></div>
+              <div><span>Sisa RAB</span><b class="num" id="sSisa">Rp0</b></div>
+              <div><span>Total untung</span><b class="num" id="sUntung">Rp0</b></div>
+            </div>
+            <div class="hint" id="mPeringatan"></div>
+            <button class="cta" id="mKirim" style="width:100%;margin-top:14px">Kirim ke atasan (ntfy + PDF)</button>
+            <div class="hint" id="mStatus" role="status"></div>
+            <button class="btn" id="mMemoXlsx" style="width:100%;margin-top:10px;border-radius:14px;padding:10px">Unduh memo (.xlsx)</button>
+          </div>
+        </div>
       </div>
     </section>
    </div>
@@ -358,7 +359,7 @@
   const rp = n => 'Rp' + idn(n);
   const rpRingkas = n => n >= 1e9 ? 'Rp' + (n / 1e9).toFixed(2).replace('.', ',') + ' M' : n >= 1e6 ? 'Rp' + (n / 1e6).toFixed(1).replace('.', ',') + ' jt' : rp(n);
 
-  let lokasi = [], pengisi = new Map(), punyaNama = false, anggaran = null, kodeAktif = '';
+  let lokasi = [], pengisi = new Map(), punyaNama = false, anggaran = null;
   let sel = null, status = 'semua', fBagian = '', terbukaHP = false;
 
   async function ambilSemua(path) {
@@ -544,18 +545,18 @@
     try {
       const data = await ambilNama(kode);
       if (!data.length) { if (!senyap) $('pesan').textContent = 'Kode salah.'; return false; }
-      punyaNama = true; kodeAktif = kode; kelompokkanPengisi(data);
+      punyaNama = true; kelompokkanPengisi(data);
       $('labelKode').textContent = 'Nama pengisi: terbuka'; $('kode').hidden = true; $('btnKode').textContent = 'Kunci';
       $('pesan').textContent = '';
       try { sessionStorage.setItem('kodeNama', kode); } catch (e) {}
-      ringkasan(); renderDetail(); muatStatus(); return true;
+      ringkasan(); renderDetail(); return true;
     } catch (e) { if (!senyap) $('pesan').textContent = 'Gagal: ' + e.message; return false; }
   }
   async function kunciNama() {
-    punyaNama = false; kodeAktif = ''; try { sessionStorage.removeItem('kodeNama'); } catch (e) {}
+    punyaNama = false; try { sessionStorage.removeItem('kodeNama'); } catch (e) {}
     kelompokkanPengisi(await ambilSemua('ukuran_publik?select=*&order=id'));
     $('labelKode').textContent = 'Nama pengisi'; $('kode').hidden = false; $('kode').value = ''; $('btnKode').textContent = 'Buka';
-    ringkasan(); renderDetail(); daftarMinta = []; muatStatus();
+    ringkasan(); renderDetail();
   }
   const pilih = k => { sel = k; fBagian = ''; terbukaHP = true; renderDaftar(); };
   const keDaftar = () => $('bawah').scrollIntoView({ behavior: 'smooth' });
@@ -579,7 +580,7 @@
     const kartu = (pg, judul, angka, ket, mati) => `<button class="mk card ${mati ? 'mati' : ''}" data-pg="${pg}"><small>${judul}</small><b class="num">${angka}</b><span class="ket">${ket}</span></button>`;
     $('modul').innerHTML = [
       kartu('monitor', 'Monitoring Pengisian', T ? (100 * I / T).toFixed(1).replace('.', ',') + '%' : '-', T ? `${idn(I)} dari ${idn(T)} anggota sudah mengisi · ${kurang} lokasi belum lengkap` : 'Memuat…'),
-      kartu('permintaan', 'Permintaan Seragam', anggaran ? rpRingkas(anggaran.total) : '-', `Total RAB · ${HARGA.length} item di daftar harga`),
+      kartu('permintaan', 'Permintaan Seragam', anggaran ? rpRingkas(anggaran.total) : '-', statusMuat ? `Total RAB · ${daftarMinta.filter(p => p.status === 'menunggu').length} menunggu · ${daftarMinta.filter(p => p.status === 'disetujui').length} disetujui · ${daftarMinta.filter(p => p.status === 'ditolak').length} ditolak/revisi` : `Total RAB · ${HARGA.length} item di daftar harga`),
       kartu('pengiriman', 'Pengiriman', '–', 'Belum aktif', true),
       kartu('inventaris', 'Inventaris', '–', 'Belum aktif', true),
       kartu('tagihan', 'Tagihan', '–', 'Belum aktif', true),
@@ -591,7 +592,7 @@
     document.querySelectorAll('[data-pg]').forEach(b => b.classList.toggle('on', b.dataset.pg === pg));
     if (location.hash !== '#' + pg) history.replaceState(null, '', '#' + pg);
     window.scrollTo({ top: 0 });
-    if (pg === 'permintaan' && kodeAktif) muatStatus();
+    if (pg === 'permintaan') muatStatus();
   }
   document.addEventListener('click', e => { const b = e.target.closest('[data-pg]'); if (b) tampil(b.dataset.pg); });
   window.addEventListener('hashchange', () => tampil(location.hash.slice(1)));
@@ -602,19 +603,17 @@
   const hargaDari = no => HARGA.find(h => String(h.no) === String(no));
   const opsiItem = no => '<option value="">Pilih item</option>' + [...new Set(HARGA.map(h => h.kat))].map(k =>
     `<optgroup label="${esc(k)}">` + HARGA.filter(h => h.kat === k).map(h => `<option value="${h.no}" ${String(h.no) === String(no) ? 'selected' : ''}>${esc(h.nama)}</option>`).join('') + '</optgroup>').join('');
-  const mAnggota = () => { const l = lokasi.find(x => x.lokasi === $('mLokasi').value); return l && l.bagian.find(b => b.nama === $('mBagian').value); };
-  const mRab = () => { const a = anggaran && anggaran.peta.get($('mLokasi').value); return a && a.per[$('mBagian').value] || 0; };
+  let mSel = '', terbukaMinta = false, mStatusF = 'semua';
+  const mAnggota = () => { const l = lokasi.find(x => x.lokasi === mSel); return l && l.bagian.find(b => b.nama === $('mBagian').value); };
+  const mRab = () => { const a = anggaran && anggaran.peta.get(mSel); return a && a.per[$('mBagian').value] || 0; };
 
-  function renderLokasiMinta() {
-    const ada = anggaran ? lokasi.filter(l => anggaran.peta.has(l.lokasi)) : lokasi;
-    const urut = [...ada].sort((a, b) => a.client.localeCompare(b.client));
-    $('mLokasi').innerHTML = '<option value="">Pilih lokasi</option>' + urut.map(l => `<option value="${esc(l.lokasi)}">${esc(l.client)}</option>`).join('');
-    pilihLokasiMinta();
-  }
-  function pilihLokasiMinta() {
-    const l = lokasi.find(x => x.lokasi === $('mLokasi').value);
-    $('mBagian').innerHTML = l ? '<option value="">Pilih bagian</option>' + l.bagian.map(b => `<option value="${esc(b.nama)}">${esc(b.nama)}</option>`).join('') : '<option value="">Pilih lokasi dulu</option>';
-    infoMinta();
+  // memilih lokasi di daftar: form dikosongkan hanya kalau lokasinya berganti
+  function setLokasiMinta(k) {
+    if (k === mSel) return;
+    mSel = k; baris = [{ no: '', qty: '' }]; $('mMemo').value = ''; $('mStatus').textContent = '';
+    const l = lokasi.find(x => x.lokasi === k);
+    $('mBagian').innerHTML = l ? (l.bagian.length > 1 ? '<option value="">Pilih bagian</option>' : '') + l.bagian.map(b => `<option value="${esc(b.nama)}">${esc(b.nama)}</option>`).join('') : '<option value="">Pilih lokasi</option>';
+    infoMinta(); renderBaris();
   }
   function infoMinta() {
     const b = mAnggota();
@@ -646,10 +645,9 @@
     set('sBeli', beli); set('sJual', jual); set('sSisa', sisa); set('sUntung', untung);
     $('mPeringatan').textContent = rab && beli > rab ? `Total beli melebihi RAB sebesar ${rp(beli - rab)}.` : '';
   }
-  $('mLokasi').onchange = pilihLokasiMinta;
   $('mBagian').onchange = infoMinta;
   $('mTambah').onclick = () => { baris.push({ no: '', qty: '' }); renderBaris(); };
-  $('mReset').onclick = () => { baris = [{ no: '', qty: '' }]; $('mMemo').value = ''; $('mLokasi').value = ''; pilihLokasiMinta(); renderBaris(); };
+  $('mReset').onclick = () => { baris = [{ no: '', qty: '' }]; $('mMemo').value = ''; renderBaris(); };
   $('mBody').onchange = e => { if (e.target.classList.contains('mi')) { const n = e.target.closest('tr').dataset.n; baris[n].no = e.target.value; baris[n].qty = ''; renderBaris(); } };
   $('mBody').oninput = e => { if (e.target.classList.contains('mq')) { baris[e.target.closest('tr').dataset.n].qty = e.target.value; hitungMinta(); } };
   $('mBody').onclick = e => {
@@ -659,9 +657,9 @@
   };
   const muatSkrip = src => new Promise((ok, gagal) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => gagal(new Error('Pustaka gagal dimuat')); document.head.appendChild(s); });
   function ambilIsian() {
-    const l = lokasi.find(x => x.lokasi === $('mLokasi').value), bag = $('mBagian').value;
+    const l = lokasi.find(x => x.lokasi === mSel), bag = $('mBagian').value;
     const isi = baris.map(b => ({ h: hargaDari(b.no), q: Number(b.qty) || 0 })).filter(x => x.h && x.q > 0);
-    if (!l || !bag) { alert('Pilih lokasi dan bagian kerja dulu.'); return null; }
+    if (!l || !bag) { alert('Pilih lokasi di daftar dan bagian kerja dulu.'); return null; }
     if (!isi.length) { alert('Isi minimal satu item dengan qty lebih dari 0.'); return null; }
     const beli = isi.reduce((a, x) => a + x.h.beli * x.q, 0), jual = isi.reduce((a, x) => a + x.h.jual * x.q, 0);
     return { l, bag, isi, beli, jual, rab: mRab() };
@@ -690,61 +688,104 @@
   }
   $('mKirim').onclick = async () => {
     const d = ambilIsian(); if (!d) return;
-    let kode = kodeAktif;
-    if (!kode) kode = (prompt('Masukkan kode akses untuk mengirim permintaan:') || '').trim();
-    if (!kode) return;
     const btn = $('mKirim'), st = $('mStatus'); btn.disabled = true; btn.textContent = 'Mengirim…'; st.style.color = ''; st.textContent = '';
     try {
       const pdf = await buatPdf(d);
       const r = await fetch(`${SUPABASE_URL}/functions/v1/kirim-permintaan`, {
         method: 'POST', headers: { ...H, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kode, lokasi_form: d.l.lokasi, bagian: d.bag, items: d.isi.map(x => ({ no: x.h.no, qty: x.q })), memo: $('mMemo').value.trim(), pdf })
+        body: JSON.stringify({ lokasi_form: d.l.lokasi, bagian: d.bag, items: d.isi.map(x => ({ no: x.h.no, qty: x.q })), memo: $('mMemo').value.trim(), pdf })
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
-      kodeAktif = kode; st.style.color = 'var(--ok)'; st.textContent = `✓ Terkirim ke atasan (permintaan no. ${j.id}).`;
+      st.style.color = 'var(--ok)'; st.textContent = `✓ Terkirim ke atasan (permintaan no. ${j.id}).`;
       baris = [{ no: '', qty: '' }]; $('mMemo').value = ''; renderBaris(); muatStatus();
     } catch (e) { st.style.color = 'var(--bad)'; st.textContent = 'Gagal: ' + e.message; }
     btn.disabled = false; btn.textContent = 'Kirim ke atasan (ntfy + PDF)';
   };
-  // ---- status permintaan (dikirim / disetujui / ditolak-revisi) ----
-  const ST = { menunggu: ['Dikirim · menunggu', 'warn'], disetujui: ['Disetujui', 'ok'], ditolak: ['Ditolak / Revisi', 'bad'] };
-  let daftarMinta = [], stFilter = 'semua', stBuka = new Set();
+  // ---- status permintaan per lokasi (belum dibuat / menunggu / disetujui / ditolak-revisi) ----
+  const ST = { menunggu: ['Menunggu persetujuan', 'warn'], disetujui: ['Disetujui', 'ok'], ditolak: ['Ditolak / Revisi', 'bad'] };
+  const LS = { belum: ['Belum dibuat', 'neu'], sebagian: ['Belum lengkap', 'warn'], menunggu: ['Menunggu', 'warn'], disetujui: ['Disetujui', 'ok'], ditolak: ['Ditolak / Revisi', 'bad'], terkunci: ['', 'neu'] };
+  const URUT_LS = { ditolak: 0, belum: 1, sebagian: 2, menunggu: 3, disetujui: 4, terkunci: 5 };
+  let daftarMinta = [], statusMuat = false, terbaru = new Map(), riwBuka = new Set();
+  const tglP = d => new Date(d).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   const rpMin = n => (n < 0 ? '-' : '') + rp(Math.abs(n));
+  const lokMinta = () => anggaran ? lokasi.filter(l => anggaran.peta.has(l.lokasi)) : lokasi;
+
   async function muatStatus() {
-    const ada = !!kodeAktif;
-    $('stKunci').hidden = ada; $('stIsi').hidden = !ada;
-    if (!ada) return;
     try {
-      const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/daftar_permintaan`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ kode: kodeAktif }) });
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/daftar_permintaan`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: '{}' });
       if (!r.ok) throw new Error('HTTP ' + r.status);
-      daftarMinta = await r.json();
-    } catch (e) { daftarMinta = []; $('stBody').innerHTML = `<tr><td colspan="6" class="kosongnya">Gagal memuat: ${esc(e.message)}</td></tr>`; return; }
-    renderStatus();
+      daftarMinta = await r.json(); statusMuat = true;
+    } catch (e) { daftarMinta = []; susunStatus(); renderDaftarMinta(); $('infoMinta').textContent = 'Gagal memuat status: ' + e.message; return; }
+    susunStatus(); renderDaftarMinta(); renderRingkasan();
   }
-  function renderStatus() {
-    const n = s => s === 'semua' ? daftarMinta.length : daftarMinta.filter(p => p.status === s).length;
-    $('stChips').innerHTML = [['semua', 'Semua'], ['menunggu', 'Dikirim'], ['disetujui', 'Disetujui'], ['ditolak', 'Ditolak / Revisi']]
-      .map(([s, t]) => `<button class="chip ${stFilter === s ? 'on' : ''}" data-s="${s}">${t} ${n(s)}</button>`).join('');
-    const tgl = d => new Date(d).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-    const f = daftarMinta.filter(p => stFilter === 'semua' || p.status === stFilter);
-    $('stBody').innerHTML = f.map(p => {
-      const [lbl, cls] = ST[p.status] || [p.status, ''], buka = stBuka.has(p.id);
-      return `<tr class="ar" data-id="${p.id}"><td><b>${esc(p.client)}</b><div class="muted">${esc(p.bagian_kerja)} · ${p.jumlah_anggota ?? '-'} orang</div></td>
-        <td>${tgl(p.dibuat)}${p.terkirim ? '' : '<div class="muted" style="color:var(--bad)">gagal terkirim</div>'}</td>
-        <td class="r">${rp(p.rab)}</td><td class="r">${rp(p.total_beli)}</td><td class="r ${p.untung < 0 ? 'neg' : ''}">${rpMin(p.untung)}</td>
-        <td><span class="badge ${cls}">${lbl}</span>${p.diputuskan ? `<div class="muted">${tgl(p.diputuskan)}</div>` : ''}</td></tr>` +
-        (buka ? `<tr><td colspan="6" class="det">${(p.items || []).map(i => `<div><span>${i.qty} × ${esc(i.nama)}</span><span>beli ${rp(i.beli)} · jual ${rp(i.jual)}</span></div>`).join('')}${p.memo ? `<div><span>Catatan: ${esc(p.memo)}</span></div>` : ''}</td></tr>` : '');
-    }).join('') || '<tr><td colspan="6" class="kosongnya">Belum ada permintaan yang dikirim.</td></tr>';
+  function susunStatus() { // daftar sudah urut terbaru dulu, jadi yang pertama per bagian adalah permintaan terakhir
+    terbaru = new Map();
+    for (const p of daftarMinta) { const k = p.lokasi_form + '|' + p.bagian_kerja; if (!terbaru.has(k)) terbaru.set(k, p); }
   }
-  $('stMuat').onclick = muatStatus;
-  $('stChips').onclick = e => { const s = e.target.dataset && e.target.dataset.s; if (s) { stFilter = s; renderStatus(); } };
-  $('stBody').onclick = e => { const tr = e.target.closest('tr.ar'); if (tr) { const id = Number(tr.dataset.id); stBuka.has(id) ? stBuka.delete(id) : stBuka.add(id); renderStatus(); } };
-  $('stBuka').onclick = async () => {
-    $('stPesan').textContent = '';
-    if (await bukaNama($('stKode').value.trim(), true)) $('stKode').value = ''; else $('stPesan').textContent = 'Kode salah.';
+  function infoLok(l) {
+    const per = l.bagian.map(b => terbaru.get(l.lokasi + '|' + b.nama)), ada = per.filter(Boolean);
+    const s = !ada.length ? 'belum' : ada.some(p => p.status === 'ditolak') ? 'ditolak' : ada.some(p => p.status === 'menunggu') ? 'menunggu' : ada.length < per.length ? 'sebagian' : 'disetujui';
+    return { s, ada: ada.length, total: per.length, per };
+  }
+  function renderDaftarMinta() {
+    const semua = lokMinta(); semua.forEach(l => { l.mi = infoLok(l); });
+    const q = $('mCari').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const f = semua.filter(l => q.every(w => l.kunci.includes(w)) && (mStatusF === 'semua' || l.mi.s === mStatusF))
+      .sort((a, b) => q.length ? a.client.localeCompare(b.client) : (URUT_LS[a.mi.s] - URUT_LS[b.mi.s]) || a.client.localeCompare(b.client));
+    if (!f.some(l => l.lokasi === mSel)) setLokasiMinta(f.length ? f[0].lokasi : '');
+    const n = s => s === 'semua' ? semua.length : semua.filter(l => l.mi.s === s).length;
+    const chips = [['semua', 'Semua'], ['belum', 'Belum dibuat'], ['sebagian', 'Belum lengkap'], ['menunggu', 'Menunggu'], ['disetujui', 'Disetujui'], ['ditolak', 'Ditolak / Revisi']];
+    $('mChips').innerHTML = chips.map(([s, t]) => `<button class="chip ${mStatusF === s ? 'on' : ''}" data-s="${s}">${t} ${n(s)}</button>`).join('');
+    $('infoMinta').textContent = semua.length ? `${semua.length} lokasi · ${n('belum')} belum dibuat · ${n('menunggu')} menunggu · ${n('disetujui')} disetujui · ${n('ditolak')} ditolak/revisi` : 'Memuat data…';
+    $('mDaftar').innerHTML = f.map(l => {
+      const [lbl, cls] = LS[l.mi.s], pct = l.mi.total ? 100 * l.mi.ada / l.mi.total : 0;
+      return `<button class="item ${l.lokasi === mSel ? 'sel' : ''}" data-k="${esc(l.lokasi)}">
+         <div class="nm">${esc(l.client)}</div>
+         <div class="bar ${cls === 'neu' ? '' : cls}"><i style="width:${pct}%"></i></div>
+         <div class="mt"><span>${l.mi.ada}/${l.mi.total} bagian</span><span class="badge ${cls}">${lbl}</span></div>
+       </button>`;
+    }).join('') || '<div class="kosongnya">Lokasi tidak ditemukan.</div>';
+    renderDetailMinta();
+  }
+  function renderDetailMinta() {
+    const l = lokasi.find(x => x.lokasi === mSel);
+    $('mDetail').classList.toggle('open', terbukaMinta && !!l);
+    $('mForm').hidden = !l;
+    if (!l) { $('mDHead').innerHTML = '<div class="kosongnya">Pilih lokasi di daftar untuk melihat status dan membuat permintaan.</div>'; return; }
+    const mi = l.mi || infoLok(l), [lbl, cls] = LS[mi.s], ang = anggaran && anggaran.peta.get(l.lokasi);
+    const bagian = l.bagian.map((b, i) => {
+      const p = mi.per[i], k = l.lokasi + '|' + b.nama, riw = daftarMinta.filter(x => x.lokasi_form === l.lokasi && x.bagian_kerja === b.nama);
+      const badge = p ? `<span class="badge ${ST[p.status][1]}">${ST[p.status][0]}</span>` : '<span class="badge neu">Belum dibuat</span>';
+      const buka = riwBuka.has(k);
+      return `<div class="bgr"><div class="row"><div><b>${esc(b.nama)}</b><div class="muted">${b.target} orang${ang && ang.per[b.nama] != null ? ' · RAB ' + rp(ang.per[b.nama]) : ''}</div></div>
+          <div class="bgact">${badge}<button class="btn" data-buat="${esc(b.nama)}">${p ? (p.status === 'ditolak' ? 'Revisi / buat ulang' : 'Buat lagi') : 'Buat permintaan'}</button></div></div>
+        ${riw.length ? `<button class="riw" data-riw="${esc(k)}">${buka ? '▾' : '▸'} Riwayat permintaan (${riw.length})</button>` : ''}
+        ${buka ? riw.map(x => `<div class="rwi"><div class="row"><span>${tglP(x.dibuat)}${x.terkirim ? '' : ' · <span style="color:var(--bad)">gagal terkirim</span>'}</span><span class="badge ${ST[x.status][1]}">${ST[x.status][0]}${x.diputuskan ? ' · ' + tglP(x.diputuskan) : ''}</span></div>
+            ${(x.items || []).map(i => `<div class="rl"><span>${i.qty} × ${esc(i.nama)}</span><span>beli ${rp(i.beli)} · jual ${rp(i.jual)}</span></div>`).join('')}
+            <div class="rl"><b>Total beli ${rp(x.total_beli)} · jual ${rp(x.total_jual)}</b><b class="${x.untung < 0 ? 'neg' : ''}">Untung ${rpMin(x.untung)}</b></div>${x.memo ? `<div class="rl"><span>Catatan: ${esc(x.memo)}</span></div>` : ''}</div>`).join('') : ''}</div>`;
+    }).join('');
+    $('mDHead').innerHTML =
+      `<div class="dhead">
+         <button class="btn back" id="mBack">‹ Kembali</button>
+         <div class="row"><h2>${esc(l.client)}</h2><span class="badge ${cls}">${lbl}</span></div>
+         ${`<div class="bar ${cls === 'neu' ? '' : cls}" style="height:9px;margin-top:12px"><i style="width:${mi.total ? 100 * mi.ada / mi.total : 0}%"></i></div>
+           <div class="muted" style="margin-top:6px">${mi.ada} dari ${mi.total} bagian kerja sudah dibuatkan permintaan</div>`}
+         ${ang ? `<div class="row" style="margin-top:10px"><span class="muted">Anggaran RAB lokasi ini</span><b class="num" style="color:var(--green);font-size:1.15rem">${rp(ang.total)}</b></div>` : ''}
+       </div>
+       <div class="dbody">${bagian}</div>`;
+  }
+  $('mDaftar').onclick = e => { const b = e.target.closest('.item'); if (b) { terbukaMinta = true; setLokasiMinta(b.dataset.k); renderDaftarMinta(); } };
+  $('mDetail').onclick = e => {
+    if (e.target.id === 'mBack') { terbukaMinta = false; renderDetailMinta(); return; }
+    const bt = e.target.closest('[data-buat]');
+    if (bt) { $('mBagian').value = bt.dataset.buat; infoMinta(); $('mForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    const rw = e.target.closest('[data-riw]');
+    if (rw) { const k = rw.dataset.riw; riwBuka.has(k) ? riwBuka.delete(k) : riwBuka.add(k); renderDetailMinta(); }
   };
-  $('stKode').onkeydown = e => { if (e.key === 'Enter') $('stBuka').click(); };
+  $('mChips').onclick = e => { const s = e.target.dataset && e.target.dataset.s; if (s) { mStatusF = s; terbukaMinta = false; renderDaftarMinta(); } };
+  $('mCari').oninput = () => { terbukaMinta = false; renderDaftarMinta(); };
+  $('stMuat').onclick = muatStatus;
 
   $('mMemoXlsx').onclick = async () => {
     const d = ambilIsian(); if (!d) return;
@@ -777,7 +818,7 @@
         const hs = await ambilSemua('harga_seragam?select=*&order=no');
         if (hs.length) { HARGA = hs.map(h => ({ no: h.no, kat: h.kategori, nama: h.nama, beli: h.harga_beli, jual: h.harga_jual })); renderBaris(); renderRingkasan(); }
       } catch (e) { /* pakai harga.js */ }
-      susunLokasi(prog); kelompokkanPengisi(publik); ringkasan(); renderDaftar(); renderLokasiMinta();
+      susunLokasi(prog); kelompokkanPengisi(publik); ringkasan(); renderDaftar(); renderDaftarMinta(); muatStatus();
       let tersimpan = null; try { tersimpan = sessionStorage.getItem('kodeNama'); } catch (e) {}
       if (tersimpan) bukaNama(tersimpan, true);
     } catch (e) { $('info').textContent = 'Gagal memuat data: ' + e.message; }
