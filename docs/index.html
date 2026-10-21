@@ -161,6 +161,12 @@
   .sums span { display:block; font-size:.74rem; color:var(--muted); }
   .sums b { display:block; font-size:clamp(1rem,1.9vw,1.3rem); line-height:1.2; margin-top:4px; white-space:normal; overflow-wrap:break-word; }
   .neg { color:var(--bad); }
+  .mini { margin-bottom:14px; }
+  .mini .hero { min-height:270px; }
+  .mini .hero h2 { font-size:1.85rem; }
+  .mini .rabtotal b { font-size:1.7rem; }
+  .mini .worst:disabled { opacity:.6; cursor:default; }
+  @media (max-width: 980px) { .mini .hero h2 { font-size:1.4rem; } .mini .rabtotal b { font-size:1.45rem; } }
   .dsec { padding:18px 20px; margin-bottom:16px; scroll-margin-top:16px; }
   .dh { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; flex-wrap:wrap; margin-bottom:12px; }
   .dh h3 { font-size:1.15rem; }
@@ -293,6 +299,7 @@
 
    <div class="page" id="pg-ploting" hidden>
     <header><div><h1>Ploting Seragam</h1><div class="sub" id="infoPlot">Memuat data…</div></div></header>
+    <section class="top mini" id="md-ploting"></section>
     <section class="bawah card">
       <div class="bar-top">
         <h3>Daftar lokasi</h3>
@@ -309,6 +316,7 @@
 
    <div class="page" id="pg-pengiriman" hidden>
     <header><div><h1>Pengiriman</h1><div class="sub" id="infoKirim">Memuat data…</div></div></header>
+    <section class="top mini" id="md-pengiriman"></section>
     <section class="bawah card">
       <div class="bar-top"><h3>Daftar lokasi</h3><label class="search"><span aria-hidden="true">🔍</span><input id="kCari" type="search" placeholder="Cari lokasi"></label><button class="btn" id="kMuat">Muat ulang</button></div>
       <div class="chips" id="kChips" style="margin-bottom:14px"></div>
@@ -321,6 +329,7 @@
    <div class="page" id="pg-inventaris" hidden>
     <header><div><h1>Inventaris</h1><div class="sub" id="infoInv">Memuat data…</div></div>
       <div class="bgact"><button class="btn" id="iMuat">Muat ulang</button><button class="cta" id="iMasukBtn" style="padding:8px 18px">+ Barang masuk dari supplier</button></div></header>
+    <section class="top mini" id="md-inventaris"></section>
     <section class="card pcard" id="iForm" hidden>
       <h3>Barang masuk dari supplier</h3>
       <div class="fgrid" style="grid-template-columns:1fr 1.4fr 1.4fr 1.6fr">
@@ -339,6 +348,7 @@
    </div>
    <div class="page" id="pg-tagihan" hidden>
     <header><div><h1>Tagihan</h1><div class="sub" id="infoTag">Memuat data…</div></div></header>
+    <section class="top mini" id="md-tagihan"></section>
     <section class="bawah card">
       <div class="bar-top"><h3>Siap ditagih</h3><label class="search"><span aria-hidden="true">🔍</span><input id="tCari" type="search" placeholder="Cari lokasi"></label><button class="btn" id="tMuat">Muat ulang</button></div>
       <div class="chips" id="tChips" style="margin-bottom:14px"></div>
@@ -416,6 +426,7 @@
         <div class="sub" id="infoMinta">Memuat data…</div>
       </div>
     </header>
+    <section class="top mini" id="md-permintaan"></section>
 
     <section class="bawah card" id="mBawah">
       <div class="bar-top">
@@ -715,7 +726,7 @@
   // ---- sub halaman ----
   const HALAMAN = ['ringkasan', 'monitor', 'permintaan', 'ploting', 'inventaris', 'pengiriman', 'tagihan'];
   let dashSiap = false;
-  function renderRingkasan() { if (dashSiap) renderDash(); }
+  function renderRingkasan() { if (dashSiap) { renderDash(); renderMini(); } }
   function tampil(pg) {
     if (!HALAMAN.includes(pg)) pg = 'ringkasan';
     for (const h of HALAMAN) $('pg-' + h).hidden = h !== pg;
@@ -2009,7 +2020,8 @@
     tip.style.left = Math.max(8, Math.min(innerWidth - w - 8, x + 14)) + 'px'; tip.style.top = Math.max(8, Math.min(innerHeight - hh - 8, y + 14)) + 'px';
   }
   const sembunyiTip = () => { tip.hidden = true; document.querySelectorAll('.vch').forEach(l => l.setAttribute('visibility', 'hidden')); document.querySelectorAll('.vcd').forEach(g => { g.textContent = ''; }); };
-  $('dash').addEventListener('pointermove', e => {
+  function pasangTip(el) {
+  el.addEventListener('pointermove', e => {
     const ov = e.target.closest && e.target.closest('.vov');
     if (ov) { // grafik garis: crosshair menempel ke titik terdekat, tooltip memuat semua seri
       const g = dataGrafik.get(ov.dataset.g); if (!g) return; const svg = ov.ownerSVGElement, r = svg.getBoundingClientRect(), px = (e.clientX - r.left) * g.V / r.width;
@@ -2024,10 +2036,108 @@
     if (hb) { try { const t = JSON.parse(hb.dataset.tip); tampilTip(e.clientX, e.clientY, t.t, t.r, t.k); } catch (x) {} return; }
     sembunyiTip();
   });
-  $('dash').addEventListener('pointerleave', sembunyiTip);
-  $('dash').addEventListener('focusin', e => { const hb = e.target.closest && e.target.closest('.hb'); if (hb) { const r = hb.getBoundingClientRect(), t = JSON.parse(hb.dataset.tip); tampilTip(r.left + 40, r.top, t.t, t.r, t.k); } });
-  $('dash').addEventListener('focusout', sembunyiTip);
+  el.addEventListener('pointerleave', sembunyiTip);
+  el.addEventListener('focusin', e => { const hb = e.target.closest && e.target.closest('.hb'); if (hb) { const r = hb.getBoundingClientRect(), t = JSON.parse(hb.dataset.tip); tampilTip(r.left + 40, r.top, t.t, t.r, t.k); } });
+  el.addEventListener('focusout', sembunyiTip);
+  }
+  pasangTip($('dash'));
   renderDash(); dashSiap = true;
+
+  // ================= MINI DASHBOARD DI ATAS TIAP HALAMAN =================
+  // Kerangka dan gayanya sama dengan bagian atas halaman Monitoring Pengisian: kartu utama (cincin persen + angka), grafik 30 hari,
+  // dan kartu "terbesar" yang bisa diklik. Angkanya ringkasan seluruh data halaman itu (tidak terpengaruh filter di bawahnya).
+  const hariSejak = d => Math.max(0, Math.floor((Date.now() - new Date(d)) / 864e5));
+  const BULAT = { info: '#8aa4ff', aksen: 'var(--accent)', jingga: 'var(--orange)', bahaya: 'var(--bad)', ok: 'var(--ok)' };
+  const cincin = (id, p) => { const C = 2 * Math.PI * 44; return `<svg viewBox="0 0 110 110" width="100%" height="100%" aria-hidden="true"><defs><linearGradient id="gr-${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb25e"/><stop offset="1" stop-color="#f5d547"/></linearGradient></defs>
+    <circle cx="55" cy="55" r="44" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="11"/><circle cx="55" cy="55" r="44" fill="none" stroke="url(#gr-${id})" stroke-width="11" stroke-linecap="round" stroke-dasharray="${(C * Math.min(100, p) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 55 55)"/></svg>`; };
+  const aksiAttr = (k, a, arg) => `data-md="${k}|${a}|${encodeURIComponent(arg || '')}"`;
+  function miniHtml(m) {
+    const w = m.gap.worst;
+    return `<div class="hero card"><div><small>${esc(m.kecil)}</small><h2>${esc(m.judul)}</h2>
+        <div class="rabtotal"><small>${esc(m.labelAngka)}</small><b class="num">${esc(m.angka)}</b></div><button class="cta" ${aksiAttr(m.key, m.cta[1], m.cta[2])}>${esc(m.cta[0])}</button></div>
+      <div class="ringhero">${cincin(m.key, m.persen)}<div class="t"><b>${m.persen.toFixed(1).replace('.', ',')}%</b><span>${esc(m.labelRing)}</span></div></div>
+      <div class="kpi">${m.kpi.map(([a, b, c]) => `<div><b>${esc(a)}</b><span><i style="background:${c}"></i>${esc(b)}</span></div>`).join('')}</div></div>
+      <div class="rcol"><div class="chartcard card"><div class="ttl"><b>${esc(m.grafik.judul)}</b></div>${grafikGaris('md-' + m.key, m.grafik.sumbu, m.grafik.seri, m.grafik.fmt)}</div>
+        <div class="gap card"><div><div class="lbl">${esc(m.gap.label)}</div><div class="big">${esc(m.gap.besar)}</div><span class="pill">${esc(m.gap.pill)}</span><div class="muted" style="margin-top:6px">${esc(m.gap.ket)}</div></div>
+          ${w ? `<button class="worst" ${aksiAttr(m.key, w.aksi, w.arg)}><small>${esc(w.kecil)}</small><b>${esc(w.nama)}</b><small>${esc(w.detail)}</small></button>` : '<button class="worst" disabled><small>Tidak ada yang tertunda</small><b>Semua beres ✓</b></button>'}</div></div>`;
+  }
+  const bulan30 = () => sumbuWaktu(30);
+  function miniPermintaan() {
+    if (!statusMuat) return null;
+    const d = daftarMinta, n = s => d.filter(p => stReq(p) === s).length, tunggu = d.filter(p => !['disetujui', 'ditolak'].includes(stReq(p)));
+    const wy = d.filter(p => stYasir(p) === 'menunggu' && stReq(p) !== 'ditolak').length, wf = d.filter(p => stFerry(p) === 'menunggu' && stReq(p) !== 'ditolak').length;
+    const sumbu = bulan30(), nilai = deret(sumbu, d, p => p.dibuat), tertua = [...tunggu].sort((a, b) => new Date(a.dibuat) - new Date(b.dibuat))[0];
+    return { key: 'permintaan', kecil: 'Permintaan seragam', judul: 'Pantau persetujuan Pak Yasir dan Pak Ferry', labelAngka: 'Nilai jual seluruh permintaan', angka: rpRingkas(d.reduce((a, p) => a + Number(p.total_jual || 0), 0)),
+      persen: d.length ? 100 * n('disetujui') / d.length : 0, labelRing: 'disetujui keduanya', cta: ['Lihat yang menunggu', 'menunggu'],
+      kpi: [[idn(d.length), 'Permintaan dibuat', BULAT.info], [idn(tunggu.length), 'Menunggu persetujuan', BULAT.jingga], [idn(n('disetujui')), 'Disetujui keduanya', BULAT.ok], [idn(n('ditolak')), 'Ditolak / revisi', BULAT.bahaya]],
+      grafik: { judul: 'Permintaan dibuat 30 hari terakhir', sumbu, seri: [{ nama: 'Permintaan', warna: WD.s1, nilai }] },
+      gap: { label: 'Menunggu persetujuan', besar: idn(tunggu.length), pill: `Pak Yasir ${wy} · Pak Ferry ${wf}`, ket: 'permintaan belum diputuskan',
+        worst: tertua && { kecil: 'Menunggu paling lama', nama: tertua.client, detail: `${hariSejak(tertua.dibuat)} hari · ${tertua.bagian_kerja}`, aksi: 'lokasi', arg: tertua.lokasi_form } } };
+  }
+  function miniPloting() {
+    if (!statusMuat) return null;
+    const s = [...setujuTerakhir().values()], sudah = s.filter(p => p.diploting_pada), belum = s.filter(p => !p.diploting_pada), lokBelum = new Set(belum.map(p => p.lokasi_form)).size;
+    const sumbu = bulan30(), nilai = deret(sumbu, sudah, p => p.diploting_pada), tertua = [...belum].sort((a, b) => new Date(a.diputuskan || a.dibuat) - new Date(b.diputuskan || b.dibuat))[0];
+    return { key: 'ploting', kecil: 'Ploting seragam', judul: 'Bagikan seragam yang disetujui ke karyawan', labelAngka: 'Bagian kerja yang sudah diplot', angka: `${idn(sudah.length)} dari ${idn(s.length)}`,
+      persen: s.length ? 100 * sudah.length / s.length : 0, labelRing: 'sudah diplot', cta: ['Lihat yang belum diplot', 'belum'],
+      kpi: [[idn(s.length), 'Bagian disetujui', BULAT.info], [idn(sudah.length), 'Sudah diplot', BULAT.ok], [idn(belum.length), 'Belum diplot', BULAT.jingga], [idn(lokBelum), 'Lokasi belum selesai', BULAT.bahaya]],
+      grafik: { judul: 'Ploting disimpan 30 hari terakhir', sumbu, seri: [{ nama: 'Ploting', warna: WD.s1, nilai }] },
+      gap: { label: 'Belum diplot', besar: idn(belum.length), pill: `${lokBelum} lokasi`, ket: 'bagian kerja menunggu ploting',
+        worst: tertua && { kecil: 'Disetujui paling lama', nama: tertua.client, detail: `${hariSejak(tertua.diputuskan || tertua.dibuat)} hari · ${tertua.bagian_kerja}`, aksi: 'lokasi', arg: tertua.lokasi_form } } };
+  }
+  function miniInventaris() {
+    if (!hilirMuat) return null;
+    const pcs = stok.reduce((a, x) => a + Number(x.saldo), 0), aman = stok.filter(x => x.saldo > 2).length, tipis = stok.filter(x => x.saldo > 0 && x.saldo <= 2), habis = stok.filter(x => x.saldo <= 0);
+    const sumbu = bulan30(), sM = deret(sumbu, gerak.filter(x => x.jenis === 'masuk'), x => x.tanggal, x => x.qty), sK = deret(sumbu, gerak.filter(x => x.jenis === 'keluar'), x => x.tanggal, x => x.qty);
+    const kritis = [...habis, ...tipis].sort((a, b) => a.saldo - b.saldo)[0];
+    return { key: 'inventaris', kecil: 'Inventaris', judul: 'Pantau stok gudang tiap ukuran', labelAngka: 'Stok di gudang', angka: `${idn(pcs)} pcs`,
+      persen: stok.length ? 100 * aman / stok.length : 0, labelRing: stok.length ? 'ukuran stok aman' : 'belum ada stok', cta: ['+ Barang masuk dari supplier', 'masuk'],
+      kpi: [[idn(new Set(stok.filter(x => x.saldo > 0).map(x => x.item_no)).size), 'Jenis barang ada stok', BULAT.info], [idn(tipis.length), 'Ukuran menipis', BULAT.jingga], [idn(habis.length), 'Ukuran habis', BULAT.bahaya], [idn(sM.reduce((a, b) => a + b, 0)), 'Pcs masuk 30 hari', BULAT.ok]],
+      grafik: { judul: 'Barang masuk dan keluar 30 hari terakhir', sumbu, seri: [{ nama: 'Masuk', warna: WD.s1, nilai: sM }, { nama: 'Keluar', warna: WD.s2, nilai: sK }] },
+      gap: { label: 'Perlu diisi ulang', besar: idn(habis.length + tipis.length), pill: `${habis.length} habis · ${tipis.length} menipis`, ket: 'ukuran dengan stok 2 pcs atau kurang',
+        worst: kritis && { kecil: kritis.saldo <= 0 ? 'Stok habis' : 'Paling tipis', nama: kritis.item_nama, detail: `${NAMA_JENIS[kritis.jenis_ukuran]}${kritis.jenis_ukuran === '-' ? '' : ' ' + kritis.ukuran} · sisa ${kritis.saldo}`, aksi: 'item', arg: kritis.item_nama } } };
+  }
+  function miniKirim() {
+    if (!hilirMuat || !statusMuat) return null;
+    const per = [...setujuTerakhir().values()].filter(p => p.diploting_pada).map(p => { const pr = progresP(p), tot = Number(pr.total_qty), krm = Number(pr.terkirim_qty); return { p, tot, krm, sisa: tot - krm }; });
+    const T = per.reduce((a, x) => a + x.tot, 0), K = per.reduce((a, x) => a + x.krm, 0), buka = per.filter(x => x.sisa > 0), sumbu = bulan30(), nilai = deret(sumbu, kirimAll, g => g.tanggal, g => g.jumlah_pcs);
+    const terbesar = [...buka].sort((a, b) => b.sisa - a.sisa)[0];
+    return { key: 'pengiriman', kecil: 'Pengiriman', judul: 'Kirim seragam, stok terpotong otomatis', labelAngka: 'Pcs terkirim', angka: `${idn(K)} dari ${idn(T)}`,
+      persen: T ? 100 * K / T : 0, labelRing: 'terkirim', cta: ['Lihat yang belum dikirim', 'belum'],
+      kpi: [[idn(T - K), 'Sisa pcs', BULAT.jingga], [idn(kirimAll.length), 'Surat jalan', BULAT.info], [idn(kirimAll.filter(g => g.status === 'dikirim').length), 'Dalam pengiriman', BULAT.aksen], [idn(kirimAll.filter(g => g.status === 'diterima').length), 'Sudah diterima', BULAT.ok]],
+      grafik: { judul: 'Pcs dikirim 30 hari terakhir', sumbu, seri: [{ nama: 'Pcs dikirim', warna: WD.s1, nilai }] },
+      gap: { label: 'Belum selesai dikirim', besar: idn(buka.length), pill: `${idn(T - K)} pcs`, ket: 'bagian kerja masih ada sisa',
+        worst: terbesar && { kecil: 'Sisa terbesar', nama: terbesar.p.client, detail: `${idn(terbesar.sisa)} pcs · ${terbesar.p.bagian_kerja}`, aksi: 'lokasi', arg: terbesar.p.lokasi_form } } };
+  }
+  function miniTagihan() {
+    if (!hilirMuat || !statusMuat) return null;
+    const akt = tagihanAll.filter(t => t.status !== 'batal'), total = akt.reduce((a, t) => a + Number(t.total), 0), bayar = akt.reduce((a, t) => a + Number(t.terbayar), 0), h0 = hariIni();
+    const siap = entriTagihan().filter(x => x.s === 'siap'), buka = akt.filter(t => t.status !== 'lunas'), lewat = buka.filter(t => t.jatuh_tempo && tanggalLokal(t.jatuh_tempo) < h0);
+    const byr = akt.flatMap(t => t.bayar), sumbu = bulan30(), nilai = deret(sumbu, byr, b => b.tanggal, b => b.jumlah), sisaT = t => Number(t.total) - Number(t.terbayar), tb = [...buka].sort((a, b) => sisaT(b) - sisaT(a))[0];
+    return { key: 'tagihan', kecil: 'Tagihan', judul: 'Pantau invoice dan pembayaran', labelAngka: 'Total ditagih', angka: rpRingkas(total),
+      persen: total ? 100 * bayar / total : 0, labelRing: 'sudah dibayar', cta: ['Lihat yang siap ditagih', 'siap'],
+      kpi: [[rpRingkas(bayar), 'Sudah dibayar', BULAT.ok], [rpRingkas(total - bayar), 'Sisa tagihan', BULAT.jingga], [idn(lewat.length), 'Lewat jatuh tempo', BULAT.bahaya], [idn(siap.length), 'Siap ditagih', BULAT.info]],
+      grafik: { judul: 'Pembayaran masuk 30 hari terakhir', sumbu, seri: [{ nama: 'Pembayaran', warna: WD.s1, nilai }], fmt: rp },
+      gap: { label: 'Sisa tagihan', besar: rpRingkas(total - bayar), pill: `${buka.length} invoice terbuka`, ket: 'belum terbayar',
+        worst: tb && { kecil: 'Sisa terbesar', nama: tb.client, detail: `${rpRingkas(sisaT(tb))} · ${tb.no_invoice}`, aksi: 'tagihan', arg: String(tb.permintaan_id) } } };
+  }
+  const MINI = { permintaan: miniPermintaan, ploting: miniPloting, inventaris: miniInventaris, pengiriman: miniKirim, tagihan: miniTagihan };
+  function renderMini() {
+    for (const [k, f] of Object.entries(MINI)) { const el = $('md-' + k); if (!el) continue; const m = f(); el.innerHTML = m ? miniHtml(m) : '<div class="hero card"><div class="kosongnya">Memuat data…</div></div>'; }
+  }
+  const gulirKe = id => { const el = document.querySelector(`#pg-${id} .bawah`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  function aksiMini(k, a, arg) {
+    if (k === 'permintaan') { if (a === 'menunggu') { const ada = lokMinta().map(l => infoLok(l).s); mStatusF = ['menunggu', 'setuju_yasir', 'setuju_ferry'].find(x => ada.includes(x)) || 'menunggu'; terbukaMinta = false; } else { mStatusF = 'semua'; $('mCari').value = ''; terbukaMinta = true; setLokasiMinta(arg); } renderDaftarMinta(); gulirKe('permintaan'); }
+    else if (k === 'ploting') { if (a === 'belum') { const sj = setujuTerakhir(), ada = lokMinta().map(l => infoPlot(l, sj).s); pStatusF = ada.includes('belum') ? 'belum' : 'sebagian'; terbukaPlot = false; } else { pStatusF = 'semua'; $('pCari').value = ''; pSel = arg; pData = null; terbukaPlot = true; } renderPlotList(); gulirKe('ploting'); }
+    else if (k === 'inventaris') { if (a === 'masuk') return bukaFormMasuk(); iTab = 'stok'; iAda = false; iKat = 'semua'; $('iCari').value = arg; renderInventaris(); gulirKe('inventaris'); }
+    else if (k === 'pengiriman') { if (a === 'belum') { const sj = setujuTerakhir(), ada = lokMinta().map(l => infoKirim(l, sj).s); kStatusF = ada.includes('belum') ? 'belum' : 'sebagian'; kTerbuka = false; } else { kStatusF = 'semua'; $('kCari').value = ''; kSel = arg; kData = null; kTerbuka = true; } renderKirimList(); gulirKe('pengiriman'); }
+    else if (k === 'tagihan') { if (a === 'siap') { tStatusF = 'siap'; tTerbuka = false; } else { tStatusF = 'semua'; $('tCari').value = ''; tSel = Number(arg); tTerbuka = true; } renderTagihanList(); gulirKe('tagihan'); }
+  }
+  document.querySelectorAll('.mini').forEach(el => {
+    pasangTip(el);
+    el.addEventListener('click', e => { const b = e.target.closest('[data-md]'); if (b && !b.disabled) { const [k, a, arg] = b.dataset.md.split('|'); aksiMini(k, a, decodeURIComponent(arg || '')); } });
+  });
+  renderMini();
 
   renderBaris();
   tampil(location.hash.slice(1));
