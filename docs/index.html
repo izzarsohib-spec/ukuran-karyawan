@@ -161,6 +161,35 @@
   .sums span { display:block; font-size:.74rem; color:var(--muted); }
   .sums b { display:block; font-size:clamp(1rem,1.9vw,1.3rem); line-height:1.2; margin-top:4px; white-space:normal; overflow-wrap:break-word; }
   .neg { color:var(--bad); }
+  .dsec { padding:18px 20px; margin-bottom:16px; scroll-margin-top:16px; }
+  .dh { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; flex-wrap:wrap; margin-bottom:12px; }
+  .dh h3 { font-size:1.15rem; }
+  .dfil { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--stroke); }
+  .df { display:flex; flex-direction:column; gap:4px; font-size:.72rem; color:var(--muted); flex:1 1 150px; max-width:270px; min-width:0; }
+  .df select { border:1px solid var(--stroke); background:var(--solid); color:var(--text); border-radius:12px; padding:7px 10px; font:inherit; font-size:.84rem; width:100%; min-width:0; }
+  .dkpi { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:14px; }
+  .vk { background:rgba(14,14,16,.55); border-radius:18px; padding:12px 14px; min-width:0; }
+  .vk span { display:block; font-size:.75rem; color:var(--muted); }
+  .vk b { display:block; font:600 1.5rem/1.15 system-ui,-apple-system,"Segoe UI",sans-serif; margin-top:4px; overflow-wrap:anywhere; }
+  .vk small { display:block; color:var(--muted); font-size:.74rem; margin-top:2px; }
+  .dgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); gap:12px; }
+  .vc { background:rgba(14,14,16,.45); border:1px solid var(--stroke); border-radius:18px; padding:14px 16px; min-width:0; }
+  .vh { display:flex; justify-content:space-between; gap:10px; margin-bottom:10px; } .vh b { font-size:.9rem; }
+  .vt { display:flex; gap:2px; background:rgba(255,255,255,.07); border-radius:99px; padding:2px; height:fit-content; flex:none; }
+  .vt button { border:0; background:transparent; color:var(--muted); border-radius:99px; padding:3px 10px; font-size:.72rem; } .vt button.on { background:#fff; color:#111; font-weight:600; }
+  .vsvg { width:100%; height:auto; display:block; }
+  .vleg { display:flex; gap:14px; font-size:.76rem; color:var(--muted); margin-bottom:4px; } .vleg i { display:inline-block; width:14px; height:3px; border-radius:2px; margin-right:6px; vertical-align:middle; }
+  .vbars { display:grid; gap:2px; }
+  .hb { display:grid; grid-template-columns:minmax(96px,40%) 1fr auto; gap:10px; align-items:center; padding:5px 4px; border-radius:8px; outline:none; }
+  .hb:hover, .hb:focus-visible { background:rgba(255,255,255,.06); }
+  .hl { font-size:.78rem; line-height:1.25; color:var(--muted); overflow-wrap:anywhere; }
+  .ht { display:flex; height:14px; } .ht i { display:block; height:100%; margin-left:2px; min-width:2px; } .ht i:first-child { margin-left:0; } .ht i:last-child { border-radius:0 4px 4px 0; }
+  .hv { font-size:.78rem; font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
+  .vlist .vi { display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--stroke); } .vlist .vi:last-child { border-bottom:0; }
+  .vi .r { text-align:right; flex:none; } .vi b { font-size:.84rem; } .vtab { max-height:300px; }
+  #vTip { position:fixed; z-index:80; pointer-events:none; background:#26262b; border:1px solid var(--stroke); border-radius:12px; padding:8px 10px; font-size:.78rem; min-width:130px; max-width:280px; box-shadow:0 8px 24px rgba(0,0,0,.45); }
+  #vTip[hidden] { display:none; } #vTip .tj { color:var(--muted); margin-bottom:4px; } #vTip .tr { display:flex; align-items:center; gap:6px; } #vTip .tr i { width:12px; height:3px; border-radius:2px; flex:none; }
+  #vTip .tr b { font-size:.9rem; } #vTip .tr span { color:var(--muted); } #vTip .tk { color:var(--muted); margin-top:4px; }
   .stkode { display:flex; gap:8px; max-width:340px; } .stkode input { margin-top:0 !important; }
   .kuotas { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:8px; margin-bottom:14px; }
   .kq { border:1px solid var(--stroke); border-radius:14px; padding:10px 12px; background:rgba(255,255,255,.05); }
@@ -257,8 +286,9 @@
    <nav class="mobnav" id="mobnav"><button class="on" data-pg="ringkasan">Ringkasan</button><button data-pg="monitor">Monitoring</button><button data-pg="permintaan">Permintaan</button><button data-pg="ploting">Ploting</button><button data-pg="inventaris">Inventaris</button><button data-pg="pengiriman">Pengiriman</button><button data-pg="tagihan">Tagihan</button></nav>
 
    <div class="page" id="pg-ringkasan">
-    <header><div><h1>Ringkasan</h1><div class="sub">Semua modul seragam dalam satu tempat</div></div></header>
-    <div class="modul" id="modul"></div>
+    <header><div><h1>Ringkasan</h1><div class="sub">Dashboard seluruh modul · tiap bagian punya filter sendiri di atasnya</div></div></header>
+    <nav class="chips" id="dNav" style="margin-bottom:14px"></nav>
+    <div id="dash"></div>
    </div>
 
    <div class="page" id="pg-ploting" hidden>
@@ -684,19 +714,8 @@
 
   // ---- sub halaman ----
   const HALAMAN = ['ringkasan', 'monitor', 'permintaan', 'ploting', 'inventaris', 'pengiriman', 'tagihan'];
-  function renderRingkasan() {
-    const T = lokasi.reduce((a, l) => a + l.target, 0), I = lokasi.reduce((a, l) => a + l.isi, 0);
-    const kurang = lokasi.filter(l => l.status !== 'lengkap').length;
-    const kartu = (pg, judul, angka, ket, mati) => `<button class="mk card ${mati ? 'mati' : ''}" data-pg="${pg}"><small>${judul}</small><b class="num">${angka}</b><span class="ket">${ket}</span></button>`;
-    $('modul').innerHTML = [
-      kartu('monitor', 'Monitoring Pengisian', T ? (100 * I / T).toFixed(1).replace('.', ',') + '%' : '-', T ? `${idn(I)} dari ${idn(T)} anggota sudah mengisi · ${kurang} lokasi belum lengkap` : 'Memuat…'),
-      kartu('permintaan', 'Permintaan Seragam', anggaran ? rpRingkas(anggaran.total) : '-', statusMuat ? `Total RAB · ${daftarMinta.filter(p => !['disetujui', 'ditolak'].includes(stReq(p))).length} menunggu · ${daftarMinta.filter(p => stReq(p) === 'disetujui').length} disetujui · ${daftarMinta.filter(p => stReq(p) === 'ditolak').length} ditolak/revisi` : `Total RAB · ${HARGA.length} item di daftar harga`),
-      kartu('ploting', 'Ploting Seragam', statusMuat ? `${ringkasPlot().sudah} / ${ringkasPlot().total}` : '-', statusMuat ? 'bagian yang sudah disetujui, sudah diplot ke karyawan' : 'Memuat…'),
-      kartu('inventaris', 'Inventaris', hilirMuat ? `${idn(ringkasHilir().pcs)} pcs` : '-', hilirMuat ? `stok gudang · ${ringkasHilir().tipis} ukuran menipis atau habis` : 'Memuat…'),
-      kartu('pengiriman', 'Pengiriman', hilirMuat ? `${idn(ringkasHilir().krm)} / ${idn(ringkasHilir().tot)}` : '-', hilirMuat ? `pcs terkirim dari yang sudah diplot · ${ringkasHilir().sj} surat jalan` : 'Memuat…'),
-      kartu('tagihan', 'Tagihan', hilirMuat ? rpRingkas(ringkasHilir().total) : '-', hilirMuat ? `${ringkasHilir().jmlTagihan} tagihan · belum terbayar ${rpRingkas(ringkasHilir().sisa)}` : 'Memuat…'),
-    ].join('');
-  }
+  let dashSiap = false;
+  function renderRingkasan() { if (dashSiap) renderDash(); }
   function tampil(pg) {
     if (!HALAMAN.includes(pg)) pg = 'ringkasan';
     for (const h of HALAMAN) $('pg-' + h).hidden = h !== pg;
@@ -1801,6 +1820,214 @@
     const akt = tagihanAll.filter(t => t.status !== 'batal'), total = akt.reduce((a, t) => a + Number(t.total), 0), sisa = akt.reduce((a, t) => a + Number(t.total) - Number(t.terbayar), 0);
     return { pcs, tipis, tot, krm, sj: kirimAll.length, total, sisa, jmlTagihan: akt.length };
   }
+
+  // ================= DASHBOARD RINGKASAN =================
+  // Lima bagian (pengisian ukuran, permintaan, stok, pengiriman, tagihan). Tiap bagian punya satu baris filter di atas isinya;
+  // filter itu mengatur semua angka, grafik, dan tabel di bagian tersebut. Warna kategori sudah divalidasi (biru, oranye, aqua) pada permukaan gelap.
+  const WD = { s1: '#3987e5', s2: '#d95926', abu: '#898781', good: '#0ca30c', warn: '#fab219', kritis: '#d03b3b', track: 'rgba(255,255,255,.14)', grid: 'rgba(255,255,255,.09)', permukaan: '#19191c' };
+  const D = { pengisian: { status: 'semua', bagian: 'semua', hari: 30 }, permintaan: { hari: 0, status: 'semua', bagian: 'semua' }, stok: { kat: 'semua', jenis: 'semua', batas: 2, hari: 30 }, kirim: { status: 'semua', hari: 30 }, tagihan: { status: 'semua', hari: 0 } };
+  const modeGrafik = new Map(), dataGrafik = new Map();
+  const HARI_OPSI = [['7', '7 hari terakhir'], ['30', '30 hari terakhir'], ['90', '90 hari terakhir']], HARI_SEMUA = [['0', 'Semua waktu'], ...HARI_OPSI];
+  const hariIni = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
+  const mulaiHari = n => { if (!n) return null; const d = hariIni(); d.setDate(d.getDate() - n + 1); return d; };
+  const tanggalLokal = s => { const d = new Date(String(s).length <= 10 ? s + 'T00:00:00' : s); d.setHours(0, 0, 0, 0); return d; };
+  const nice = v => { const p = Math.pow(10, Math.floor(Math.log10(Math.max(v, 1)))), f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; };
+  const pct = (a, b) => b ? (100 * a / b).toFixed(1).replace('.', ',') + '%' : '-';
+
+  // sumbu waktu: harian sampai 31 hari, selebihnya mingguan
+  function sumbuWaktu(hari, awal) {
+    const akhir = hariIni(), n = hari || Math.min(180, Math.max(14, awal ? Math.round((akhir - awal) / 864e5) + 1 : 30)), lebar = n <= 31 ? 1 : 7, jml = Math.ceil(n / lebar);
+    const tgl = i => { const a = new Date(akhir); a.setDate(a.getDate() - (jml - 1 - i) * lebar); return a; };
+    return { jml, lebar, label: i => tgl(i).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) + (lebar > 1 ? ' (mgg)' : ''),
+      idx: d => { const p = jml - 1 - Math.floor((akhir - tanggalLokal(d)) / 864e5 / lebar); return p >= 0 && p < jml ? p : -1; } };
+  }
+  function deret(sumbu, daftar, ambilTgl, ambilNilai = () => 1) { const a = new Array(sumbu.jml).fill(0); for (const x of daftar) { const i = sumbu.idx(ambilTgl(x)); if (i >= 0) a[i] += Number(ambilNilai(x)) || 0; } return a; }
+
+  // ---- komponen grafik ----
+  function grafikGaris(id, sumbu, seri, fmt = idn) {
+    const V = 340, H = 185, L = 36, R = 12, T = 10, B = 24, n = sumbu.jml, mx = Math.max(1, ...seri.flatMap(s => s.nilai)), langkah = nice(mx / 4), ymax = langkah * 4;
+    const x = i => L + (n === 1 ? (V - L - R) / 2 : i * (V - L - R) / (n - 1)), y = v => T + (H - T - B) * (1 - v / ymax), kompak = v => v >= 1e6 ? (v / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' jt' : v >= 1e3 ? (v / 1e3).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' rb' : String(v);
+    dataGrafik.set(id, { sumbu, seri, fmt, V, L, R, n, x, y });
+    const grid = [0, 1, 2, 3, 4].map(k => `<line x1="${L}" x2="${V - R}" y1="${y(k * langkah)}" y2="${y(k * langkah)}" stroke="${WD.grid}" stroke-width="1" vector-effect="non-scaling-stroke"/><text x="${L - 6}" y="${y(k * langkah) + 4}" text-anchor="end" font-size="11" fill="#a4a4ae">${kompak(k * langkah)}</text>`).join('');
+    const garis = seri.map(s => { const pts = s.nilai.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`), akhir = s.nilai.length - 1;
+      return (seri.length === 1 ? `<path d="M${x(0).toFixed(1)},${y(0)} L${pts.join(' L')} L${x(akhir).toFixed(1)},${y(0)}Z" fill="${s.warna}" fill-opacity=".1"/>` : '')
+        + `<path d="M${pts.join(' L')}" fill="none" stroke="${s.warna}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/><circle cx="${x(akhir).toFixed(1)}" cy="${y(s.nilai[akhir]).toFixed(1)}" r="4" fill="${s.warna}" stroke="${WD.permukaan}" stroke-width="2"/>`; }).join('');
+    const lab = (i, a) => `<text x="${x(i)}" y="${H - 8}" text-anchor="${a}" font-size="11" fill="#a4a4ae">${esc(sumbu.label(i))}</text>`;
+    const legenda = seri.length > 1 ? `<div class="vleg">${seri.map(s => `<span><i style="background:${s.warna}"></i>${esc(s.nama)}</span>`).join('')}</div>` : '';
+    return `${legenda}<svg class="vsvg" viewBox="0 0 ${V} ${H}" role="img" aria-label="${esc(seri.map(s => s.nama).join(', '))}">${grid}${garis}${lab(0, 'start')}${n > 4 ? lab(Math.floor((n - 1) / 2), 'middle') : ''}${n > 1 ? lab(n - 1, 'end') : ''}
+      <line class="vch" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="#a4a4ae" stroke-width="1" vector-effect="non-scaling-stroke" visibility="hidden"/><g class="vcd"></g>
+      <rect class="vov" data-g="${id}" x="${L}" y="${T}" width="${V - L - R}" height="${H - T - B}" fill="transparent"/></svg>`;
+  }
+  // batang horizontal: rows = [{label, segs:[{v, warna, nama}], teks, ket}]; penuh = tiap baris diskalakan ke 100% (meter)
+  function grafikBatang(rows, { penuh = false, fmt = idn } = {}) {
+    const maks = Math.max(1, ...rows.map(r => r.segs.reduce((a, s) => a + s.v, 0)));
+    return `<div class="vbars">${rows.map(r => { const tot = r.segs.reduce((a, s) => a + s.v, 0), skala = penuh ? 100 / Math.max(tot, 1) : 100 / maks;
+      const tip = { t: r.label, k: r.ket || '', r: r.segs.map(s => ({ n: s.nama, v: fmt(s.v), w: s.warna })) };
+      return `<div class="hb" data-tip="${esc(JSON.stringify(tip))}" tabindex="0"><span class="hl" title="${esc(r.label)}">${esc(r.label)}</span><div class="ht">${r.segs.filter(s => s.v > 0).map(s => `<i style="width:${(s.v * skala).toFixed(2)}%;background:${s.warna}"></i>`).join('')}</div><span class="hv">${esc(r.teks ?? fmt(tot))}</span></div>`; }).join('') || '<div class="kosongnya">Tidak ada data untuk filter ini.</div>'}</div>`;
+  }
+  const tabelHtml = (head, rows) => `<div class="wrap vtab"><table><thead><tr>${head.map((h, i) => `<th class="${i ? 'r' : ''}">${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map((c, i) => `<td class="${i ? 'r' : ''}">${esc(c)}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${head.length}" class="kosongnya">Tidak ada data.</td></tr>`}</tbody></table></div>`;
+  // kartu grafik dengan tombol Grafik / Tabel (tiap grafik punya padanan tabel)
+  function kartuGrafik(id, judul, sub, grafik, tabel) {
+    const m = modeGrafik.get(id) || 'grafik';
+    return `<div class="vc" id="vc-${id}"><div class="vh"><div><b>${esc(judul)}</b><div class="muted">${esc(sub)}</div></div><span class="vt"><button class="${m === 'grafik' ? 'on' : ''}" data-vm="${id}|grafik">Grafik</button><button class="${m === 'tabel' ? 'on' : ''}" data-vm="${id}|tabel">Tabel</button></span></div>${m === 'grafik' ? grafik : tabel}</div>`;
+  }
+  const ubin = (label, nilai, ket) => `<div class="vk"><span>${esc(label)}</span><b>${esc(nilai)}</b>${ket ? `<small>${esc(ket)}</small>` : ''}</div>`;
+  const muatBelum = `<div class="kosongnya">Memuat data…</div>`;
+
+  // ---- bagian 1: pengisian ukuran ----
+  function isiPengisian() {
+    if (!lokasi.length) return { kpi: muatBelum, grid: '' };
+    const f = D.pengisian, rows = lokasi.map(l => { const bs = l.bagian.filter(b => f.bagian === 'semua' || b.nama === f.bagian), target = bs.reduce((a, b) => a + b.target, 0), isi = bs.reduce((a, b) => a + b.isi, 0);
+      return { l, bs, target, isi, s: isi >= target ? 'lengkap' : isi === 0 ? 'kosong' : 'kurang' }; }).filter(x => x.target > 0 && (f.status === 'semua' || x.s === f.status));
+    const T = rows.reduce((a, x) => a + x.target, 0), I = rows.reduce((a, x) => a + x.isi, 0), lengkap = rows.filter(x => x.s === 'lengkap').length;
+    const kpi = ubin('Pengisian', pct(I, T), `${idn(I)} dari ${idn(T)} anggota`) + ubin('Belum mengisi', idn(T - I), 'anggota') + ubin('Lokasi lengkap', `${lengkap} / ${rows.length}`, 'lokasi') + ubin('Lokasi belum ada yang isi', idn(rows.filter(x => x.s === 'kosong').length), 'lokasi');
+    const sumbu = sumbuWaktu(f.hari), ada = new Set(rows.map(x => x.l.lokasi)), data = [];
+    for (const k of ada) for (const r of pengisi.get(k) || []) if (r.waktu && (f.bagian === 'semua' || r.bagian_kerja === f.bagian)) data.push(r);
+    const nilai = deret(sumbu, data, r => r.waktu), bag = new Map();
+    for (const x of rows) for (const b of x.bs) { if (!bag.has(b.nama)) bag.set(b.nama, { isi: 0, target: 0 }); bag.get(b.nama).isi += b.isi; bag.get(b.nama).target += b.target; }
+    const bagianRows = [...bag.entries()].sort((a, b) => b[1].target - a[1].target).map(([nama, v]) => ({ label: nama, teks: `${pct(v.isi, v.target)}`, ket: `${idn(v.isi)} dari ${idn(v.target)} anggota`, segs: [{ v: v.isi, warna: WD.s1, nama: 'Sudah mengisi' }, { v: v.target - v.isi, warna: WD.track, nama: 'Belum mengisi' }] }));
+    const terendah = rows.filter(x => x.target > x.isi).sort((a, b) => (b.target - b.isi) - (a.target - a.isi)).slice(0, 8);
+    const g1 = grafikGaris('pg-tren', sumbu, [{ nama: 'Pengisian', warna: WD.s1, nilai }]);
+    return { kpi, grid:
+      kartuGrafik('pg-tren', 'Pengisian ukuran per ' + (sumbu.lebar > 1 ? 'minggu' : 'hari'), `${f.hari} hari terakhir · ${idn(nilai.reduce((a, b) => a + b, 0))} isian`, g1, tabelHtml(['Tanggal', 'Isian'], nilai.map((v, i) => [sumbu.label(i), idn(v)])))
+      + kartuGrafik('pg-bagian', 'Kelengkapan per bagian kerja', 'sudah mengisi dari target anggota', grafikBatang(bagianRows, { penuh: true }), tabelHtml(['Bagian kerja', 'Sudah', 'Target', '%'], [...bag.entries()].map(([n, v]) => [n, idn(v.isi), idn(v.target), pct(v.isi, v.target)])))
+      + kartuGrafik('pg-kurang', 'Lokasi dengan kekurangan terbesar', 'jumlah anggota yang belum mengisi', grafikBatang(terendah.map(x => ({ label: x.l.client, teks: `kurang ${x.target - x.isi}`, ket: `${x.isi} dari ${x.target} anggota`, segs: [{ v: x.target - x.isi, warna: WD.s2, nama: 'Belum mengisi' }] })), {}), tabelHtml(['Lokasi', 'Sudah', 'Target', 'Kurang'], terendah.map(x => [x.l.client, idn(x.isi), idn(x.target), idn(x.target - x.isi)]))) };
+  }
+
+  // ---- bagian 2: permintaan ----
+  const STATUS_MINTA = [['semua', 'Semua status'], ['menunggu', 'Menunggu keduanya'], ['setuju_yasir', 'Disetujui Pak Yasir'], ['setuju_ferry', 'Disetujui Pak Ferry'], ['disetujui', 'Disetujui keduanya'], ['ditolak', 'Ditolak / revisi']];
+  function isiPermintaan() {
+    if (!statusMuat) return { kpi: muatBelum, grid: '' };
+    const f = D.permintaan, dari = mulaiHari(f.hari);
+    const data = daftarMinta.filter(p => (!dari || new Date(p.dibuat) >= dari) && (f.bagian === 'semua' || p.bagian_kerja === f.bagian) && (f.status === 'semua' || stReq(p) === f.status));
+    const n = s => data.filter(p => stReq(p) === s).length, menunggu = data.filter(p => !['disetujui', 'ditolak'].includes(stReq(p))).length;
+    const wy = data.filter(p => stYasir(p) === 'menunggu' && stReq(p) !== 'ditolak').length, wf = data.filter(p => stFerry(p) === 'menunggu' && stReq(p) !== 'ditolak').length;
+    const jual = data.reduce((a, p) => a + Number(p.total_jual || 0), 0), untung = data.reduce((a, p) => a + Number(p.untung || 0), 0);
+    const kpi = ubin('Permintaan', idn(data.length), 'dibuat') + ubin('Disetujui keduanya', idn(n('disetujui')), pct(n('disetujui'), data.length)) + ubin('Menunggu persetujuan', idn(menunggu), `Pak Yasir ${wy} · Pak Ferry ${wf}`) + ubin('Ditolak / revisi', idn(n('ditolak')), '') + ubin('Nilai jual', rpRingkas(jual), 'total harga jual') + ubin('Untung', rpRingkas(untung), 'jual − beli + sisa RAB');
+    const sumbu = sumbuWaktu(f.hari, data.length ? new Date(Math.min(...data.map(p => new Date(p.dibuat)))) : null), nilai = deret(sumbu, data, p => p.dibuat);
+    const baris = [['menunggu', 'Menunggu keduanya', WD.warn], ['setuju_yasir', 'Disetujui Pak Yasir, menunggu Pak Ferry', WD.warn], ['setuju_ferry', 'Disetujui Pak Ferry, menunggu Pak Yasir', WD.warn], ['disetujui', 'Disetujui keduanya', WD.good], ['ditolak', 'Ditolak / revisi', WD.kritis]];
+    const terbaru = data.slice(0, 8);
+    return { kpi, grid:
+      kartuGrafik('pm-status', 'Status permintaan', 'jumlah permintaan menurut posisi persetujuan', grafikBatang(baris.map(([k, l, w]) => ({ label: l, teks: String(n(k)), segs: [{ v: n(k), warna: w, nama: l }] }))), tabelHtml(['Status', 'Jumlah'], baris.map(([k, l]) => [l, idn(n(k))])))
+      + kartuGrafik('pm-tren', 'Permintaan dibuat per ' + (sumbu.lebar > 1 ? 'minggu' : 'hari'), f.hari ? `${f.hari} hari terakhir` : 'seluruh waktu', grafikGaris('pm-tren', sumbu, [{ nama: 'Permintaan', warna: WD.s1, nilai }]), tabelHtml(['Tanggal', 'Permintaan'], nilai.map((v, i) => [sumbu.label(i), idn(v)])))
+      + kartuGrafik('pm-baru', 'Permintaan terbaru', '8 terakhir sesuai filter', `<div class="vlist">${terbaru.map(p => `<div class="vi"><div><b>${esc(p.client)}</b><div class="muted">${esc(p.bagian_kerja)} · ${tglP(p.dibuat)}</div></div><div class="r"><span class="badge ${labelReq(p)[1]}">${esc(labelReq(p)[0].split(' · ')[0])}</span><div class="muted">${rpRingkas(p.total_jual)}</div></div></div>`).join('') || '<div class="kosongnya">Belum ada permintaan.</div>'}</div>`,
+        tabelHtml(['Lokasi', 'Bagian', 'Status', 'Nilai jual'], terbaru.map(p => [p.client, p.bagian_kerja, labelReq(p)[0], rp(p.total_jual)]))) };
+  }
+
+  // ---- bagian 3: stok ----
+  const katItem = no => { const h = HARGA.find(x => x.no === no); return h ? h.kat : ''; };
+  function isiStok() {
+    if (!hilirMuat) return { kpi: muatBelum, grid: '' };
+    const f = D.stok, dari = mulaiHari(f.hari), cocok = x => (f.kat === 'semua' || katItem(x.item_no) === f.kat) && (f.jenis === 'semua' || x.jenis_ukuran === f.jenis);
+    const s = stok.filter(cocok), g = gerak.filter(x => cocok(x) && (!dari || tanggalLokal(x.tanggal) >= dari));
+    const pcs = s.reduce((a, x) => a + Number(x.saldo), 0), tipis = s.filter(x => x.saldo > 0 && x.saldo <= f.batas), habis = s.filter(x => x.saldo <= 0);
+    const masuk = g.filter(x => x.jenis === 'masuk').reduce((a, x) => a + x.qty, 0), keluar = g.filter(x => x.jenis === 'keluar').reduce((a, x) => a + x.qty, 0);
+    const kpi = ubin('Stok di gudang', idn(pcs) + ' pcs', `${new Set(s.filter(x => x.saldo > 0).map(x => x.item_no)).size} jenis barang`) + ubin('Ukuran menipis', idn(tipis.length), `stok 1 sampai ${f.batas} pcs`) + ubin('Ukuran habis', idn(habis.length), 'stok 0') + ubin('Masuk' + (f.hari ? ` (${f.hari} hari)` : ''), idn(masuk) + ' pcs', 'dari supplier') + ubin('Keluar' + (f.hari ? ` (${f.hari} hari)` : ''), idn(keluar) + ' pcs', 'untuk pengiriman');
+    const per = new Map(); for (const x of s) per.set(x.item_no, (per.get(x.item_no) || { nama: x.item_nama, saldo: 0 })), per.get(x.item_no).saldo += Number(x.saldo);
+    const top = [...per.values()].filter(x => x.saldo > 0).sort((a, b) => b.saldo - a.saldo).slice(0, 10);
+    const sumbu = sumbuWaktu(f.hari, g.length ? new Date(Math.min(...g.map(x => tanggalLokal(x.tanggal)))) : null);
+    const sMasuk = deret(sumbu, g.filter(x => x.jenis === 'masuk'), x => x.tanggal, x => x.qty), sKeluar = deret(sumbu, g.filter(x => x.jenis === 'keluar'), x => x.tanggal, x => x.qty);
+    const kritis = [...tipis, ...habis].sort((a, b) => a.saldo - b.saldo).slice(0, 8);
+    return { kpi, grid:
+      kartuGrafik('st-top', 'Stok terbanyak per barang', '10 barang dengan stok tertinggi (pcs)', grafikBatang(top.map(x => ({ label: x.nama, segs: [{ v: x.saldo, warna: WD.s1, nama: 'Stok' }] }))), tabelHtml(['Barang', 'Stok (pcs)'], top.map(x => [x.nama, idn(x.saldo)])))
+      + kartuGrafik('st-gerak', 'Barang masuk dan keluar', f.hari ? `${f.hari} hari terakhir` : 'seluruh riwayat', grafikGaris('st-gerak', sumbu, [{ nama: 'Masuk', warna: WD.s1, nilai: sMasuk }, { nama: 'Keluar', warna: WD.s2, nilai: sKeluar }]), tabelHtml(['Tanggal', 'Masuk', 'Keluar'], sMasuk.map((v, i) => [sumbu.label(i), idn(v), idn(sKeluar[i])])))
+      + kartuGrafik('st-kritis', 'Ukuran yang perlu diisi ulang', `stok habis atau tinggal ${f.batas} pcs atau kurang`, `<div class="vlist">${kritis.map(x => `<div class="vi"><div><b>${esc(x.item_nama)}</b><div class="muted">${NAMA_JENIS[x.jenis_ukuran]} ${x.jenis_ukuran === '-' ? '' : esc(x.ukuran)}</div></div><div class="r"><span class="badge ${x.saldo <= 0 ? 'bad' : 'warn'}">${x.saldo <= 0 ? '⚠ Habis' : 'Menipis'} · ${x.saldo}</span></div></div>`).join('') || '<div class="kosongnya">Tidak ada yang menipis.</div>'}</div>`,
+        tabelHtml(['Barang', 'Ukuran', 'Stok'], kritis.map(x => [x.item_nama, NAMA_JENIS[x.jenis_ukuran] + (x.jenis_ukuran === '-' ? '' : ' ' + x.ukuran), String(x.saldo)]))) };
+  }
+
+  // ---- bagian 4: pengiriman ----
+  function isiKirim() {
+    if (!hilirMuat || !statusMuat) return { kpi: muatBelum, grid: '' };
+    const f = D.kirim, dari = mulaiHari(f.hari);
+    const per = [...setujuTerakhir().values()].filter(p => p.diploting_pada).map(p => { const pr = progresP(p), tot = Number(pr.total_qty), krm = Number(pr.terkirim_qty); return { p, tot, krm, sisa: tot - krm, s: krm >= tot ? 'selesai' : krm > 0 ? 'sebagian' : 'belum' }; }).filter(x => f.status === 'semua' || x.s === f.status);
+    const sj = kirimAll.filter(g => !dari || tanggalLokal(g.tanggal) >= dari), T = per.reduce((a, x) => a + x.tot, 0), K = per.reduce((a, x) => a + x.krm, 0);
+    const kpi = ubin('Terkirim', pct(K, T), `${idn(K)} dari ${idn(T)} pcs`) + ubin('Sisa dikirim', idn(T - K) + ' pcs', `${per.filter(x => x.sisa > 0).length} lokasi/bagian`) + ubin('Selesai dikirim', `${per.filter(x => x.s === 'selesai').length} / ${per.length}`, 'bagian kerja')
+      + ubin('Surat jalan' + (f.hari ? ` (${f.hari} hari)` : ''), idn(sj.length), `${idn(sj.reduce((a, g) => a + Number(g.jumlah_pcs), 0))} pcs`) + ubin('Dalam pengiriman', idn(sj.filter(g => g.status === 'dikirim').length), 'belum diterima') + ubin('Sudah diterima', idn(sj.filter(g => g.status === 'diterima').length), 'surat jalan');
+    const sisaRows = per.filter(x => x.sisa > 0).sort((a, b) => b.sisa - a.sisa).slice(0, 8);
+    const sumbu = sumbuWaktu(f.hari, sj.length ? new Date(Math.min(...sj.map(g => tanggalLokal(g.tanggal)))) : null), nilai = deret(sumbu, sj, g => g.tanggal, g => g.jumlah_pcs);
+    return { kpi, grid:
+      kartuGrafik('kr-sisa', 'Progres pengiriman per bagian', '8 terbesar yang belum selesai (pcs terkirim dari total)', grafikBatang(sisaRows.map(x => ({ label: `${x.p.client} · ${x.p.bagian_kerja.split(' (')[0]}`, teks: `${x.krm}/${x.tot}`, ket: `sisa ${x.sisa} pcs`, segs: [{ v: x.krm, warna: WD.s1, nama: 'Terkirim' }, { v: x.sisa, warna: WD.track, nama: 'Belum dikirim' }] })), { penuh: true }), tabelHtml(['Lokasi', 'Bagian', 'Terkirim', 'Total', 'Sisa'], sisaRows.map(x => [x.p.client, x.p.bagian_kerja, idn(x.krm), idn(x.tot), idn(x.sisa)])))
+      + kartuGrafik('kr-tren', 'Pcs dikirim per ' + (sumbu.lebar > 1 ? 'minggu' : 'hari'), f.hari ? `${f.hari} hari terakhir` : 'seluruh waktu', grafikGaris('kr-tren', sumbu, [{ nama: 'Pcs dikirim', warna: WD.s1, nilai }]), tabelHtml(['Tanggal', 'Pcs dikirim'], nilai.map((v, i) => [sumbu.label(i), idn(v)])))
+      + kartuGrafik('kr-sj', 'Surat jalan terbaru', '8 terakhir', `<div class="vlist">${sj.slice(0, 8).map(g => `<div class="vi"><div><b>${esc(g.no_surat_jalan)}</b><div class="muted">${esc(g.client)} · ${tglPendek(g.tanggal)}</div></div><div class="r"><span class="badge ${g.status === 'diterima' ? 'ok' : 'warn'}">${g.status === 'diterima' ? '✓ Diterima' : 'Dalam pengiriman'}</span><div class="muted">${idn(g.jumlah_pcs)} pcs</div></div></div>`).join('') || '<div class="kosongnya">Belum ada surat jalan.</div>'}</div>`,
+        tabelHtml(['No. surat jalan', 'Lokasi', 'Tanggal', 'Pcs', 'Status'], sj.slice(0, 8).map(g => [g.no_surat_jalan, g.client, tglPendek(g.tanggal), idn(g.jumlah_pcs), g.status]))) };
+  }
+
+  // ---- bagian 5: tagihan ----
+  function isiTagihan() {
+    if (!hilirMuat || !statusMuat) return { kpi: muatBelum, grid: '' };
+    const f = D.tagihan, dari = mulaiHari(f.hari), siap = entriTagihan().filter(x => x.s === 'siap');
+    const t = tagihanAll.filter(x => x.status !== 'batal' && (!dari || tanggalLokal(x.tanggal) >= dari) && (f.status === 'semua' || (f.status === 'belum' ? x.status !== 'lunas' : x.status === f.status)));
+    const total = t.reduce((a, x) => a + Number(x.total), 0), bayar = t.reduce((a, x) => a + Number(x.terbayar), 0), hariIni0 = hariIni();
+    const lewat = t.filter(x => x.status !== 'lunas' && x.jatuh_tempo && tanggalLokal(x.jatuh_tempo) < hariIni0);
+    const kpi = ubin('Total ditagih', rpRingkas(total), `${t.length} invoice`) + ubin('Sudah dibayar', rpRingkas(bayar), pct(bayar, total)) + ubin('Sisa tagihan', rpRingkas(total - bayar), `${t.filter(x => x.status !== 'lunas').length} invoice terbuka`)
+      + ubin('Lewat jatuh tempo', idn(lewat.length), rpRingkas(lewat.reduce((a, x) => a + Number(x.total) - Number(x.terbayar), 0))) + ubin('Siap ditagih', idn(siap.length), 'barang sudah terkirim semua');
+    const byr = []; for (const x of t) for (const b of x.bayar) byr.push(b);
+    const sumbu = sumbuWaktu(f.hari, byr.length ? new Date(Math.min(...byr.map(b => tanggalLokal(b.tanggal)))) : null), nilai = deret(sumbu, byr, b => b.tanggal, b => b.jumlah);
+    const terbesar = [...t].sort((a, b) => Number(b.total) - Number(a.total)).slice(0, 8), terbuka = t.filter(x => x.status !== 'lunas').sort((a, b) => String(a.jatuh_tempo || '9999').localeCompare(String(b.jatuh_tempo || '9999'))).slice(0, 8);
+    return { kpi, grid:
+      kartuGrafik('tg-bayar', 'Pembayaran per lokasi', '8 tagihan terbesar (dibayar dari total)', grafikBatang(terbesar.map(x => ({ label: `${x.client} · ${x.bagian_kerja.split(' (')[0]}`, teks: `${rpRingkas(x.terbayar)} / ${rpRingkas(x.total)}`, ket: x.no_invoice, segs: [{ v: Number(x.terbayar), warna: WD.s1, nama: 'Dibayar' }, { v: Number(x.total) - Number(x.terbayar), warna: WD.track, nama: 'Sisa' }] })), { penuh: true, fmt: rp }), tabelHtml(['Invoice', 'Lokasi', 'Total', 'Dibayar', 'Sisa'], terbesar.map(x => [x.no_invoice, x.client, rp(x.total), rp(x.terbayar), rp(Number(x.total) - Number(x.terbayar))])))
+      + kartuGrafik('tg-tren', 'Pembayaran masuk per ' + (sumbu.lebar > 1 ? 'minggu' : 'hari'), f.hari ? `${f.hari} hari terakhir` : 'seluruh waktu', grafikGaris('tg-tren', sumbu, [{ nama: 'Pembayaran', warna: WD.s1, nilai }], rp), tabelHtml(['Tanggal', 'Pembayaran'], nilai.map((v, i) => [sumbu.label(i), rp(v)])))
+      + kartuGrafik('tg-buka', 'Tagihan yang masih terbuka', 'diurutkan menurut jatuh tempo', `<div class="vlist">${terbuka.map(x => { const tl = x.jatuh_tempo && tanggalLokal(x.jatuh_tempo) < hariIni0; return `<div class="vi"><div><b>${esc(x.client)}</b><div class="muted">${esc(x.no_invoice)} · jatuh tempo ${tglPendek(x.jatuh_tempo)}</div></div><div class="r"><span class="badge ${tl ? 'bad' : 'warn'}">${tl ? '⚠ Lewat tempo' : 'Belum lunas'}</span><div class="muted">${rpRingkas(Number(x.total) - Number(x.terbayar))}</div></div></div>`; }).join('') || '<div class="kosongnya">Tidak ada tagihan terbuka.</div>'}</div>`,
+        tabelHtml(['Invoice', 'Lokasi', 'Jatuh tempo', 'Sisa'], terbuka.map(x => [x.no_invoice, x.client, tglPendek(x.jatuh_tempo), rp(Number(x.total) - Number(x.terbayar))]))) };
+  }
+
+  // ---- kerangka, filter, dan penyegaran ----
+  const bagianKerjaSemua = () => [...new Set([...lokasi.flatMap(l => l.bagian.map(b => b.nama)), ...daftarMinta.map(p => p.bagian_kerja)])].sort();
+  const SEK = [
+    { k: 'pengisian', judul: 'Pengisian ukuran', sumber: 'isian Google Form karyawan', pg: 'monitor', isi: isiPengisian, filter: () => [['status', 'Status lokasi', [['semua', 'Semua status'], ['lengkap', 'Lengkap'], ['kurang', 'Masih kurang'], ['kosong', 'Belum ada yang isi']]], ['bagian', 'Bagian kerja', [['semua', 'Semua bagian'], ...bagianKerjaSemua().map(b => [b, b])]], ['hari', 'Rentang tren', HARI_OPSI]] },
+    { k: 'permintaan', judul: 'Permintaan seragam', sumber: 'permintaan dan persetujuan pimpinan', pg: 'permintaan', isi: isiPermintaan, filter: () => [['hari', 'Periode dibuat', HARI_SEMUA], ['status', 'Status', STATUS_MINTA], ['bagian', 'Bagian kerja', [['semua', 'Semua bagian'], ...bagianKerjaSemua().map(b => [b, b])]]] },
+    { k: 'stok', judul: 'Stok gudang', sumber: 'inventaris dan riwayat barang', pg: 'inventaris', isi: isiStok, filter: () => [['kat', 'Kategori', [['semua', 'Semua kategori'], ...[...new Set(HARGA.map(h => h.kat))].map(k => [k, k])]], ['jenis', 'Jenis ukuran', [['semua', 'Semua jenis'], ['baju', 'Baju'], ['celana', 'Celana'], ['sepatu', 'Sepatu'], ['-', 'Tanpa ukuran']]], ['batas', 'Batas menipis', [['2', '2 pcs atau kurang'], ['5', '5 pcs atau kurang'], ['10', '10 pcs atau kurang']]], ['hari', 'Periode gerak stok', HARI_SEMUA]] },
+    { k: 'kirim', judul: 'Pengiriman', sumber: 'surat jalan dan progres kirim', pg: 'pengiriman', isi: isiKirim, filter: () => [['status', 'Progres', [['semua', 'Semua'], ['belum', 'Belum dikirim'], ['sebagian', 'Sebagian'], ['selesai', 'Selesai dikirim']]], ['hari', 'Periode surat jalan', HARI_SEMUA]] },
+    { k: 'tagihan', judul: 'Tagihan', sumber: 'invoice dan pembayaran', pg: 'tagihan', isi: isiTagihan, filter: () => [['status', 'Status', [['semua', 'Semua'], ['belum', 'Belum lunas'], ['sebagian', 'Dibayar sebagian'], ['lunas', 'Lunas']]], ['hari', 'Periode invoice', HARI_SEMUA]] },
+  ];
+  function isiSek(s) { const r = s.isi(); $('dk-' + s.k).innerHTML = r.kpi; $('dg-' + s.k).innerHTML = r.grid; }
+  function renderDash() {
+    $('dNav').innerHTML = SEK.map(s => `<button class="chip" data-d="${s.k}">${s.judul}</button>`).join('');
+    $('dash').innerHTML = SEK.map(s => `<section class="card dsec" id="ds-${s.k}"><div class="dh"><div><h3>${s.judul}</h3><span class="muted">${s.sumber}</span></div><button class="btn" data-pg="${s.pg}">Buka halaman ›</button></div>
+      <div class="dfil">${s.filter().map(([p, label, opsi]) => `<label class="df"><span>${label}</span><select data-s="${s.k}" data-p="${p}">${opsi.map(([v, t]) => `<option value="${esc(v)}" ${String(D[s.k][p]) === String(v) ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`).join('')}</div>
+      <div class="dkpi" id="dk-${s.k}"></div><div class="dgrid" id="dg-${s.k}"></div></section>`).join('');
+    SEK.forEach(isiSek);
+  }
+  $('dash').onchange = e => {
+    const sel = e.target.closest('select[data-s]'); if (!sel) return;
+    const p = sel.dataset.p, v = sel.value; D[sel.dataset.s][p] = ['hari', 'batas'].includes(p) ? Number(v) : v;
+    isiSek(SEK.find(s => s.k === sel.dataset.s));
+  };
+  $('dash').onclick = e => {
+    const b = e.target.closest('[data-vm]'); if (!b) return; const [id, m] = b.dataset.vm.split('|'); modeGrafik.set(id, m);
+    const kunci = { pg: 'pengisian', pm: 'permintaan', st: 'stok', kr: 'kirim', tg: 'tagihan' }[id.slice(0, 2)]; isiSek(SEK.find(x => x.k === kunci));
+  };
+  $('dNav').onclick = e => { const k = e.target.dataset && e.target.dataset.d; if (k) $('ds-' + k).scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+
+  // ---- tooltip (satu elemen bersama; teks selalu lewat textContent) ----
+  const tip = document.createElement('div'); tip.id = 'vTip'; tip.hidden = true; document.body.appendChild(tip);
+  function tampilTip(x, y, judul, baris, ket) {
+    tip.textContent = ''; const h = document.createElement('div'); h.className = 'tj'; h.textContent = judul; tip.appendChild(h);
+    for (const r of baris) { const d = document.createElement('div'); d.className = 'tr'; const k = document.createElement('i'); k.style.background = r.w; const v = document.createElement('b'); v.textContent = r.v; const n = document.createElement('span'); n.textContent = r.n; d.append(k, v, n); tip.appendChild(d); }
+    if (ket) { const d = document.createElement('div'); d.className = 'tk'; d.textContent = ket; tip.appendChild(d); }
+    tip.hidden = false; const w = tip.offsetWidth, hh = tip.offsetHeight;
+    tip.style.left = Math.max(8, Math.min(innerWidth - w - 8, x + 14)) + 'px'; tip.style.top = Math.max(8, Math.min(innerHeight - hh - 8, y + 14)) + 'px';
+  }
+  const sembunyiTip = () => { tip.hidden = true; document.querySelectorAll('.vch').forEach(l => l.setAttribute('visibility', 'hidden')); document.querySelectorAll('.vcd').forEach(g => { g.textContent = ''; }); };
+  $('dash').addEventListener('pointermove', e => {
+    const ov = e.target.closest && e.target.closest('.vov');
+    if (ov) { // grafik garis: crosshair menempel ke titik terdekat, tooltip memuat semua seri
+      const g = dataGrafik.get(ov.dataset.g); if (!g) return; const svg = ov.ownerSVGElement, r = svg.getBoundingClientRect(), px = (e.clientX - r.left) * g.V / r.width;
+      const i = Math.max(0, Math.min(g.n - 1, Math.round(g.n === 1 ? 0 : (px - g.L) / ((g.V - g.L - g.R) / (g.n - 1)))));
+      const ch = svg.querySelector('.vch'); ch.setAttribute('x1', g.x(i)); ch.setAttribute('x2', g.x(i)); ch.setAttribute('visibility', 'visible');
+      const NS = 'http://www.w3.org/2000/svg', gd = svg.querySelector('.vcd'); gd.textContent = '';
+      for (const s of g.seri) { const c = document.createElementNS(NS, 'circle'); c.setAttribute('cx', g.x(i)); c.setAttribute('cy', g.y(s.nilai[i])); c.setAttribute('r', 4); c.setAttribute('fill', s.warna); c.setAttribute('stroke', WD.permukaan); c.setAttribute('stroke-width', 2); gd.appendChild(c); }
+      tampilTip(e.clientX, e.clientY, g.sumbu.label(i), g.seri.map(s => ({ w: s.warna, v: g.fmt(s.nilai[i]), n: s.nama })));
+      return;
+    }
+    const hb = e.target.closest && e.target.closest('.hb');
+    if (hb) { try { const t = JSON.parse(hb.dataset.tip); tampilTip(e.clientX, e.clientY, t.t, t.r, t.k); } catch (x) {} return; }
+    sembunyiTip();
+  });
+  $('dash').addEventListener('pointerleave', sembunyiTip);
+  $('dash').addEventListener('focusin', e => { const hb = e.target.closest && e.target.closest('.hb'); if (hb) { const r = hb.getBoundingClientRect(), t = JSON.parse(hb.dataset.tip); tampilTip(r.left + 40, r.top, t.t, t.r, t.k); } });
+  $('dash').addEventListener('focusout', sembunyiTip);
+  renderDash(); dashSiap = true;
 
   renderBaris();
   tampil(location.hash.slice(1));
