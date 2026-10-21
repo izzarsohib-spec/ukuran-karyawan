@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>Monitoring Ukuran Seragam</title>
+<title>Sistem Administrasi Seragam Karyawan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700&display=swap">
 <style>
@@ -28,6 +28,12 @@
                radial-gradient(34% 30% at 100% 2%, rgba(255,196,96,.28), transparent 72%),
                radial-gradient(40% 36% at 0% 100%, rgba(255,110,60,.16), transparent 72%); }
 
+  .kop { justify-content:flex-start !important; flex-wrap:nowrap; align-items:center; gap:26px; padding-bottom:6px; }
+  .kop > div { min-width:0; flex:1; }
+  .kop img { height:112px; width:auto; flex:none; filter:drop-shadow(0 0 22px rgba(255,255,255,.2)) drop-shadow(0 4px 14px rgba(0,0,0,.35)); }
+  .kop h1 { font-size:clamp(1.25rem, 2.6vw, 2.15rem); line-height:1.12; letter-spacing:.01em; }
+  .kop .perusahaan { font-family:var(--head); font-weight:700; font-size:clamp(.95rem, 1.7vw, 1.35rem); letter-spacing:.14em; color:var(--accent); margin:6px 0 8px; }
+  @media (max-width: 640px) { .kop { gap:14px; } .kop img { height:68px; } }
   .side { position:sticky; top:14px; align-self:flex-start; margin:14px 0 14px 14px; width:64px; flex:none; z-index:2;
           background:#08080a; border-radius:26px; padding:14px 0; display:flex; flex-direction:column; align-items:center; gap:10px; height:calc(100vh - 60px); }
   .side .logo { width:34px; height:34px; border-radius:11px; background:linear-gradient(135deg,var(--orange),var(--accent)); margin-bottom:10px; }
@@ -294,7 +300,7 @@
    <nav class="mobnav" id="mobnav"><button class="on" data-pg="ringkasan">Ringkasan</button><button data-pg="monitor">Monitoring</button><button data-pg="permintaan">Permintaan</button><button data-pg="ploting">Ploting</button><button data-pg="inventaris">Inventaris</button><button data-pg="pengiriman">Pengiriman</button><button data-pg="tagihan">Tagihan</button><button data-pg="laporan">Laporan</button></nav>
 
    <div class="page" id="pg-ringkasan">
-    <header><div><h1>Ringkasan</h1><div class="sub">Dashboard seluruh modul · tiap bagian punya filter sendiri di atasnya</div></div></header>
+    <header class="kop"><img src="aset/logo-ray.png" alt="Logo PT. Ray Mitra Perkasa"><div><h1>SISTEM ADMINISTRASI SERAGAM KARYAWAN</h1><div class="perusahaan">PT. RAY MITRA PERKASA</div><div class="sub">Dashboard seluruh modul · tiap bagian punya filter sendiri di atasnya</div></div></header>
     <nav class="chips" id="dNav" style="margin-bottom:14px"></nav>
     <div id="dash"></div>
    </div>
