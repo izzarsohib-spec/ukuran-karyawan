@@ -193,6 +193,7 @@
   .hv { font-size:.78rem; font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
   .vlist .vi { display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--stroke); } .vlist .vi:last-child { border-bottom:0; }
   .vi .r { text-align:right; flex:none; } .vi b { font-size:.84rem; } .vtab { max-height:300px; }
+  #lAkt { grid-template-columns:repeat(auto-fit,minmax(min(100%,540px),1fr)); } #lAkt .vtab { max-height:none; } #lAkt .vc table td, #lAkt .vc table th { padding:7px 10px; }
   #vTip { position:fixed; z-index:80; pointer-events:none; background:#26262b; border:1px solid var(--stroke); border-radius:12px; padding:8px 10px; font-size:.78rem; min-width:130px; max-width:280px; box-shadow:0 8px 24px rgba(0,0,0,.45); }
   #vTip[hidden] { display:none; } #vTip .tj { color:var(--muted); margin-bottom:4px; } #vTip .tr { display:flex; align-items:center; gap:6px; } #vTip .tr i { width:12px; height:3px; border-radius:2px; flex:none; }
   #vTip .tr b { font-size:.9rem; } #vTip .tr span { color:var(--muted); } #vTip .tk { color:var(--muted); margin-top:4px; }
@@ -284,12 +285,13 @@
     <button data-pg="inventaris" title="Inventaris" aria-label="Inventaris"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg></button>
     <button data-pg="pengiriman" title="Pengiriman" aria-label="Pengiriman"><svg viewBox="0 0 24 24"><path d="M2 6h12v10H2zM14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg></button>
     <button data-pg="tagihan" title="Tagihan" aria-label="Tagihan"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></button>
+    <button data-pg="laporan" title="Laporan harian" aria-label="Laporan harian"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6M9 9h2"/></svg></button>
     <div class="sp"></div>
     <button id="sKunci" title="Kode akses nama" aria-label="Kode akses nama"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
   </aside>
 
   <div class="content">
-   <nav class="mobnav" id="mobnav"><button class="on" data-pg="ringkasan">Ringkasan</button><button data-pg="monitor">Monitoring</button><button data-pg="permintaan">Permintaan</button><button data-pg="ploting">Ploting</button><button data-pg="inventaris">Inventaris</button><button data-pg="pengiriman">Pengiriman</button><button data-pg="tagihan">Tagihan</button></nav>
+   <nav class="mobnav" id="mobnav"><button class="on" data-pg="ringkasan">Ringkasan</button><button data-pg="monitor">Monitoring</button><button data-pg="permintaan">Permintaan</button><button data-pg="ploting">Ploting</button><button data-pg="inventaris">Inventaris</button><button data-pg="pengiriman">Pengiriman</button><button data-pg="tagihan">Tagihan</button><button data-pg="laporan">Laporan</button></nav>
 
    <div class="page" id="pg-ringkasan">
     <header><div><h1>Ringkasan</h1><div class="sub">Dashboard seluruh modul · tiap bagian punya filter sendiri di atasnya</div></div></header>
@@ -479,6 +481,28 @@
           </div>
         </div>
       </div>
+    </section>
+   </div>
+   <div class="page" id="pg-laporan" hidden>
+    <header><div><h1>Laporan Harian</h1><div class="sub" id="infoLap">Rekap kegiatan dan progres seragam untuk dilaporkan ke atasan</div></div>
+      <div class="bgact"><button class="btn" id="lMuat">Muat ulang</button><button class="cta" id="lUnduh" style="padding:8px 18px">Unduh laporan (PDF)</button></div></header>
+    <section class="card pcard">
+      <div class="chips" id="lChips" style="margin-bottom:14px"></div>
+      <div class="fgrid" style="grid-template-columns:1fr 1fr 2fr"><label>Tanggal laporan<input type="date" id="lTgl"></label><label>Rekap mulai tanggal<input type="date" id="lDari"></label><div class="muted" id="lPeriode" style="align-self:end;padding-bottom:10px"></div></div>
+      <div class="hint">Untuk laporan satu hari, biarkan kedua tanggal sama. Untuk rekap beberapa hari, isi "Rekap mulai tanggal" dengan tanggal awal.</div>
+    </section>
+    <section class="card dsec"><div class="dh"><div><h3>Progres saat ini</h3><span class="muted">posisi data sistem pada saat laporan dibuat</span></div></div><div class="dkpi" id="lRingkas"></div></section>
+    <section class="card dsec"><div class="dh"><div><h3>Kegiatan pada periode</h3><span class="muted">dikumpulkan otomatis dari catatan sistem</span></div></div><div class="dgrid" id="lAkt"></div></section>
+    <section class="card pcard">
+      <h3>Catatan untuk laporan</h3>
+      <div id="lKodeBox"></div>
+      <div class="fgrid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+        <label>Kegiatan lain yang dikerjakan<textarea id="lKeg" rows="5" placeholder="Pekerjaan lain hari ini yang tidak tercatat di sistem…"></textarea></label>
+        <label>Kendala<textarea id="lKen" rows="5" placeholder="Hambatan atau hal yang perlu bantuan atasan…"></textarea></label>
+        <label>Rencana berikutnya<textarea id="lRen" rows="5" placeholder="Yang akan dikerjakan selanjutnya…"></textarea></label>
+      </div>
+      <div class="bgact" style="margin-top:12px"><button class="btn" id="lSimpan" disabled>Simpan catatan</button><span class="hint" id="lPesan" style="margin:0"></span></div>
+      <div class="hint">Catatan berlaku untuk tanggal laporan di atas dan ikut tercetak di PDF, juga yang belum disimpan.</div>
     </section>
    </div>
   </div>
@@ -724,9 +748,9 @@
   $('sKunci').onclick = () => { tampil('monitor'); window.scrollTo({ top: 0, behavior: 'smooth' }); $('kode').hidden ? $('btnKode').focus() : $('kode').focus(); };
 
   // ---- sub halaman ----
-  const HALAMAN = ['ringkasan', 'monitor', 'permintaan', 'ploting', 'inventaris', 'pengiriman', 'tagihan'];
+  const HALAMAN = ['ringkasan', 'monitor', 'permintaan', 'ploting', 'inventaris', 'pengiriman', 'tagihan', 'laporan'];
   let dashSiap = false;
-  function renderRingkasan() { if (dashSiap) { renderDash(); renderMini(); } }
+  function renderRingkasan() { if (dashSiap) { renderDash(); renderMini(); renderLaporan(); } }
   function tampil(pg) {
     if (!HALAMAN.includes(pg)) pg = 'ringkasan';
     for (const h of HALAMAN) $('pg-' + h).hidden = h !== pg;
@@ -735,6 +759,7 @@
     window.scrollTo({ top: 0 });
     if (pg === 'permintaan' || pg === 'ploting') muatStatus();
     if (pg === 'inventaris' || pg === 'pengiriman' || pg === 'tagihan') { muatStatus(); muatHilir(); }
+    if (pg === 'laporan') { muatStatus(); muatHilir(); muatCatatan(); }
   }
   document.addEventListener('click', e => { const b = e.target.closest('[data-pg]'); if (b) tampil(b.dataset.pg); });
   window.addEventListener('hashchange', () => tampil(location.hash.slice(1)));
@@ -1482,7 +1507,7 @@
   const tglPendek = d => d ? new Date(String(d).length <= 10 ? d + 'T00:00:00' : d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
   async function muatHilir() {
     try {
-      const [s, g, k, p, t] = await Promise.all([rpc('daftar_stok', {}), rpc('daftar_stok_gerak', { p_batas: 400 }), rpc('daftar_pengiriman', {}), rpc('daftar_progres_kirim', {}), rpc('daftar_tagihan', {})]);
+      const [s, g, k, p, t] = await Promise.all([rpc('daftar_stok', {}), rpc('daftar_stok_gerak', { p_batas: 1000 }), rpc('daftar_pengiriman', {}), rpc('daftar_progres_kirim', {}), rpc('daftar_tagihan', {})]);
       stok = s; gerak = g; kirimAll = k; progres = new Map(p.map(x => [x.permintaan_id, x])); tagihanAll = t; hilirMuat = true;
     } catch (e) { hilirMuat = false; ['infoInv', 'infoKirim', 'infoTag'].forEach(id => { $(id).textContent = 'Gagal memuat: ' + e.message; }); return; }
     renderInventaris(); renderKirimList(); renderTagihanList(); renderRingkasan();
@@ -2139,6 +2164,141 @@
   });
   renderMini();
 
+  // ================= LAPORAN HARIAN =================
+  // Mengumpulkan kegiatan dan progres dari sistem untuk satu hari (atau rentang hari) dan membuatnya jadi PDF untuk atasan.
+  // Bagian "kegiatan" otomatis dari catatan sistem; "catatan" (kegiatan lain, kendala, rencana) ditulis sendiri dan disimpan per tanggal.
+  const tglStr = d => { const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 10); };
+  const harianStr = v => String(v).length <= 10 ? String(v) : tglStr(v);
+  const hariPanjang = s => new Date(s + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const hariPendek = s => new Date(s + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+  let lapDari = tglStr(new Date()), lapSampai = tglStr(new Date()), lapCatatan = new Map(), lapKodeOk = false, lapKotor = false;
+  const geser = n => { const d = new Date(); d.setDate(d.getDate() + n); return tglStr(d); };
+
+  function snapshotLaporan() {
+    const T = lokasi.reduce((a, l) => a + l.target, 0), I = lokasi.reduce((a, l) => a + l.isi, 0), belumLengkap = lokasi.filter(l => l.status !== 'lengkap').length;
+    const d = daftarMinta, n = s => d.filter(p => stReq(p) === s).length, tunggu = d.filter(p => !['disetujui', 'ditolak'].includes(stReq(p))).length;
+    const rp1 = ringkasPlot(), rh = ringkasHilir();
+    return [
+      ['Pengisian ukuran', pct(I, T), `${idn(I)} dari ${idn(T)} anggota sudah mengisi · ${belumLengkap} lokasi belum lengkap`],
+      ['Permintaan seragam', `${idn(d.length)} permintaan`, `${tunggu} menunggu persetujuan · ${n('disetujui')} disetujui kedua pimpinan · ${n('ditolak')} ditolak/revisi`],
+      ['Ploting seragam', `${rp1.sudah} dari ${rp1.total}`, 'bagian kerja yang sudah disetujui, sudah diplot ke karyawan'],
+      ['Inventaris', `${idn(rh.pcs)} pcs`, `stok gudang · ${rh.tipis} ukuran menipis atau habis`],
+      ['Pengiriman', pct(rh.krm, rh.tot), `${idn(rh.krm)} dari ${idn(rh.tot)} pcs terkirim · ${rh.sj} surat jalan`],
+      ['Tagihan', rpRingkas(rh.total), `${rh.jmlTagihan} invoice · belum terbayar ${rpRingkas(rh.sisa)}`],
+    ];
+  }
+  function kumpulLaporan(dari, sampai) {
+    const dalam = v => { if (!v) return false; const s = harianStr(v); return s >= dari && s <= sampai; };
+    const S = [], sal = n => `${hariPendek(harianStr(n))}`;
+    // 1. pengisian ukuran oleh karyawan
+    const per = new Map(); let jml = 0;
+    for (const l of lokasi) for (const r of pengisi.get(l.lokasi) || []) if (dalam(r.waktu)) { jml++; per.set(l.client, (per.get(l.client) || 0) + 1); }
+    const top = [...per.entries()].sort((a, b) => b[1] - a[1]);
+    S.push({ judul: 'Pengisian ukuran oleh karyawan', ringkas: jml ? `${idn(jml)} isian baru dari ${per.size} lokasi` : 'Tidak ada isian baru pada periode ini', head: ['Lokasi', 'Isian baru'],
+      rows: [...top.slice(0, 10).map(([c, n]) => [c, idn(n)]), ...(top.length > 10 ? [[`dan ${top.length - 10} lokasi lainnya`, idn(top.slice(10).reduce((a, x) => a + x[1], 0))]] : [])] });
+    // 2. permintaan dibuat dan keputusan pimpinan
+    const baru = daftarMinta.filter(p => dalam(p.dibuat)).sort((a, b) => new Date(a.dibuat) - new Date(b.dibuat));
+    const ev = [];
+    for (const p of baru) ev.push([new Date(p.dibuat), sal(p.dibuat), 'Permintaan dibuat', `${p.client} - ${p.bagian_kerja}`, `Nilai jual ${rp(p.total_jual)} · status sekarang: ${labelReq(p)[0]}`]);
+    for (const p of daftarMinta) for (const [nama, st, tg] of [['Pak Yasir', stYasir(p), p.diputuskan_yasir], ['Pak Ferry', stFerry(p), p.diputuskan_ferry]])
+      if (tg && dalam(tg) && st !== 'menunggu') ev.push([new Date(tg), sal(tg), `${nama} ${st === 'disetujui' ? 'menyetujui' : 'menolak / meminta revisi'}`, `${p.client} - ${p.bagian_kerja}`, `Permintaan no. ${p.id}`]);
+    ev.sort((a, b) => a[0] - b[0]);
+    S.push({ judul: 'Permintaan dan keputusan pimpinan', ringkas: ev.length ? `${baru.length} permintaan dibuat · ${ev.length - baru.length} keputusan pimpinan` : 'Tidak ada aktivitas pada periode ini', head: ['Tanggal', 'Kegiatan', 'Lokasi / bagian', 'Rincian'], rows: ev.map(e => e.slice(1)) });
+    // 3. ploting
+    const plot = daftarMinta.filter(p => p.diploting_pada && dalam(p.diploting_pada)).sort((a, b) => new Date(a.diploting_pada) - new Date(b.diploting_pada));
+    S.push({ judul: 'Ploting seragam ke karyawan', ringkas: plot.length ? `${plot.length} bagian kerja diplot` : 'Tidak ada ploting pada periode ini', head: ['Tanggal', 'Lokasi / bagian', 'Rincian'],
+      rows: plot.map(p => [sal(p.diploting_pada), `${p.client} - ${p.bagian_kerja}`, `Permintaan no. ${p.id} · ${(p.items || []).reduce((a, i) => a + (Number(i.qty) || 0), 0)} pcs`]) });
+    // 4. barang masuk dari supplier
+    const msk = new Map();
+    for (const g of gerak) if (g.jenis === 'masuk' && dalam(g.tanggal)) { const k = `${g.tanggal}|${g.supplier}|${g.no_dokumen}`; if (!msk.has(k)) msk.set(k, { tgl: g.tanggal, sup: g.supplier, dok: g.no_dokumen, pcs: 0, baris: [] }); const m = msk.get(k); m.pcs += g.qty; m.baris.push(`${g.item_nama}${g.jenis_ukuran === '-' ? '' : ' ' + g.ukuran} ×${g.qty}`); }
+    const masuk = [...msk.values()].sort((a, b) => a.tgl.localeCompare(b.tgl));
+    S.push({ judul: 'Barang masuk dari supplier', ringkas: masuk.length ? `${masuk.length} penerimaan · ${idn(masuk.reduce((a, m) => a + m.pcs, 0))} pcs` : 'Tidak ada barang masuk pada periode ini', head: ['Tanggal', 'Supplier / dokumen', 'Barang', 'Pcs'],
+      rows: masuk.map(m => [hariPendek(m.tgl), `${m.sup || '-'}${m.dok ? ' · ' + m.dok : ''}`, m.baris.slice(0, 6).join('; ') + (m.baris.length > 6 ? `; dan ${m.baris.length - 6} baris lainnya` : ''), idn(m.pcs)]) });
+    // 5. pengiriman
+    const kir = [];
+    for (const g of kirimAll) { if (dalam(g.tanggal)) kir.push([g.tanggal, hariPendek(g.tanggal), 'Barang dikirim', `${g.client} - ${g.bagian_kerja}`, `${g.no_surat_jalan} · ${idn(g.jumlah_pcs)} pcs${g.ekspedisi ? ' · ' + g.ekspedisi : ''}${g.no_resi ? ' (resi ' + g.no_resi + ')' : ''}`]);
+      if (g.diterima_pada && dalam(g.diterima_pada)) kir.push([harianStr(g.diterima_pada), hariPendek(harianStr(g.diterima_pada)), 'Barang diterima di lokasi', `${g.client} - ${g.bagian_kerja}`, `${g.no_surat_jalan}${g.penerima ? ' · penerima ' + g.penerima : ''}`]); }
+    kir.sort((a, b) => a[0].localeCompare(b[0]));
+    S.push({ judul: 'Pengiriman seragam', ringkas: kir.length ? `${kir.filter(x => x[2] === 'Barang dikirim').length} surat jalan dibuat · ${kir.filter(x => x[2] !== 'Barang dikirim').length} diterima` : 'Tidak ada pengiriman pada periode ini', head: ['Tanggal', 'Kegiatan', 'Lokasi / bagian', 'Rincian'], rows: kir.map(x => x.slice(1)) });
+    // 6. tagihan dan pembayaran
+    const tag = [];
+    for (const t of tagihanAll) { if (t.status === 'batal') continue;
+      if (dalam(t.tanggal)) tag.push([t.tanggal, hariPendek(t.tanggal), 'Invoice dibuat', `${t.client} - ${t.bagian_kerja}`, `${t.no_invoice} · ${rp(t.total)}${t.jatuh_tempo ? ' · jatuh tempo ' + hariPendek(t.jatuh_tempo) : ''}`]);
+      for (const b of t.bayar) if (dalam(b.tanggal)) tag.push([b.tanggal, hariPendek(b.tanggal), 'Pembayaran diterima', `${t.client} - ${t.bagian_kerja}`, `${t.no_invoice} · ${rp(b.jumlah)}${b.keterangan ? ' · ' + b.keterangan : ''}`]); }
+    tag.sort((a, b) => a[0].localeCompare(b[0]));
+    S.push({ judul: 'Tagihan dan pembayaran', ringkas: tag.length ? `${tag.filter(x => x[2] === 'Invoice dibuat').length} invoice dibuat · ${tag.filter(x => x[2] !== 'Invoice dibuat').length} pembayaran masuk` : 'Tidak ada aktivitas tagihan pada periode ini', head: ['Tanggal', 'Kegiatan', 'Lokasi / bagian', 'Rincian'], rows: tag.map(x => x.slice(1)) });
+    return S;
+  }
+  const tabelLap = (head, rows) => `<div class="wrap vtab"><table><thead><tr>${head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td style="white-space:normal">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  function renderLaporan() {
+    if (!statusMuat || !hilirMuat || !lokasi.length) { $('lRingkas').innerHTML = muatBelum; $('lAkt').innerHTML = ''; return; }
+    $('lChips').innerHTML = [['hari', 'Hari ini', 0], ['kemarin', 'Kemarin', -1], ['minggu', '7 hari terakhir', -6]].map(([k, t, n]) => `<button class="chip ${((k === 'hari' && lapSampai === geser(0) && lapDari === lapSampai) || (k === 'kemarin' && lapSampai === geser(-1) && lapDari === lapSampai) || (k === 'minggu' && lapSampai === geser(0) && lapDari === geser(-6))) ? 'on' : ''}" data-l="${k}">${t}</button>`).join('');
+    if ($('lTgl').value !== lapSampai) $('lTgl').value = lapSampai; if ($('lDari').value !== lapDari) $('lDari').value = lapDari;
+    $('lPeriode').textContent = lapDari === lapSampai ? hariPanjang(lapSampai) : `${hariPendek(lapDari)} sampai ${hariPendek(lapSampai)}`;
+    $('infoLap').textContent = `Laporan ${lapDari === lapSampai ? hariPanjang(lapSampai) : hariPendek(lapDari) + ' – ' + hariPendek(lapSampai)} · dibuat oleh ${TTD.pic[0]}`;
+    $('lRingkas').innerHTML = snapshotLaporan().map(([a, b, c]) => ubin(a, b, c)).join('');
+    $('lAkt').innerHTML = kumpulLaporan(lapDari, lapSampai).map(s => `<div class="vc"><div class="vh"><div><b>${esc(s.judul)}</b><div class="muted">${esc(s.ringkas)}</div></div></div>${s.rows.length ? tabelLap(s.head, s.rows) : '<div class="kosongnya" style="padding:14px">—</div>'}</div>`).join('');
+  }
+  function aturPeriode(dari, sampai) { lapDari = dari; lapSampai = sampai; if (lapDari > lapSampai) lapDari = lapSampai; lapKodeOk = false; lapKotor = false; muatCatatan(); renderLaporan(); }
+  $('lChips').onclick = e => { const k = e.target.dataset && e.target.dataset.l; if (!k) return; if (k === 'hari') aturPeriode(geser(0), geser(0)); else if (k === 'kemarin') aturPeriode(geser(-1), geser(-1)); else aturPeriode(geser(-6), geser(0)); };
+  $('lTgl').onchange = () => { if ($('lTgl').value) aturPeriode($('lDari').value && $('lDari').value <= $('lTgl').value ? $('lDari').value : $('lTgl').value, $('lTgl').value); };
+  $('lDari').onchange = () => { if ($('lDari').value) aturPeriode($('lDari').value, $('lTgl').value || $('lDari').value); };
+  $('lMuat').onclick = async () => { await muatStatus(); await muatHilir(); muatCatatan(); };
+
+  // ---- catatan (kegiatan lain, kendala, rencana) ----
+  async function muatCatatan() {
+    const kode = kodePlot(), box = $('lKodeBox'); lapCatatan = new Map();
+    if (!kode) { box.innerHTML = '<div class="stkode"><input id="lKode" type="password" placeholder="Kode akses untuk membuka catatan" autocomplete="off"><button class="btn" id="lBukaKode">Buka</button></div>'; lapKodeOk = false; isiCatatan(); return; }
+    try { const r = await rpc('daftar_laporan', { kode, p_dari: lapDari, p_sampai: lapSampai }); r.forEach(x => lapCatatan.set(x.tanggal, x)); lapKodeOk = true; box.innerHTML = ''; }
+    catch (e) { lapKodeOk = false; if (e.message === 'KODE') { try { sessionStorage.removeItem('kodeNama'); } catch (x) {} box.innerHTML = '<div class="hint" style="color:var(--bad)">Kode akses salah. Masukkan lagi:</div><div class="stkode"><input id="lKode" type="password" placeholder="Kode akses" autocomplete="off"><button class="btn" id="lBukaKode">Buka</button></div>'; } else box.innerHTML = `<div class="hint" style="color:var(--bad)">Gagal memuat catatan: ${esc(e.message)}</div>`; }
+    isiCatatan();
+  }
+  function isiCatatan() { if (!lapKotor) { const c = lapCatatan.get(lapSampai) || {}; $('lKeg').value = c.kegiatan || ''; $('lKen').value = c.kendala || ''; $('lRen').value = c.rencana || ''; } $('lSimpan').disabled = !lapKodeOk; }
+  ['lKeg', 'lKen', 'lRen'].forEach(id => { $(id).oninput = () => { lapKotor = true; }; });
+  $('lKodeBox').onclick = e => { if (e.target.id === 'lBukaKode') { const v = $('lKode').value.trim(); if (v) { try { sessionStorage.setItem('kodeNama', v); } catch (x) {} muatCatatan(); } } };
+  $('lKodeBox').onkeydown = e => { if (e.key === 'Enter' && e.target.id === 'lKode') $('lBukaKode').click(); };
+  $('lSimpan').onclick = async () => {
+    const btn = $('lSimpan'), ps = $('lPesan'); btn.disabled = true; btn.textContent = 'Menyimpan…'; ps.style.color = ''; ps.textContent = '';
+    try { await rpcKode('simpan_laporan', { p_tanggal: lapSampai, p_kegiatan: $('lKeg').value, p_kendala: $('lKen').value, p_rencana: $('lRen').value });
+      lapCatatan.set(lapSampai, { tanggal: lapSampai, kegiatan: $('lKeg').value, kendala: $('lKen').value, rencana: $('lRen').value }); lapKotor = false; const kosong = !($('lKeg').value.trim() || $('lKen').value.trim() || $('lRen').value.trim()); ps.style.color = 'var(--ok)'; ps.textContent = kosong ? '✓ Catatan untuk ' + hariPendek(lapSampai) + ' dikosongkan.' : '✓ Catatan tersimpan untuk ' + hariPendek(lapSampai) + '.'; }
+    catch (e) { ps.style.color = 'var(--bad)'; ps.textContent = 'Gagal: ' + e.message; }
+    btn.disabled = !lapKodeOk; btn.textContent = 'Simpan catatan';
+  };
+
+  // ---- PDF ----
+  async function laporanPdf() {
+    const k = await kertasKop(), { doc, PW, R, W } = k, ML = k.L, S = kumpulLaporan(lapDari, lapSampai), harian = lapDari === lapSampai;
+    const gaya = { font: 'times', fontSize: 9, cellPadding: { top: 2.2, bottom: 2.2, left: 4, right: 4 }, lineColor: [0, 0, 0], lineWidth: 0.5, textColor: 0 };
+    k.pasang(); k.huruf('bold', 15); doc.text('LAPORAN KEGIATAN HARIAN', PW / 2, 102, { align: 'center' }); k.huruf('normal', 11); doc.text('Progres Pengadaan Seragam Karyawan', PW / 2, 118, { align: 'center' });
+    k.y = 144; k.huruf();
+    [['Hari / tanggal', harian ? hariPanjang(lapSampai) : `${hariPendek(lapDari)} sampai ${hariPendek(lapSampai)}`], ['Dibuat oleh', `${TTD.pic[0]} (${TTD.pic[1].replace(/[()]/g, '')})`], ['Kepada', `${TTD.dir[0]} (Direktur) dan ${TTD.dirut[0]} (Direktur Utama)`]]
+      .forEach(([a, b], n) => { doc.text(a, ML, k.y + n * 14); doc.text(': ' + b, ML + 92, k.y + n * 14); });
+    k.y += 3 * 14 + 10;
+    const judul = t => { k.cek(70); k.huruf('bold', 11); doc.text(t, ML, k.y); k.y += 8; k.huruf(); };
+    judul('A. Progres saat ini');
+    k.tabel({ startY: k.y, styles: gaya, head: [['NO', 'BIDANG', 'PROGRES', 'KETERANGAN']], body: snapshotLaporan().map(([a, b, c], n) => [{ content: n + 1, styles: { halign: 'center' } }, a, { content: b, styles: { halign: 'center', fontStyle: 'bold' } }, c]), columnStyles: { 0: { cellWidth: 28 }, 1: { cellWidth: 110 }, 2: { cellWidth: 90 } } });
+    k.y += 18; judul(`B. Kegiatan ${harian ? 'hari ini' : 'pada periode ini'}`);
+    S.forEach((s, i) => {
+      k.cek(60); k.huruf('bold', 10); doc.text(`${i + 1}. ${s.judul}`, ML + 6, k.y + 10); k.huruf('italic', 9.5); doc.text(s.ringkas, ML + 6, k.y + 23); k.y += 28; k.huruf();
+      if (s.rows.length) { k.tabel({ startY: k.y, styles: gaya, head: [s.head], body: s.rows, margin: { top: 92, bottom: 110, left: ML + 6, right: PW - R } }); k.y += 12; }
+    });
+    // catatan
+    const hariCat = [...lapCatatan.values()].filter(c => c.tanggal !== lapSampai);
+    const cat = [...hariCat, { tanggal: lapSampai, kegiatan: $('lKeg').value, kendala: $('lKen').value, rencana: $('lRen').value }].filter(c => (c.kegiatan || c.kendala || c.rencana) && String(c.tanggal) >= lapDari && String(c.tanggal) <= lapSampai).sort((a, b) => String(a.tanggal).localeCompare(String(b.tanggal)));
+    k.y += 4; judul('C. Catatan');
+    if (!cat.length) { k.huruf('italic', 9.5); doc.text('Tidak ada catatan tambahan.', ML + 6, k.y + 10); k.y += 22; }
+    for (const c of cat) for (const [lbl, isi] of [['Kegiatan lain', c.kegiatan], ['Kendala', c.kendala], ['Rencana berikutnya', c.rencana]]) {
+      if (!isi || !String(isi).trim()) continue;
+      k.huruf('bold', 9.5); const lb = doc.splitTextToSize(`${harian ? '' : hariPendek(String(c.tanggal)) + ' · '}${lbl}`, 104); k.huruf('normal', 10);
+      const t = doc.splitTextToSize(String(isi).trim(), W - 122), tinggi = Math.max(lb.length * 11, t.length * 12) + 8; k.cek(tinggi);
+      k.huruf('bold', 9.5); doc.text(lb, ML + 6, k.y + 10); k.huruf('normal', 10); doc.text(t, ML + 116, k.y + 10); k.y += tinggi;
+    }
+    k.y += 16; k.cek(92); k.ttd([{ x: ML + W * 0.17, label: 'Dibuat oleh,', t: TTD.pic }, { x: ML + W * 0.5, label: 'Mengetahui,', t: TTD.dir }, { x: ML + W * 0.83, label: 'Mengetahui,', t: TTD.dirut }], k.y);
+    k.simpan(`Laporan Harian Seragam ${harian ? lapSampai : lapDari + ' sampai ' + lapSampai}.pdf`);
+  }
+  $('lUnduh').onclick = async () => { const b = $('lUnduh'), label = b.textContent; b.disabled = true; b.textContent = 'Menyiapkan…'; try { await laporanPdf(); } catch (e) { alert('Gagal membuat laporan: ' + e.message); } b.disabled = false; b.textContent = label; };
+
+  renderLaporan(); muatCatatan();
   renderBaris();
   tampil(location.hash.slice(1));
 
