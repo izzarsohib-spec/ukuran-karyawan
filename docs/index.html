@@ -178,6 +178,11 @@
   .pit select { width:auto !important; margin:0 !important; padding:5px 8px !important; font-size:.8rem !important; }
   .pit select.kosong { border-color:var(--bad); }
   .pus { display:flex; gap:6px; flex-wrap:wrap; }
+  .szg { display:flex; flex-wrap:wrap; gap:4px 6px; align-items:center; margin:3px 0; }
+  .szg > b { font-size:.72rem; color:var(--muted); width:54px; flex:none; font-weight:600; }
+  .szc { font-size:.74rem; padding:1px 9px; border-radius:99px; background:var(--panel2); }
+  .szc.ok { background:var(--ok-bg); color:var(--ok); } .szc.tipis { background:var(--warn-bg); color:var(--warn); } .szc.nol { background:var(--bad-bg); color:var(--bad); }
+  .szc b { font-weight:700; }
   .rabbox { margin-top:18px; padding:14px 16px; border:1px dashed var(--stroke); border-radius:16px; }
   .rabbox .row { margin-bottom:8px; }
   .pvm { position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.74); display:grid; place-items:center; padding:2vh 2vw; }
@@ -241,15 +246,15 @@
     <button data-pg="monitor" title="Monitoring pengisian" aria-label="Monitoring pengisian"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></button>
     <button data-pg="permintaan" title="Permintaan seragam" aria-label="Permintaan seragam"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></button>
     <button data-pg="ploting" title="Ploting seragam" aria-label="Ploting seragam"><svg viewBox="0 0 24 24"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></button>
-    <button data-pg="pengiriman" title="Pengiriman" aria-label="Pengiriman"><svg viewBox="0 0 24 24"><path d="M2 6h12v10H2zM14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg></button>
     <button data-pg="inventaris" title="Inventaris" aria-label="Inventaris"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg></button>
+    <button data-pg="pengiriman" title="Pengiriman" aria-label="Pengiriman"><svg viewBox="0 0 24 24"><path d="M2 6h12v10H2zM14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg></button>
     <button data-pg="tagihan" title="Tagihan" aria-label="Tagihan"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></button>
     <div class="sp"></div>
     <button id="sKunci" title="Kode akses nama" aria-label="Kode akses nama"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
   </aside>
 
   <div class="content">
-   <nav class="mobnav" id="mobnav"><button class="on" data-pg="ringkasan">Ringkasan</button><button data-pg="monitor">Monitoring</button><button data-pg="permintaan">Permintaan</button><button data-pg="ploting">Ploting</button><button data-pg="pengiriman">Pengiriman</button><button data-pg="inventaris">Inventaris</button><button data-pg="tagihan">Tagihan</button></nav>
+   <nav class="mobnav" id="mobnav"><button class="on" data-pg="ringkasan">Ringkasan</button><button data-pg="monitor">Monitoring</button><button data-pg="permintaan">Permintaan</button><button data-pg="ploting">Ploting</button><button data-pg="inventaris">Inventaris</button><button data-pg="pengiriman">Pengiriman</button><button data-pg="tagihan">Tagihan</button></nav>
 
    <div class="page" id="pg-ringkasan">
     <header><div><h1>Ringkasan</h1><div class="sub">Semua modul seragam dalam satu tempat</div></div></header>
@@ -272,9 +277,47 @@
     </section>
    </div>
 
-   <div class="page" id="pg-pengiriman" hidden><header><div><h1>Pengiriman</h1><div class="sub">Pengiriman seragam ke lokasi</div></div></header><div class="card segera">Halaman ini akan segera diisi.</div></div>
-   <div class="page" id="pg-inventaris" hidden><header><div><h1>Inventaris</h1><div class="sub">Stok seragam dan perlengkapan</div></div></header><div class="card segera">Halaman ini akan segera diisi.</div></div>
-   <div class="page" id="pg-tagihan" hidden><header><div><h1>Tagihan</h1><div class="sub">Tagihan dan invoice per lokasi</div></div></header><div class="card segera">Halaman ini akan segera diisi.</div></div>
+   <div class="page" id="pg-pengiriman" hidden>
+    <header><div><h1>Pengiriman</h1><div class="sub" id="infoKirim">Memuat data…</div></div></header>
+    <section class="bawah card">
+      <div class="bar-top"><h3>Daftar lokasi</h3><label class="search"><span aria-hidden="true">🔍</span><input id="kCari" type="search" placeholder="Cari lokasi"></label><button class="btn" id="kMuat">Muat ulang</button></div>
+      <div class="chips" id="kChips" style="margin-bottom:14px"></div>
+      <div class="layout">
+        <div class="list"><div class="scroll" id="kDaftar"></div></div>
+        <div class="detail" id="kDetail"><div id="kHead"></div><div class="pcard formminta" id="kEditor" hidden></div></div>
+      </div>
+    </section>
+   </div>
+   <div class="page" id="pg-inventaris" hidden>
+    <header><div><h1>Inventaris</h1><div class="sub" id="infoInv">Memuat data…</div></div>
+      <div class="bgact"><button class="btn" id="iMuat">Muat ulang</button><button class="cta" id="iMasukBtn" style="padding:8px 18px">+ Barang masuk dari supplier</button></div></header>
+    <section class="card pcard" id="iForm" hidden>
+      <h3>Barang masuk dari supplier</h3>
+      <div class="fgrid" style="grid-template-columns:1fr 1.4fr 1.4fr 1.6fr">
+        <label>Tanggal<input type="date" id="iTgl"></label><label>Supplier<input id="iSup" placeholder="Nama supplier"></label>
+        <label>No. surat jalan / faktur supplier<input id="iDok"></label><label>Keterangan<input id="iKet" placeholder="opsional"></label></div>
+      <div class="row" style="margin:16px 0 8px"><b>Barang yang masuk</b><button class="btn" id="iTambah">+ Tambah baris</button></div>
+      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:250px">Barang</th><th>Jenis</th><th>Ukuran</th><th style="width:96px">Qty</th><th></th></tr></thead><tbody id="iBaris"></tbody></table></div>
+      <div class="hint" id="iPesan"></div>
+      <div class="bgact" style="margin-top:12px"><button class="cta" id="iSimpan">Simpan barang masuk</button><button class="btn" id="iBatal">Batal</button></div>
+    </section>
+    <section class="bawah card">
+      <div class="bar-top"><div class="chips" id="iTab"></div><label class="search"><span aria-hidden="true">🔍</span><input id="iCari" type="search" placeholder="Cari barang, supplier, atau tujuan"></label></div>
+      <div class="chips" id="iChips" style="margin-bottom:12px"></div>
+      <div class="wrap tabelminta"><table><thead id="iHead"></thead><tbody id="iBody"></tbody></table></div>
+    </section>
+   </div>
+   <div class="page" id="pg-tagihan" hidden>
+    <header><div><h1>Tagihan</h1><div class="sub" id="infoTag">Memuat data…</div></div></header>
+    <section class="bawah card">
+      <div class="bar-top"><h3>Siap ditagih</h3><label class="search"><span aria-hidden="true">🔍</span><input id="tCari" type="search" placeholder="Cari lokasi"></label><button class="btn" id="tMuat">Muat ulang</button></div>
+      <div class="chips" id="tChips" style="margin-bottom:14px"></div>
+      <div class="layout">
+        <div class="list"><div class="scroll" id="tDaftar"></div></div>
+        <div class="detail" id="tDetail"><div id="tHead"></div><div class="pcard formminta" id="tIsi" hidden></div></div>
+      </div>
+    </section>
+   </div>
 
    <div class="page" id="pg-monitor" hidden>
     <header>
@@ -640,7 +683,7 @@
   $('sKunci').onclick = () => { tampil('monitor'); window.scrollTo({ top: 0, behavior: 'smooth' }); $('kode').hidden ? $('btnKode').focus() : $('kode').focus(); };
 
   // ---- sub halaman ----
-  const HALAMAN = ['ringkasan', 'monitor', 'permintaan', 'ploting', 'pengiriman', 'inventaris', 'tagihan'];
+  const HALAMAN = ['ringkasan', 'monitor', 'permintaan', 'ploting', 'inventaris', 'pengiriman', 'tagihan'];
   function renderRingkasan() {
     const T = lokasi.reduce((a, l) => a + l.target, 0), I = lokasi.reduce((a, l) => a + l.isi, 0);
     const kurang = lokasi.filter(l => l.status !== 'lengkap').length;
@@ -649,9 +692,9 @@
       kartu('monitor', 'Monitoring Pengisian', T ? (100 * I / T).toFixed(1).replace('.', ',') + '%' : '-', T ? `${idn(I)} dari ${idn(T)} anggota sudah mengisi · ${kurang} lokasi belum lengkap` : 'Memuat…'),
       kartu('permintaan', 'Permintaan Seragam', anggaran ? rpRingkas(anggaran.total) : '-', statusMuat ? `Total RAB · ${daftarMinta.filter(p => !['disetujui', 'ditolak'].includes(stReq(p))).length} menunggu · ${daftarMinta.filter(p => stReq(p) === 'disetujui').length} disetujui · ${daftarMinta.filter(p => stReq(p) === 'ditolak').length} ditolak/revisi` : `Total RAB · ${HARGA.length} item di daftar harga`),
       kartu('ploting', 'Ploting Seragam', statusMuat ? `${ringkasPlot().sudah} / ${ringkasPlot().total}` : '-', statusMuat ? 'bagian yang sudah disetujui, sudah diplot ke karyawan' : 'Memuat…'),
-      kartu('pengiriman', 'Pengiriman', '–', 'Belum aktif', true),
-      kartu('inventaris', 'Inventaris', '–', 'Belum aktif', true),
-      kartu('tagihan', 'Tagihan', '–', 'Belum aktif', true),
+      kartu('inventaris', 'Inventaris', hilirMuat ? `${idn(ringkasHilir().pcs)} pcs` : '-', hilirMuat ? `stok gudang · ${ringkasHilir().tipis} ukuran menipis atau habis` : 'Memuat…'),
+      kartu('pengiriman', 'Pengiriman', hilirMuat ? `${idn(ringkasHilir().krm)} / ${idn(ringkasHilir().tot)}` : '-', hilirMuat ? `pcs terkirim dari yang sudah diplot · ${ringkasHilir().sj} surat jalan` : 'Memuat…'),
+      kartu('tagihan', 'Tagihan', hilirMuat ? rpRingkas(ringkasHilir().total) : '-', hilirMuat ? `${ringkasHilir().jmlTagihan} tagihan · belum terbayar ${rpRingkas(ringkasHilir().sisa)}` : 'Memuat…'),
     ].join('');
   }
   function tampil(pg) {
@@ -661,6 +704,7 @@
     if (location.hash !== '#' + pg) history.replaceState(null, '', '#' + pg);
     window.scrollTo({ top: 0 });
     if (pg === 'permintaan' || pg === 'ploting') muatStatus();
+    if (pg === 'inventaris' || pg === 'pengiriman' || pg === 'tagihan') { muatStatus(); muatHilir(); }
   }
   document.addEventListener('click', e => { const b = e.target.closest('[data-pg]'); if (b) tampil(b.dataset.pg); });
   window.addEventListener('hashchange', () => tampil(location.hash.slice(1)));
@@ -1024,7 +1068,7 @@
       if (!r.ok) throw new Error('HTTP ' + r.status);
       daftarMinta = await r.json(); statusMuat = true;
     } catch (e) { daftarMinta = []; susunStatus(); renderDaftarMinta(); $('infoMinta').textContent = 'Gagal memuat status: ' + e.message; return; }
-    susunStatus(); renderDaftarMinta(); renderPlotList(); renderRingkasan();
+    susunStatus(); renderDaftarMinta(); renderPlotList(); renderKirimList(); renderTagihanList(); renderRingkasan();
   }
   function susunStatus() { // daftar sudah urut terbaru dulu, jadi yang pertama per bagian adalah permintaan terakhir
     terbaru = new Map();
@@ -1400,6 +1444,364 @@
     return doc.output('datauristring').split(',')[1];
   }
 
+  // ================= INVENTARIS · PENGIRIMAN · TAGIHAN =================
+  // Stok disimpan sebagai buku besar gerak (masuk dari supplier, keluar karena pengiriman). Pengiriman membaca hasil ploting dan
+  // otomatis memotong stok. Tagihan dibuat dari barang yang benar-benar terkirim. Membaca terbuka; menulis memakai kode akses.
+  let stok = [], gerak = [], kirimAll = [], progres = new Map(), tagihanAll = [], hilirMuat = false;
+  const tgl0 = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+  const tglPendek = d => d ? new Date(String(d).length <= 10 ? d + 'T00:00:00' : d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+  async function muatHilir() {
+    try {
+      const [s, g, k, p, t] = await Promise.all([rpc('daftar_stok', {}), rpc('daftar_stok_gerak', { p_batas: 400 }), rpc('daftar_pengiriman', {}), rpc('daftar_progres_kirim', {}), rpc('daftar_tagihan', {})]);
+      stok = s; gerak = g; kirimAll = k; progres = new Map(p.map(x => [x.permintaan_id, x])); tagihanAll = t; hilirMuat = true;
+    } catch (e) { hilirMuat = false; ['infoInv', 'infoKirim', 'infoTag'].forEach(id => { $(id).textContent = 'Gagal memuat: ' + e.message; }); return; }
+    renderInventaris(); renderKirimList(); renderTagihanList(); renderRingkasan();
+  }
+  // panggilan yang menulis data: kode akses diminta sekali per sesi
+  async function rpcKode(nama, body) {
+    let kode = kodePlot(); if (!kode) kode = (prompt('Masukkan kode akses untuk menyimpan perubahan:') || '').trim();
+    if (!kode) throw new Error('Dibatalkan: kode akses diperlukan.');
+    try { const r = await rpc(nama, { kode, ...body }); try { sessionStorage.setItem('kodeNama', kode); } catch (e) {} return r; }
+    catch (e) { if (e.message === 'KODE') { try { sessionStorage.removeItem('kodeNama'); } catch (x) {} throw new Error('Kode akses salah.'); } throw e; }
+  }
+  const NAMA_JENIS = { baju: 'Baju', celana: 'Celana', sepatu: 'Sepatu', '-': 'Barang' };
+  const daftarUkuran = j => j === 'baju' ? UK_BAJU : j === 'celana' ? UK_CELANA : j === 'sepatu' ? UK_SEPATU : [];
+  const jenisItem = (no, nama) => { const u = jenisUkuran(no, nama), a = []; if (u.baju) a.push('baju'); if (u.celana) a.push('celana'); if (u.sepatu) a.push('sepatu'); return a.length ? a : ['-']; };
+  const bandingUk = (a, b) => String(a).localeCompare(String(b), 'id', { numeric: true });
+  // kertas ber-kop untuk surat jalan dan invoice (kop dan kaki sama seperti memo)
+  async function kertasKop() {
+    if (!window.jspdf) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    if (!(window.jspdf && window.jspdf.jsPDF.API.autoTable)) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
+    const [kop, kaki] = await Promise.all([muatGambar('aset/kop-surat.png'), muatGambar('aset/kaki-surat.png')]);
+    const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' }), PW = 595.28, L = 40, R = PW - 40, W = R - L, BAWAH = 742, k = { doc, PW, L, R, W, y: 0, dipasang: new Set() };
+    k.pasang = () => {
+      const n = doc.internal.getCurrentPageInfo().pageNumber; if (k.dipasang.has(n)) return; k.dipasang.add(n);
+      if (kop) doc.addImage(kop, 'PNG', L, 14, W, W * 112 / 1030); if (kaki) doc.addImage(kaki, 'PNG', L, 758, W, W * 92 / 1030);
+      doc.setDrawColor(0, 112, 192); doc.setLineWidth(2.2); doc.line(L, 74, R, 74); doc.line(L, 752, R, 752);
+      doc.setFont('times', 'bold'); doc.setFontSize(9.5); doc.setTextColor(255, 0, 0); doc.text('HEAD OFFICE :', PW / 2, 768, { align: 'center' });
+      doc.setFont('times', 'normal'); doc.setTextColor(0, 0, 0);
+      doc.text('Jl. Sidodadi RT. 03 RW. 04 Kel. Mijen Kec. Mijen Semarang', PW / 2, 781, { align: 'center' }); doc.text('Telp. 024-76640213, 085 848484 222 - 085641220696', PW / 2, 794, { align: 'center' });
+      doc.setTextColor(0, 0, 255); doc.text('Email : raymitraperkasa@yahoo.co.id', PW / 2, 807, { align: 'center' }); doc.setTextColor(0, 0, 0);
+    };
+    k.huruf = (g = 'normal', u = 10.5) => { doc.setFont('times', g); doc.setFontSize(u); doc.setTextColor(0, 0, 0); };
+    k.cek = t => { if (k.y + t > BAWAH) { doc.addPage(); k.pasang(); k.y = 100; } };
+    k.tabel = o => { doc.autoTable({ theme: 'plain', margin: { top: 92, bottom: 110, left: L, right: PW - R }, didDrawPage: k.pasang,
+      styles: { font: 'times', fontSize: 10, cellPadding: { top: 2.6, bottom: 2.6, left: 4, right: 4 }, lineColor: [0, 0, 0], lineWidth: 0.5, textColor: 0 }, headStyles: { fontStyle: 'bold', halign: 'center', fillColor: false }, ...o }); k.y = doc.lastAutoTable.finalY; };
+    k.ttd = (kolom, yy) => { k.huruf(); kolom.forEach(c => doc.text(c.label, c.x, yy, { align: 'center' }));
+      kolom.forEach(c => { k.huruf('bold'); doc.text(c.t[0] || '', c.x, yy + 58, { align: 'center' }); const w = Math.max(doc.getTextWidth(c.t[0] || ''), 70); doc.setLineWidth(0.6); doc.setDrawColor(0, 0, 0); doc.line(c.x - w / 2, yy + 60, c.x + w / 2, yy + 60);
+        k.huruf('bold', 8.5); doc.setTextColor(153, 153, 153); doc.text(c.t[1] || '', c.x, yy + 72, { align: 'center' }); k.huruf(); }); };
+    k.simpan = nama => { const a = document.createElement('a'); a.href = 'data:application/pdf;base64,' + doc.output('datauristring').split(',')[1]; a.download = nama.replace(/[\\/:*?"<>|]/g, ''); document.body.appendChild(a); a.click(); a.remove(); };
+    return k;
+  }
+
+  // ----------------- INVENTARIS -----------------
+  let iTab = 'stok', iKat = 'semua', iAda = false, iJenis = 'semua', iBaris = [];
+  const saldoItem = no => stok.filter(s => s.item_no === no);
+  function renderInventaris() {
+    const totalPcs = stok.reduce((a, s) => a + Number(s.saldo), 0), tipis = stok.filter(s => s.saldo > 0 && s.saldo <= 2).length, habis = stok.filter(s => s.saldo <= 0).length;
+    $('infoInv').textContent = hilirMuat ? `${idn(totalPcs)} pcs di gudang · ${new Set(stok.map(s => s.item_no)).size} jenis barang pernah masuk · ${tipis} ukuran menipis · ${habis} ukuran habis` : 'Memuat data…';
+    const q = $('iCari').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    $('iTab').innerHTML = [['stok', 'Stok gudang'], ['riwayat', 'Riwayat masuk & keluar']].map(([t, n]) => `<button class="chip ${iTab === t ? 'on' : ''}" data-t="${t}">${n}</button>`).join('');
+    if (iTab === 'stok') {
+      const kats = ['semua', ...new Set(HARGA.map(h => h.kat))];
+      $('iChips').innerHTML = kats.map(k => `<button class="chip ${iKat === k ? 'on' : ''}" data-k="${esc(k)}">${k === 'semua' ? 'Semua kategori' : esc(k)}</button>`).join('') + `<button class="chip ${iAda ? 'on' : ''}" data-ada="1">Hanya yang ada stok</button>`;
+      $('iHead').innerHTML = '<tr><th style="min-width:260px">Barang</th><th>Stok per ukuran</th></tr>';
+      const baris = HARGA.filter(h => (iKat === 'semua' || h.kat === iKat) && q.every(w => h.nama.toLowerCase().includes(w))).map(h => ({ h, s: saldoItem(h.no) })).filter(x => !iAda || x.s.some(s => s.saldo > 0));
+      $('iBody').innerHTML = baris.map(({ h, s }) => {
+        const per = ['baju', 'celana', 'sepatu', '-'].map(j => ({ j, l: s.filter(x => x.jenis_ukuran === j).sort((a, b) => bandingUk(a.ukuran, b.ukuran)) })).filter(x => x.l.length);
+        return `<tr><td><b>${esc(h.nama)}</b><div class="muted">${esc(h.kat)}</div></td><td>${per.length ? per.map(({ j, l }) =>
+          `<div class="szg"><b>${NAMA_JENIS[j]}</b>${l.map(x => `<span class="szc ${x.saldo <= 0 ? 'nol' : x.saldo <= 2 ? 'tipis' : 'ok'}" title="masuk ${x.masuk} · keluar ${x.keluar}">${j === '-' ? '' : esc(x.ukuran) + ' '}<b>${x.saldo}</b></span>`).join('')}<span class="muted">total ${l.reduce((a, x) => a + Number(x.saldo), 0)}</span></div>`).join('') : '<span class="muted">belum ada stok</span>'}</td></tr>`;
+      }).join('') || '<tr><td colspan="2" class="kosongnya">Tidak ada barang yang cocok.</td></tr>';
+    } else {
+      $('iChips').innerHTML = [['semua', 'Semua'], ['masuk', 'Masuk dari supplier'], ['keluar', 'Keluar (pengiriman)']].map(([k, n]) => `<button class="chip ${iJenis === k ? 'on' : ''}" data-j="${k}">${n}</button>`).join('');
+      $('iHead').innerHTML = '<tr><th>Tanggal</th><th>Jenis</th><th>Barang</th><th>Ukuran</th><th class="r">Qty</th><th>Supplier / tujuan</th><th>Dokumen</th></tr>';
+      const f = gerak.filter(g => (iJenis === 'semua' || g.jenis === iJenis) && q.every(w => [g.item_nama, g.supplier, g.tujuan, g.no_dokumen, g.ukuran].join(' ').toLowerCase().includes(w)));
+      $('iBody').innerHTML = f.map(g => `<tr><td>${tglPendek(g.tanggal)}</td><td><span class="badge ${g.jenis === 'masuk' ? 'ok' : 'warn'}">${g.jenis === 'masuk' ? 'Masuk' : 'Keluar'}</span></td><td>${esc(g.item_nama)}</td>
+        <td>${g.jenis_ukuran === '-' ? '-' : NAMA_JENIS[g.jenis_ukuran] + ' ' + esc(g.ukuran)}</td><td class="r"><b>${g.jenis === 'masuk' ? '+' : '−'}${g.qty}</b></td><td>${esc(g.supplier || g.tujuan || '-')}</td><td>${esc(g.no_dokumen || '-')}${g.keterangan ? `<div class="muted">${esc(g.keterangan)}</div>` : ''}</td></tr>`).join('')
+        || '<tr><td colspan="7" class="kosongnya">Belum ada riwayat.</td></tr>';
+    }
+  }
+  $('iTab').onclick = e => { const t = e.target.dataset && e.target.dataset.t; if (t) { iTab = t; renderInventaris(); } };
+  $('iChips').onclick = e => { const d = e.target.dataset; if (!d) return; if (d.k) iKat = d.k; else if (d.ada) iAda = !iAda; else if (d.j) iJenis = d.j; else return; renderInventaris(); };
+  $('iCari').oninput = renderInventaris; $('iMuat').onclick = muatHilir;
+  // --- form barang masuk ---
+  const opsiItemMasuk = no => '<option value="">Pilih barang</option>' + [...new Set(HARGA.map(h => h.kat))].map(k => `<optgroup label="${esc(k)}">` + HARGA.filter(h => h.kat === k).map(h => `<option value="${h.no}" ${String(h.no) === String(no) ? 'selected' : ''}>${esc(h.nama)}</option>`).join('') + '</optgroup>').join('');
+  function renderBarisMasuk() {
+    $('iBaris').innerHTML = iBaris.map((b, n) => {
+      const h = HARGA.find(x => String(x.no) === String(b.no)), js = h ? jenisItem(h.no, h.nama) : [];
+      return `<tr data-n="${n}"><td><select class="im-item">${opsiItemMasuk(b.no)}</select></td>
+        <td><select class="im-jenis" ${h ? '' : 'disabled'}>${js.length > 1 ? '<option value="">Pilih</option>' : ''}${js.map(j => `<option value="${j}" ${b.jenis === j ? 'selected' : ''}>${NAMA_JENIS[j]}</option>`).join('')}</select></td>
+        <td><select class="im-uk" ${b.jenis && b.jenis !== '-' ? '' : 'disabled'}>${b.jenis === '-' ? '<option value="-">-</option>' : opsiUk(daftarUkuran(b.jenis), b.ukuran)}</select></td>
+        <td><input class="im-qty" type="number" min="1" inputmode="numeric" placeholder="0" value="${esc(b.qty)}"></td><td><button class="x" title="Hapus baris" aria-label="Hapus baris">✕</button></td></tr>`;
+    }).join('');
+  }
+  const barisMasukBaru = () => ({ no: '', jenis: '', ukuran: '', qty: '' });
+  function bukaFormMasuk() { iBaris = [barisMasukBaru()]; $('iTgl').value = tgl0(); ['iSup', 'iDok', 'iKet'].forEach(id => { $(id).value = ''; }); $('iPesan').textContent = ''; renderBarisMasuk(); $('iForm').hidden = false; $('iForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  $('iMasukBtn').onclick = bukaFormMasuk; $('iBatal').onclick = () => { $('iForm').hidden = true; };
+  $('iTambah').onclick = () => { iBaris.push(barisMasukBaru()); renderBarisMasuk(); };
+  $('iBaris').onchange = e => {
+    const tr = e.target.closest('tr'); if (!tr) return; const b = iBaris[tr.dataset.n];
+    if (e.target.classList.contains('im-item')) { b.no = e.target.value; const h = HARGA.find(x => String(x.no) === String(b.no)), js = h ? jenisItem(h.no, h.nama) : []; b.jenis = js.length === 1 ? js[0] : ''; b.ukuran = b.jenis === '-' ? '-' : ''; renderBarisMasuk(); }
+    else if (e.target.classList.contains('im-jenis')) { b.jenis = e.target.value; b.ukuran = b.jenis === '-' ? '-' : ''; renderBarisMasuk(); }
+    else if (e.target.classList.contains('im-uk')) b.ukuran = e.target.value;
+  };
+  $('iBaris').oninput = e => { if (e.target.classList.contains('im-qty')) iBaris[e.target.closest('tr').dataset.n].qty = e.target.value; };
+  $('iBaris').onclick = e => { if (!e.target.classList.contains('x')) return; if (iBaris.length === 1) iBaris = [barisMasukBaru()]; else iBaris.splice(e.target.closest('tr').dataset.n, 1); renderBarisMasuk(); };
+  $('iSimpan').onclick = async () => {
+    const ps = $('iPesan'), btn = $('iSimpan'); ps.style.color = 'var(--bad)';
+    if (!$('iSup').value.trim()) { ps.textContent = 'Nama supplier wajib diisi.'; return; }
+    const baris = iBaris.filter(b => b.no || b.qty || b.jenis);
+    if (!baris.length || baris.some(b => !b.no || !b.jenis || (b.jenis !== '-' && !b.ukuran) || !(Number(b.qty) > 0))) { ps.textContent = 'Lengkapi barang, jenis, ukuran, dan qty di setiap baris.'; return; }
+    btn.disabled = true; btn.textContent = 'Menyimpan…'; ps.textContent = '';
+    try {
+      const n = await rpcKode('catat_barang_masuk', { p_tanggal: $('iTgl').value || tgl0(), p_supplier: $('iSup').value.trim(), p_no_dokumen: $('iDok').value.trim(), p_keterangan: $('iKet').value.trim(),
+        p_baris: baris.map(b => ({ item_no: Number(b.no), jenis_ukuran: b.jenis, ukuran: b.ukuran, qty: Number(b.qty) })) });
+      $('iForm').hidden = true; iTab = 'riwayat'; iJenis = 'masuk'; await muatHilir();
+    } catch (e) { ps.textContent = 'Gagal: ' + e.message; }
+    btn.disabled = false; btn.textContent = 'Simpan barang masuk';
+  };
+
+  // ----------------- PENGIRIMAN -----------------
+  let kSel = '', kStatusF = 'semua', kTerbuka = false, kData = null;
+  const progresP = p => progres.get(p.id) || { total_qty: 0, terkirim_qty: 0 };
+  function infoKirim(l, setuju) {
+    const per = l.bagian.map(b => setuju.get(l.lokasi + '|' + b.nama)).filter(p => p && p.diploting_pada);
+    const tot = per.reduce((a, p) => a + Number(progresP(p).total_qty), 0), krm = per.reduce((a, p) => a + Number(progresP(p).terkirim_qty), 0);
+    return { s: !per.length ? 'kosong' : krm >= tot ? 'selesai' : krm > 0 ? 'sebagian' : 'belum', tot, krm, per };
+  }
+  const LK = { belum: ['Belum dikirim', 'warn'], sebagian: ['Sebagian terkirim', 'warn'], selesai: ['Selesai dikirim', 'ok'] };
+  const URUT_LK = { belum: 0, sebagian: 1, selesai: 2 };
+  function renderKirimList() {
+    if (!hilirMuat) return;
+    const setuju = setujuTerakhir(), semua = lokMinta().map(l => { l.ki = infoKirim(l, setuju); return l; }).filter(l => l.ki.s !== 'kosong');
+    const q = $('kCari').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const f = semua.filter(l => q.every(w => l.kunci.includes(w)) && (kStatusF === 'semua' || l.ki.s === kStatusF))
+      .sort((a, b) => q.length ? a.client.localeCompare(b.client) : (URUT_LK[a.ki.s] - URUT_LK[b.ki.s]) || a.client.localeCompare(b.client));
+    if (!f.some(l => l.lokasi === kSel)) { kSel = f.length ? f[0].lokasi : ''; kData = null; }
+    const n = s => s === 'semua' ? semua.length : semua.filter(l => l.ki.s === s).length;
+    $('kChips').innerHTML = [['semua', 'Semua'], ['belum', 'Belum dikirim'], ['sebagian', 'Sebagian'], ['selesai', 'Selesai dikirim']].map(([s, t]) => `<button class="chip ${kStatusF === s ? 'on' : ''}" data-s="${s}">${t} ${n(s)}</button>`).join('');
+    $('infoKirim').textContent = semua.length ? `${semua.length} lokasi siap dikirim · ${n('belum') + n('sebagian')} belum selesai · ${kirimAll.length} surat jalan` : 'Belum ada lokasi yang sudah diplot. Lakukan ploting seragam dulu.';
+    $('kDaftar').innerHTML = f.map(l => { const [lbl, cls] = LK[l.ki.s], pct = l.ki.tot ? 100 * l.ki.krm / l.ki.tot : 0;
+      return `<button class="item ${l.lokasi === kSel ? 'sel' : ''}" data-k="${esc(l.lokasi)}"><div class="nm">${esc(l.client)}</div><div class="bar ${cls}"><i style="width:${pct}%"></i></div>
+        <div class="mt"><span>${idn(l.ki.krm)}/${idn(l.ki.tot)} pcs terkirim</span><span class="badge ${cls}">${lbl}</span></div></button>`; }).join('') || `<div class="kosongnya">${semua.length ? 'Lokasi tidak ditemukan.' : 'Belum ada lokasi yang sudah diplot.'}</div>`;
+    renderKirimDetail();
+  }
+  function renderKirimDetail() {
+    const l = lokasi.find(x => x.lokasi === kSel); $('kDetail').classList.toggle('open', kTerbuka && !!l);
+    if (!l) { $('kHead').innerHTML = '<div class="kosongnya">Pilih lokasi di daftar untuk mengirim seragam.</div>'; $('kEditor').hidden = true; return; }
+    const setuju = setujuTerakhir(), mi = l.ki || infoKirim(l, setuju), [lbl, cls] = LK[mi.s] || ['', 'neu'];
+    const bagian = mi.per.map(p => {
+      const pr = progresP(p), riw = kirimAll.filter(g => g.permintaan_id === p.id), selesai = Number(pr.terkirim_qty) >= Number(pr.total_qty);
+      return `<div class="bgr"><div class="row"><div><b>${esc(p.bagian_kerja)}</b><div class="muted">permintaan no. ${p.id} · ${idn(pr.terkirim_qty)} dari ${idn(pr.total_qty)} pcs terkirim</div></div>
+        <div class="bgact"><span class="badge ${selesai ? 'ok' : 'warn'}">${selesai ? 'Selesai dikirim' : 'Belum selesai'}</span>${selesai ? '' : `<button class="btn" data-kirim="${p.id}">Kirim seragam</button>`}</div></div>
+        <div class="bar ${selesai ? 'ok' : 'warn'}" style="margin:8px 0 4px"><i style="width:${pr.total_qty ? 100 * pr.terkirim_qty / pr.total_qty : 0}%"></i></div>
+        ${riw.map(g => `<div class="rwi"><div class="row"><span><b>${esc(g.no_surat_jalan)}</b> · ${tglPendek(g.tanggal)} · ${idn(g.jumlah_pcs)} pcs</span><span class="badge ${g.status === 'diterima' ? 'ok' : 'warn'}">${g.status === 'diterima' ? 'Diterima ' + tglPendek(g.diterima_pada) : 'Dalam pengiriman'}</span></div>
+          <div class="rl"><span>${esc(g.ekspedisi || '-')}${g.no_resi ? ' · resi ' + esc(g.no_resi) : ''}${g.penerima ? ' · penerima ' + esc(g.penerima) : ''}</span>
+          <span class="bgact">${g.status === 'dikirim' ? `<button class="btn" data-terima="${g.id}">Tandai diterima</button>` : ''}<button class="btn" data-sj="${g.id}">Surat jalan (PDF)</button></span></div></div>`).join('')}</div>`;
+    }).join('');
+    $('kHead').innerHTML = `<div class="dhead"><button class="btn back" id="kBack">‹ Kembali</button><div class="row"><h2>${esc(l.client)}</h2><span class="badge ${cls}">${lbl}</span></div></div><div class="dbody">${bagian}</div>`;
+    if (!kData || kData.lokasi !== l.lokasi) $('kEditor').hidden = true;
+  }
+  // --- editor pengiriman ---
+  function butuhBaris(r) { // satu baris ploting memakai stok per jenis ukuran
+    const a = []; if (r.ukuran_baju) a.push(['baju', r.ukuran_baju]); if (r.ukuran_celana) a.push(['celana', r.ukuran_celana]); if (r.ukuran_sepatu) a.push(['sepatu', r.ukuran_sepatu]); if (!a.length) a.push(['-', '-']);
+    return a.map(([j, u]) => ({ key: `${r.item_no}|${j}|${u}`, q: r.qty, j, u }));
+  }
+  async function bukaKirim(permintaanId) {
+    const p = daftarMinta.find(x => x.id === Number(permintaanId)), ed = $('kEditor'); if (!p) return;
+    ed.hidden = false; ed.innerHTML = '<div class="hint">Memuat data ploting dan stok…</div>'; ed.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    try {
+      const rows = await rpcKode('siap_kirim', { p_permintaan: p.id });
+      const s = await rpc('daftar_stok', {}); stok = s;
+      const peta = new Map(s.map(x => [`${x.item_no}|${x.jenis_ukuran}|${x.ukuran}`, Number(x.saldo)]));
+      kData = { lokasi: p.lokasi_form, p, rows, peta, pilih: new Set() };
+      kData.pilih = statusKirimUrut();
+      renderKirimEditor();
+    } catch (e) { ed.innerHTML = `<div class="hint" style="color:var(--bad)">${esc(e.message)}</div>`; }
+  }
+  function statusKirim() { // simulasi stok: baris yang dipilih memakai stok berurutan; yang tidak dipilih dicek terhadap stok penuh
+    const sisa = new Map(kData.peta);
+    return kData.rows.map(r => {
+      if (r.pengiriman_id) return { r, ok: false, sudah: true, kurang: [] };
+      const b = butuhBaris(r), pilih = kData.pilih.has(r.id), pakai = pilih ? sisa : kData.peta;
+      const kurang = b.filter(x => (pakai.get(x.key) || 0) < x.q);
+      if (pilih && !kurang.length) b.forEach(x => sisa.set(x.key, (sisa.get(x.key) || 0) - x.q));
+      return { r, ok: !kurang.length, sudah: false, kurang };
+    });
+  }
+  function renderKirimEditor() {
+    const { p, rows } = kData, st = statusKirim(), ed = $('kEditor'), belum = st.filter(x => !x.sudah);
+    ed.hidden = false;
+    ed.innerHTML = `<div class="row" style="margin-bottom:6px"><h3 style="margin:0">Kirim seragam: ${esc(p.bagian_kerja)}</h3><button class="btn" id="kTutup">Tutup</button></div>
+      <div class="muted" style="margin-bottom:12px">${belum.length} baris belum dikirim dari ${rows.length} · centang yang dikirim sekarang. Stok otomatis berkurang saat diproses.</div>
+      <div class="bgact" style="margin-bottom:10px"><button class="btn" id="kSemua">Pilih semua yang stoknya ada</button><button class="btn" id="kKosong">Kosongkan pilihan</button></div>
+      <div class="wrap pplot"><table><thead><tr><th style="width:36px"></th><th>Karyawan</th><th>Barang</th><th>Ukuran</th><th class="r">Qty</th><th>Stok</th></tr></thead><tbody id="kBaris"></tbody></table></div>
+      <div class="fgrid" style="margin-top:16px;grid-template-columns:1fr 1.2fr 1.2fr 1.2fr"><label>Tanggal kirim<input type="date" id="kTgl" value="${tgl0()}"></label><label>Ekspedisi / kurir<input id="kEks" placeholder="mis. JNE, kurir sendiri"></label>
+        <label>No. resi<input id="kResi"></label><label>Penerima di lokasi<input id="kPen"></label></div>
+      <label style="display:block;margin-top:10px;font-size:.76rem;color:var(--muted)">Keterangan<input id="kKet" style="margin-top:5px"></label>
+      <div class="hint" id="kPesan"></div>
+      <button class="cta" id="kProses" style="width:100%;margin-top:14px" disabled>Proses pengiriman</button><div class="hint" id="kStatus" role="status"></div>`;
+    isiBarisKirim();
+  }
+  function isiBarisKirim() {
+    const st = statusKirim(), ukTeks = r => [r.ukuran_baju && 'Baju ' + r.ukuran_baju, r.ukuran_celana && 'Celana ' + r.ukuran_celana, r.ukuran_sepatu && 'Sepatu ' + r.ukuran_sepatu].filter(Boolean).join(' · ') || '-';
+    $('kBaris').innerHTML = st.map(({ r, ok, sudah, kurang }) => `<tr data-id="${r.id}"><td><input type="checkbox" class="kc" ${sudah ? 'disabled' : ''} ${kData.pilih.has(r.id) ? 'checked' : ''}></td><td>${esc(r.nama)}</td><td>${esc(r.item_nama)}</td><td>${esc(ukTeks(r))}</td><td class="r">${r.qty}</td>
+      <td>${sudah ? `<span class="badge ok">Sudah dikirim · ${esc(r.no_surat_jalan || '')}</span>` : ok ? '<span class="badge ok">Tersedia</span>' : `<span class="badge bad" title="${esc(kurang.map(x => x.j + ' ' + x.u).join(', '))}">Stok kurang</span>`}</td></tr>`).join('');
+    const dipilih = st.filter(x => kData.pilih.has(x.r.id)), bermasalah = dipilih.filter(x => !x.ok).length, btn = $('kProses');
+    $('kPesan').textContent = bermasalah ? `${bermasalah} baris yang dicentang stoknya kurang. Hilangkan centang atau tambah stok di Inventaris.` : '';
+    btn.disabled = !dipilih.length || !!bermasalah; btn.textContent = dipilih.length ? `Proses pengiriman (${dipilih.reduce((a, x) => a + x.r.qty, 0)} pcs)` : 'Pilih barang yang dikirim';
+  }
+  async function prosesKirim() {
+    const btn = $('kProses'), st = $('kStatus'), label = btn.textContent, ids = [...kData.pilih]; btn.disabled = true; btn.textContent = 'Memproses…'; st.style.color = ''; st.textContent = '';
+    const dikirim = kData.rows.filter(r => kData.pilih.has(r.id));
+    try {
+      const h = await rpcKode('catat_pengiriman', { p_permintaan: kData.p.id, p_tanggal: $('kTgl').value || tgl0(), p_ekspedisi: $('kEks').value.trim(), p_resi: $('kResi').value.trim(), p_penerima: $('kPen').value.trim(), p_keterangan: $('kKet').value.trim(), p_ploting_ids: ids });
+      const info = { no: h.no_surat_jalan, tanggal: $('kTgl').value || tgl0(), client: kData.p.client, bagian: kData.p.bagian_kerja, ekspedisi: $('kEks').value.trim(), resi: $('kResi').value.trim(), penerima: $('kPen').value.trim(), rows: dikirim };
+      await muatHilir(); kData = null; $('kEditor').hidden = false;
+      $('kEditor').innerHTML = `<div class="hint" style="color:var(--ok)">✓ Pengiriman ${esc(info.no)} tercatat dan stok sudah dipotong.</div><button class="cta" id="kUnduhSj" style="margin-top:10px">Unduh surat jalan (PDF)</button> <button class="btn" id="kTutup">Tutup</button>`;
+      kSuratTerakhir = info; return;
+    } catch (e) { st.style.color = 'var(--bad)'; st.textContent = 'Gagal: ' + e.message; }
+    btn.textContent = label; isiBarisKirim();
+  }
+  let kSuratTerakhir = null;
+  async function suratJalanPdf(i) { // i = { no, tanggal, client, bagian, ekspedisi, resi, penerima, rows:[{nama,item_nama,qty,ukuran_*}] }
+    const k = await kertasKop(), { doc, PW, L, W } = k; k.pasang(); k.huruf('bold', 14); doc.text('SURAT JALAN', PW / 2, 104, { align: 'center' }); k.y = 134;
+    [['No. Surat Jalan', i.no], ['Tanggal', new Date(i.tanggal + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })], ['Tujuan', i.client], ['Bagian', i.bagian], ['Ekspedisi', (i.ekspedisi || '-') + (i.resi ? ' · resi ' + i.resi : '')]]
+      .forEach(([a, b], n) => { k.huruf('bold'); doc.text(a, L, k.y + n * 14); k.huruf(); doc.text(': ' + b, L + 92, k.y + n * 14); });
+    k.y += 5 * 14 + 8;
+    const uk = r => [r.ukuran_baju && 'Baju ' + r.ukuran_baju, r.ukuran_celana && 'Celana ' + r.ukuran_celana, r.ukuran_sepatu && 'Sepatu ' + r.ukuran_sepatu].filter(Boolean).join(', ') || '-';
+    k.tabel({ startY: k.y, head: [['NO', 'KARYAWAN', 'BARANG', 'UKURAN', 'QTY']], body: [...i.rows.map((r, n) => [{ content: n + 1, styles: { halign: 'center' } }, r.nama, r.item_nama, uk(r), { content: r.qty, styles: { halign: 'center' } }]),
+      [{ content: 'TOTAL', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } }, { content: i.rows.reduce((a, r) => a + r.qty, 0), styles: { halign: 'center', fontStyle: 'bold' } }]],
+      columnStyles: { 0: { cellWidth: 28 }, 1: { cellWidth: 100 }, 3: { cellWidth: 120 }, 4: { cellWidth: 40 } } });
+    k.y += 26; k.cek(92); k.ttd([{ x: L + W * 0.25, label: 'Pengirim,', t: TTD.pic }, { x: L + W * 0.75, label: 'Penerima,', t: [i.penerima || '', '(Penerima)'] }], k.y);
+    k.simpan(`Surat Jalan ${i.no.replace(/\//g, '-')} ${i.client}.pdf`);
+  }
+  $('kDaftar').onclick = e => { const b = e.target.closest('.item'); if (b) { kTerbuka = true; if (kSel !== b.dataset.k) { kSel = b.dataset.k; kData = null; $('kEditor').hidden = true; } renderKirimList(); } };
+  $('kHead').onclick = async e => {
+    const t = e.target;
+    if (t.id === 'kBack') { kTerbuka = false; renderKirimDetail(); return; }
+    if (t.dataset.kirim) return bukaKirim(t.dataset.kirim);
+    if (t.dataset.terima) { try { await rpcKode('tandai_diterima', { p_id: Number(t.dataset.terima) }); await muatHilir(); } catch (x) { alert('Gagal: ' + x.message); } return; }
+    if (t.dataset.sj) {
+      const g = kirimAll.find(x => x.id === Number(t.dataset.sj)); if (!g) return; const label = t.textContent; t.disabled = true; t.textContent = 'Menyiapkan…';
+      try { const rows = await rpcKode('detail_pengiriman', { p_id: g.id }); await suratJalanPdf({ no: g.no_surat_jalan, tanggal: g.tanggal, client: g.client, bagian: g.bagian_kerja, ekspedisi: g.ekspedisi, resi: g.no_resi, penerima: g.penerima, rows }); } catch (x) { alert('Gagal: ' + x.message); }
+      t.disabled = false; t.textContent = label;
+    }
+  };
+  $('kEditor').onclick = e => {
+    const t = e.target;
+    if (t.id === 'kTutup') { $('kEditor').hidden = true; kData = null; return; }
+    if (t.id === 'kUnduhSj') { if (kSuratTerakhir) suratJalanPdf(kSuratTerakhir).catch(x => alert('Gagal: ' + x.message)); return; }
+    if (!kData) return;
+    if (t.id === 'kSemua') { kData.pilih = statusKirimUrut(); isiBarisKirim(); return; }
+    if (t.id === 'kKosong') { kData.pilih = new Set(); isiBarisKirim(); return; }
+    if (t.id === 'kProses') return prosesKirim();
+    if (t.classList.contains('kc')) { const id = Number(t.closest('tr').dataset.id); t.checked ? kData.pilih.add(id) : kData.pilih.delete(id); isiBarisKirim(); }
+  };
+  function statusKirimUrut() { // pilih baris berurutan selama stoknya masih cukup
+    const sisa = new Map(kData.peta), hasil = new Set();
+    for (const r of kData.rows) { if (r.pengiriman_id) continue; const b = butuhBaris(r); if (b.every(x => (sisa.get(x.key) || 0) >= x.q)) { b.forEach(x => sisa.set(x.key, sisa.get(x.key) - x.q)); hasil.add(r.id); } }
+    return hasil;
+  }
+  $('kChips').onclick = e => { const s = e.target.dataset && e.target.dataset.s; if (s) { kStatusF = s; kTerbuka = false; renderKirimList(); } };
+  $('kCari').oninput = () => { kTerbuka = false; renderKirimList(); }; $('kMuat').onclick = muatHilir;
+
+  // ----------------- TAGIHAN -----------------
+  let tSel = 0, tStatusF = 'semua', tTerbuka = false;
+  const tagihanAktif = pid => tagihanAll.find(t => t.permintaan_id === pid && t.status !== 'batal');
+  function entriTagihan() { // permintaan yang barangnya sudah terkirim semua
+    return [...setujuTerakhir().values()].filter(p => { const pr = progres.get(p.id); return pr && Number(pr.total_qty) > 0 && Number(pr.terkirim_qty) >= Number(pr.total_qty); })
+      .map(p => { const t = tagihanAktif(p.id); return { p, t, s: !t ? 'siap' : t.status === 'lunas' ? 'lunas' : 'belum' }; });
+  }
+  const LT = { siap: ['Siap ditagih', 'warn'], belum: ['Belum lunas', 'bad'], lunas: ['Lunas', 'ok'] };
+  const URUT_LT = { siap: 0, belum: 1, lunas: 2 };
+  function renderTagihanList() {
+    if (!hilirMuat) return;
+    const semua = entriTagihan(), q = $('tCari').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const f = semua.filter(x => q.every(w => (x.p.client + ' ' + x.p.bagian_kerja).toLowerCase().includes(w)) && (tStatusF === 'semua' || x.s === tStatusF)).sort((a, b) => (URUT_LT[a.s] - URUT_LT[b.s]) || a.p.client.localeCompare(b.p.client));
+    if (!f.some(x => x.p.id === tSel)) tSel = f.length ? f[0].p.id : 0;
+    const n = s => s === 'semua' ? semua.length : semua.filter(x => x.s === s).length;
+    $('tChips').innerHTML = [['semua', 'Semua'], ['siap', 'Siap ditagih'], ['belum', 'Belum lunas'], ['lunas', 'Lunas']].map(([s, t]) => `<button class="chip ${tStatusF === s ? 'on' : ''}" data-s="${s}">${t} ${n(s)}</button>`).join('');
+    const aktif = tagihanAll.filter(t => t.status !== 'batal'), total = aktif.reduce((a, t) => a + Number(t.total), 0), sisa = aktif.reduce((a, t) => a + Number(t.total) - Number(t.terbayar), 0);
+    $('infoTag').textContent = `${n('siap')} siap ditagih · ${n('belum')} belum lunas · total tagihan ${rpRingkas(total)} · belum terbayar ${rpRingkas(sisa)}`;
+    $('tDaftar').innerHTML = f.map(({ p, t, s }) => { const [lbl, cls] = LT[s];
+      return `<button class="item ${p.id === tSel ? 'sel' : ''}" data-id="${p.id}"><div class="nm">${esc(p.client)}</div><div class="muted" style="font-size:.76rem">${esc(p.bagian_kerja)}</div>
+        <div class="mt"><span>${t ? esc(t.no_invoice) + ' · ' + rpRingkas(t.total) : 'barang sudah terkirim semua'}</span><span class="badge ${cls}">${lbl}</span></div></button>`; }).join('') || `<div class="kosongnya">${semua.length ? 'Tidak ada yang cocok.' : 'Belum ada permintaan yang seluruh barangnya sudah terkirim.'}</div>`;
+    renderTagihanDetail();
+  }
+  function renderTagihanDetail() {
+    const x = entriTagihan().find(e => e.p.id === tSel); $('tDetail').classList.toggle('open', tTerbuka && !!x);
+    if (!x) { $('tHead').innerHTML = '<div class="kosongnya">Pilih lokasi di daftar untuk membuat atau melihat tagihan.</div>'; $('tIsi').hidden = true; return; }
+    const { p, t, s } = x, [lbl, cls] = LT[s];
+    $('tHead').innerHTML = `<div class="dhead"><button class="btn back" id="tBack">‹ Kembali</button><div class="row"><h2>${esc(p.client)}</h2><span class="badge ${cls}">${lbl}</span></div>
+      <div class="muted" style="margin-top:4px">${esc(p.bagian_kerja)} · permintaan no. ${p.id}</div></div>`;
+    $('tIsi').hidden = false;
+    const tabel = items => `<div class="wrap tabelminta"><table><thead><tr><th>Barang</th><th class="r">Qty</th><th class="r">Harga</th><th class="r">Jumlah</th></tr></thead><tbody>${items.map(i => `<tr><td>${esc(i.item_nama)}</td><td class="r">${i.qty}</td><td class="r">${rp(i.harga)}</td><td class="r">${rp(i.subtotal)}</td></tr>`).join('')}
+      <tr><td colspan="3" class="r"><b>Total</b></td><td class="r"><b>${rp(items.reduce((a, i) => a + Number(i.subtotal), 0))}</b></td></tr></tbody></table></div>`;
+    if (!t) { // pratinjau tagihan: qty terkirim x harga jual di permintaan
+      const g = new Map(); for (const it of p.items || []) { const k = String(it.no); if (!g.has(k)) g.set(k, { item_nama: it.nama, qty: 0, harga: Number(it.jual) || 0 }); g.get(k).qty += Number(it.qty) || 0; }
+      const items = [...g.values()].map(i => ({ ...i, subtotal: i.qty * i.harga })), jt = new Date(); jt.setDate(jt.getDate() + 14); jt.setMinutes(jt.getMinutes() - jt.getTimezoneOffset());
+      $('tIsi').innerHTML = `<h3 style="margin:0 0 10px">Buat tagihan</h3><div class="muted" style="margin-bottom:10px">Seluruh barang sudah terkirim. Jumlah tagihan = qty terkirim × harga jual.</div>${tabel(items)}
+        <div class="fgrid" style="margin-top:14px;grid-template-columns:1fr 1fr 2fr"><label>Tanggal invoice<input type="date" id="tTgl" value="${tgl0()}"></label><label>Jatuh tempo<input type="date" id="tJt" value="${jt.toISOString().slice(0, 10)}"></label><label>Catatan<input id="tCat" placeholder="opsional"></label></div>
+        <div class="hint" id="tPesan"></div><button class="cta" id="tBuat" style="width:100%;margin-top:12px">Buat tagihan</button>`;
+      return;
+    }
+    const sisa = Number(t.total) - Number(t.terbayar);
+    $('tIsi').innerHTML = `<div class="row" style="margin-bottom:6px"><h3 style="margin:0">${esc(t.no_invoice)}</h3><span class="muted">${tglPendek(t.tanggal)}${t.jatuh_tempo ? ' · jatuh tempo ' + tglPendek(t.jatuh_tempo) : ''}</span></div>${t.catatan ? `<div class="muted" style="margin-bottom:8px">Catatan: ${esc(t.catatan)}</div>` : ''}
+      ${tabel(t.items)}
+      <div class="sums" style="margin-top:14px"><div><span>Total tagihan</span><b class="num">${rp(t.total)}</b></div><div><span>Sudah dibayar</span><b class="num" style="color:var(--green)">${rp(t.terbayar)}</b></div><div><span>Sisa tagihan</span><b class="num ${sisa > 0 ? 'neg' : ''}">${rp(sisa)}</b></div></div>
+      ${t.bayar.length ? `<div style="margin-top:12px"><b>Riwayat pembayaran</b>${t.bayar.map(b => `<div class="rl"><span>${tglPendek(b.tanggal)}${b.keterangan ? ' · ' + esc(b.keterangan) : ''}</span><b>${rp(b.jumlah)}</b></div>`).join('')}</div>` : ''}
+      ${sisa > 0 ? `<div class="fgrid" style="margin-top:14px;grid-template-columns:1fr 1fr 2fr"><label>Tanggal bayar<input type="date" id="tBayarTgl" value="${tgl0()}"></label><label>Jumlah (Rp)<input type="number" id="tBayarJml" min="1" value="${sisa}"></label><label>Keterangan<input id="tBayarKet" placeholder="mis. transfer BCA"></label></div>
+        <div class="hint" id="tPesan"></div><button class="cta" id="tBayar" style="width:100%;margin-top:12px">Catat pembayaran</button>` : '<div class="hint" id="tPesan" style="color:var(--ok)">✓ Tagihan sudah lunas.</div>'}
+      <div class="bgact" style="margin-top:12px"><button class="btn" id="tPdf">Unduh invoice (PDF)</button>${Number(t.terbayar) === 0 ? '<button class="btn" id="tBatal">Batalkan tagihan</button>' : ''}</div>`;
+  }
+  const TERBILANG = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
+  function terbilang(n) {
+    n = Math.floor(n); if (n === 0) return 'nol';
+    const t = x => x < 12 ? TERBILANG[x] : x < 20 ? t(x - 10) + ' belas' : x < 100 ? t(Math.floor(x / 10)) + ' puluh' + (x % 10 ? ' ' + t(x % 10) : '') : x < 200 ? 'seratus' + (x - 100 ? ' ' + t(x - 100) : '')
+      : x < 1000 ? t(Math.floor(x / 100)) + ' ratus' + (x % 100 ? ' ' + t(x % 100) : '') : x < 2000 ? 'seribu' + (x - 1000 ? ' ' + t(x - 1000) : '') : x < 1e6 ? t(Math.floor(x / 1000)) + ' ribu' + (x % 1000 ? ' ' + t(x % 1000) : '')
+      : x < 1e9 ? t(Math.floor(x / 1e6)) + ' juta' + (x % 1e6 ? ' ' + t(x % 1e6) : '') : t(Math.floor(x / 1e9)) + ' miliar' + (x % 1e9 ? ' ' + t(x % 1e9) : '');
+    return t(n);
+  }
+  async function invoicePdf(t) {
+    const k = await kertasKop(), { doc, PW, L, R, W } = k, fmt = d => d ? new Date(String(d).slice(0, 10) + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
+    k.pasang(); k.huruf('bold', 16); doc.text('INVOICE', PW / 2, 104, { align: 'center' }); k.y = 134;
+    [['No. Invoice', t.no_invoice], ['Tanggal', fmt(t.tanggal)], ['Jatuh tempo', fmt(t.jatuh_tempo)]].forEach(([a, b], n) => { k.huruf('bold'); doc.text(a, L, k.y + n * 14); k.huruf(); doc.text(': ' + b, L + 82, k.y + n * 14); });
+    k.huruf('bold'); doc.text('Kepada Yth.', R - 200, k.y); k.huruf(); doc.text(doc.splitTextToSize(`${t.client}\n${t.bagian_kerja}`, 200), R - 200, k.y + 14);
+    k.y += 3 * 14 + 22;
+    k.huruf(); const jml = Number(t.total);
+    k.tabel({ startY: k.y, head: [['NO', 'DESKRIPSI BARANG', 'QTY', 'HARGA SATUAN', 'JUMLAH']], body: [...t.items.map((i, n) => [{ content: n + 1, styles: { halign: 'center' } }, i.item_nama, { content: i.qty, styles: { halign: 'center' } }, { content: rp(i.harga), styles: { halign: 'right' } }, { content: rp(i.subtotal), styles: { halign: 'right' } }]),
+      [{ content: 'TOTAL', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rp(jml), styles: { halign: 'right', fontStyle: 'bold' } }]],
+      columnStyles: { 0: { cellWidth: 28 }, 2: { cellWidth: 40 }, 3: { cellWidth: 90 }, 4: { cellWidth: 92 } } });
+    k.y += 18; k.cek(150); k.huruf('italic', 10); const tb = doc.splitTextToSize('Terbilang: ' + terbilang(jml).replace(/^./, c => c.toUpperCase()) + ' rupiah', W); doc.text(tb, L, k.y); k.y += tb.length * 13 + 8;
+    if (Number(t.terbayar) > 0) { k.huruf(); doc.text(`Sudah dibayar: ${rp(t.terbayar)}   ·   Sisa tagihan: ${rp(Number(t.total) - Number(t.terbayar))}`, L, k.y); k.y += 16; }
+    k.huruf(); doc.text('Pembayaran dapat ditransfer ke rekening: ______________________________________', L, k.y); k.y += 14;
+    if (t.catatan) { const c = doc.splitTextToSize('Catatan: ' + t.catatan, W); doc.text(c, L, k.y); k.y += c.length * 13; }
+    k.y += 18; k.cek(92); k.ttd([{ x: R - 110, label: 'Hormat kami,', t: TTD.dir }], k.y);
+    k.simpan(`Invoice ${t.no_invoice.replace(/\//g, '-')} ${t.client}.pdf`);
+  }
+  $('tDaftar').onclick = e => { const b = e.target.closest('.item'); if (b) { tTerbuka = true; tSel = Number(b.dataset.id); renderTagihanList(); } };
+  $('tHead').onclick = e => { if (e.target.id === 'tBack') { tTerbuka = false; renderTagihanDetail(); } };
+  $('tIsi').onclick = async e => {
+    const id = e.target.id, x = entriTagihan().find(en => en.p.id === tSel); if (!x) return; const ps = $('tPesan'), btn = e.target; if (ps) ps.style.color = 'var(--bad)';
+    const jalan = async (fn, label) => { btn.disabled = true; btn.textContent = label; try { await fn(); } catch (err) { if (ps) ps.textContent = 'Gagal: ' + err.message; } btn.disabled = false; };
+    if (id === 'tBuat') return jalan(async () => { await rpcKode('buat_tagihan', { p_permintaan: x.p.id, p_tanggal: $('tTgl').value || tgl0(), p_jatuh_tempo: $('tJt').value || null, p_catatan: $('tCat').value.trim() }); await muatHilir(); }, 'Membuat…').then(() => { btn.textContent = 'Buat tagihan'; });
+    if (id === 'tBayar') { const jml = Math.floor(Number($('tBayarJml').value)); if (!(jml > 0)) { ps.textContent = 'Jumlah pembayaran harus lebih dari 0.'; return; }
+      return jalan(async () => { await rpcKode('catat_bayar', { p_tagihan: x.t.id, p_tanggal: $('tBayarTgl').value || tgl0(), p_jumlah: jml, p_keterangan: $('tBayarKet').value.trim() }); await muatHilir(); }, 'Menyimpan…').then(() => { btn.textContent = 'Catat pembayaran'; }); }
+    if (id === 'tBatal') { if (!confirm('Batalkan tagihan ini? Lokasi akan kembali berstatus "Siap ditagih".')) return; return jalan(async () => { await rpcKode('batalkan_tagihan', { p_tagihan: x.t.id }); await muatHilir(); }, 'Membatalkan…'); }
+    if (id === 'tPdf') { const label = btn.textContent; btn.disabled = true; btn.textContent = 'Menyiapkan…'; try { await invoicePdf(x.t); } catch (err) { alert('Gagal: ' + err.message); } btn.disabled = false; btn.textContent = label; }
+  };
+  $('tChips').onclick = e => { const s = e.target.dataset && e.target.dataset.s; if (s) { tStatusF = s; tTerbuka = false; renderTagihanList(); } };
+  $('tCari').oninput = () => { tTerbuka = false; renderTagihanList(); }; $('tMuat').onclick = muatHilir;
+
+  // ----------------- ringkasan di halaman Ringkasan -----------------
+  function ringkasHilir() {
+    const pcs = stok.reduce((a, s) => a + Number(s.saldo), 0), tipis = stok.filter(s => s.saldo <= 2).length;
+    const pr = [...progres.values()], tot = pr.reduce((a, x) => a + Number(x.total_qty), 0), krm = pr.reduce((a, x) => a + Number(x.terkirim_qty), 0);
+    const akt = tagihanAll.filter(t => t.status !== 'batal'), total = akt.reduce((a, t) => a + Number(t.total), 0), sisa = akt.reduce((a, t) => a + Number(t.total) - Number(t.terbayar), 0);
+    return { pcs, tipis, tot, krm, sj: kirimAll.length, total, sisa, jmlTagihan: akt.length };
+  }
+
   renderBaris();
   tampil(location.hash.slice(1));
 
@@ -1415,7 +1817,7 @@
         const hs = await ambilSemua('harga_seragam?select=*&order=no');
         if (hs.length) { HARGA = hs.map(h => ({ no: h.no, kat: h.kategori, nama: h.nama, beli: h.harga_beli, jual: h.harga_jual })); renderBaris(); renderRingkasan(); }
       } catch (e) { /* pakai harga.js */ }
-      susunLokasi(prog); kelompokkanPengisi(publik); ringkasan(); renderDaftar(); renderDaftarMinta(); muatStatus();
+      susunLokasi(prog); kelompokkanPengisi(publik); ringkasan(); renderDaftar(); renderDaftarMinta(); muatStatus(); muatHilir();
       let tersimpan = null; try { tersimpan = sessionStorage.getItem('kodeNama'); } catch (e) {}
       if (tersimpan) bukaNama(tersimpan, true);
     } catch (e) { $('info').textContent = 'Gagal memuat data: ' + e.message; }
