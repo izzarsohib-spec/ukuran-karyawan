@@ -176,7 +176,7 @@
   .badge.neu { background:var(--panel2); color:var(--muted); }
   .bar.neu i { background:var(--muted); }
   .formminta { margin:0; padding:20px; border-top:1px solid var(--stroke); }
-  .formminta .fgrid { grid-template-columns:2fr 1fr 2fr; }
+  .formminta .fgrid { grid-template-columns:2.2fr .9fr .9fr 1.4fr 1.5fr; align-items:end; }
   .bgr { padding:12px 0; border-bottom:1px solid var(--stroke); }
   .bgr:last-child { border-bottom:0; }
   .bgact { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -326,6 +326,8 @@
             <div class="fgrid">
               <label>Bagian kerja<select id="mBagian"><option value="">Pilih lokasi</option></select></label>
               <label>Jumlah anggota<input id="mJml" readonly></label>
+              <label>Kontrak<input id="mKontrak" readonly></label>
+              <label>Anggaran / orang / bulan<input id="mPerOrang" readonly></label>
               <label>Total anggaran (RAB)<input id="mRab" readonly class="hi"></label>
             </div>
 
@@ -346,8 +348,8 @@
             </div>
             <div class="hint" id="mPeringatan"></div>
             <div class="rabbox">
-              <div class="row"><b>Lampiran RAB</b><span class="muted">opsional · PDF atau Excel</span></div>
-              <input type="file" id="mRabFile" accept=".pdf,.xlsx,.xls,application/pdf">
+              <div class="row"><b>Lampiran RAB</b><span class="muted">opsional · PDF, halaman 1</span></div>
+              <input type="file" id="mRabFile" accept=".pdf,application/pdf">
               <div class="hint" id="mRabInfo">Tanpa file, halaman RAB dibuat otomatis dari data anggaran.</div>
             </div>
             <div class="hint" style="margin-top:10px">PDF berisi 5 halaman: Memo, PO, Daftar Harga, Data Ukuran, RAB. Periksa dulu lewat Preview sebelum dikirim.</div>
@@ -416,9 +418,10 @@
   function susunAnggaran(baris) {
     const peta = new Map(); let total = 0;
     for (const x of baris) {
-      if (!peta.has(x.lokasi_form)) peta.set(x.lokasi_form, { total: 0, per: {} });
+      if (!peta.has(x.lokasi_form)) peta.set(x.lokasi_form, { total: 0, per: {}, det: {} });
       const a = peta.get(x.lokasi_form), n = Number(x.anggaran) || 0;
       a.per[x.bagian_kerja] = n; a.total += n; total += n;
+      a.det[x.bagian_kerja] = { kontrak: Number(x.masa_kontrak) || 12, perOrang: x.anggaran_per_orang == null ? null : Number(x.anggaran_per_orang) };
     }
     return peta.size ? { peta, total } : null;
   }
@@ -646,7 +649,10 @@
   }
   function infoMinta() {
     const b = mAnggota();
+    const a = anggaran && anggaran.peta.get(mSel), dt = b && a && a.det[$('mBagian').value];
     $('mJml').value = b ? idn(b.target) : '';
+    $('mKontrak').value = dt ? dt.kontrak + ' bulan' : '';
+    $('mPerOrang').value = dt ? (dt.perOrang == null ? '-' : rp(Math.round(dt.perOrang))) : '';
     $('mRab').value = b ? rp(mRab()) : '';
     hitungMinta();
   }
@@ -701,26 +707,26 @@
   // ---- bahan tambahan untuk PDF: lampiran RAB, data ukuran, penggabungan ----
   let mRabBerkas = null;
   const keBase64 = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
-  async function gabungPdf(utama, tambahan) {
+  async function gabungPdf(utama, tambahan) { // hanya halaman 1 dari PDF RAB yang dipakai
     if (!window.PDFLib) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js');
     const dok = await window.PDFLib.PDFDocument.load(utama), rab = await window.PDFLib.PDFDocument.load(tambahan, { ignoreEncryption: true });
-    (await dok.copyPages(rab, rab.getPageIndices())).forEach(p => dok.addPage(p));
+    (await dok.copyPages(rab, [0])).forEach(p => dok.addPage(p));
     return keBase64(await dok.save());
   }
-  function ringkasBerkas(b) { return `${b.nama} · ${Math.max(1, Math.round(b.buf.byteLength / 1024)).toLocaleString('id-ID')} KB`; }
   $('mRabFile').onchange = async e => {
     const f = e.target.files[0], info = $('mRabInfo');
     mRabBerkas = null; info.style.color = '';
     if (!f) { info.textContent = 'Tanpa file, halaman RAB dibuat otomatis dari data anggaran.'; return; }
-    const pdf = /\.pdf$/i.test(f.name) || f.type === 'application/pdf', xls = /\.xlsx?$/i.test(f.name);
-    if (!pdf && !xls) { info.style.color = 'var(--bad)'; info.textContent = 'Hanya file PDF atau Excel (.xlsx / .xls).'; e.target.value = ''; return; }
+    if (!(/\.pdf$/i.test(f.name) || f.type === 'application/pdf')) { info.style.color = 'var(--bad)'; info.textContent = 'Hanya file PDF.'; e.target.value = ''; return; }
     if (f.size > 2.5 * 1024 * 1024) { info.style.color = 'var(--bad)'; info.textContent = 'File terlalu besar (maksimal 2,5 MB).'; e.target.value = ''; return; }
     try {
       const buf = await f.arrayBuffer();
-      if (xls && !window.XLSX) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
-      mRabBerkas = { nama: f.name, tipe: pdf ? 'pdf' : 'xls', buf };
-      info.style.color = 'var(--ok)'; info.textContent = `✓ ${ringkasBerkas(mRabBerkas)} akan menjadi halaman RAB (${pdf ? 'PDF digabung apa adanya' : 'Excel diubah jadi tabel'}).`;
-    } catch (err) { info.style.color = 'var(--bad)'; info.textContent = 'File tidak terbaca: ' + err.message; e.target.value = ''; }
+      if (!window.PDFLib) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js');
+      const hal = (await window.PDFLib.PDFDocument.load(buf, { ignoreEncryption: true })).getPageCount();
+      mRabBerkas = { nama: f.name, tipe: 'pdf', buf };
+      info.style.color = hal > 1 ? 'var(--warn)' : 'var(--ok)';
+      info.textContent = `✓ ${f.name} · ${Math.max(1, Math.round(buf.byteLength / 1024)).toLocaleString('id-ID')} KB` + (hal > 1 ? ` · ${hal} halaman, hanya halaman 1 yang dipakai sebagai RAB.` : ' · menjadi halaman RAB.');
+    } catch (err) { info.style.color = 'var(--bad)'; info.textContent = 'File PDF tidak terbaca: ' + err.message; e.target.value = ''; }
   };
   function kosongkanRab() { mRabBerkas = null; $('mRabFile').value = ''; $('mRabInfo').style.color = ''; $('mRabInfo').textContent = 'Tanpa file, halaman RAB dibuat otomatis dari data anggaran.'; }
   // Data ukuran memuat nama karyawan, jadi tetap meminta kode akses (disimpan per sesi, sama seperti di Monitoring)
@@ -748,8 +754,14 @@
     const urut = daftarMinta.filter(p => { const d = new Date(p.dibuat); return d.getMonth() + 1 === bln && d.getFullYear() === thn; }).length + 1;
     const noSurat = `${String(urut).padStart(3, '0')}/PS/RAY/${bln}/${thn}`;
     const tgl = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const tglPanjang = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     const rpPdf = n => 'Rp' + Math.round(n).toLocaleString('id-ID');
+    const NAMA_BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    // data kontrak dari file acuan: lama kontrak (bulan) dan anggaran per orang per bulan
+    const anggota = mAnggota().target, angLok = anggaran && anggaran.peta.get(l.lokasi), det = (angLok && angLok.det[bag]) || {};
+    const kontrak = det.kontrak || 12, perOrang = det.perOrang != null ? det.perOrang : (anggota ? rab / anggota / kontrak : 0);
 
+    let K = 1, y = 0; // K = skala huruf/jarak; diturunkan otomatis supaya Memo, PO, dan Daftar Harga muat 1 halaman
     const dipasang = new Set();
     const pasang = () => { // kop + kaki surat di tiap halaman
       const n = doc.internal.getCurrentPageInfo().pageNumber; if (dipasang.has(n)) return; dipasang.add(n);
@@ -762,87 +774,120 @@
       doc.text('Telp. 024-76640213, 085 848484 222 - 085641220696', PW / 2, 794, { align: 'center' });
       doc.setTextColor(0, 0, 255); doc.text('Email : raymitraperkasa@yahoo.co.id', PW / 2, 807, { align: 'center' }); doc.setTextColor(0, 0, 0);
     };
-    let y = 0;
     const cek = tinggi => { if (y + tinggi > BAWAH) { doc.addPage(); pasang(); y = 100; } };
-    const huruf = (gaya = 'normal', ukuran = 10.5) => { doc.setFont('times', gaya); doc.setFontSize(ukuran); doc.setTextColor(0, 0, 0); };
+    const huruf = (gaya = 'normal', ukuran = 10.5) => { doc.setFont('times', gaya); doc.setFontSize(ukuran * K); doc.setTextColor(0, 0, 0); };
     const tabel = opsi => {
       doc.autoTable({ theme: 'plain', margin: { top: 92, bottom: 110, left: L + 28, right: PW - R + 28 }, didDrawPage: pasang,
-        styles: { font: 'times', fontSize: 10, cellPadding: { top: 2.6, bottom: 2.6, left: 4, right: 4 }, lineColor: [0, 0, 0], lineWidth: 0.5, textColor: 0 },
+        styles: { font: 'times', fontSize: 10 * K, cellPadding: { top: 2.6 * K, bottom: 2.6 * K, left: 4, right: 4 }, lineColor: [0, 0, 0], lineWidth: 0.5, textColor: 0 },
         headStyles: { fontStyle: 'bold', halign: 'center', fillColor: false }, ...opsi });
       y = doc.lastAutoTable.finalY;
     };
-    const tandaTangan = (kolom, label, yy) => { // kolom: [{x, label, ttd}]
+    const tandaTangan = (kolom, yy) => {
       huruf('normal', 10.5);
       kolom.forEach(k => doc.text(k.label, k.x, yy, { align: 'center' }));
       kolom.forEach(k => {
-        huruf('bold', 10.5); doc.text(k.ttd[0], k.x, yy + 62, { align: 'center' });
-        const w = doc.getTextWidth(k.ttd[0]); doc.setLineWidth(0.6); doc.setDrawColor(0, 0, 0); doc.line(k.x - w / 2, yy + 64, k.x + w / 2, yy + 64);
-        huruf('bold', 8.5); doc.setTextColor(153, 153, 153); doc.text(k.ttd[1], k.x, yy + 76, { align: 'center' }); huruf();
+        huruf('bold', 10.5); doc.text(k.ttd[0], k.x, yy + 58 * K, { align: 'center' });
+        const w = doc.getTextWidth(k.ttd[0]); doc.setLineWidth(0.6); doc.setDrawColor(0, 0, 0); doc.line(k.x - w / 2, yy + 60 * K, k.x + w / 2, yy + 60 * K);
+        huruf('bold', 8.5); doc.setTextColor(153, 153, 153); doc.text(k.ttd[1], k.x, yy + 72 * K, { align: 'center' }); huruf();
       });
+    };
+    // tulis satu bagian; kalau meluber ke halaman kedua, ulangi dengan skala lebih kecil sampai muat 1 halaman
+    const satuHalaman = (tulis, dengankop = true) => {
+      const awal = doc.getNumberOfPages();
+      for (const k of [1, 0.94, 0.88, 0.82, 0.76, 0.7, 0.64, 0.58]) {
+        K = k; y = 0; if (dengankop) pasang();
+        tulis();
+        if (doc.getNumberOfPages() === awal || k === 0.58) break;
+        const n = doc.getNumberOfPages(); doc.addPage();
+        for (let i = n; i >= awal; i--) doc.deletePage(i);
+        doc.setPage(awal); [...dipasang].forEach(p => { if (p >= awal) dipasang.delete(p); });
+      }
+      K = 1;
     };
 
     // ===== Halaman 1: SURAT MEMO INTERNAL =====
-    pasang();
-    huruf('bold', 16); doc.text('SURAT MEMO INTERNAL', PW / 2, 108, { align: 'center' });
-    huruf(); y = 142;
-    [['Nomor', ':' + noSurat], ['Tanggal', ':' + tgl], ['Perihal', ': Permohonan Persetujuan Pengadaan Seragam Karyawan']].forEach(([k, v], i) => { doc.text(k, L, y + i * 14); doc.text(v, L + 52, y + i * 14); });
-    y += 3 * 14 + 14;
-    huruf('bold'); doc.text('Dengan hormat,', L + 14, y); huruf(); y += 15;
-    const par = doc.splitTextToSize('Sehubungan dengan kebutuhan operasional dan identitas karyawan, kami mengajukan permohonan persetujuan pengadaan seragam dengan rincian sebagai berikut:', W - 14);
-    doc.text(par, L + 14, y); y += par.length * 13 + 8;
-    huruf('bold'); doc.text('A. Lokasi & Kebutuhan', L, y); huruf(); y += 15;
-    [['Lokasi Penempatan', ':' + l.client], ['Departemen', ':' + bag], ['Jumlah Anggota', ':' + mAnggota().target], ['Detail Kebutuhan', ':']].forEach(([k, v], i) => { doc.text(k, L + 44, y + i * 13); doc.text(v, L + 200, y + i * 13); });
-    y += 4 * 13 - 3;
-    tabel({ startY: y, head: [['No', 'Deskripsi Barang', 'Qty', 'Harga Jual', 'Total']],
-      body: [...isi.map((x, i) => [{ content: i + 1, styles: { halign: 'center' } }, x.h.nama, { content: x.q, styles: { halign: 'center' } }, { content: rpPdf(x.h.jual), styles: { halign: 'center', fillColor: [255, 255, 0] } }, { content: rpPdf(x.h.jual * x.q), styles: { halign: 'right' } }]),
-        [{ content: 'SUBTOTAL', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(jual), styles: { halign: 'right', fontStyle: 'bold' } }]],
-      columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 38 }, 3: { cellWidth: 80 }, 4: { cellWidth: 82 } } });
-    const cat = $('mMemo').value.trim();
-    if (cat) { y += 12; const c = doc.splitTextToSize('Catatan: ' + cat, W - 28); cek(c.length * 13); huruf('italic', 10); doc.text(c, L + 28, y); y += c.length * 13 - 4; huruf(); }
-    y += 18; cek(80);
-    huruf('bold'); doc.text('B. Estimasi Anggaran (RAB)', L, y); y += 8;
-    tabel({ startY: y, head: [['No', 'Uraian', 'Jumlah Personil', 'Total Anggaran (Rp)']],
-      body: [[{ content: 1, styles: { halign: 'center' } }, 'Anggaran seragam (RAB)', { content: mAnggota().target, styles: { halign: 'center' } }, { content: rpPdf(rab), styles: { halign: 'right' } }],
-        [{ content: 'TOTAL', colSpan: 3, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(rab), styles: { halign: 'right', fontStyle: 'bold' } }]],
-      columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 90 }, 3: { cellWidth: 120 } } });
-    y += 20; cek(92);
-    tandaTangan([{ x: L + 80, label: 'Diajukan Oleh,', ttd: TTD.pic }, { x: PW / 2, label: 'Disetujui Oleh,', ttd: TTD.dir }, { x: R - 80, label: 'Disetujui Oleh,', ttd: TTD.dirut }], '', y);
-
-    // ===== Halaman berikutnya: PURCHASE ORDER (PO) =====
-    doc.addPage(); pasang();
-    huruf('bold', 14); doc.text('PURCHASE ORDER (PO)', PW / 2, 108, { align: 'center' });
-    y = 140;
-    [['Tanggal', tgl], ['No. PO', noSurat], ['Lokasi', l.client + ' - ' + bag]].forEach(([k, v], i) => { huruf('bold'); doc.text(k, L, y + i * 14); huruf(); doc.text(v, L + 62, y + i * 14); });
-    huruf('bold'); doc.text('Detail Pesanan :', L, y + 3 * 14 + 4); y += 3 * 14 + 12;
-    tabel({ startY: y, head: [['No', 'Deskripsi Barang', 'Ukuran', 'Qty', 'Harga Beli', 'Total']],
-      body: [...isi.map((x, i) => [{ content: i + 1, styles: { halign: 'center' } }, x.h.nama, { content: 'Terlampir', styles: { halign: 'center', fontStyle: 'italic' } }, { content: x.q, styles: { halign: 'center' } }, { content: rpPdf(x.h.beli), styles: { halign: 'right' } }, { content: rpPdf(x.h.beli * x.q), styles: { halign: 'right' } }]),
-        [{ content: 'SUBTOTAL', colSpan: 5, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(beli), styles: { halign: 'right', fontStyle: 'bold' } }]],
-      columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 58 }, 3: { cellWidth: 34 }, 4: { cellWidth: 66 }, 5: { cellWidth: 72 } } });
-    y += 30; cek(190); huruf();
-    doc.text('Syarat & Ketentuan:', L, y); y += 14;
-    doc.text('- Detail Ukuran', L, y); doc.text(': Rincian nama dan ukuran (size) terlampir dalam lembar spesifikasi.', L + 110, y); y += 14;
-    doc.text('- Waktu Pengiriman', L, y);
-    const kirim = doc.splitTextToSize(': Vendor wajib menyelesaikan dan mengirimkan barang maksimal 1 (satu) bulan terhitung sejak PO ini ditandatangani (Maksimal tanggal: ..................................).', W - 110);
-    doc.text(kirim, L + 110, y); y += kirim.length * 13 + 10;
-    doc.text('Mohon dokumen ini ditandatangani sebagai bukti persetujuan kerja sama.', L, y); y += 34;
-    const kol = W / 4;
-    tandaTangan([{ x: L + kol * 0.5, label: 'Pemesan,', ttd: TTD.pic }, { x: L + kol * 1.5, label: 'Mengetahui,', ttd: TTD.dir }, { x: L + kol * 2.5, label: 'Mengetahui,', ttd: TTD.dirut }, { x: L + kol * 3.5, label: 'Penyedia,', ttd: TTD.vendor }], '', y);
-    // ===== Halaman 3: DAFTAR HARGA (diambil dari tabel harga_seragam di Supabase) =====
-    doc.addPage();
-    huruf('bold', 13); doc.text('DAFTAR HARGA SERAGAM', PW / 2, 46, { align: 'center' });
-    const bodyHarga = [];
-    [...new Set(HARGA.map(h => h.kat))].forEach(k => {
-      bodyHarga.push([{ content: k.toUpperCase(), colSpan: 4, styles: { fontStyle: 'bold', halign: 'left', fillColor: [226, 239, 218] } }]);
-      HARGA.filter(h => h.kat === k).forEach(h => bodyHarga.push([{ content: h.no, styles: { halign: 'right' } }, h.nama, { content: rpPdf(h.beli), styles: { halign: 'right' } }, { content: rpPdf(h.jual), styles: { halign: 'right' } }]));
+    satuHalaman(() => {
+      huruf('bold', 16); doc.text('SURAT MEMO INTERNAL', PW / 2, 104, { align: 'center' });
+      huruf(); y = 134; const g = 14 * K;
+      [['Nomor', ':' + noSurat], ['Tanggal', ':' + tgl], ['Perihal', ': Permohonan Persetujuan Pengadaan Seragam Karyawan']].forEach(([k, v], i) => { doc.text(k, L, y + i * g); doc.text(v, L + 52, y + i * g); });
+      y += 3 * g + 8 * K;
+      huruf('bold'); doc.text('Dengan hormat,', L + 14, y); huruf(); y += 14 * K;
+      const par = doc.splitTextToSize('Sehubungan dengan kebutuhan operasional dan identitas karyawan, kami mengajukan permohonan persetujuan pengadaan seragam dengan rincian sebagai berikut:', W - 14);
+      doc.text(par, L + 14, y); y += par.length * 13 * K + 6 * K;
+      huruf('bold'); doc.text('A. Lokasi & Kebutuhan', L, y); huruf(); y += 14 * K;
+      [['Lokasi Penempatan', ':' + l.client], ['Departemen', ':' + bag], ['Jumlah Anggota', ':' + anggota], ['Detail Kebutuhan', ':']].forEach(([k, v], i) => { doc.text(k, L + 44, y + i * 13 * K); doc.text(v, L + 200, y + i * 13 * K); });
+      y += 4 * 13 * K - 4 * K;
+      tabel({ startY: y, head: [['No', 'Deskripsi Barang', 'Qty', 'Harga Jual', 'Total']],
+        body: [...isi.map((x, i) => [{ content: i + 1, styles: { halign: 'center' } }, x.h.nama, { content: x.q, styles: { halign: 'center' } }, { content: rpPdf(x.h.jual), styles: { halign: 'center', fillColor: [255, 255, 0] } }, { content: rpPdf(x.h.jual * x.q), styles: { halign: 'right' } }]),
+          [{ content: 'SUBTOTAL', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(jual), styles: { halign: 'right', fontStyle: 'bold' } }]],
+        columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 38 }, 3: { cellWidth: 80 }, 4: { cellWidth: 82 } } });
+      const cat = $('mMemo').value.trim();
+      if (cat) { y += 10 * K; const c = doc.splitTextToSize('Catatan: ' + cat, W - 28); huruf('italic', 10); doc.text(c, L + 28, y); y += c.length * 12 * K - 4 * K; huruf(); }
+      y += 16 * K;
+      huruf('bold'); doc.text('B. Estimasi Anggaran (RAB)', L, y); y += 8 * K;
+      // sama seperti memo lama: satu baris per bulan kontrak = jumlah personil x biaya per orang per bulan
+      tabel({ startY: y, head: [['No', 'Bulan', 'Jumlah Personil', 'Biaya / Orang (Rp)', 'Total / Bulan (Rp)']],
+        body: [...Array.from({ length: kontrak }, (_, m) => [{ content: m + 1, styles: { halign: 'center' } }, NAMA_BULAN[m % 12], { content: anggota, styles: { halign: 'center' } }, { content: rpPdf(perOrang), styles: { halign: 'right' } }, { content: rpPdf(anggota * perOrang), styles: { halign: 'right' } }]),
+          [{ content: 'TOTAL', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(rab), styles: { halign: 'right', fontStyle: 'bold' } }]],
+        columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 78 }, 3: { cellWidth: 92 }, 4: { cellWidth: 92 } } });
+      y += 20 * K; cek(84 * K);
+      tandaTangan([{ x: L + 80, label: 'Diajukan Oleh,', ttd: TTD.pic }, { x: PW / 2, label: 'Disetujui Oleh,', ttd: TTD.dir }, { x: R - 80, label: 'Disetujui Oleh,', ttd: TTD.dirut }], y);
     });
-    doc.autoTable({ theme: 'grid', startY: 60, margin: { top: 40, bottom: 40, left: L, right: PW - R },
-      styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 2.2, lineColor: [0, 0, 0], lineWidth: 0.4, textColor: 0 },
-      headStyles: { fillColor: [146, 208, 80], textColor: 0, fontStyle: 'bold', halign: 'center' },
-      head: [['NO', 'JENIS SERAGAM', 'HARGA BELI', 'HARGA JUAL']], body: bodyHarga,
-      columnStyles: { 0: { cellWidth: 34 }, 2: { cellWidth: 92 }, 3: { cellWidth: 92 } } });
 
-    // ===== Halaman 4: LAMPIRAN DATA UKURAN SERAGAM (hasil isian Google Form untuk lokasi + bagian ini) =====
-    doc.addPage(); pasang();
+    // ===== Halaman 2: PURCHASE ORDER (PO) =====
+    doc.addPage();
+    satuHalaman(() => {
+      huruf('bold', 14); doc.text('PURCHASE ORDER (PO)', PW / 2, 104, { align: 'center' });
+      y = 134; const g = 14 * K;
+      [['Tanggal', tgl], ['No. PO', noSurat], ['Lokasi', l.client + ' - ' + bag]].forEach(([k, v], i) => { huruf('bold'); doc.text(k, L, y + i * g); huruf(); doc.text(v, L + 62, y + i * g); });
+      huruf('bold'); doc.text('Detail Pesanan :', L, y + 3 * g + 4 * K); y += 3 * g + 12 * K;
+      tabel({ startY: y, head: [['No', 'Deskripsi Barang', 'Ukuran', 'Qty', 'Harga Beli', 'Total']],
+        body: [...isi.map((x, i) => [{ content: i + 1, styles: { halign: 'center' } }, x.h.nama, { content: 'Terlampir', styles: { halign: 'center', fontStyle: 'italic' } }, { content: x.q, styles: { halign: 'center' } }, { content: rpPdf(x.h.beli), styles: { halign: 'right' } }, { content: rpPdf(x.h.beli * x.q), styles: { halign: 'right' } }]),
+          [{ content: 'SUBTOTAL', colSpan: 5, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(beli), styles: { halign: 'right', fontStyle: 'bold' } }]],
+        columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 58 }, 3: { cellWidth: 34 }, 4: { cellWidth: 66 }, 5: { cellWidth: 72 } } });
+      y += 28 * K; cek(180 * K); huruf();
+      doc.text('Syarat & Ketentuan:', L, y); y += 14 * K;
+      doc.text('- Detail Ukuran', L, y); doc.text(': Rincian nama dan ukuran (size) terlampir dalam lembar spesifikasi.', L + 110, y); y += 14 * K;
+      doc.text('- Waktu Pengiriman', L, y);
+      const kirim = doc.splitTextToSize(': Vendor wajib menyelesaikan dan mengirimkan barang maksimal 1 (satu) bulan terhitung sejak PO ini ditandatangani (Maksimal tanggal: ..................................).', W - 110);
+      doc.text(kirim, L + 110, y); y += kirim.length * 13 * K + 10 * K;
+      doc.text('Mohon dokumen ini ditandatangani sebagai bukti persetujuan kerja sama.', L, y); y += 30 * K;
+      const kol = W / 4;
+      tandaTangan([{ x: L + kol * 0.5, label: 'Pemesan,', ttd: TTD.pic }, { x: L + kol * 1.5, label: 'Mengetahui,', ttd: TTD.dir }, { x: L + kol * 2.5, label: 'Mengetahui,', ttd: TTD.dirut }, { x: L + kol * 3.5, label: 'Penyedia,', ttd: TTD.vendor }], y);
+    });
+
+    // ===== Halaman 3: DAFTAR HARGA (dari tabel harga_seragam; QTY terisi otomatis dari item permintaan) =====
+    doc.addPage();
+    satuHalaman(() => {
+      const qty = new Map(isi.map(x => [String(x.h.no), x.q])), M = 28, TW = 371;
+      let totalQ = 0, totalH = 0;
+      const body = HARGA.map(h => {
+        const q = qty.get(String(h.no)) || 0, b = q > 0 ? 'bold' : 'normal'; totalQ += q; totalH += q * h.jual;
+        return [{ content: h.no, styles: { halign: 'right', fontStyle: b } }, { content: h.nama, styles: { fontStyle: b } }, { content: rpPdf(h.beli), styles: { halign: 'right', fontStyle: b } }, { content: rpPdf(h.jual), styles: { halign: 'right', fontStyle: b } },
+          { content: q || '', styles: { halign: 'center', fontStyle: b } }, { content: q ? rpPdf(q * h.jual) : '', styles: { halign: 'right', fontStyle: b } }];
+      });
+      doc.autoTable({ theme: 'grid', startY: 36, tableWidth: TW, margin: { top: 30, bottom: 20, left: M, right: PW - M - TW }, pageBreak: 'avoid',
+        styles: { font: 'helvetica', fontSize: 6.6 * K, cellPadding: { top: 0.7 * K, bottom: 0.7 * K, left: 2.5, right: 2.5 }, lineColor: [0, 0, 0], lineWidth: 0.3, textColor: 0, valign: 'middle' },
+        headStyles: { fillColor: [139, 195, 74], textColor: 0, fontStyle: 'bold', halign: 'center' }, bodyStyles: { fillColor: [255, 255, 255] }, alternateRowStyles: { fillColor: [238, 247, 227] },
+        footStyles: { fillColor: [238, 247, 227], textColor: 0, fontStyle: 'bold' }, showFoot: 'lastPage',
+        head: [['NO', 'JENIS SERAGAM', 'HARGA BELI', 'HARGA JUAL', 'QTY', 'TOTAL']], body,
+        foot: [['', '', { content: 'GRAND TOTAL', colSpan: 2, styles: { halign: 'center' } }, { content: totalQ, styles: { halign: 'center' } }, { content: rpPdf(totalH), styles: { halign: 'right' } }]],
+        columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 175 }, 2: { cellWidth: 48 }, 3: { cellWidth: 48 }, 4: { cellWidth: 24 }, 5: { cellWidth: 56 } } });
+      const yT = doc.lastAutoTable.finalY, sisa = rab - totalH;
+      // panel perhitungan di samping tabel (sama seperti sheet DAFTAR HARGA di project lama)
+      doc.autoTable({ theme: 'grid', startY: 36 + 11 * K, tableWidth: PW - 2 * M - TW - 10, margin: { top: 30, left: M + TW + 10, right: M }, pageBreak: 'avoid',
+        styles: { font: 'helvetica', fontSize: 6.8 * K, cellPadding: { top: 1.6 * K, bottom: 1.6 * K, left: 3, right: 3 }, lineColor: [0, 0, 0], lineWidth: 0.9, textColor: 0, valign: 'middle' },
+        columnStyles: { 0: { cellWidth: 98, fontStyle: 'bold' }, 1: { halign: 'right' } },
+        body: [[{ content: 'ANGGARAN CLIENT', styles: { fillColor: [255, 255, 0] } }, rpPdf(rab)], [{ content: 'TOTAL BELANJA SERAGAM', styles: { fillColor: [0, 176, 240] } }, rpPdf(totalH)],
+          [{ content: 'TOTAL BELANJA PERALATAN', styles: { fillColor: [0, 176, 240] } }, 'Rp0'], ['SISA ANGGARAN', { content: (sisa < 0 ? '-' : '') + rpPdf(Math.abs(sisa)), styles: { fontStyle: 'bold' } }]] });
+      y = yT + 14 * K;
+      const xc = M + TW * 0.68; huruf('normal', 9); doc.text(`Semarang, ${tglPanjang}`, xc, y, { align: 'center' });
+      huruf('bold', 9); doc.text(TTD.dir[0], xc, y + 34 * K, { align: 'center' }); huruf('normal', 9); doc.text('Direktur', xc, y + 44 * K, { align: 'center' }); huruf();
+      if (y + 50 * K > 832) doc.addPage(); // tanda meluber -> ulangi dengan skala lebih kecil
+    }, false);
+
+    // ===== Halaman 4..n: LAMPIRAN DATA UKURAN SERAGAM (hasil isian Google Form untuk lokasi + bagian ini; boleh beberapa halaman) =====
+    doc.addPage(); pasang(); K = 1;
     huruf('bold', 13); doc.text('LAMPIRAN DATA UKURAN SERAGAM', PW / 2, 108, { align: 'center' });
     huruf(); doc.text('Lokasi', L, 134); doc.text(': ' + l.client, L + 42, 134); doc.text('Bagian', L, 148); doc.text(': ' + bag, L + 42, 148);
     const uk = ekstra.ukuran || [];
@@ -853,42 +898,27 @@
       styles: { font: 'times', fontSize: 9.5, cellPadding: { top: 2.6, bottom: 2.6, left: 4, right: 4 }, lineColor: [0, 0, 0], lineWidth: 0.5, textColor: 0 },
       columnStyles: { 0: { cellWidth: 28 }, 2: { cellWidth: 154 }, 3: { cellWidth: 50 }, 4: { cellWidth: 58 }, 5: { cellWidth: 56 }, 6: { cellWidth: 36 } } });
     y += 26; cek(92);
-    tandaTangan([{ x: L + W * 0.25, label: 'Pemesan,', ttd: TTD.pic }, { x: L + W * 0.75, label: 'Penyedia,', ttd: TTD.vendor }], '', y);
+    tandaTangan([{ x: L + W * 0.25, label: 'Pemesan,', ttd: TTD.pic }, { x: L + W * 0.75, label: 'Penyedia,', ttd: TTD.vendor }], y);
 
-    // ===== Halaman 5: RAB =====
+    // ===== Halaman terakhir: RAB (file PDF lampiran halaman 1; kalau tidak ada, dibuat otomatis dari data anggaran) =====
     const rb = ekstra.rab;
-    if (rb && rb.tipe === 'xls') {
-      const wbx = window.XLSX.read(rb.buf, { type: 'array' });
-      let ada = 0;
-      for (const nama of wbx.SheetNames.slice(0, 5)) {
-        const aoa = window.XLSX.utils.sheet_to_json(wbx.Sheets[nama], { header: 1, raw: false, defval: '' }).filter(r => r.some(c => String(c).trim() !== ''));
-        if (!aoa.length) continue;
-        const kol = Math.min(14, Math.max(...aoa.map(r => r.length)));
-        doc.addPage('a4', kol > 6 ? 'l' : 'p'); ada++;
-        const lebar = doc.internal.pageSize.getWidth();
-        huruf('bold', 13); doc.text(wbx.SheetNames.length > 1 ? `RAB - ${nama}` : 'RAB', lebar / 2, 40, { align: 'center' });
-        doc.autoTable({ theme: 'grid', startY: 52, margin: { top: 36, bottom: 36, left: 28, right: 28 },
-          styles: { font: 'helvetica', fontSize: kol > 10 ? 6.5 : kol > 6 ? 7.5 : 9, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3, textColor: 0, overflow: 'linebreak' },
-          body: aoa.map(r => Array.from({ length: kol }, (_, i) => String(r[i] ?? ''))) });
-      }
-      if (!ada) throw new Error('File Excel RAB kosong.');
-    } else if (!rb) { // tanpa lampiran: halaman RAB dibuat dari data anggaran
-      doc.addPage('a4', 'p'); pasang();
+    if (!rb) {
+      doc.addPage(); pasang(); K = 1;
       huruf('bold', 13); doc.text('RAB (RENCANA ANGGARAN BIAYA)', PW / 2, 108, { align: 'center' });
       huruf(); doc.text('Lokasi', L, 134); doc.text(': ' + l.client, L + 42, 134);
-      const ang = anggaran && anggaran.peta.get(l.lokasi), semua = l.bagian.map(b => ({ nama: b.nama, orang: b.target, rab: ang && ang.per[b.nama] || 0 }));
+      const semua = l.bagian.map(b => ({ nama: b.nama, orang: b.target, rab: angLok && angLok.per[b.nama] || 0 }));
       tabel({ startY: 148, margin: { top: 92, bottom: 110, left: L, right: PW - R },
         head: [['No', 'Bagian Kerja', 'Jumlah Anggota', 'Total Anggaran (Rp)']],
         body: [...semua.map((s, i) => [{ content: i + 1, styles: { halign: 'center' } }, { content: s.nama, styles: s.nama === bag ? { fontStyle: 'bold' } : {} }, { content: s.orang, styles: { halign: 'center' } }, { content: rpPdf(s.rab), styles: { halign: 'right', fontStyle: s.nama === bag ? 'bold' : 'normal' } }]),
           [{ content: 'TOTAL', colSpan: 3, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(semua.reduce((a, s) => a + s.rab, 0)), styles: { halign: 'right', fontStyle: 'bold' } }]],
         columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 92 }, 3: { cellWidth: 120 } } });
-      y += 24; cek(120); huruf('bold'); doc.text('Ringkasan permintaan: ' + bag, L, y); y += 8;
+      y += 24; huruf('bold'); doc.text('Ringkasan permintaan: ' + bag, L, y); y += 8;
       const sisa = rab - beli;
       tabel({ startY: y, margin: { top: 92, bottom: 110, left: L, right: PW - R },
         body: [['Anggaran (RAB) bagian ini', rpPdf(rab)], ['Total belanja (harga beli)', rpPdf(beli)], ['Sisa RAB', (sisa < 0 ? '-' : '') + rpPdf(Math.abs(sisa))], ['Total penjualan (harga jual)', rpPdf(jual)]].map(r => [r[0], { content: r[1], styles: { halign: 'right' } }]),
         columnStyles: { 1: { cellWidth: 140 } } });
     }
-    if (rb && rb.tipe === 'pdf') return await gabungPdf(doc.output('arraybuffer'), rb.buf);
+    if (rb) return await gabungPdf(doc.output('arraybuffer'), rb.buf);
     return doc.output('datauristring').split(',')[1];
   }
   // pdfSiap = PDF yang sudah dilihat di preview, supaya yang terkirim sama persis dengan yang diperiksa
