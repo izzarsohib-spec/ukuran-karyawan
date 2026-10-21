@@ -1101,6 +1101,16 @@
     if (rb) return await gabungPdf(doc.output('arraybuffer'), rb.buf);
     return doc.output('datauristring').split(',')[1];
   }
+  // ---- arsip ke Google Drive (fungsi server arsip-drive -> Apps Script milik PIC). Gagal mengarsip tidak pernah membatalkan proses utama ----
+  async function arsipDrive(jenis, id, pdf, kode) {
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/arsip-drive`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ jenis, id, pdf, kode }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { const e = new Error(j.error || 'HTTP ' + r.status); e.belumDiatur = !!j.belum_diatur; throw e; }
+    return j;
+  }
+  const teksArsip = a => `✓ Diarsipkan di Google Drive, folder "${a.folder}"${a.folderBaru ? ' (folder baru dibuat)' : ''}: ${a.nama}`;
+  const kabarArsip = (el, teks, warna) => { if (el) { el.style.color = warna || 'var(--muted)'; el.textContent = teks; } };
+  const galatArsip = e => e.belumDiatur ? ['Arsip Google Drive belum diaktifkan.', 'var(--muted)'] : ['Arsip Drive gagal: ' + e.message, 'var(--bad)'];
   // halamanSiap = gambar halaman yang sudah dilihat di preview, supaya yang terkirim sama persis dengan yang diperiksa
   async function kirimKeAtasan(d, halamanSiap, tombol) {
     const st = $('mStatus'), label = tombol.textContent; tombol.disabled = true; tombol.textContent = 'Mengirim…'; st.style.color = ''; st.textContent = '';
@@ -1114,7 +1124,12 @@
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
       st.style.color = 'var(--ok)'; st.textContent = `✓ Terkirim ke Pak Yasir dan Pak Ferry (permintaan no. ${j.id}). Perlu persetujuan keduanya.`;
+      const pdfArsip = await siapkanPdf(d).catch(() => null); // dibuat sebelum isian dikosongkan (RAB masih terpakai)
       baris = [{ no: '', qty: '' }]; $('mMemo').value = ''; renderBaris(); kosongkanRab(); muatStatus(); sukses = true;
+      if (pdfArsip) {
+        const ar = document.createElement('div'); ar.style.cssText = 'margin-top:4px;color:var(--muted)'; ar.textContent = 'Mengarsipkan memo ke Google Drive…'; st.appendChild(ar);
+        arsipDrive('memo', j.id, pdfArsip).then(a => kabarArsip(ar, teksArsip(a), 'var(--ok)')).catch(e => kabarArsip(ar, ...galatArsip(e)));
+      }
     } catch (e) { st.style.color = 'var(--bad)'; st.textContent = 'Gagal: ' + e.message; }
     tombol.disabled = false; tombol.textContent = label;
     return sukses;
@@ -1835,7 +1850,8 @@
       ${t.bayar.length ? `<div style="margin-top:12px"><b>Riwayat pembayaran</b>${t.bayar.map(b => `<div class="rl"><span>${tglPendek(b.tanggal)}${b.keterangan ? ' · ' + esc(b.keterangan) : ''}</span><b>${rp(b.jumlah)}</b></div>`).join('')}</div>` : ''}
       ${sisa > 0 ? `<div class="fgrid" style="margin-top:14px;grid-template-columns:1fr 1fr 2fr"><label>Tanggal bayar<input type="date" id="tBayarTgl" value="${tgl0()}"></label><label>Jumlah (Rp)<input type="number" id="tBayarJml" min="1" value="${sisa}"></label><label>Keterangan<input id="tBayarKet" placeholder="mis. transfer BCA"></label></div>
         <div class="hint" id="tPesan"></div><button class="cta" id="tBayar" style="width:100%;margin-top:12px">Catat pembayaran</button>` : '<div class="hint" id="tPesan" style="color:var(--ok)">✓ Tagihan sudah lunas.</div>'}
-      <div class="bgact" style="margin-top:12px"><button class="btn" id="tPdf">Unduh invoice (PDF)</button>${Number(t.terbayar) === 0 ? '<button class="btn" id="tBatal">Batalkan tagihan</button>' : ''}</div>`;
+      <div class="bgact" style="margin-top:12px"><button class="btn" id="tPdf">Unduh invoice (PDF)</button><button class="btn" id="tArsip">Arsipkan ke Google Drive</button>${Number(t.terbayar) === 0 ? '<button class="btn" id="tBatal">Batalkan tagihan</button>' : ''}</div>
+      <div class="hint" id="tArsipInfo"></div>`;
   }
   const TERBILANG = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
   function terbilang(n) {
@@ -1845,7 +1861,7 @@
       : x < 1e9 ? t(Math.floor(x / 1e6)) + ' juta' + (x % 1e6 ? ' ' + t(x % 1e6) : '') : t(Math.floor(x / 1e9)) + ' miliar' + (x % 1e9 ? ' ' + t(x % 1e9) : '');
     return t(n);
   }
-  async function invoicePdf(t) {
+  async function invoicePdf(t, kembali = false) {
     const k = await kertasKop(), { doc, PW, L, R, W } = k, fmt = d => d ? new Date(String(d).slice(0, 10) + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
     k.pasang(); k.huruf('bold', 16); doc.text('INVOICE', PW / 2, 104, { align: 'center' }); k.y = 134;
     [['No. Invoice', t.no_invoice], ['Tanggal', fmt(t.tanggal)], ['Jatuh tempo', fmt(t.jatuh_tempo)]].forEach(([a, b], n) => { k.huruf('bold'); doc.text(a, L, k.y + n * 14); k.huruf(); doc.text(': ' + b, L + 82, k.y + n * 14); });
@@ -1860,17 +1876,26 @@
     k.huruf(); doc.text('Pembayaran dapat ditransfer ke rekening: ______________________________________', L, k.y); k.y += 14;
     if (t.catatan) { const c = doc.splitTextToSize('Catatan: ' + t.catatan, W); doc.text(c, L, k.y); k.y += c.length * 13; }
     k.y += 18; k.cek(92); k.ttd([{ x: R - 110, label: 'Hormat kami,', t: TTD.dir }], k.y);
+    if (kembali) return doc.output('datauristring').split(',')[1];
     k.simpan(`Invoice ${t.no_invoice.replace(/\//g, '-')} ${t.client}.pdf`);
+  }
+  async function arsipInvoice(pid) {
+    const t = tagihanAktif(pid); if (!t) return; const info = () => $('tArsipInfo');
+    kabarArsip(info(), 'Mengarsipkan invoice ke Google Drive…');
+    try { const kode = kodePlot() || (prompt('Masukkan kode akses untuk mengarsipkan:') || '').trim(); if (!kode) throw new Error('kode akses diperlukan');
+      kabarArsip(info(), teksArsip(await arsipDrive('invoice', t.id, await invoicePdf(t, true), kode)), 'var(--ok)'); }
+    catch (e) { kabarArsip(info(), ...galatArsip(e)); }
   }
   $('tDaftar').onclick = e => { const b = e.target.closest('.item'); if (b) { tTerbuka = true; tSel = Number(b.dataset.id); renderTagihanList(); } };
   $('tHead').onclick = e => { if (e.target.id === 'tBack') { tTerbuka = false; renderTagihanDetail(); } };
   $('tIsi').onclick = async e => {
     const id = e.target.id, x = entriTagihan().find(en => en.p.id === tSel); if (!x) return; const ps = $('tPesan'), btn = e.target; if (ps) ps.style.color = 'var(--bad)';
     const jalan = async (fn, label) => { btn.disabled = true; btn.textContent = label; try { await fn(); } catch (err) { if (ps) ps.textContent = 'Gagal: ' + err.message; } btn.disabled = false; };
-    if (id === 'tBuat') return jalan(async () => { await rpcKode('buat_tagihan', { p_permintaan: x.p.id, p_tanggal: $('tTgl').value || tgl0(), p_jatuh_tempo: $('tJt').value || null, p_catatan: $('tCat').value.trim() }); await muatHilir(); }, 'Membuat…').then(() => { btn.textContent = 'Buat tagihan'; });
+    if (id === 'tBuat') return jalan(async () => { await rpcKode('buat_tagihan', { p_permintaan: x.p.id, p_tanggal: $('tTgl').value || tgl0(), p_jatuh_tempo: $('tJt').value || null, p_catatan: $('tCat').value.trim() }); await muatHilir(); arsipInvoice(x.p.id); }, 'Membuat…').then(() => { btn.textContent = 'Buat tagihan'; });
     if (id === 'tBayar') { const jml = Math.floor(Number($('tBayarJml').value)); if (!(jml > 0)) { ps.textContent = 'Jumlah pembayaran harus lebih dari 0.'; return; }
       return jalan(async () => { await rpcKode('catat_bayar', { p_tagihan: x.t.id, p_tanggal: $('tBayarTgl').value || tgl0(), p_jumlah: jml, p_keterangan: $('tBayarKet').value.trim() }); await muatHilir(); }, 'Menyimpan…').then(() => { btn.textContent = 'Catat pembayaran'; }); }
     if (id === 'tBatal') { if (!confirm('Batalkan tagihan ini? Lokasi akan kembali berstatus "Siap ditagih".')) return; return jalan(async () => { await rpcKode('batalkan_tagihan', { p_tagihan: x.t.id }); await muatHilir(); }, 'Membatalkan…'); }
+    if (id === 'tArsip') { btn.disabled = true; await arsipInvoice(x.p.id); btn.disabled = false; return; }
     if (id === 'tPdf') { const label = btn.textContent; btn.disabled = true; btn.textContent = 'Menyiapkan…'; try { await invoicePdf(x.t); } catch (err) { alert('Gagal: ' + err.message); } btn.disabled = false; btn.textContent = label; }
   };
   $('tChips').onclick = e => { const s = e.target.dataset && e.target.dataset.s; if (s) { tStatusF = s; tTerbuka = false; renderTagihanList(); } };
