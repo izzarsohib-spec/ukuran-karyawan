@@ -362,6 +362,18 @@
     }
     return `<svg viewBox="0 0 ${W} ${Ht}" role="img" aria-label="${esc(seri.map(s => s.nama).join(', '))} per bulan">${g}</svg>`;
   }
+  // grafik batang anggaran semua lokasi, dari yang terbesar ke terkecil; bagian oranye = terpakai (merah bila melebihi anggaran)
+  function grafikAnggaran() {
+    const d = [...LOK].sort((a, b) => Number(b.rab) - Number(a.rab)), n = d.length, W = 320, Ht = 130, L = 8, R = 8, T = 16, B = 20, maks = Math.max(1, ...d.map(l => Number(l.rab)));
+    if (!n) return '<div class="kosong" style="padding:30px 0">Belum ada lokasi.</div>';
+    const lebar = (W - L - R) / n, bw = Math.max(2, lebar * .72), dasar = Ht - B, tinggi = v => (dasar - T) * Math.min(1, v / maks);
+    const bar = d.map((l, i) => {
+      const x = L + i * lebar + (lebar - bw) / 2, rab = Number(l.rab), pakai = Number(l.terpakai), hr = tinggi(rab), hp = Math.min(tinggi(pakai), Math.max(hr, 3));
+      return `<g tabindex="0"><title>${esc(l.nama)}: anggaran ${esc(rpR(rab))}, terpakai ${esc(rpR(pakai))}</title><rect x="${x.toFixed(1)}" y="${(dasar - hr).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(hr, 1).toFixed(1)}" rx="1.5" fill="rgba(255,255,255,.3)"/>${pakai > 0 ? `<rect x="${x.toFixed(1)}" y="${(dasar - hp).toFixed(1)}" width="${bw.toFixed(1)}" height="${hp.toFixed(1)}" rx="1.5" fill="${pakai > rab ? '#ff7a7a' : '#ffb25e'}"/>` : ''}</g>`;
+    }).join('');
+    return `<svg viewBox="0 0 ${W} ${Ht}" role="img" aria-label="Anggaran tiap lokasi dari terbesar ke terkecil"><line x1="${L}" x2="${W - R}" y1="${dasar}" y2="${dasar}" stroke="rgba(255,255,255,.12)"/>${bar}
+      <text x="${L}" y="10" font-size="9" fill="#a4a4ae">${esc(rpR(maks))}</text><text x="${L}" y="${Ht - 5}" font-size="9" fill="#a4a4ae">terbesar</text><text x="${W - R}" y="${Ht - 5}" font-size="9" fill="#a4a4ae" text-anchor="end">terkecil (${n} lokasi)</text></svg>`;
+  }
   const aksiAttr = (k, a, arg) => `data-md="${k}|${a}|${encodeURIComponent(arg || '')}"`;
   function miniHtml(m) {
     const w = m.gap.worst;
@@ -369,7 +381,7 @@
         <div class="angka"><small>${esc(m.labelAngka)}</small><b class="num">${esc(m.angka)}</b></div><button class="cta" ${aksiAttr(m.key, m.cta[1], m.cta[2])}>${esc(m.cta[0])}</button></div>
       <div class="ringhero">${cincin(m.key, m.persen)}<div class="t"><b>${m.persen.toFixed(1).replace('.', ',')}%</b><span>${esc(m.labelRing)}</span></div></div>
       <div class="mkpi">${m.kpi.map(([a, b, c]) => `<div><b>${esc(a)}</b><span><i style="background:${c}"></i>${esc(b)}</span></div>`).join('')}</div></div>
-      <div class="rcol"><div class="chartcard card"><div class="ttl"><b>${esc(m.grafik.judul)}</b><span class="legend">${m.grafik.seri.map(s => `<span><i style="background:${s.warna}"></i>${esc(s.nama)}</span>`).join('')}</span></div>${grafikGaris(m.key, m.grafik.seri, m.grafik.fmt)}</div>
+      <div class="rcol"><div class="chartcard card"><div class="ttl"><b>${esc(m.grafik.judul)}</b><span class="legend">${m.grafik.seri.map(s => `<span><i style="background:${s.warna}"></i>${esc(s.nama)}</span>`).join('')}</span></div>${m.grafik.html || grafikGaris(m.key, m.grafik.seri, m.grafik.fmt)}</div>
         <div class="gapcard card"><div><div class="lbl">${esc(m.gap.label)}</div><div class="big">${esc(m.gap.besar)}</div><span class="pill">${esc(m.gap.pill)}</span><div class="muted" style="margin-top:6px;font-size:.82rem">${esc(m.gap.ket)}</div></div>
           ${w ? `<button class="worst" ${aksiAttr(m.key, w.aksi, w.arg)}><small>${esc(w.kecil)}</small><b>${esc(w.nama)}</b><small>${esc(w.detail)}</small></button>` : '<button class="worst" disabled><small>Tidak ada yang tertunda</small><b>Semua beres ✓</b></button>'}</div></div>`;
   }
@@ -390,7 +402,7 @@
     return { key: 'anggaran', kecil: 'Anggaran peralatan', judul: 'Pantau pemakaian anggaran tiap lokasi', labelAngka: 'Sisa anggaran peralatan', angka: rpR(rab - pakai),
       persen: rab ? 100 * pakai / rab : 0, labelRing: 'terpakai dari anggaran', cta: ['Lihat yang melebihi RAB', 'lewat'],
       kpi: [[idn(LOK.length), 'Lokasi', WARNA.info], [idn(LOK.filter(l => Number(l.terpakai) > 0).length), 'Sudah memesan', WARNA.ok], [idn(hampir.length), 'Hampir habis (>85%)', WARNA.jingga], [idn(lewat.length), 'Melebihi RAB', WARNA.bahaya]],
-      grafik: { judul: 'Total jual per bulan', fmt: rpR, seri: [{ nama: 'Jual', warna: WARNA.ok, nilai: perBulan(REQ.filter(aktif), p => Number(p.total_jual)) }] },
+      grafik: { judul: 'Anggaran per lokasi', html: grafikAnggaran(), seri: [{ nama: 'Anggaran', warna: 'rgba(255,255,255,.4)' }, { nama: 'Terpakai', warna: '#ffb25e' }] },
       gap: { label: 'Melebihi RAB', besar: idn(lewat.length), pill: lewat.length ? `lebih ${rpR(lebih)}` : 'semua dalam anggaran', ket: 'lokasi dengan jual di atas anggaran',
         worst: buruk && { kecil: 'Kelebihan terbesar', nama: buruk.nama, detail: `${rpR(-sisaLok(buruk))} di atas RAB`, aksi: 'lokasi', arg: buruk.nama } } };
   }
