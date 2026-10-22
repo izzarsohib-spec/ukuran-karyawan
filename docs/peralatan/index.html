@@ -72,6 +72,32 @@
   .alasan { margin:4px 0; padding:8px 10px; border-left:3px solid var(--bad); border-radius:6px; background:var(--panel2); font-size:.9rem; white-space:pre-wrap; overflow-wrap:anywhere; }
   details summary { cursor:pointer; color:var(--muted); font-size:.85rem; margin-top:4px; } details table { margin-top:6px; }
   .kosong { padding:22px; text-align:center; color:var(--muted); }
+
+  /* mini dashboard di atas tiap halaman: kartu utama (cincin persen + angka), grafik bulanan, kartu "terbesar" yang bisa diklik */
+  .top { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:14px; margin-bottom:18px; }
+  .top .card { margin-bottom:0; }
+  .hero { position:relative; padding:26px; min-height:260px; display:flex; flex-direction:column; justify-content:space-between; gap:18px; overflow:hidden; }
+  .hero small { color:var(--muted); font-size:.78rem; }
+  .hero h2 { font-size:1.75rem; line-height:1.08; max-width:380px; margin:8px 0 14px; }
+  .hero .angka small { display:block; } .hero .angka b { display:block; font-family:var(--head); font-size:1.7rem; line-height:1.15; color:var(--ok); margin-bottom:16px; }
+  .hero .cta { padding:11px 24px; }
+  .ringhero { position:absolute; right:24px; top:20px; width:min(38%,190px); aspect-ratio:1; }
+  .ringhero .t { position:absolute; inset:0; display:grid; place-content:center; text-align:center; }
+  .ringhero b { font-family:var(--head); font-size:1.9rem; line-height:1; } .ringhero span { font-size:.74rem; color:var(--muted); }
+  .mkpi { display:grid; grid-template-columns:repeat(auto-fit,minmax(105px,1fr)); gap:10px 6px; background:rgba(14,14,16,.55); border-radius:22px; padding:14px 18px; position:relative; z-index:1; }
+  .mkpi b { display:block; font-family:var(--head); font-size:1.45rem; line-height:1.1; white-space:nowrap; }
+  .mkpi span { display:flex; align-items:center; gap:6px; font-size:.74rem; color:var(--muted); margin-top:4px; } .mkpi i { width:9px; height:9px; border-radius:3px; flex:none; }
+  .rcol { display:grid; gap:14px; grid-template-rows:auto 1fr; }
+  .chartcard { padding:16px 18px 10px; } .chartcard .ttl { display:flex; justify-content:space-between; align-items:center; font-size:.82rem; margin-bottom:4px; }
+  .legend { display:flex; gap:12px; font-size:.72rem; color:var(--muted); } .legend i { display:inline-block; width:14px; height:3px; border-radius:2px; margin-right:5px; vertical-align:middle; }
+  .chartcard svg { width:100%; height:auto; display:block; }
+  .gapcard { padding:16px 18px; display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:stretch; }
+  .gapcard .lbl { font-size:.82rem; } .gapcard .big { font-family:var(--head); font-size:2.3rem; line-height:1.1; color:var(--ok); margin:6px 0 2px; }
+  .pill { display:inline-block; font-size:.72rem; padding:2px 9px; border-radius:99px; background:var(--panel2); color:var(--muted); }
+  .worst { background:rgba(14,14,16,.55); border:1px solid var(--stroke); border-radius:20px; padding:12px 14px; text-align:left; display:flex; flex-direction:column; justify-content:space-between; gap:8px; min-width:0; }
+  .worst:hover:not(:disabled) { border-color:var(--accent); } .worst:disabled { opacity:.6; cursor:default; } .worst small { color:var(--muted); font-size:.74rem; } .worst b { font-size:.95rem; overflow-wrap:anywhere; }
+  @media (max-width:980px) { .top { grid-template-columns:1fr; } .hero { min-height:0; } .hero h2 { margin-right:min(40%,150px); font-size:1.4rem; } }
+  @media (max-width:520px) { .gapcard { grid-template-columns:1fr; } .ringhero span { display:none; } .ringhero { width:min(30%,110px); right:14px; top:16px; } .ringhero b { font-size:1.2rem; } }
   @media (max-width: 640px) {
     .side { display:none; } .shell { margin:0; border-radius:0; border:0; } .content { padding:18px 14px 40px; } .kop img { height:56px; } .kop { gap:12px; }
     .mobnav { display:flex; gap:6px; margin-bottom:14px; overflow-x:auto; scrollbar-width:none; }
@@ -103,6 +129,7 @@
     </section>
 
     <section class="page" id="pg-permintaan" hidden>
+      <section class="top" id="md-permintaan"></section>
       <div class="ph"><h2>Permintaan Peralatan</h2></div>
       <div class="card">
         <h3>Buat permintaan</h3>
@@ -120,12 +147,13 @@
         <div style="margin-top:14px"><button class="cta" id="fKirim">Kirim ke Pak Yasir &amp; Pak Ferry</button></div>
         <div class="hint" id="fStatus" role="status"></div>
       </div>
-      <div class="card"><h3>Permintaan terakhir</h3><div id="daftarBaru"></div></div>
+      <div class="card" id="kartuBaru"><h3>Permintaan terakhir</h3><div class="chips" id="pChips"></div><div id="daftarBaru"></div></div>
     </section>
 
     <section class="page" id="pg-anggaran" hidden>
+      <section class="top" id="md-anggaran"></section>
       <div class="ph"><h2>Anggaran Lokasi</h2><div class="muted">Sisa RAB = anggaran − total jual permintaan yang tidak ditolak</div></div>
-      <div class="card">
+      <div class="card" id="kartuAnggaran">
         <div class="chips" id="aChips"></div>
         <input id="aCari" type="search" placeholder="Cari lokasi" style="margin-bottom:12px;max-width:340px">
         <div class="wrap"><table><thead><tr><th>Lokasi</th><th class="r">Anggaran</th><th class="r">Terpakai</th><th class="r">Sisa</th><th style="min-width:130px">Pemakaian</th><th class="r">Sisa anggaran seragam</th></tr></thead><tbody id="aBody"></tbody></table></div>
@@ -133,8 +161,9 @@
     </section>
 
     <section class="page" id="pg-riwayat" hidden>
+      <section class="top" id="md-riwayat"></section>
       <div class="ph"><h2>Riwayat Permintaan</h2><div class="muted" id="rInfo"></div></div>
-      <div class="card">
+      <div class="card" id="kartuRiwayat">
         <div class="chips" id="rChips"></div>
         <input id="rCari" type="search" placeholder="Cari lokasi atau peralatan" style="margin-bottom:12px;max-width:340px">
         <div id="rDaftar"></div>
@@ -161,7 +190,7 @@
     return j;
   }
 
-  let LOK = [], ITEM = [], REQ = [], baris = [{ id: '', qty: '' }], dimuat = false;
+  let LOK = [], ITEM = [], REQ = [], baris = [{ id: '', qty: '' }], dimuat = false, pF = 'semua';
 
   // ---- status permintaan: baru dari web = dua pimpinan; asal 'migrasi-sheet' = arsip dari spreadsheet lama ----
   const stReq = p => p.status === 'arsip' ? 'arsip' : p.status_yasir === 'ditolak' || p.status_ferry === 'ditolak' ? 'ditolak' : p.status_yasir === 'disetujui' && p.status_ferry === 'disetujui' ? 'disetujui' : 'menunggu';
@@ -222,6 +251,7 @@
   }
   $('fLok').onchange = () => { $('fSumber').value = 'peralatan'; hitung(); };
   $('fSumber').onchange = hitung;
+  $('pChips').onclick = e => { if (e.target.dataset.k) { pF = e.target.dataset.k; renderSemua(); } };
   $('fTambah').onclick = () => { baris.push({ id: '', qty: '' }); renderBaris(); };
   $('fBaris').onchange = e => { const tr = e.target.closest('tr'); if (!tr) return; const b = baris[tr.dataset.n]; if (e.target.classList.contains('f-item')) { b.id = e.target.value; if (!b.qty) b.qty = 1; renderBaris(); } };
   $('fBaris').oninput = e => { if (!e.target.classList.contains('f-qty')) return; const tr = e.target.closest('tr'), b = baris[tr.dataset.n]; b.qty = e.target.value; const it = ITEM.find(x => String(x.id) === String(b.id)); tr.querySelector('.f-tot').textContent = it && Number(b.qty) > 0 ? rp(it.harga_jual * b.qty) : '-'; hitung(); };
@@ -269,12 +299,98 @@
   $('rChips').onclick = e => { if (e.target.dataset.k) { rF = e.target.dataset.k; renderRiwayat(); } };
   $('rCari').oninput = renderRiwayat;
 
+  // ================= MINI DASHBOARD DI ATAS TIAP HALAMAN =================
+  // Angkanya ringkasan seluruh data halaman itu (tidak ikut filter di bawahnya). Tombol utama dan kartu "terbesar" memfilter daftar di bawahnya.
+  const idn = n => Number(n).toLocaleString('id-ID');
+  const hariSejak = d => Math.max(0, Math.floor((Date.now() - new Date(d)) / 864e5));
+  const WARNA = { info: '#8aa4ff', ok: 'var(--ok)', jingga: 'var(--warn)', bahaya: 'var(--bad)', aksen: 'var(--accent)' };
+  const cincin = (id, p) => { const C = 2 * Math.PI * 44; return `<svg viewBox="0 0 110 110" width="100%" height="100%" aria-hidden="true"><defs><linearGradient id="gr-${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb25e"/><stop offset="1" stop-color="#f5d547"/></linearGradient></defs>
+    <circle cx="55" cy="55" r="44" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="11"/>${p > 0 ? `<circle cx="55" cy="55" r="44" fill="none" stroke="url(#gr-${id})" stroke-width="11" stroke-linecap="round" stroke-dasharray="${(C * Math.max(0, Math.min(100, p)) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 55 55)"/>` : ''}</svg>`; };
+  // grafik per bulan berdasarkan tanggal pesanan; permintaan tanpa tanggal tidak masuk grafik
+  const kunciBulan = d => { const x = new Date(d); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0'); };
+  function sumbuBulan() {
+    const ada = REQ.filter(p => p.tanggal).map(p => new Date(p.tanggal)), akhir = new Date(), awal = ada.length ? new Date(Math.min(...ada)) : new Date(akhir.getFullYear(), akhir.getMonth() - 2, 1), out = [];
+    for (let d = new Date(awal.getFullYear(), awal.getMonth(), 1); d <= akhir; d.setMonth(d.getMonth() + 1)) { out.push(kunciBulan(d)); if (out.length > 12) out.shift(); }
+    // minimal 3 titik: tambahkan bulan-bulan sebelumnya (bukan bulan depan)
+    for (let d = new Date(awal.getFullYear(), awal.getMonth() - 1, 1); out.length < 3; d.setMonth(d.getMonth() - 1)) out.unshift(kunciBulan(d));
+    return out;
+  }
+  const NAMA_BLN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  const labelBulan = k => NAMA_BLN[Number(k.slice(5)) - 1] + ' ' + k.slice(2, 4);
+  const perBulan = (data, nilai) => { const m = new Map(sumbuBulan().map(k => [k, 0])); for (const p of data) if (p.tanggal) { const k = kunciBulan(p.tanggal); if (m.has(k)) m.set(k, m.get(k) + nilai(p)); } return [...m]; };
+  function grafikGaris(id, seri, fmt) {
+    const W = 320, Ht = 130, L = 8, R = 8, T = 10, B = 24, n = seri[0].nilai.length, maks = Math.max(1, ...seri.flatMap(s => s.nilai.map(x => x[1])));
+    if (!seri.some(s => s.nilai.some(x => x[1] > 0))) return '<div class="kosong" style="padding:30px 0">Belum ada pesanan bertanggal.</div>';
+    const x = i => n === 1 ? W / 2 : L + i * (W - L - R) / (n - 1), y = v => T + (Ht - T - B) * (1 - v / maks);
+    let g = [0, .5, 1].map(f => `<line x1="${L}" x2="${W - R}" y1="${y(maks * f).toFixed(1)}" y2="${y(maks * f).toFixed(1)}" stroke="rgba(255,255,255,.08)"/>`).join('');
+    g += seri[0].nilai.map((v, i) => `<text x="${x(i).toFixed(1)}" y="${Ht - 6}" font-size="9" fill="#a4a4ae" text-anchor="${i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'}">${labelBulan(v[0])}</text>`).join('');
+    for (const s of seri) {
+      g += `<polyline fill="none" stroke="${s.warna}" stroke-width="2.4" stroke-linejoin="round" points="${s.nilai.map((v, i) => `${x(i).toFixed(1)},${y(v[1]).toFixed(1)}`).join(' ')}"/>`;
+      g += s.nilai.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v[1]).toFixed(1)}" r="4" fill="${s.warna}" tabindex="0"><title>${esc(s.nama)} ${labelBulan(v[0])}: ${esc(fmt(v[1]))}</title></circle>`).join('');
+    }
+    return `<svg viewBox="0 0 ${W} ${Ht}" role="img" aria-label="${esc(seri.map(s => s.nama).join(', '))} per bulan">${g}</svg>`;
+  }
+  const aksiAttr = (k, a, arg) => `data-md="${k}|${a}|${encodeURIComponent(arg || '')}"`;
+  function miniHtml(m) {
+    const w = m.gap.worst;
+    return `<div class="hero card"><div><small>${esc(m.kecil)}</small><h2>${esc(m.judul)}</h2>
+        <div class="angka"><small>${esc(m.labelAngka)}</small><b class="num">${esc(m.angka)}</b></div><button class="cta" ${aksiAttr(m.key, m.cta[1], m.cta[2])}>${esc(m.cta[0])}</button></div>
+      <div class="ringhero">${cincin(m.key, m.persen)}<div class="t"><b>${m.persen.toFixed(1).replace('.', ',')}%</b><span>${esc(m.labelRing)}</span></div></div>
+      <div class="mkpi">${m.kpi.map(([a, b, c]) => `<div><b>${esc(a)}</b><span><i style="background:${c}"></i>${esc(b)}</span></div>`).join('')}</div></div>
+      <div class="rcol"><div class="chartcard card"><div class="ttl"><b>${esc(m.grafik.judul)}</b><span class="legend">${m.grafik.seri.map(s => `<span><i style="background:${s.warna}"></i>${esc(s.nama)}</span>`).join('')}</span></div>${grafikGaris(m.key, m.grafik.seri, m.grafik.fmt)}</div>
+        <div class="gapcard card"><div><div class="lbl">${esc(m.gap.label)}</div><div class="big">${esc(m.gap.besar)}</div><span class="pill">${esc(m.gap.pill)}</span><div class="muted" style="margin-top:6px;font-size:.82rem">${esc(m.gap.ket)}</div></div>
+          ${w ? `<button class="worst" ${aksiAttr(m.key, w.aksi, w.arg)}><small>${esc(w.kecil)}</small><b>${esc(w.nama)}</b><small>${esc(w.detail)}</small></button>` : '<button class="worst" disabled><small>Tidak ada yang tertunda</small><b>Semua beres ✓</b></button>'}</div></div>`;
+  }
+  const sisaLok = l => Number(l.rab) - Number(l.terpakai);
+  function miniPermintaan() {
+    const baru = REQ.filter(p => p.status !== 'arsip'), n = k => baru.filter(p => stReq(p) === k).length, tunggu = baru.filter(p => stReq(p) === 'menunggu');
+    const wy = tunggu.filter(p => p.status_yasir === 'menunggu').length, wf = tunggu.filter(p => p.status_ferry === 'menunggu').length, tertua = [...tunggu].sort((a, b) => new Date(a.tanggal || a.dibuat) - new Date(b.tanggal || b.dibuat))[0];
+    return { key: 'permintaan', kecil: 'Permintaan peralatan', judul: 'Pantau persetujuan Pak Yasir dan Pak Ferry', labelAngka: 'Nilai jual permintaan baru (tanpa yang ditolak)', angka: rpR(baru.filter(aktif).reduce((a, p) => a + Number(p.total_jual), 0)),
+      persen: baru.length ? 100 * n('disetujui') / baru.length : 0, labelRing: 'disetujui keduanya', cta: ['Lihat yang menunggu', 'menunggu'],
+      kpi: [[idn(baru.length), 'Permintaan dari web', WARNA.info], [idn(tunggu.length), 'Menunggu persetujuan', WARNA.jingga], [idn(n('disetujui')), 'Disetujui keduanya', WARNA.ok], [idn(n('ditolak')), 'Ditolak / revisi', WARNA.bahaya]],
+      grafik: { judul: 'Permintaan per bulan', fmt: v => idn(v) + ' permintaan', seri: [{ nama: 'Permintaan', warna: WARNA.info, nilai: perBulan(REQ, () => 1) }] },
+      gap: { label: 'Menunggu persetujuan', besar: idn(tunggu.length), pill: `Pak Yasir ${wy} · Pak Ferry ${wf}`, ket: 'permintaan belum diputuskan',
+        worst: tertua && { kecil: 'Menunggu paling lama', nama: tertua.lokasi, detail: `${hariSejak(tertua.tanggal || tertua.dibuat)} hari · no. ${tertua.id}`, aksi: 'menunggu', arg: '' } } };
+  }
+  function miniAnggaran() {
+    const rab = LOK.reduce((a, l) => a + Number(l.rab), 0), pakai = LOK.reduce((a, l) => a + Number(l.terpakai), 0), lewat = LOK.filter(l => sisaLok(l) < 0), hampir = LOK.filter(l => sisaLok(l) >= 0 && Number(l.rab) && Number(l.terpakai) / Number(l.rab) > .85);
+    const buruk = [...lewat].sort((a, b) => sisaLok(a) - sisaLok(b))[0], lebih = lewat.reduce((a, l) => a - sisaLok(l), 0);
+    return { key: 'anggaran', kecil: 'Anggaran peralatan', judul: 'Pantau pemakaian anggaran tiap lokasi', labelAngka: 'Sisa anggaran peralatan', angka: rpR(rab - pakai),
+      persen: rab ? 100 * pakai / rab : 0, labelRing: 'terpakai dari anggaran', cta: ['Lihat yang melebihi RAB', 'lewat'],
+      kpi: [[idn(LOK.length), 'Lokasi', WARNA.info], [idn(LOK.filter(l => Number(l.terpakai) > 0).length), 'Sudah memesan', WARNA.ok], [idn(hampir.length), 'Hampir habis (>85%)', WARNA.jingga], [idn(lewat.length), 'Melebihi RAB', WARNA.bahaya]],
+      grafik: { judul: 'Total jual per bulan', fmt: rpR, seri: [{ nama: 'Jual', warna: WARNA.ok, nilai: perBulan(REQ.filter(aktif), p => Number(p.total_jual)) }] },
+      gap: { label: 'Melebihi RAB', besar: idn(lewat.length), pill: lewat.length ? `lebih ${rpR(lebih)}` : 'semua dalam anggaran', ket: 'lokasi dengan jual di atas anggaran',
+        worst: buruk && { kecil: 'Kelebihan terbesar', nama: buruk.nama, detail: `${rpR(-sisaLok(buruk))} di atas RAB`, aksi: 'lokasi', arg: buruk.nama } } };
+  }
+  function miniRiwayat() {
+    const ak = REQ.filter(aktif), jual = ak.reduce((a, p) => a + Number(p.total_jual), 0), beli = ak.reduce((a, p) => a + Number(p.total_beli), 0), tunggu = REQ.filter(p => stReq(p) === 'menunggu').length;
+    const per = ak.filter(p => p.sumber_anggaran === 'peralatan'), dipesan = LOK.filter(l => per.some(p => p.lokasi_id === l.id)), untung = dipesan.reduce((a, l) => a + sisaLok(l), 0) + jual - beli;
+    const besar = [...ak].sort((a, b) => Number(b.total_jual) - Number(a.total_jual))[0];
+    return { key: 'riwayat', kecil: 'Riwayat permintaan', judul: 'Seluruh permintaan peralatan, lama dan baru', labelAngka: 'Total jual (tanpa yang ditolak)', angka: rpR(jual),
+      persen: jual ? 100 * (jual - beli) / jual : 0, labelRing: 'margin jual − beli', cta: tunggu ? ['Lihat yang menunggu', 'menunggu'] : ['Lihat semua', 'semua'],
+      kpi: [[idn(REQ.length), 'Seluruh permintaan', WARNA.info], [idn(REQ.filter(p => p.status === 'arsip').length), 'Arsip sheet lama', WARNA.aksen], [idn(REQ.filter(p => p.status !== 'arsip').length), 'Dari web', WARNA.ok], [idn(REQ.filter(p => stReq(p) === 'ditolak').length), 'Ditolak / revisi', WARNA.bahaya]],
+      grafik: { judul: 'Jual dan beli per bulan', fmt: rpR, seri: [{ nama: 'Jual', warna: WARNA.ok, nilai: perBulan(ak, p => Number(p.total_jual)) }, { nama: 'Beli', warna: WARNA.jingga, nilai: perBulan(ak, p => Number(p.total_beli)) }] },
+      gap: { label: 'Untung seluruhnya', besar: rpR(untung), pill: 'sisa RAB + jual − beli', ket: 'dari permintaan yang tidak ditolak',
+        worst: besar && { kecil: 'Permintaan terbesar', nama: besar.lokasi, detail: `jual ${rpR(besar.total_jual)} · no. ${besar.id}`, aksi: 'lokasi', arg: besar.lokasi } } };
+  }
+  const MINI = { permintaan: miniPermintaan, anggaran: miniAnggaran, riwayat: miniRiwayat };
+  function renderMini() { for (const [k, f] of Object.entries(MINI)) { const el = $('md-' + k); if (el) el.innerHTML = miniHtml(f()); } }
+  const gulirKe = id => { const el = $(id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  function aksiMini(k, a, arg) {
+    if (k === 'permintaan') { pF = a === 'menunggu' ? 'menunggu' : 'semua'; renderSemua(); gulirKe('kartuBaru'); }
+    else if (k === 'anggaran') { if (a === 'lewat') { aF = 'lewat'; $('aCari').value = ''; } else { aF = 'semua'; $('aCari').value = arg; } renderAnggaran(); gulirKe('kartuAnggaran'); }
+    else if (k === 'riwayat') { if (a === 'menunggu') { rF = 'menunggu'; $('rCari').value = ''; } else if (a === 'lokasi') { rF = 'semua'; $('rCari').value = arg; } else { rF = 'semua'; $('rCari').value = ''; } renderRiwayat(); gulirKe('kartuRiwayat'); }
+  }
+  document.querySelectorAll('.top').forEach(el => el.addEventListener('click', e => { const b = e.target.closest('[data-md]'); if (b && !b.disabled) { const [k, a, arg] = b.dataset.md.split('|'); aksiMini(k, a, decodeURIComponent(arg || '')); } }));
+
   // ---------------- MUAT + NAVIGASI ----------------
   function renderSemua() {
     const sel = $('fLok').value;
     $('fLok').innerHTML = '<option value="">Pilih lokasi</option>' + LOK.map(l => `<option value="${l.id}" ${String(l.id) === sel ? 'selected' : ''}>${esc(l.nama)}</option>`).join('');
-    renderDash(); renderAnggaran(); renderRiwayat(); renderBaris();
-    $('daftarBaru').innerHTML = REQ.filter(p => p.status !== 'arsip').slice(0, 8).map(kartuReq).join('') || '<div class="kosong">Belum ada permintaan dari web. Permintaan lama dari spreadsheet ada di Riwayat.</div>';
+    renderDash(); renderAnggaran(); renderRiwayat(); renderBaris(); renderMini();
+    const baru = REQ.filter(p => p.status !== 'arsip'), nb = k => baru.filter(p => k === 'semua' || stReq(p) === k).length;
+    $('pChips').innerHTML = [['semua', 'Semua'], ['menunggu', 'Menunggu'], ['disetujui', 'Disetujui'], ['ditolak', 'Ditolak / revisi']].map(([k, t]) => `<button class="chip ${pF === k ? 'on' : ''}" data-k="${k}">${t} ${nb(k)}</button>`).join('');
+    $('daftarBaru').innerHTML = baru.filter(p => pF === 'semua' || stReq(p) === pF).slice(0, 12).map(kartuReq).join('') || '<div class="kosong">Belum ada permintaan dari web. Permintaan lama dari spreadsheet ada di Riwayat.</div>';
     $('sub').textContent = `${LOK.length} lokasi · ${ITEM.length} peralatan · ${REQ.length} permintaan`;
   }
   async function muat() {
