@@ -69,7 +69,7 @@
   .top { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:14px; }
   .hero { position:relative; padding:28px; min-height:330px; display:flex; flex-direction:column; justify-content:space-between; gap:18px; overflow:hidden; }
   .hero small { color:var(--muted); font-size:.78rem; }
-  .hero h2 { font-size:2.25rem; line-height:1.08; max-width:380px; margin:8px 0 16px; }
+  .hero h2 { font-size:2.25rem; line-height:1.08; max-width:min(380px, calc(100% - min(40%,210px) - 20px)); margin:8px 0 16px; }
   .rabtotal { margin:0 0 18px; }
   .rabtotal small { display:block; color:var(--muted); font-size:.78rem; }
   .rabtotal b { display:block; font-size:1.9rem; line-height:1.15; color:var(--green); }
@@ -89,8 +89,8 @@
 
   .rcol { display:grid; gap:14px; grid-template-rows:auto 1fr; }
   .chartcard { padding:16px 18px 10px; }
-  .chartcard .ttl { display:flex; justify-content:space-between; align-items:center; font-size:.82rem; margin-bottom:4px; }
-  .legend { display:flex; gap:12px; font-size:.72rem; color:var(--muted); }
+  .chartcard .ttl { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:2px 12px; font-size:.82rem; margin-bottom:4px; }
+  .legend { display:flex; flex-wrap:wrap; gap:2px 12px; font-size:.72rem; color:var(--muted); } .legend > span { white-space:nowrap; }
   .legend i { display:inline-block; width:14px; height:3px; border-radius:2px; margin-right:5px; vertical-align:middle; }
   .chartcard svg { width:100%; height:auto; display:block; }
   .gap { padding:16px 18px; display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:stretch; }
@@ -194,7 +194,7 @@
   .vk span { display:block; font-size:.75rem; color:var(--muted); }
   .vk b { display:block; font:600 1.5rem/1.15 system-ui,-apple-system,"Segoe UI",sans-serif; margin-top:4px; overflow-wrap:anywhere; }
   .vk small { display:block; color:var(--muted); font-size:.74rem; margin-top:2px; }
-  .dgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); gap:12px; }
+  .dgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); gap:12px; align-items:start; }
   .vc { background:rgba(14,14,16,.45); border:1px solid var(--stroke); border-radius:18px; padding:14px 16px; min-width:0; }
   .vh { display:flex; justify-content:space-between; gap:10px; margin-bottom:10px; } .vh b { font-size:.9rem; }
   .vt { display:flex; gap:2px; background:rgba(255,255,255,.07); border-radius:99px; padding:2px; height:fit-content; flex:none; }
@@ -208,6 +208,7 @@
   .ht { display:flex; height:14px; } .ht i { display:block; height:100%; margin-left:2px; min-width:2px; } .ht i:first-child { margin-left:0; } .ht i:last-child { border-radius:0 4px 4px 0; }
   .hv { font-size:.78rem; font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
   .vlist .vi { display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--stroke); } .vlist .vi:last-child { border-bottom:0; }
+  .vlist .vi > div:first-child { min-width:0; } .vlist .vi > .r { flex:none; text-align:right; }
   .vi .r { text-align:right; flex:none; } .vi b { font-size:.84rem; } .vtab { max-height:300px; }
   #lAkt { grid-template-columns:repeat(auto-fit,minmax(min(100%,540px),1fr)); } #lAkt .vtab { max-height:none; } #lAkt .vc table td, #lAkt .vc table th { padding:7px 10px; }
   #vTip { position:fixed; z-index:80; pointer-events:none; background:#26262b; border:1px solid var(--stroke); border-radius:12px; padding:8px 10px; font-size:.78rem; min-width:130px; max-width:280px; box-shadow:0 8px 24px rgba(0,0,0,.45); }
@@ -2164,7 +2165,7 @@
     return { kpi, grid:
       kartuGrafik('pm-status', 'Status permintaan', 'jumlah permintaan menurut posisi persetujuan', grafikBatang(baris.map(([k, l, w]) => ({ label: l, teks: String(n(k)), segs: [{ v: n(k), warna: w, nama: l }] }))), tabelHtml(['Status', 'Jumlah'], baris.map(([k, l]) => [l, idn(n(k))])))
       + kartuGrafik('pm-tren', 'Permintaan dibuat per ' + (sumbu.lebar > 1 ? 'minggu' : 'hari'), f.hari ? `${f.hari} hari terakhir` : 'seluruh waktu', grafikGaris('pm-tren', sumbu, [{ nama: 'Permintaan', warna: WD.s1, nilai }]), tabelHtml(['Tanggal', 'Permintaan'], nilai.map((v, i) => [sumbu.label(i), idn(v)])))
-      + kartuGrafik('pm-baru', 'Permintaan terbaru', '8 terakhir sesuai filter', `<div class="vlist">${terbaru.map(p => `<div class="vi"><div><b>${esc(p.client)}</b><div class="muted">${esc(p.bagian_kerja)} · ${tglP(p.dibuat)}</div></div><div class="r"><span class="badge ${labelReq(p)[1]}">${esc(labelReq(p)[0].split(' · ')[0])}</span><div class="muted">${rpRingkas(p.total_jual)}</div></div></div>`).join('') || '<div class="kosongnya">Belum ada permintaan.</div>'}</div>`,
+      + kartuGrafik('pm-baru', 'Permintaan terbaru', '8 terakhir sesuai filter', `<div class="vlist">${terbaru.map(p => `<div class="vi"><div><b>${esc(p.client)}</b><div class="muted">${esc(p.bagian_kerja)} · ${tglP(p.dibuat)}</div></div><div class="r"><span class="badge ${labelReq(p)[1]}">${esc(labelReq(p)[0].split(' · ')[0].replace(' Pak Yasir & Pak Ferry', ''))}</span><div class="muted">${rpRingkas(p.total_jual)}</div></div></div>`).join('') || '<div class="kosongnya">Belum ada permintaan.</div>'}</div>`,
         tabelHtml(['Lokasi', 'Bagian', 'Status', 'Nilai jual'], terbaru.map(p => [p.client, p.bagian_kerja, labelReq(p)[0], rp(p.total_jual)]))) };
   }
 

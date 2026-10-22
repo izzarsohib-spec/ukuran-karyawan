@@ -78,7 +78,7 @@
   .top .card { margin-bottom:0; }
   .hero { position:relative; padding:26px; min-height:260px; display:flex; flex-direction:column; justify-content:space-between; gap:18px; overflow:hidden; }
   .hero small { color:var(--muted); font-size:.78rem; }
-  .hero h2 { font-size:1.75rem; line-height:1.08; max-width:380px; margin:8px 0 14px; }
+  .hero h2 { font-size:1.75rem; line-height:1.08; max-width:min(380px, calc(100% - min(38%,190px) - 20px)); margin:8px 0 14px; }
   .hero .angka small { display:block; } .hero .angka b { display:block; font-family:var(--head); font-size:1.7rem; line-height:1.15; color:var(--ok); margin-bottom:16px; }
   .hero .cta { padding:11px 24px; }
   .ringhero { position:absolute; right:24px; top:20px; width:min(38%,190px); aspect-ratio:1; }
@@ -88,8 +88,8 @@
   .mkpi b { display:block; font-family:var(--head); font-size:1.45rem; line-height:1.1; white-space:nowrap; }
   .mkpi span { display:flex; align-items:center; gap:6px; font-size:.74rem; color:var(--muted); margin-top:4px; } .mkpi i { width:9px; height:9px; border-radius:3px; flex:none; }
   .rcol { display:grid; gap:14px; grid-template-rows:auto 1fr; }
-  .chartcard { padding:16px 18px 10px; } .chartcard .ttl { display:flex; justify-content:space-between; align-items:center; font-size:.82rem; margin-bottom:4px; }
-  .legend { display:flex; gap:12px; font-size:.72rem; color:var(--muted); } .legend i { display:inline-block; width:14px; height:3px; border-radius:2px; margin-right:5px; vertical-align:middle; }
+  .chartcard { padding:16px 18px 10px; } .chartcard .ttl { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:2px 12px; font-size:.82rem; margin-bottom:4px; }
+  .legend { display:flex; flex-wrap:wrap; gap:2px 12px; font-size:.72rem; color:var(--muted); } .legend > span { white-space:nowrap; } .legend i { display:inline-block; width:14px; height:3px; border-radius:2px; margin-right:5px; vertical-align:middle; }
   .chartcard svg { width:100%; height:auto; display:block; }
   .gapcard { padding:16px 18px; display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:stretch; }
   .gapcard .lbl { font-size:.82rem; } .gapcard .big { font-family:var(--head); font-size:2.3rem; line-height:1.1; color:var(--ok); margin:6px 0 2px; }
@@ -111,7 +111,7 @@
   .tl { border-left:2px solid var(--stroke); margin:0 0 8px 6px; padding:2px 0 2px 12px; }
   details.req > summary { font-size:.95rem; color:var(--text); } details.req > summary .muted { font-size:.82rem; }
   /* grafik Dashboard Utama (sama dengan seragam) */
-  .dgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); gap:12px; margin-bottom:18px; }
+  .dgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); gap:12px; margin-bottom:18px; align-items:start; }
   .vc { background:rgba(14,14,16,.45); border:1px solid var(--stroke); border-radius:18px; padding:14px 16px; min-width:0; }
   .vh { display:flex; justify-content:space-between; gap:10px; margin-bottom:10px; } .vh b { font-size:.9rem; }
   .vt { display:flex; gap:2px; background:rgba(255,255,255,.07); border-radius:99px; padding:2px; height:fit-content; flex:none; }
