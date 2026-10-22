@@ -131,6 +131,21 @@
   .pvbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:12px 16px; border-bottom:1px solid var(--stroke); } .pvbar .jd { margin-right:auto; min-width:0; }
   .pvbar .jd b { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .pvbar .jd span { color:var(--muted); font-size:.78rem; } .pvbar .cta { padding:8px 18px; }
   .pvbody { flex:1; overflow:auto; background:#2a2a2e; padding:12px; } .pvbody img { display:block; width:100%; max-width:900px; margin:0 auto 12px; background:#fff; }
+  /* daftar lokasi di halaman Permintaan (sama dengan seragam) */
+  .mlay { display:grid; grid-template-columns:minmax(280px,360px) minmax(0,1fr); gap:14px; align-items:start; }
+  .mlist .scroll { max-height:640px; overflow-y:auto; padding-right:4px; scrollbar-width:thin; }
+  .item { display:block; width:100%; text-align:left; border:1px solid transparent; background:rgba(255,255,255,.05); border-radius:18px; padding:11px 14px; margin-bottom:6px; color:inherit; }
+  .item:hover { background:var(--panel2); } .item.sel { border-color:var(--accent); background:var(--panel2); }
+  .item .nm { font-weight:600; font-size:.9rem; margin-bottom:7px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .item .mt { display:flex; justify-content:space-between; gap:8px; align-items:center; font-size:.76rem; color:var(--muted); margin-top:7px; }
+  .mdet { background:rgba(14,14,16,.5); border:1px solid var(--stroke); border-radius:22px; min-width:0; }
+  .dhead { padding:18px 20px 14px; border-bottom:1px solid var(--stroke); } .dhead h2 { font-size:1.2rem; color:var(--text); } .dhead .rl { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; color:var(--muted); font-size:.88rem; padding:2px 0; }
+  .pcard { padding:18px 20px; } .pcard h3 { margin:0 0 12px; }
+  .back { display:none; margin-bottom:10px; }
+  @media (max-width: 900px) {
+    .mlay { display:block; } .mlist .scroll { max-height:60vh; }
+    .mdet { display:none; position:fixed; inset:0; z-index:20; border-radius:0; overflow:auto; background:#141416; } .mdet.open { display:block; } .back { display:inline-block; }
+  }
   @media (max-width: 640px) {
     .side { display:none; } .shell { margin:0; border-radius:0; border:0; } .content { padding:18px 14px 40px; } .kop img { height:56px; } .kop { gap:12px; }
     .mobnav { display:flex; gap:6px; margin-bottom:14px; overflow-x:auto; scrollbar-width:none; }
@@ -163,10 +178,17 @@
     <section class="page" id="pg-permintaan" hidden>
       <section class="top" id="md-permintaan"></section>
       <div class="ph"><h2>Permintaan Peralatan</h2></div>
-      <div class="card">
+      <div class="card" id="kartuLokasiMinta">
+        <div class="rl" style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><h3 style="margin:0">Daftar lokasi</h3><span class="muted" id="mInfo"></span></div>
+        <input id="mCari" type="search" placeholder="Cari lokasi, mis. kejari barito" style="margin-bottom:12px;max-width:380px">
+        <div class="chips" id="mChips"></div>
+        <div class="mlay">
+          <div class="mlist"><div class="scroll" id="mDaftar"></div></div>
+          <div class="mdet" id="mDetail"><div id="mDHead"></div>
+      <div class="pcard" id="mForm" hidden>
         <h3>Buat permintaan</h3>
         <div class="grid2">
-          <label class="f"><span>Lokasi</span><select id="fLok"></select></label>
+          <div class="f"><span>Lokasi</span><b id="fLokNama" style="display:block;margin-top:5px">Pilih lokasi di daftar</b><select id="fLok" hidden></select></div>
           <label class="f"><span>Sumber anggaran</span>
             <select id="fSumber"><option value="peralatan">Anggaran peralatan</option><option value="seragam">Anggaran seragam (bagian keamanan)</option></select></label>
         </div>
@@ -186,6 +208,9 @@
         <button class="btn" id="fPreview" style="width:100%;margin-top:14px;border-radius:14px;padding:11px">Preview surat</button>
         <button class="cta" id="fKirim" style="width:100%;margin-top:10px">Kirim ke Pak Yasir &amp; Pak Ferry</button>
         <div class="hint" id="fStatus" role="status"></div>
+      </div>
+          </div>
+        </div>
       </div>
       <div class="card" id="kartuBaru"><h3>Permintaan terakhir</h3><div class="chips" id="pChips"></div><div id="daftarBaru"></div></div>
     </section>
@@ -973,11 +998,58 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('pvModal').hidden) tutupPreview(); });
   $('pvKirim').onclick = async () => { if (!pvData) return; const { d, halaman } = pvData; if (await kirimKeAtasan(d, halaman, $('pvKirim'))) tutupPreview(); };
 
+  // ================= DAFTAR LOKASI DI HALAMAN PERMINTAAN =================
+  // Seperti halaman Permintaan Seragam: daftar lokasi (cari + filter status) di kiri, di kanan detail lokasi, riwayat permintaannya, dan form permintaan.
+  let mSel = '', mTerbuka = false, mF = 'semua';
+  const reqLok = l => REQ.filter(p => p.lokasi_id === l.id); // REQ sudah urut terbaru dulu
+  function statusLok(l) {
+    const r = reqLok(l).find(p => p.status !== 'arsip'); if (!r) return 'belum';
+    const t = tahapReq(r); return t === 'menunggu' ? 'menunggu' : t === 'ditolak' ? 'ditolak' : t === 'selesai' ? 'selesai' : 'proses';
+  }
+  const LSTAT = { belum: ['Belum ada permintaan baru', ''], menunggu: ['Menunggu persetujuan', 'warn'], proses: ['Diproses', 'info'], selesai: ['Selesai', 'ok'], ditolak: ['Ditolak / revisi', 'bad'] };
+  const URUT_LOK = { ditolak: 0, menunggu: 1, proses: 2, belum: 3, selesai: 4 };
+  function setLokasiMinta(id) {
+    if (String(id) === mSel) return;
+    mSel = String(id); $('fLok').value = mSel; $('fSumber').value = 'peralatan'; hitung();
+  }
+  function renderDaftarMinta() {
+    const q = $('mCari').value.trim().toLowerCase(), semua = LOK.map(l => ({ l, s: statusLok(l) }));
+    const cocok = (x, k) => k === 'semua' || (k === 'lewat' ? sisaLok(x.l) < 0 : x.s === k);
+    $('mChips').innerHTML = [['semua', 'Semua'], ['belum', 'Belum ada permintaan baru'], ['menunggu', 'Menunggu'], ['proses', 'Diproses'], ['selesai', 'Selesai'], ['ditolak', 'Ditolak / revisi'], ['lewat', 'Melebihi RAB']]
+      .map(([k, t]) => `<button class="chip ${mF === k ? 'on' : ''}" data-k="${k}">${t} ${semua.filter(x => cocok(x, k)).length}</button>`).join('');
+    const f = semua.filter(x => cocok(x, mF) && (!q || x.l.nama.toLowerCase().includes(q))).sort((a, b) => q ? a.l.nama.localeCompare(b.l.nama) : (URUT_LOK[a.s] - URUT_LOK[b.s]) || a.l.nama.localeCompare(b.l.nama));
+    $('mInfo').textContent = `${LOK.length} lokasi · ${semua.filter(x => x.s === 'menunggu').length} menunggu · ${semua.filter(x => x.s === 'proses').length} diproses · ${semua.filter(x => cocok(x, 'lewat')).length} melebihi RAB`;
+    $('mDaftar').innerHTML = f.map(({ l, s }) => {
+      const pct = Number(l.rab) ? 100 * Number(l.terpakai) / Number(l.rab) : 0, [lbl, cls] = LSTAT[s], n = reqLok(l).length;
+      return `<button class="item ${String(l.id) === mSel ? 'sel' : ''}" data-k="${l.id}"><div class="nm">${esc(l.nama)}</div><div class="bar ${pct > 100 ? 'bad' : pct > 85 ? 'warn' : ''}"><i style="width:${Math.min(100, pct)}%"></i></div>
+        <div class="mt"><span>${n} permintaan · sisa ${rpR(sisaLok(l))}</span><span class="badge ${cls}">${lbl}</span></div></button>`;
+    }).join('') || '<div class="kosong">Lokasi tidak ditemukan.</div>';
+    renderDetailMinta();
+  }
+  function renderDetailMinta() {
+    const l = LOK.find(x => String(x.id) === mSel);
+    $('mDetail').classList.toggle('open', mTerbuka && !!l);
+    $('mForm').hidden = !l; $('fLokNama').textContent = l ? l.nama : 'Pilih lokasi di daftar';
+    if (!l) { $('mDHead').innerHTML = '<div class="kosong">Pilih lokasi di daftar untuk melihat anggaran, riwayat, dan membuat permintaan.</div>'; return; }
+    const [lbl, cls] = LSTAT[statusLok(l)], pct = Number(l.rab) ? 100 * Number(l.terpakai) / Number(l.rab) : 0, r = riwayatLok(l), rq = reqLok(l);
+    $('mDHead').innerHTML = `<div class="dhead"><button class="btn back" id="mBack">‹ Kembali</button>
+      <div class="rl" style="align-items:center"><h2>${esc(l.nama)}</h2><span class="badge ${cls}">${lbl}</span></div>
+      <div class="bar ${pct > 100 ? 'bad' : pct > 85 ? 'warn' : ''}" style="margin-top:12px;height:9px"><i style="width:${Math.min(100, pct)}%"></i></div>
+      <div class="rl" style="margin-top:8px"><span>Anggaran peralatan ${rp(l.rab)} · terpakai ${rp(l.terpakai)}</span><b class="${sisaLok(l) < 0 ? 'neg' : ''}">sisa ${rp(sisaLok(l))}</b></div>
+      <div class="rl"><span>${l.seragam_rab == null ? 'Belum dipetakan ke anggaran seragam' : 'Anggaran seragam bagian keamanan: sisa ' + rp(Number(l.seragam_rab) - Number(l.seragam_terpakai))}</span><span>${l.anggota ? l.anggota + ' anggota' : ''}${l.kontrak_bulan ? ' · kontrak ' + l.kontrak_bulan + ' bulan' : ''}</span></div>
+      <div class="rl"><span>${r.ini.length ? `${r.ini.length} permintaan pada kontrak berjalan${r.ini.length > 1 ? ` (${r.ini.length - 1} penambahan)` : ''}` : 'Belum ada riwayat permintaan'}</span></div>
+      ${rq.length ? `<details><summary>Riwayat permintaan (${rq.length})</summary>${rq.slice(0, 25).map(kartuReq).join('')}</details>` : ''}</div>`;
+  }
+  $('mDaftar').onclick = e => { const b = e.target.closest('.item'); if (b) { mTerbuka = true; setLokasiMinta(b.dataset.k); renderDaftarMinta(); } };
+  $('mDetail').onclick = e => { if (e.target.id === 'mBack') { mTerbuka = false; renderDetailMinta(); } };
+  $('mChips').onclick = e => { if (e.target.dataset.k) { mF = e.target.dataset.k; mTerbuka = false; renderDaftarMinta(); } };
+  $('mCari').oninput = () => { mTerbuka = false; renderDaftarMinta(); };
+
   // ---------------- MUAT + NAVIGASI ----------------
   function renderSemua() {
     const sel = $('fLok').value;
     $('fLok').innerHTML = '<option value="">Pilih lokasi</option>' + LOK.map(l => `<option value="${l.id}" ${String(l.id) === sel ? 'selected' : ''}>${esc(l.nama)}</option>`).join('');
-    renderDash(); renderAnggaran(); renderRiwayat(); renderProses(); renderLokasi(); renderBaris(); renderMini();
+    renderDash(); renderAnggaran(); renderRiwayat(); renderProses(); renderLokasi(); renderBaris(); renderDaftarMinta(); renderMini();
     const baru = REQ.filter(p => p.status !== 'arsip'), nb = k => baru.filter(p => k === 'semua' || stReq(p) === k).length;
     $('pChips').innerHTML = [['semua', 'Semua'], ['menunggu', 'Menunggu'], ['disetujui', 'Disetujui'], ['ditolak', 'Ditolak / revisi']].map(([k, t]) => `<button class="chip ${pF === k ? 'on' : ''}" data-k="${k}">${t} ${nb(k)}</button>`).join('');
     $('daftarBaru').innerHTML = baru.filter(p => pF === 'semua' || stReq(p) === pF).slice(0, 12).map(kartuReq).join('') || '<div class="kosong">Belum ada permintaan dari web. Permintaan lama dari spreadsheet ada di Riwayat.</div>';
