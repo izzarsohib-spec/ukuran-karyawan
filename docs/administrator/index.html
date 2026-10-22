@@ -88,6 +88,7 @@
   </div>
 </main></div>
 <script src="../aset/auth.js"></script>
+<script src="../aset/filter.js" data-otomatis="main"></script>
 <script>
   const SUPABASE_URL = 'https://vqcusagijiavaoljfrib.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxY3VzYWdpamlhdmFvbGpmcmliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0OTIzOTksImV4cCI6MjEwODA2ODM5OX0.VeslVR4UHv26LCMbkO7KP0k96r8lg7-NNLjY30iMyFk';
@@ -122,7 +123,7 @@
   const TABS = {
     acuan: {
       grup: 'Seragam', nama: 'Anggaran & anggota', ket: 'RAB seragam, jumlah anggota, bagian kerja, dan masa kontrak per lokasi (dipakai di halaman Seragam). Nama lokasi harus sama dengan pilihan lokasi di Google Form supaya pengisian ukuran terhitung.',
-      muat: () => rpc('admin_daftar_acuan'), cari: r => [r.client, r.lokasi_form, r.bagian_kerja].join(' '), id: r => r.id,
+      muat: () => rpc('admin_daftar_acuan'), cari: r => [r.client, r.lokasi_form, r.bagian_kerja].join(' '), id: r => r.id, lokasiDari: r => r.lokasi_form,
       kolom: [['Client / lokasi', r => `<b>${esc(r.client)}</b>${r.client !== r.lokasi_form ? `<div class="sub">${esc(r.lokasi_form)}</div>` : ''}`], ['Bagian kerja', r => esc(r.bagian_kerja)], ['Anggota', r => num(r.jumlah_anggota), 'r'],
         ['Anggaran', r => rp(r.anggaran), 'r'], ['Kontrak', r => r.masa_kontrak + ' bln', 'r'], ['Per orang/bln', r => rp(r.anggaran_per_orang), 'r'], ['Karyawan aktif', r => num(r.karyawan), 'r'], ['Permintaan', r => num(r.riwayat), 'r']],
       kpi: d => [['Baris anggaran', num(d.length)], ['Lokasi', num(uniq(d, r => r.lokasi_form).length)], ['Total anggota', num(d.reduce((a, r) => a + r.jumlah_anggota, 0))], ['Total anggaran', rpR(d.reduce((a, r) => a + Number(r.anggaran), 0))]],
@@ -156,7 +157,7 @@
     },
     lokasi: {
       grup: 'Peralatan', nama: 'Lokasi & RAB', ket: 'Lokasi untuk modul Peralatan: RAB, jumlah anggota, lama kontrak, dan pemetaan ke anggaran seragam. Lokasi yang sudah punya permintaan hanya bisa dinonaktifkan.',
-      muat: () => rpc('peralatan_kelola_lokasi'), cari: r => [r.nama, r.bagian].join(' '), id: r => r.id, mati: r => !r.aktif,
+      muat: () => rpc('peralatan_kelola_lokasi'), cari: r => [r.nama, r.bagian].join(' '), id: r => r.id, mati: r => !r.aktif, lokasiDari: r => r.nama,
       statusOpsi: [['semua', 'Semua status'], ['aktif', 'Aktif', r => r.aktif], ['nonaktif', 'Nonaktif', r => !r.aktif], ['tanpa', 'Belum dipetakan ke anggaran seragam', r => !r.seragam_lokasi_form], ['baru', 'Ditambahkan lewat web', r => !r.dari_sumber]],
       kolom: [['Lokasi', r => `<b>${esc(r.nama)}</b><div class="sub">${esc(r.bagian || '')}${r.dari_sumber ? '' : ' · ditambah lewat web'}</div>`], ['Anggota', r => num(r.anggota), 'r'], ['Kontrak', r => (r.kontrak_bulan || '-') + ' bln' + (r.kontrak_mulai ? `<div class="sub">sejak ${esc(r.kontrak_mulai)}</div>` : ''), 'r'], ['RAB', r => rp(r.rab), 'r'],
         ['Anggaran seragam', r => r.seragam_lokasi_form ? esc(r.seragam_lokasi_form) : '<span class="sub">belum dipetakan</span>'], ['Permintaan', r => num(r.jumlah_permintaan), 'r'], ['Status', r => r.aktif ? '<span class="badge ok">Aktif</span>' : '<span class="badge">Nonaktif</span>']],
@@ -192,7 +193,7 @@
       grup: 'Organisasi', nama: 'Lokasi & PIC', login: true, tanpaTambah: true, massal: true,
       ket: 'Cabang dan PIC lapangan untuk setiap lokasi (Seragam dan Peralatan). Ubah satu lokasi dengan tombol Ubah, atau cari/saring lalu terapkan ke semua lokasi yang tampil sekaligus (penugasan massal).',
       pra: async () => { [CAB, PICS] = await Promise.all([rpc('admin_daftar_cabang'), rpc('admin_daftar_pic', { kode: 'sesi' })]); },
-      muat: () => rpc('admin_daftar_penugasan', { kode: 'sesi' }), cari: r => [r.lokasi, r.cabang, r.pic].join(' '), id: r => r.lokasi,
+      muat: () => rpc('admin_daftar_penugasan', { kode: 'sesi' }), cari: r => [r.lokasi, r.cabang, r.pic].join(' '), id: r => r.lokasi, lokasiDari: r => r.lokasi,
       statusOpsi: [['semua', 'Semua status'], ['tanpa', 'Belum ada PIC', r => !r.pic], ['ada', 'Sudah ada PIC', r => !!r.pic]],
       saring: [['cabang', 'Semua cabang', r => r.cabang], ['pic', 'Semua PIC', r => r.pic]],
       kolom: [['Lokasi', r => `<b>${esc(r.lokasi)}</b><div class="sub">${esc({ seragam: 'Seragam', peralatan: 'Peralatan', keduanya: 'Seragam & Peralatan' }[r.sumber] || r.sumber)} · ${num(r.anggota)} anggota</div>`],
@@ -239,7 +240,7 @@
     },
     karyawan: {
       grup: 'Seragam', nama: 'Karyawan', login: true, ket: 'Data karyawan dan ukuran seragam. Karyawan yang keluar ditandai "Keluar" (tidak dihapus, riwayat tetap) dan tidak dihitung di pengisian. Setiap perubahan ukuran tercatat di Riwayat.',
-      muat: () => rpc('admin_daftar_karyawan', { kode: 'sesi' }), cari: r => [r.nama, r.lokasi, r.bagian_kerja].join(' '), id: r => r.id, mati: r => !r.aktif,
+      muat: () => rpc('admin_daftar_karyawan', { kode: 'sesi' }), cari: r => [r.nama, r.lokasi, r.bagian_kerja].join(' '), id: r => r.id, mati: r => !r.aktif, lokasiDari: r => r.lokasi,
       saring: [['lokasi', 'Semua lokasi', r => r.lokasi]],
       statusOpsi: [['aktif', 'Karyawan aktif', r => r.aktif], ['keluar', 'Sudah keluar', r => !r.aktif], ['semua', 'Semua status']],
       kolom: [['Nama', r => `<b>${esc(r.nama)}</b>`], ['Lokasi', r => esc(r.lokasi)], ['Bagian', r => esc(r.bagian_kerja)], ['Baju', r => esc(r.ukuran_baju || '-')], ['Celana', r => esc(r.ukuran_celana || '-')], ['Sepatu', r => esc(r.ukuran_sepatu || '-')],
@@ -308,7 +309,7 @@
   function baris() {
     const t = cfg(), d = DATA[tab] || [], kata = q.trim().toLowerCase();
     const st = t.statusOpsi && t.statusOpsi.find(o => o[0] === (saring.st || t.statusOpsi[0][0]));
-    return d.filter(r => (!kata || t.cari(r).toLowerCase().includes(kata)) && (!st || !st[2] || st[2](r)) && (t.saring || []).every(([k, , f]) => !saring[k] || f(r) === saring[k]));
+    return d.filter(r => (!kata || t.cari(r).toLowerCase().includes(kata)) && (!t.lokasiDari || Saring.boleh(t.lokasiDari(r))) && (!st || !st[2] || st[2](r)) && (t.saring || []).every(([k, , f]) => !saring[k] || f(r) === saring[k]));
   }
   function gambar() {
     const t = cfg(); gambarTab(); $('ket').textContent = t.ket;
@@ -318,7 +319,7 @@
     }
     if (t.frame) { $('kpis').innerHTML = ''; $('isi').innerHTML = `<iframe class="bingkai" src="${t.frame}" title="${esc(t.nama)}"></iframe>`; return; }
     const d = DATA[tab]; if (!d) return;
-    $('kpis').innerHTML = t.kpi(d).map(([l, v]) => `<div class="kpi"><div class="l">${esc(l)}</div><div class="v">${esc(v)}</div></div>`).join('');
+    $('kpis').innerHTML = t.kpi(t.lokasiDari ? d.filter(r => Saring.boleh(t.lokasiDari(r))) : d).map(([l, v]) => `<div class="kpi"><div class="l">${esc(l)}</div><div class="v">${esc(v)}</div></div>`).join('');
     const filter = (t.statusOpsi ? `<select data-s="st">${t.statusOpsi.map(([v, l, f]) => `<option value="${v}" ${(saring.st || t.statusOpsi[0][0]) === v ? 'selected' : ''}>${esc(l)}${f ? ' (' + num(d.filter(f).length) + ')' : ''}</option>`).join('')}</select>` : '')
       + (t.saring || []).map(([k, semua, f]) => `<select data-s="${k}"><option value="">${esc(semua)}</option>${uniq(d, f).map(x => `<option value="${esc(x)}" ${saring[k] === x ? 'selected' : ''}>${esc(TBL[x] || x)}</option>`).join('')}</select>`).join('');
     const b = baris(), tampil = b.slice(0, batas);
@@ -406,6 +407,9 @@
   });
   window.addEventListener('masuk-ubah', () => { if (cfg().login) { DATA[tab] = null; muatTab(true); } });
 
+  // filter cabang / PIC dari portal: gambar ulang tab yang datanya per lokasi
+  window.addEventListener('saring-ubah', () => { if (DATA[tab] && !cfg().frame) gambar(); });
+  Saring.siap.then(() => { if (DATA[tab] && !cfg().frame) gambar(); });
   gambarTab(); muatTab(false);
 </script>
 </body>

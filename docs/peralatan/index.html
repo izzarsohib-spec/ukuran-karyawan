@@ -265,6 +265,7 @@
   </div>
 </div>
 <script src="../aset/auth.js"></script>
+<script src="../aset/filter.js" data-otomatis=".content"></script>
 <script>
   const SUPABASE_URL = 'https://vqcusagijiavaoljfrib.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxY3VzYWdpamlhdmFvbGpmcmliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0OTIzOTksImV4cCI6MjEwODA2ODM5OX0.VeslVR4UHv26LCMbkO7KP0k96r8lg7-NNLjY30iMyFk';
@@ -1059,7 +1060,12 @@
     $('sub').textContent = `${LOK.length} lokasi · ${ITEM.length} peralatan · ${REQ.length} permintaan`;
   }
   async function muat() {
-    try { [LOK, ITEM, REQ] = await Promise.all([rpc('peralatan_daftar_lokasi'), rpc('peralatan_daftar_item'), rpc('peralatan_daftar_permintaan')]); dimuat = true; renderSemua(); }
+    try {
+      [LOK, ITEM, REQ] = await Promise.all([rpc('peralatan_daftar_lokasi'), rpc('peralatan_daftar_item'), rpc('peralatan_daftar_permintaan')]); await Saring.siap;
+      const boleh = new Set(LOK.filter(l => Saring.boleh(l.nama)).map(l => l.id)); // filter cabang / PIC
+      LOK = LOK.filter(l => boleh.has(l.id)); REQ = REQ.filter(p => boleh.has(p.lokasi_id));
+      dimuat = true; renderSemua();
+    }
     catch (e) { $('sub').textContent = 'Gagal memuat data: ' + e.message; }
   }
   function tampil(pg) {
@@ -1070,6 +1076,7 @@
   }
   document.querySelectorAll('[data-pg]').forEach(b => { b.onclick = () => tampil(b.dataset.pg); });
   tampil(['dashboard', 'permintaan', 'proses', 'lokasi', 'anggaran', 'riwayat'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'dashboard');
+  window.addEventListener('saring-ubah', () => { mSel = ''; mTerbuka = false; muat(); }); // filter cabang / PIC berubah
   muat();
 </script>
 </body>

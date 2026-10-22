@@ -303,6 +303,7 @@
   }
   @media (max-width: 520px) { .gap { grid-template-columns:1fr; } }
   @media (max-width: 560px) { .sums { grid-template-columns:1fr; } }
+  .filterinfo { margin:0 0 12px; padding:8px 14px; border-radius:14px; background:rgba(245,213,71,.1); border:1px solid rgba(245,213,71,.35); font-size:.82rem; }
   /* sub-tab di dalam halaman gabungan */
   .subtabs { margin:0 0 14px; }
   .subtabs .chip { padding:7px 16px; font-size:.85rem; cursor:pointer; }
@@ -345,6 +346,7 @@
 
    <div class="page" id="pg-ringkasan">
     <header class="kop"><img src="../aset/logo-ray.png" alt="Logo PT. Ray Mitra Perkasa"><div><h1>SISTEM ADMINISTRASI SERAGAM KARYAWAN</h1><div class="perusahaan">PT. RAY MITRA PERKASA</div><div class="sub">Alur pengadaan seragam, dari data karyawan sampai tagihan · tiap bagian punya filter sendiri</div></div></header>
+    <div id="filterInfo" class="filterinfo" hidden></div>
     <section class="alur" id="alur"></section>
     <nav class="chips" id="dNav" style="margin-bottom:14px"></nav>
     <div id="dash"></div>
@@ -594,6 +596,7 @@
   </div>
 </div>
 <script src="../aset/auth.js"></script>
+<script src="../aset/filter.js" data-otomatis=".content"></script>
 <script src="harga.js"></script>
 <script>
   // Anon key memang publik; aksesnya dibatasi di Supabase (view agregat tanpa nama, nama hanya lewat kode akses).
@@ -610,7 +613,7 @@
   const rp = n => 'Rp' + idn(n);
   const rpRingkas = n => n >= 1e9 ? 'Rp' + (n / 1e9).toFixed(2).replace('.', ',') + ' M' : n >= 1e6 ? 'Rp' + (n / 1e6).toFixed(1).replace('.', ',') + ' jt' : rp(n);
 
-  let lokasi = [], pengisi = new Map(), punyaNama = false, anggaran = null;
+  let lokasi = [], pengisi = new Map(), punyaNama = false, anggaran = null, RAW = null; // RAW = salinan data mentah, untuk menyusun ulang saat filter cabang/PIC berubah
   let sel = null, status = 'semua', fBagian = '', terbukaHP = false;
 
   async function ambilSemua(path) {
@@ -638,6 +641,7 @@
   function susunAnggaran(baris) {
     const peta = new Map(); let total = 0;
     for (const x of baris) {
+      if (!Saring.boleh(x.lokasi_form)) continue; // filter cabang / PIC
       if (!peta.has(x.lokasi_form)) peta.set(x.lokasi_form, { total: 0, per: {}, det: {} });
       const a = peta.get(x.lokasi_form), n = Number(x.anggaran) || 0;
       a.per[x.bagian_kerja] = n; a.total += n; total += n;
@@ -647,12 +651,12 @@
   }
   function kelompokkanPengisi(baris) {
     pengisi = new Map();
-    for (const p of baris) { if (!pengisi.has(p.lokasi)) pengisi.set(p.lokasi, []); pengisi.get(p.lokasi).push(p); }
+    for (const p of baris) { if (!Saring.boleh(p.lokasi)) continue; if (!pengisi.has(p.lokasi)) pengisi.set(p.lokasi, []); pengisi.get(p.lokasi).push(p); }
   }
   function susunLokasi(prog) {
     const peta = new Map();
     for (const r of prog) {
-      if (r.target <= 0) continue; // bagian tanpa anggota tidak dipantau
+      if (r.target <= 0 || !Saring.boleh(r.lokasi_form)) continue; // bagian tanpa anggota tidak dipantau; lokasi di luar filter cabang/PIC dilewati
       if (!peta.has(r.lokasi_form)) peta.set(r.lokasi_form, { client: r.client, lokasi: r.lokasi_form, bagian: [], target: 0, isi: 0 });
       const l = peta.get(r.lokasi_form), isi = Math.min(r.sudah_isi, r.target);
       l.bagian.push({ nama: r.bagian_kerja, target: r.target, isi });
@@ -1226,10 +1230,11 @@
   const lokMinta = () => anggaran ? lokasi.filter(l => anggaran.peta.has(l.lokasi)) : lokasi;
 
   async function muatStatus() {
+    await Saring.siap;
     try {
       const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/daftar_permintaan`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: '{}' });
       if (!r.ok) throw new Error('HTTP ' + r.status);
-      daftarMinta = await r.json(); statusMuat = true;
+      daftarMinta = (await r.json()).filter(p => Saring.boleh(p.lokasi_form)); statusMuat = true;
       try { peralatanDiSeragam = new Map((await rpc('peralatan_terpakai_seragam', {})).map(x => [x.lokasi_form + '' + x.bagian_kerja, Number(x.jual)])); } catch (e) { peralatanDiSeragam = new Map(); }
     } catch (e) { daftarMinta = []; susunStatus(); renderDaftarMinta(); $('infoMinta').textContent = 'Gagal memuat status: ' + e.message; return; }
     susunStatus(); renderDaftarMinta(); renderPlotList(); renderKirimList(); renderTagihanList(); renderRingkasan();
@@ -1614,9 +1619,10 @@
   const tgl0 = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
   const tglPendek = d => d ? new Date(String(d).length <= 10 ? d + 'T00:00:00' : d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
   async function muatHilir() {
+    await Saring.siap;
     try {
       const [s, g, k, p, t, o] = await Promise.all([rpc('daftar_stok', {}), rpc('daftar_stok_gerak', { p_batas: 1000 }), rpc('daftar_pengiriman', {}), rpc('daftar_progres_kirim', {}), rpc('daftar_tagihan', {}), rpc('daftar_opname', {}).catch(() => [])]);
-      stok = s; gerak = g; kirimAll = k; opnameAll = o; progres = new Map(p.map(x => [x.permintaan_id, x])); tagihanAll = t; hilirMuat = true;
+      stok = s; gerak = g; kirimAll = k.filter(x => Saring.boleh(x.lokasi_form)); opnameAll = o; progres = new Map(p.map(x => [x.permintaan_id, x])); tagihanAll = t.filter(x => Saring.boleh(x.lokasi_form)); hilirMuat = true;
     } catch (e) { hilirMuat = false; ['infoInv', 'infoKirim', 'infoTag'].forEach(id => { $(id).textContent = 'Gagal memuat: ' + e.message; }); return; }
     renderInventaris(); renderKirimList(); renderTagihanList(); renderRingkasan();
   }
@@ -2127,7 +2133,7 @@
 
   // ---- bagian 1: pengisian ukuran ----
   function isiPengisian() {
-    if (!lokasi.length) return { kpi: muatBelum, grid: '' };
+    if (!lokasi.length) return { kpi: Saring.aktif() ? '<div class="kosongnya">Tidak ada lokasi untuk filter ini.</div>' : muatBelum, grid: '' };
     const f = D.pengisian, rows = lokasi.map(l => { const bs = l.bagian.filter(b => f.bagian === 'semua' || b.nama === f.bagian), target = bs.reduce((a, b) => a + b.target, 0), isi = bs.reduce((a, b) => a + b.isi, 0);
       return { l, bs, target, isi, s: isi >= target ? 'lengkap' : isi === 0 ? 'kosong' : 'kurang' }; }).filter(x => x.target > 0 && (f.status === 'semua' || x.s === f.status));
     const T = rows.reduce((a, x) => a + x.target, 0), I = rows.reduce((a, x) => a + x.isi, 0), lengkap = rows.filter(x => x.s === 'lengkap').length;
@@ -2238,6 +2244,7 @@
   // ---- ringkasan alur: empat tahap, angka kunci, dan apa yang menunggu tindakan ----
   function renderAlur() {
     const el = $('alur'); if (!el) return;
+    const fi = $('filterInfo'); if (fi) { fi.hidden = !Saring.aktif(); fi.textContent = Saring.aktif() ? `Menampilkan: ${Saring.label()} · ${lokasi.length} lokasi dipantau. Stok gudang tetap menampilkan seluruh gudang.` : ''; }
     const Mk = (no, judul, pg, baris, tindak) => `<button type="button" class="ak" data-pg="${pg}"><div class="ah"><span class="an">${no}</span><b>${judul}</b></div>${baris.map(([a, b]) => `<div class="ar"><span>${esc(a)}</span><b>${esc(b)}</b></div>`).join('')}${tindak.map(([t, w]) => `<div class="at ${w}">${esc(t)}</div>`).join('') || '<div class="at ok">Tidak ada yang menunggu</div>'}</button>`;
     const adaLok = lokasi.length > 0, rows = lokasi.map(l => ({ t: l.bagian.reduce((a, b) => a + b.target, 0), i: l.bagian.reduce((a, b) => a + b.isi, 0) })).filter(x => x.t > 0);
     const T = rows.reduce((a, x) => a + x.t, 0), I = rows.reduce((a, x) => a + x.i, 0);
@@ -2550,6 +2557,7 @@
         ambilSemua('ukuran_publik?select=*&order=id'),
         ambilSemua('anggaran_publik?select=*&order=lokasi_form,bagian_kerja').catch(() => [])
       ]);
+      RAW = { prog, publik, rab }; await Saring.siap;
       anggaran = susunAnggaran(rab);
       try {
         const hs = await ambilSemua('harga_seragam?select=*&order=no');
@@ -2559,6 +2567,14 @@
       if (Masuk.masuk()) bukaNama('sesi', true);
     } catch (e) { $('info').textContent = 'Gagal memuat data: ' + e.message; }
   })();
+  // filter cabang / PIC berubah: susun ulang semua data dari salinan mentah, lalu muat ulang status dan data hilir
+  window.addEventListener('saring-ubah', async () => {
+    if (!RAW) return;
+    sel = null; terbukaHP = false; mSel = ''; terbukaMinta = false; pSel = ''; pData = null; terbukaPlot = false; kSel = ''; kData = null; kTerbuka = false; tSel = 0; tTerbuka = false;
+    anggaran = susunAnggaran(RAW.rab); susunLokasi(RAW.prog);
+    if (punyaNama) await bukaNama('sesi', true); else kelompokkanPengisi(RAW.publik);
+    ringkasan(); renderDaftar(); renderDaftarMinta(); muatStatus(); muatHilir();
+  });
 </script>
 </body>
 </html>

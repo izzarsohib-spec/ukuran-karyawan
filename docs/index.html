@@ -39,6 +39,8 @@
   .menu .tag { margin-left:auto; font-size:.66rem; font-weight:600; padding:2px 8px; border-radius:99px; background:rgba(255,255,255,.1); }
   .menu[disabled] { opacity:.5; cursor:default; } .menu[disabled]:hover { background:none; color:var(--muted); }
   .pemisah { height:1px; background:var(--stroke); margin:8px 6px; }
+  .filter { margin-top:14px; padding:12px 8px 0; border-top:1px solid var(--stroke); }
+  .filter .st { font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:8px; }
   .akun { margin-top:auto; padding:12px 8px 0; border-top:1px solid var(--stroke); }
   .akun .st { font-size:.74rem; color:var(--muted); margin-bottom:8px; line-height:1.4; }
 
@@ -71,6 +73,8 @@
     .side { flex-direction:row; align-items:center; gap:4px; padding:8px 10px; border-right:0; border-bottom:1px solid var(--stroke); overflow-x:auto; overflow-y:hidden; scrollbar-width:none; }
     .side { min-width:0; } .merek, .pemisah { display:none; }
     .menu { width:auto; flex:none; padding:8px 12px; gap:8px; } .menu .tag { display:none; }
+    .side { flex-wrap:wrap; overflow:visible; }
+    .filter { flex:1 0 100%; margin:0; padding:8px 0 0; order:5; } .filter .st { display:none; } .filter .sf.sisi { flex-direction:row; flex-wrap:wrap; } .filter .sf.sisi label { width:calc(50% - 5px); }
     .akun { margin:0 0 0 auto; padding:0 0 0 8px; border:0; flex:none; } .akun .st { display:none; }
     .beranda { padding:24px 16px 36px; }
   }
@@ -87,6 +91,7 @@
     <button class="menu" disabled title="Segera hadir"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3"/><path d="M7.5 15h9"/></svg>Chemical<span class="tag">Segera</span></button>
     <div class="pemisah"></div>
     <button class="menu" data-p="administrator"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.2 8 8 9 4.8-1 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>Administrator</button>
+    <div class="filter"><div class="st">Filter lokasi</div><div id="filterBar"></div></div>
     <div class="akun"><div class="st" id="akunSt"></div><div id="akun"></div></div>
   </nav>
 
@@ -123,6 +128,7 @@
   </div>
 </div>
 <script src="aset/auth.js"></script>
+<script src="aset/filter.js"></script>
 <script>
   // Setiap bidang dibuka dalam iframe (dibuat saat pertama dibuka, lalu dipertahankan supaya isian tidak hilang saat pindah menu).
   const SUMBER = { seragam: 'seragam/', peralatan: 'peralatan/', administrator: 'administrator/' };
@@ -140,6 +146,7 @@
   document.addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (b && !b.disabled) buka(b.dataset.p); });
   window.addEventListener('hashchange', () => buka(location.hash.slice(1) || 'beranda'));
   Masuk.widget(document.getElementById('akun'));
+  Saring.bar(document.getElementById('filterBar'), 'sisi'); // filter cabang / PIC untuk semua halaman
   const tulisSt = () => { document.getElementById('akunSt').textContent = Masuk.masuk() ? 'Masuk sebagai admin. Semua fitur menyimpan aktif.' : 'Belum masuk. Halaman bisa dibuka; menyimpan dan mengirim butuh login.'; };
   window.addEventListener('masuk-ubah', tulisSt); tulisSt();
   buka(location.hash.slice(1) || 'beranda');
