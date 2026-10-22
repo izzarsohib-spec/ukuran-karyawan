@@ -1104,7 +1104,7 @@
         body: [[{ content: 'ANGGARAN CLIENT', styles: { fillColor: [255, 255, 0] } }, rpPdf(rab)],
           ...(lalu.t ? [[{ content: 'SUDAH TERPAKAI (' + lalu.n + ' PERMINTAAN SEBELUMNYA)', styles: { fillColor: [0, 176, 240] } }, rpPdf(lalu.t)]] : []),
           [{ content: 'TOTAL BELANJA SERAGAM (HARGA JUAL)', styles: { fillColor: [0, 176, 240] } }, rpPdf(jual)],
-          [{ content: 'TOTAL BELANJA PERALATAN', styles: { fillColor: [0, 176, 240] } }, 'Rp0'], ['SISA ANGGARAN', { content: min(sisa), styles: { fontStyle: 'bold' } }],
+          ['SISA ANGGARAN', { content: min(sisa), styles: { fontStyle: 'bold' } }],
           ['TOTAL BELI', rpPdf(beli)], ['UNTUNG (SISA + JUAL - BELI)', { content: min(untung), styles: { fontStyle: 'bold' } }]] });
       y = yT + 14 * K;
       const xc = M + TW * 0.68; huruf('normal', 9); doc.text(`Semarang, ${tglPanjang}`, xc, y, { align: 'center' });
