@@ -171,7 +171,7 @@
     <header class="kop"><img src="../aset/logo-ray.png" alt="Logo PT. Ray Mitra Perkasa"><div><h1>SISTEM ADMINISTRASI PERALATAN</h1><div class="perusahaan">PT. RAY MITRA PERKASA</div><div class="muted" id="sub">Memuat data…</div></div></header>
 
     <section class="page" id="pg-dashboard">
-      <div class="ringkas" id="ringkas"></div>
+      <div class="kpi" id="ringkas"></div>
       <div class="dgrid" id="dGrid"></div>
     </section>
 
@@ -303,12 +303,15 @@
     const ak = REQ.filter(aktif), per = ak.filter(p => p.sumber_anggaran === 'peralatan');
     const rab = LOK.reduce((a, l) => a + Number(l.rab), 0), pakai = LOK.reduce((a, l) => a + Number(l.terpakai), 0);
     const jual = ak.reduce((a, p) => a + Number(p.total_jual), 0), beli = ak.reduce((a, p) => a + Number(p.total_beli), 0);
-    // sisa RAB dihitung sekali per lokasi (anggaran - total jual permintaan lokasi itu); untung = sisa RAB + jual - beli
-    const dipesan = LOK.filter(l => per.some(p => p.lokasi_id === l.id)), sisaDipesan = dipesan.reduce((a, l) => a + Number(l.rab) - Number(l.terpakai), 0);
-    const untung = sisaDipesan + jual - beli, menunggu = REQ.filter(p => stReq(p) === 'menunggu').length, lewat = LOK.filter(l => Number(l.rab) - Number(l.terpakai) < 0).length;
-    const rp1 = (t, v, neg) => `<span>${t} <b class="${neg ? 'neg' : ''}">${esc(v)}</b></span>`;
-    $('ringkas').innerHTML = [rp1('Anggaran', rpR(rab)), rp1('terpakai', rpR(pakai) + (rab ? ' (' + (100 * pakai / rab).toFixed(1).replace('.', ',') + '%)' : '')), rp1('sisa', rpR(rab - pakai), rab - pakai < 0), rp1('jual', rpR(jual)), rp1('untung', rpR(untung), untung < 0),
-      rp1('lokasi melebihi RAB', lewat, lewat > 0), rp1('menunggu persetujuan', menunggu)].join('');
+    // rumus sama dengan seragam: sisa RAB = anggaran - total jual (dihitung SEKALI per anggaran yang dipakai); untung = sisa RAB + (jual - beli)
+    const grup = new Map();
+    for (const p of ak) { const l = LOK.find(x => x.id === p.lokasi_id); if (!l) continue;
+      const seragam = p.sumber_anggaran === 'seragam', k = seragam ? 's|' + l.seragam_lokasi_form + '|' + l.seragam_bagian : 'p|' + l.id;
+      if (!grup.has(k)) grup.set(k, seragam ? Number(l.seragam_rab) - Number(l.seragam_terpakai) : Number(l.rab) - Number(l.terpakai)); }
+    const untung = [...grup.values()].reduce((a, b) => a + b, 0) + jual - beli, lewat = LOK.filter(l => Number(l.rab) - Number(l.terpakai) < 0).length;
+    $('ringkas').innerHTML = [['Anggaran', rpR(rab), `RAB peralatan ${LOK.length} lokasi`], ['Total belanja', rpR(beli), 'harga beli, tanpa yang ditolak'], ['Total penjualan', rpR(jual), 'harga jual, tanpa yang ditolak'],
+      ['Sisa anggaran', rpR(rab - pakai), `${lewat} lokasi melebihi RAB`], ['Untung keseluruhan', rpR(untung), 'sisa RAB + jual − beli']]
+      .map(([k, v, t]) => `<div><small>${k}</small><b class="${(k === 'Untung keseluruhan' && untung < 0) || (k === 'Sisa anggaran' && rab - pakai < 0) ? 'neg' : ''}">${esc(v)}</b><em>${esc(t)}</em></div>`).join('');
     renderGrafikDash();
   }
 
