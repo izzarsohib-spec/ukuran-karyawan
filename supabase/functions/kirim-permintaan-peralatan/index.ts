@@ -73,6 +73,11 @@ Deno.serve(async (req) => {
   }
   const sisa = rab - terpakai - tJual, untung = sisa + (tJual - tBeli);
 
+  // riwayat lokasi: permintaan sebelumnya yang tidak ditolak pada masa kontrak berjalan (setelah kontrak_mulai bila diisi)
+  const mulai = lok.kontrak_mulai ? new Date(lok.kontrak_mulai + 'T00:00:00').getTime() : 0;
+  const { data: sebelum } = await db.from('peralatan_permintaan').select('tanggal').eq('lokasi_id', lok.id).neq('status', 'ditolak');
+  const jumlahLalu = (sebelum ?? []).filter((x: any) => !x.tanggal || new Date(x.tanggal).getTime() >= mulai).length;
+
   const token: Record<string, string> = { yasir: acak(), ferry: acak() };
   const { data: baru, error: eIns } = await db.from('peralatan_permintaan').insert({
     lokasi_id: lok.id, sumber_anggaran: sumber, rab, anggota: lok.anggota, total_beli: tBeli, total_jual: tJual, untung, memo,
@@ -85,6 +90,7 @@ Deno.serve(async (req) => {
   const kepala = [
     `${lok.nama} (${lok.bagian})`,
     `Peralatan, memakai anggaran ${sumber}`,
+    jumlahLalu ? `Riwayat lokasi: sudah ${jumlahLalu} permintaan pada kontrak ini, ini Penambahan ke-${jumlahLalu}` : 'Pengadaan awal di lokasi ini',
     '',
     `Anggaran RAB ${sumber}: ${rp(rab)}`,
     ...(terpakai > 0 ? [`Sudah terpakai dari RAB sebelumnya: ${rp(terpakai)}`] : []),

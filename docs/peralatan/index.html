@@ -98,6 +98,17 @@
   .worst:hover:not(:disabled) { border-color:var(--accent); } .worst:disabled { opacity:.6; cursor:default; } .worst small { color:var(--muted); font-size:.74rem; } .worst b { font-size:.95rem; overflow-wrap:anywhere; }
   @media (max-width:980px) { .top { grid-template-columns:1fr; } .hero { min-height:0; } .hero h2 { margin-right:min(40%,150px); font-size:1.4rem; } }
   @media (max-width:520px) { .gapcard { grid-template-columns:1fr; } .ringhero span { display:none; } .ringhero { width:min(30%,110px); right:14px; top:16px; } .ringhero b { font-size:1.2rem; } }
+  /* alur pengadaan di Dashboard Utama, form belanja/kirim, dan garis waktu riwayat lokasi */
+  .alur { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:14px; }
+  .langkah { text-align:left; background:rgba(0,0,0,.28); border:1px solid var(--stroke); border-radius:18px; padding:12px 16px; color:inherit; position:relative; }
+  .langkah:hover { border-color:var(--accent); } .langkah small { color:var(--muted); font-size:.72rem; } .langkah b { display:block; font-family:var(--head); font-size:1.6rem; line-height:1.1; } .langkah span { font-size:.8rem; color:var(--muted); }
+  .badge.info { background:rgba(138,164,255,.16); color:#8aa4ff; }
+  .req .rl .ok { color:var(--ok); }
+  .grid3 { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0 14px; }
+  .aksi { margin-top:12px; padding:14px 16px; border:1px solid var(--stroke); border-radius:16px; background:rgba(0,0,0,.22); } .aksi h4 { margin:0 0 10px; font-size:.95rem; }
+  .aksi input[type=number] { width:100%; }
+  .tl { border-left:2px solid var(--stroke); margin:0 0 8px 6px; padding:2px 0 2px 12px; }
+  details.req > summary { font-size:.95rem; color:var(--text); } details.req > summary .muted { font-size:.82rem; }
   @media (max-width: 640px) {
     .side { display:none; } .shell { margin:0; border-radius:0; border:0; } .content { padding:18px 14px 40px; } .kop img { height:56px; } .kop { gap:12px; }
     .mobnav { display:flex; gap:6px; margin-bottom:14px; overflow-x:auto; scrollbar-width:none; }
@@ -112,15 +123,18 @@
     <a class="home" href="../" title="Halaman Utama" aria-label="Halaman Utama"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span>Halaman Utama</span></a>
     <button class="on" data-pg="dashboard" title="Dashboard Utama"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Dashboard Utama</span></button>
     <button data-pg="permintaan" title="Permintaan Peralatan"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg><span>Permintaan Peralatan</span></button>
+    <button data-pg="proses" title="Belanja &amp; Kirim"><svg viewBox="0 0 24 24"><path d="M3 4h2l2.4 11h10.2L20 7H6"/><circle cx="9" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/></svg><span>Belanja &amp; Kirim</span></button>
+    <button data-pg="lokasi" title="Riwayat Lokasi"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span>Riwayat Lokasi</span></button>
     <button data-pg="anggaran" title="Anggaran Lokasi"><svg viewBox="0 0 24 24"><path d="M3 20h18M6 20V10M12 20V4M18 20v-7"/></svg><span>Anggaran Lokasi</span></button>
     <button data-pg="riwayat" title="Riwayat Permintaan"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span>Riwayat Permintaan</span></button>
   </aside>
 
   <div class="content">
-    <nav class="mobnav" id="mobnav"><a href="../">‹ Utama</a><button class="on" data-pg="dashboard">Dashboard</button><button data-pg="permintaan">Permintaan</button><button data-pg="anggaran">Anggaran</button><button data-pg="riwayat">Riwayat</button></nav>
+    <nav class="mobnav" id="mobnav"><a href="../">‹ Utama</a><button class="on" data-pg="dashboard">Dashboard</button><button data-pg="permintaan">Permintaan</button><button data-pg="proses">Belanja &amp; Kirim</button><button data-pg="lokasi">Riwayat Lokasi</button><button data-pg="anggaran">Anggaran</button><button data-pg="riwayat">Riwayat</button></nav>
     <header class="kop"><img src="../aset/logo-ray.png" alt="Logo PT. Ray Mitra Perkasa"><div><h1>SISTEM ADMINISTRASI PERALATAN</h1><div class="perusahaan">PT. RAY MITRA PERKASA</div><div class="muted" id="sub">Memuat data…</div></div></header>
 
     <section class="page" id="pg-dashboard">
+      <div class="alur" id="alur"></div>
       <div class="kpi" id="kpi"></div>
       <div class="grid2">
         <div class="card"><h3>Pemakaian anggaran terbesar</h3><div id="topPakai"></div></div>
@@ -139,6 +153,7 @@
             <select id="fSumber"><option value="peralatan">Anggaran peralatan</option><option value="seragam">Anggaran seragam (bagian keamanan)</option></select></label>
         </div>
         <div class="hint" id="fInfo"></div>
+        <div class="hint" id="fRiwayat"></div>
         <div class="wrap" style="margin-top:14px"><table><thead><tr><th style="min-width:230px">Peralatan</th><th style="width:100px">Qty</th><th class="r">Harga beli</th><th class="r">Harga jual</th><th class="r">Total jual</th><th></th></tr></thead><tbody id="fBaris"></tbody></table></div>
         <div style="margin-top:10px"><button class="btn" id="fTambah">+ Tambah peralatan</button></div>
         <label class="f" style="margin-top:14px"><span>Catatan untuk pimpinan (opsional)</span><textarea id="fMemo" rows="2" maxlength="1000" placeholder="Alasan permintaan atau keterangan lain"></textarea></label>
@@ -148,6 +163,22 @@
         <div class="hint" id="fStatus" role="status"></div>
       </div>
       <div class="card" id="kartuBaru"><h3>Permintaan terakhir</h3><div class="chips" id="pChips"></div><div id="daftarBaru"></div></div>
+    </section>
+
+    <section class="page" id="pg-proses" hidden>
+      <section class="top" id="md-proses"></section>
+      <div class="ph"><h2>Belanja &amp; Kirim</h2><div class="muted" id="xInfo"></div></div>
+      <div class="card" id="kartuProses"><div class="chips" id="xChips"></div><div id="xDaftar"></div></div>
+    </section>
+
+    <section class="page" id="pg-lokasi" hidden>
+      <section class="top" id="md-lokasi"></section>
+      <div class="ph"><h2>Riwayat Lokasi</h2><div class="muted" id="lInfo"></div></div>
+      <div class="card" id="kartuLokasi">
+        <div class="chips" id="lChips"></div>
+        <input id="lCari" type="search" placeholder="Cari lokasi" style="margin-bottom:12px;max-width:340px">
+        <div id="lDaftar"></div>
+      </div>
     </section>
 
     <section class="page" id="pg-anggaran" hidden>
@@ -200,7 +231,7 @@
   const aktif = p => stReq(p) !== 'ditolak';
 
   function kartuReq(p) {
-    const [lbl, cls] = LABEL[stReq(p)], tabel = (p.items || []).map(i => `<tr><td>${esc(i.nama)}</td><td class="r">${i.qty}</td><td class="r">${rp(i.beli)}</td><td class="r">${rp(i.jual)}</td><td class="r">${rp(i.qty * i.jual)}</td></tr>`).join('');
+    const [lbl, cls] = TAHAP[tahapReq(p)] || LABEL[stReq(p)], tabel = (p.items || []).map(i => `<tr><td>${esc(i.nama)}</td><td class="r">${i.qty}</td><td class="r">${rp(i.beli)}</td><td class="r">${rp(i.jual)}</td><td class="r">${rp(i.qty * i.jual)}</td></tr>`).join('');
     return `<div class="req"><div class="rl"><b style="color:var(--text)">${esc(p.lokasi)}</b><span class="badge ${cls}">${lbl}</span></div>
       <div class="rl"><span>${tgl(p.tanggal)} · anggaran ${esc(p.sumber_anggaran)} · no. ${p.id}</span><span>Jual ${rp(p.total_jual)} · beli ${rp(p.total_beli)} · <b class="${p.untung < 0 ? 'neg' : ''}">untung ${rp(p.untung)}</b></span></div>
       ${putusan(p)}${p.memo ? `<div class="rl"><span>Catatan: ${esc(p.memo)}</span></div>` : ''}${p.catatan ? `<div class="rl"><span>Migrasi: ${esc(p.catatan)}</span></div>` : ''}
@@ -248,6 +279,7 @@
       : `Lokasi ini belum dipetakan ke anggaran seragam bagian keamanan, jadi hanya bisa memakai anggaran peralatan.`;
     if (!a && $('fSumber').value === 'seragam') $('fSumber').value = 'peralatan';
     $('fSumber').querySelector('option[value="seragam"]').disabled = !!l && l.seragam_rab == null;
+    infoRiwayat();
   }
   $('fLok').onchange = () => { $('fSumber').value = 'peralatan'; hitung(); };
   $('fSumber').onchange = hitung;
@@ -320,7 +352,7 @@
   const perBulan = (data, nilai) => { const m = new Map(sumbuBulan().map(k => [k, 0])); for (const p of data) if (p.tanggal) { const k = kunciBulan(p.tanggal); if (m.has(k)) m.set(k, m.get(k) + nilai(p)); } return [...m]; };
   function grafikGaris(id, seri, fmt) {
     const W = 320, Ht = 130, L = 8, R = 8, T = 10, B = 24, n = seri[0].nilai.length, maks = Math.max(1, ...seri.flatMap(s => s.nilai.map(x => x[1])));
-    if (!seri.some(s => s.nilai.some(x => x[1] > 0))) return '<div class="kosong" style="padding:30px 0">Belum ada pesanan bertanggal.</div>';
+    if (!seri.some(s => s.nilai.some(x => x[1] > 0))) return '<div class="kosong" style="padding:30px 0">Belum ada data bertanggal.</div>';
     const x = i => n === 1 ? W / 2 : L + i * (W - L - R) / (n - 1), y = v => T + (Ht - T - B) * (1 - v / maks);
     let g = [0, .5, 1].map(f => `<line x1="${L}" x2="${W - R}" y1="${y(maks * f).toFixed(1)}" y2="${y(maks * f).toFixed(1)}" stroke="rgba(255,255,255,.08)"/>`).join('');
     g += seri[0].nilai.map((v, i) => `<text x="${x(i).toFixed(1)}" y="${Ht - 6}" font-size="9" fill="#a4a4ae" text-anchor="${i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'}">${labelBulan(v[0])}</text>`).join('');
@@ -373,21 +405,219 @@
       gap: { label: 'Untung seluruhnya', besar: rpR(untung), pill: 'sisa RAB + jual − beli', ket: 'dari permintaan yang tidak ditolak',
         worst: besar && { kecil: 'Permintaan terbesar', nama: besar.lokasi, detail: `jual ${rpR(besar.total_jual)} · no. ${besar.id}`, aksi: 'lokasi', arg: besar.lokasi } } };
   }
-  const MINI = { permintaan: miniPermintaan, anggaran: miniAnggaran, riwayat: miniRiwayat };
+  const MINI = { permintaan: miniPermintaan, proses: miniProses, lokasi: miniLokasi, anggaran: miniAnggaran, riwayat: miniRiwayat };
   function renderMini() { for (const [k, f] of Object.entries(MINI)) { const el = $('md-' + k); if (el) el.innerHTML = miniHtml(f()); } }
   const gulirKe = id => { const el = $(id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
   function aksiMini(k, a, arg) {
     if (k === 'permintaan') { pF = a === 'menunggu' ? 'menunggu' : 'semua'; renderSemua(); gulirKe('kartuBaru'); }
     else if (k === 'anggaran') { if (a === 'lewat') { aF = 'lewat'; $('aCari').value = ''; } else { aF = 'semua'; $('aCari').value = arg; } renderAnggaran(); gulirKe('kartuAnggaran'); }
+    else if (k === 'proses') { xF = a; buka = { id: null, jenis: null }; renderProses(); gulirKe('kartuProses'); }
+    else if (k === 'lokasi') { if (a === 'tambah') { lF = 'tambah'; $('lCari').value = ''; } else { lF = 'semua'; $('lCari').value = arg; } renderLokasi(); gulirKe('kartuLokasi'); }
     else if (k === 'riwayat') { if (a === 'menunggu') { rF = 'menunggu'; $('rCari').value = ''; } else if (a === 'lokasi') { rF = 'semua'; $('rCari').value = arg; } else { rF = 'semua'; $('rCari').value = ''; } renderRiwayat(); gulirKe('kartuRiwayat'); }
   }
   document.querySelectorAll('.top').forEach(el => el.addEventListener('click', e => { const b = e.target.closest('[data-md]'); if (b && !b.disabled) { const [k, a, arg] = b.dataset.md.split('|'); aksiMini(k, a, decodeURIComponent(arg || '')); } }));
+
+  // ================= BELANJA & KIRIM =================
+  // Alur permintaan yang sudah disetujui kedua pimpinan: belanja (online / Mas Wahyu / lain, dibayar langsung) -> kirim ke lokasi -> diterima.
+  // Menulis butuh kode akses (sama dengan modul seragam; disimpan per sesi).
+  const TEMPAT = { online: 'Online', wahyu: 'Mas Wahyu', lain: 'Lainnya' };
+  const TAHAP = { belanja: ['Perlu dibelanjakan', 'warn'], kirim: ['Siap dikirim', 'info'], jalan: ['Dalam pengiriman', 'info'], selesai: ['Selesai, diterima', 'ok'] };
+  const hariIni = () => new Date().toLocaleDateString('sv-SE');
+  const tgl2 = d => d ? new Date(String(d).slice(0, 10) + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+  const jml = (p, k) => (p.items || []).reduce((a, i) => a + Number(i[k] || 0), 0);
+  // tahap sebuah permintaan: arsip / menunggu / ditolak, atau (bila disetujui) belanja -> kirim -> jalan -> selesai
+  function tahapReq(p) {
+    const s = stReq(p); if (s !== 'disetujui') return s;
+    if (p.tahap === 'diterima') return 'selesai';
+    if (jml(p, 'terkirim') < jml(p, 'dibeli')) return 'kirim';
+    if ((p.pengiriman || []).some(k => !k.diterima)) return 'jalan';
+    return 'belanja';
+  }
+  const dariWeb = p => p.status !== 'arsip' && stReq(p) === 'disetujui';
+
+  async function tulis(fn, body) {
+    let kode = ''; try { kode = sessionStorage.getItem('kodeNama') || ''; } catch (e) {}
+    if (!kode) kode = (prompt('Masukkan kode akses untuk mencatat belanja dan pengiriman:') || '').trim();
+    if (!kode) throw new Error('Dibatalkan: kode akses diperlukan.');
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ kode, ...body }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      if (/kode akses/i.test(j.message || '')) { try { sessionStorage.removeItem('kodeNama'); } catch (e) {} throw new Error('Kode akses salah.'); }
+      throw new Error(j.message || 'HTTP ' + r.status);
+    }
+    try { sessionStorage.setItem('kodeNama', kode); } catch (e) {}
+    return j;
+  }
+
+  let xF = 'aktif', buka = { id: null, jenis: null };
+  const xCocok = (p, k) => { const t = tahapReq(p); return k === 'aktif' ? ['belanja', 'kirim', 'jalan'].includes(t) : t === k; };
+
+  function formAksi(p) {
+    const it = p.items || [], tombol = (jenis, teks) => `<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="cta" data-act="simpan-${jenis}" data-id="${p.id}">${teks}</button><button class="btn" data-act="batal">Batal</button></div><div class="hint" role="status"></div>`;
+    if (buka.jenis === 'belanja') {
+      const rows = it.filter(i => i.qty - i.dibeli > 0).map(i => `<tr data-item="${i.id}"><td>${esc(i.nama)}</td><td class="r">${i.qty - i.dibeli}</td><td><input class="fb-qty" type="number" min="0" max="${i.qty - i.dibeli}" step="1" inputmode="numeric" value="${i.qty - i.dibeli}"></td><td><input class="fb-harga" type="number" min="0" step="100" inputmode="numeric" value="${Math.round(i.beli)}"></td></tr>`).join('');
+      return `<div class="aksi"><h4>Catat belanja</h4><div class="grid3">
+        <label class="f"><span>Tanggal beli</span><input class="fb-tgl" type="date" value="${hariIni()}"></label>
+        <label class="f"><span>Dibeli di</span><select class="fb-tempat"><option value="online">Online</option><option value="wahyu">Mas Wahyu</option><option value="lain">Lainnya</option></select></label>
+        <label class="f"><span>Toko / marketplace</span><input class="fb-toko" maxlength="80" placeholder="mis. Shopee, Tokopedia"></label></div>
+        <div class="wrap" style="margin-top:10px"><table><thead><tr><th>Peralatan</th><th class="r">Belum dibeli</th><th style="width:110px">Qty dibeli</th><th style="width:150px">Harga satuan (Rp)</th></tr></thead><tbody>${rows}</tbody></table></div>
+        <label class="f" style="margin-top:10px"><span>Catatan (opsional)</span><input class="fb-cat" maxlength="200"></label>${tombol('belanja', 'Simpan belanja')}</div>`;
+    }
+    const rows = it.filter(i => i.dibeli - i.terkirim > 0).map(i => `<tr data-item="${i.id}"><td>${esc(i.nama)}</td><td class="r">${i.dibeli - i.terkirim}</td><td><input class="fk-qty" type="number" min="0" max="${i.dibeli - i.terkirim}" step="1" inputmode="numeric" value="${i.dibeli - i.terkirim}"></td></tr>`).join('');
+    return `<div class="aksi"><h4>Catat pengiriman</h4><div class="grid3">
+      <label class="f"><span>Tanggal kirim</span><input class="fk-tgl" type="date" value="${hariIni()}"></label>
+      <label class="f"><span>Kurir / ekspedisi</span><input class="fk-kurir" maxlength="80" placeholder="mis. JNE, kurir sendiri"></label>
+      <label class="f"><span>No. resi (opsional)</span><input class="fk-resi" maxlength="80"></label></div>
+      <label class="f" style="margin-top:10px"><span>Penerima di lokasi</span><input class="fk-penerima" maxlength="120" placeholder="nama penerima / komandan regu"></label>
+      <div class="wrap" style="margin-top:10px"><table><thead><tr><th>Peralatan</th><th class="r">Siap kirim</th><th style="width:110px">Qty dikirim</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <label class="f" style="margin-top:10px"><span>Catatan (opsional)</span><input class="fk-cat" maxlength="200"></label>${tombol('kirim', 'Simpan pengiriman')}</div>`;
+  }
+
+  function kartuProses(p) {
+    const t = tahapReq(p), [lbl, cls] = TAHAP[t] || ['', ''], it = p.items || [], sisaBeli = jml(p, 'qty') - jml(p, 'dibeli'), siapKirim = jml(p, 'dibeli') - jml(p, 'terkirim');
+    const rows = it.map(i => `<tr><td>${esc(i.nama)}</td><td class="r">${i.qty}</td><td class="r ${i.dibeli < i.qty ? 'neg' : ''}">${i.dibeli}</td><td class="r ${i.terkirim < i.qty ? 'neg' : ''}">${i.terkirim}</td></tr>`).join('');
+    const estimasi = it.reduce((a, i) => a + i.beli * i.dibeli, 0), selisih = Number(p.beli_aktual) - estimasi;
+    const bl = (p.belanja || []).map(b => `<div class="rl"><span>Beli ${tgl2(b.tanggal)} · ${b.qty} × ${esc(b.nama)} @ ${rp(b.harga)} · ${TEMPAT[b.tempat] || ''}${b.toko ? ' (' + esc(b.toko) + ')' : ''}</span></div>`).join('');
+    const kr = (p.pengiriman || []).map(k => `<div class="rl"><span>Kirim ${tgl2(k.tanggal)}${k.kurir ? ' · ' + esc(k.kurir) : ''}${k.resi ? ' · resi ' + esc(k.resi) : ''}${k.penerima ? ' · penerima ' + esc(k.penerima) : ''}: ${(k.items || []).map(x => x.qty + '× ' + esc(x.nama)).join(', ')}</span>
+      ${k.diterima ? `<span class="badge ok">Diterima ${tgl2(k.diterima)}</span>` : `<button class="btn" data-act="terima" data-kid="${k.id}">Tandai diterima</button>`}</div>`).join('');
+    const buka_ = buka.id === p.id;
+    return `<div class="req" data-id="${p.id}"><div class="rl"><b style="color:var(--text)">${esc(p.lokasi)}</b><span class="badge ${cls}">${lbl}</span></div>
+      <div class="rl"><span>Permintaan no. ${p.id} · disetujui ${tgl(p.diputuskan_yasir && p.diputuskan_ferry ? (p.diputuskan_yasir > p.diputuskan_ferry ? p.diputuskan_yasir : p.diputuskan_ferry) : p.tanggal)} · anggaran ${esc(p.sumber_anggaran)}</span><span>Jual ${rp(p.total_jual)} · perkiraan beli ${rp(p.total_beli)}</span></div>
+      <div class="wrap"><table><thead><tr><th>Peralatan</th><th class="r">Diminta</th><th class="r">Dibeli</th><th class="r">Terkirim</th></tr></thead><tbody>${rows}</tbody></table></div>
+      ${bl}${kr}${Number(p.beli_aktual) > 0 ? `<div class="rl"><span>Biaya belanja nyata ${rp(p.beli_aktual)}</span><span class="${selisih > 0 ? 'neg' : ''}">${selisih === 0 ? 'sama dengan perkiraan' : (selisih > 0 ? 'lebih mahal ' : 'lebih hemat ') + rp(Math.abs(selisih)) + ' dari perkiraan'}</span></div>` : ''}
+      ${buka_ ? formAksi(p) : `<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">${sisaBeli > 0 ? `<button class="cta" data-act="buka" data-jenis="belanja" data-id="${p.id}">Catat belanja</button>` : ''}${siapKirim > 0 ? `<button class="cta" data-act="buka" data-jenis="kirim" data-id="${p.id}">Catat pengiriman</button>` : ''}</div>`}</div>`;
+  }
+  function renderProses() {
+    const web = REQ.filter(dariWeb), n = k => web.filter(p => xCocok(p, k)).length;
+    $('xChips').innerHTML = [['aktif', 'Perlu ditangani'], ['belanja', 'Perlu dibelanjakan'], ['kirim', 'Siap dikirim'], ['jalan', 'Dalam pengiriman'], ['selesai', 'Selesai']].map(([k, t]) => `<button class="chip ${xF === k ? 'on' : ''}" data-k="${k}">${t} ${n(k)}</button>`).join('');
+    const f = web.filter(p => xCocok(p, xF)).sort((a, b) => a.id - b.id);
+    $('xInfo').textContent = `${web.length} permintaan disetujui dari web`;
+    $('xDaftar').innerHTML = f.map(kartuProses).join('') || `<div class="kosong">${web.length ? 'Tidak ada permintaan pada tahap ini.' : 'Belum ada permintaan yang disetujui. Setelah Pak Yasir dan Pak Ferry menyetujui, permintaan muncul di sini untuk dibelanjakan.'}</div>`;
+  }
+  async function aksiProses(e) {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    const card = b.closest('.req'), a = b.dataset.act, st = card && card.querySelector('.aksi .hint');
+    if (a === 'buka') { buka = { id: Number(b.dataset.id), jenis: b.dataset.jenis }; renderProses(); return; }
+    if (a === 'batal') { buka = { id: null, jenis: null }; renderProses(); return; }
+    const pesan = t => { if (st) { st.className = 'hint bad'; st.textContent = t; } };
+    b.disabled = true; const label = b.textContent;
+    try {
+      if (a === 'terima') {
+        if (!confirm('Tandai pengiriman ini sudah diterima di lokasi?')) { b.disabled = false; return; }
+        await tulis('peralatan_tandai_diterima', { p_kirim: Number(b.dataset.kid), p_tanggal: hariIni() });
+      } else if (a === 'simpan-belanja') {
+        const A = card.querySelector('.aksi'), baris = [...A.querySelectorAll('tr[data-item]')].map(tr => ({ item: Number(tr.dataset.item), qty: Number(tr.querySelector('.fb-qty').value) || 0, harga: Number(tr.querySelector('.fb-harga').value) })).filter(x => x.qty > 0);
+        if (!baris.length) { pesan('Isi qty yang dibeli minimal pada satu baris.'); b.disabled = false; return; }
+        if (baris.some(x => !(x.harga >= 0))) { pesan('Harga satuan harus diisi.'); b.disabled = false; return; }
+        b.textContent = 'Menyimpan…';
+        await tulis('peralatan_catat_belanja', { p_id: Number(b.dataset.id), p_tanggal: A.querySelector('.fb-tgl').value || null, p_tempat: A.querySelector('.fb-tempat').value, p_toko: A.querySelector('.fb-toko').value, p_catatan: A.querySelector('.fb-cat').value, p_baris: baris });
+      } else if (a === 'simpan-kirim') {
+        const A = card.querySelector('.aksi'), baris = [...A.querySelectorAll('tr[data-item]')].map(tr => ({ item: Number(tr.dataset.item), qty: Number(tr.querySelector('.fk-qty').value) || 0 })).filter(x => x.qty > 0);
+        if (!baris.length) { pesan('Isi qty yang dikirim minimal pada satu baris.'); b.disabled = false; return; }
+        b.textContent = 'Menyimpan…';
+        await tulis('peralatan_catat_kirim', { p_id: Number(b.dataset.id), p_tanggal: A.querySelector('.fk-tgl').value || null, p_kurir: A.querySelector('.fk-kurir').value, p_resi: A.querySelector('.fk-resi').value, p_penerima: A.querySelector('.fk-penerima').value, p_catatan: A.querySelector('.fk-cat').value, p_baris: baris });
+      } else { b.disabled = false; return; }
+      buka = { id: null, jenis: null }; await muat();
+    } catch (err) { pesan('Gagal: ' + err.message); b.disabled = false; b.textContent = label; if (!st) alert('Gagal: ' + err.message); }
+  }
+  $('xDaftar').onclick = aksiProses;
+  $('xChips').onclick = e => { if (e.target.dataset.k) { xF = e.target.dataset.k; buka = { id: null, jenis: null }; renderProses(); } };
+
+  // ================= RIWAYAT PER LOKASI =================
+  // Urutan permintaan sebuah lokasi pada kontrak berjalan: yang pertama "Pengadaan awal", berikutnya "Penambahan ke-n".
+  // Permintaan sebelum tanggal mulai kontrak (bila diisi) dikelompokkan sebagai kontrak sebelumnya. Yang ditolak tidak dihitung.
+  const kunciUrut = p => p.tanggal ? new Date(p.tanggal).getTime() : (p.status === 'arsip' ? 0 : new Date(p.dibuat).getTime());
+  function riwayatLok(l) {
+    const semua = REQ.filter(p => p.lokasi_id === l.id && stReq(p) !== 'ditolak').sort((a, b) => kunciUrut(a) - kunciUrut(b) || a.id - b.id);
+    const mulai = l.kontrak_mulai ? new Date(l.kontrak_mulai + 'T00:00:00').getTime() : null;
+    const ini = mulai == null ? semua : semua.filter(p => !p.tanggal || kunciUrut(p) >= mulai), lama = mulai == null ? [] : semua.filter(p => p.tanggal && kunciUrut(p) < mulai);
+    const total = new Map();
+    for (const p of ini) for (const i of p.items || []) { const kirim = p.status === 'arsip' ? i.qty : Number(i.terkirim || 0), r = total.get(i.nama) || { kirim: 0, minta: 0 }; r.kirim += kirim; r.minta += i.qty; total.set(i.nama, r); }
+    return { ini, lama, total };
+  }
+  const daftarLokRiwayat = () => LOK.map(l => ({ l, r: riwayatLok(l) })).filter(x => x.r.ini.length || x.r.lama.length);
+  function barisRiwayat(p, n) {
+    const t = tahapReq(p), [lbl, cls] = p.status === 'arsip' ? ['Data lama (spreadsheet)', ''] : t === 'menunggu' ? ['Menunggu persetujuan', 'warn'] : (TAHAP[t] || ['', '']);
+    const judul = n === 0 ? 'Pengadaan awal' : 'Penambahan ke-' + n;
+    return `<div class="tl"><div class="rl"><b style="color:var(--text)">${judul}</b><span class="badge ${cls}">${lbl}</span></div>
+      <div class="rl"><span>${p.tanggal ? tgl2(p.tanggal) : 'tanggal tidak tercatat'} · permintaan no. ${p.id} · ${esc(p.sumber_anggaran)}</span><span>Jual ${rp(p.total_jual)}</span></div>
+      <div class="rl"><span>${(p.items || []).map(i => i.qty + '× ' + esc(i.nama)).join(', ')}</span></div>
+      ${(p.pengiriman || []).map(k => `<div class="rl"><span>↳ kirim ${tgl2(k.tanggal)}${k.resi ? ' · resi ' + esc(k.resi) : ''}${k.penerima ? ' · ' + esc(k.penerima) : ''}</span><span class="${k.diterima ? 'ok' : ''}">${k.diterima ? 'diterima ' + tgl2(k.diterima) : 'di perjalanan'}</span></div>`).join('')}</div>`;
+  }
+  let lQ = '', lF = 'semua';
+  function renderLokasi() {
+    const semua = daftarLokRiwayat(), q = $('lCari').value.trim().toLowerCase();
+    const tambah = x => x.r.ini.length > 1, proses = x => x.r.ini.some(p => ['menunggu', 'belanja', 'kirim', 'jalan'].includes(tahapReq(p)));
+    const cocok = (x, k) => k === 'semua' || (k === 'tambah' ? tambah(x) : proses(x));
+    $('lChips').innerHTML = [['semua', 'Semua lokasi'], ['tambah', 'Ada penambahan'], ['proses', 'Sedang diproses']].map(([k, t]) => `<button class="chip ${lF === k ? 'on' : ''}" data-k="${k}">${t} ${semua.filter(x => cocok(x, k)).length}</button>`).join('');
+    const f = semua.filter(x => cocok(x, lF) && (!q || x.l.nama.toLowerCase().includes(q)));
+    $('lInfo').textContent = `${f.length} dari ${semua.length} lokasi yang punya riwayat`;
+    $('lDaftar').innerHTML = f.map(({ l, r }) => {
+      const kirim = [...r.total.values()].reduce((a, x) => a + x.kirim, 0);
+      const tab = [...r.total].sort((a, b) => b[1].kirim - a[1].kirim).map(([nm, x]) => `<tr><td>${esc(nm)}</td><td class="r"><b>${x.kirim}</b></td><td class="r ${x.minta > x.kirim ? 'neg' : ''}">${x.minta}</td></tr>`).join('');
+      return `<details class="req"><summary><b>${esc(l.nama)}</b> <span class="muted">· ${r.ini.length} permintaan${r.ini.length > 1 ? ' (' + (r.ini.length - 1) + ' penambahan)' : ''} · ${idn(kirim)} unit terkirim${l.kontrak_mulai ? ' · kontrak sejak ' + tgl2(l.kontrak_mulai) : ''}</span></summary>
+        <div class="wrap" style="margin-top:10px"><table><thead><tr><th>Total peralatan pada kontrak ini</th><th class="r">Terkirim</th><th class="r">Diminta</th></tr></thead><tbody>${tab || '<tr><td colspan="3" class="kosong">Belum ada.</td></tr>'}</tbody></table></div>
+        <h4 style="margin:14px 0 6px">Riwayat permintaan</h4>${r.ini.map((p, n) => barisRiwayat(p, n)).join('')}
+        ${r.lama.length ? `<details style="margin-top:8px"><summary>Kontrak sebelumnya (${r.lama.length} permintaan)</summary>${r.lama.map((p, n) => barisRiwayat(p, n)).join('')}</details>` : ''}
+        <div class="rl" style="margin-top:12px"><label class="f" style="margin:0"><span>Awal masa kontrak saat ini</span><input type="date" class="kk" value="${l.kontrak_mulai || ''}"></label><button class="btn" data-act="kontrak" data-lok="${l.id}">Simpan</button></div>
+        <div class="hint">Permintaan sebelum tanggal ini dipisahkan sebagai kontrak sebelumnya. Kosongkan bila belum diketahui.</div></details>`;
+    }).join('') || '<div class="kosong">Belum ada lokasi dengan riwayat.</div>';
+  }
+  $('lChips').onclick = e => { if (e.target.dataset.k) { lF = e.target.dataset.k; renderLokasi(); } };
+  $('lCari').oninput = renderLokasi;
+  $('lDaftar').onclick = async e => {
+    const b = e.target.closest('[data-act="kontrak"]'); if (!b) return;
+    const v = b.closest('.rl').querySelector('.kk').value; b.disabled = true;
+    try { await tulis('peralatan_atur_kontrak', { p_lokasi: Number(b.dataset.lok), p_mulai: v || null }); await muat(); }
+    catch (err) { alert('Gagal: ' + err.message); b.disabled = false; }
+  };
+
+  // keterangan di form permintaan: lokasi ini sudah pernah menerima apa, dan permintaan baru akan jadi penambahan ke berapa
+  function infoRiwayat() {
+    const l = lokAktif(), el = $('fRiwayat'); if (!l) { el.textContent = ''; return; }
+    const r = riwayatLok(l), n = r.ini.length;
+    if (!n) { el.textContent = 'Belum ada riwayat permintaan di lokasi ini. Permintaan ini akan tercatat sebagai Pengadaan awal.'; return; }
+    const kirim = [...r.total.values()].reduce((a, x) => a + x.kirim, 0), akhir = r.ini[n - 1];
+    el.textContent = `Riwayat lokasi ini: ${n} permintaan pada kontrak berjalan, ${idn(kirim)} unit sudah terkirim (terakhir ${akhir.tanggal ? tgl2(akhir.tanggal) : 'tanggal tidak tercatat'}). Permintaan ini akan tercatat sebagai Penambahan ke-${n}.`;
+  }
+
+  // alur di Dashboard Utama: tiap kotak bisa diklik menuju halamannya
+  function renderAlur() {
+    const web = REQ.filter(p => p.status !== 'arsip'), t = k => web.filter(p => tahapReq(p) === k).length;
+    const kotak = [['menunggu', 'Menunggu persetujuan', 'permintaan'], ['belanja', 'Perlu dibelanjakan', 'proses'], ['kirim', 'Siap dikirim', 'proses'], ['jalan', 'Dalam pengiriman', 'proses'], ['selesai', 'Selesai, diterima', 'proses']];
+    $('alur').innerHTML = kotak.map(([k, nm, pg], n) => `<button class="langkah" data-go="${pg}" data-tahap="${k}"><small>${n + 1}</small><b>${t(k)}</b><span>${nm}</span></button>`).join('');
+  }
+  $('alur').onclick = e => { const b = e.target.closest('[data-go]'); if (!b) return; if (b.dataset.go === 'proses') xF = b.dataset.tahap; else pF = 'menunggu'; renderSemua(); tampil(b.dataset.go); };
+
+  // ---- mini dashboard halaman Belanja & Kirim dan Riwayat Lokasi ----
+  function miniProses() {
+    const web = REQ.filter(dariWeb), n = k => web.filter(p => tahapReq(p) === k).length, aktifP = web.filter(p => xCocok(p, 'aktif'));
+    const tertua = web.filter(p => tahapReq(p) === 'belanja').sort((a, b) => new Date(a.diputuskan || a.dibuat) - new Date(b.diputuskan || b.dibuat))[0];
+    const belanjaBulan = REQ.flatMap(p => (p.belanja || []).map(b => ({ tanggal: b.tanggal, v: b.qty * b.harga })));
+    return { key: 'proses', kecil: 'Belanja dan pengiriman', judul: 'Dari disetujui sampai barang diterima di lokasi', labelAngka: 'Nilai jual yang masih diproses', angka: rpR(aktifP.reduce((a, p) => a + Number(p.total_jual), 0)),
+      persen: web.length ? 100 * n('selesai') / web.length : 0, labelRing: 'sudah selesai', cta: ['Lihat yang perlu ditangani', 'aktif'],
+      kpi: [[idn(n('belanja')), 'Perlu dibelanjakan', WARNA.jingga], [idn(n('kirim')), 'Siap dikirim', WARNA.info], [idn(n('jalan')), 'Dalam pengiriman', WARNA.aksen], [idn(n('selesai')), 'Selesai', WARNA.ok]],
+      grafik: { judul: 'Biaya belanja nyata per bulan', fmt: rpR, seri: [{ nama: 'Belanja', warna: WARNA.jingga, nilai: perBulan(belanjaBulan, x => x.v) }] },
+      gap: { label: 'Belum dibelanjakan', besar: idn(n('belanja')), pill: `${idn(n('kirim'))} siap kirim`, ket: 'permintaan disetujui yang belum dibeli',
+        worst: tertua && { kecil: 'Menunggu dibelanjakan paling lama', nama: tertua.lokasi, detail: `${hariSejak(tertua.diputuskan || tertua.dibuat)} hari sejak disetujui · no. ${tertua.id}`, aksi: 'belanja', arg: '' } } };
+  }
+  function miniLokasi() {
+    const semua = daftarLokRiwayat(), unit = semua.reduce((a, x) => a + [...x.r.total.values()].reduce((s, t) => s + t.kirim, 0), 0), tambah = semua.filter(x => x.r.ini.length > 1);
+    const proses = semua.filter(x => x.r.ini.some(p => ['menunggu', 'belanja', 'kirim', 'jalan'].includes(tahapReq(p)))).length, terbanyak = [...semua].sort((a, b) => b.r.ini.length - a.r.ini.length)[0];
+    const kirim = REQ.reduce((a, p) => a + (p.pengiriman || []).length, 0);
+    return { key: 'lokasi', kecil: 'Riwayat per lokasi', judul: 'Apa saja yang pernah dikirim ke tiap lokasi', labelAngka: 'Unit peralatan sudah terkirim', angka: idn(unit) + ' unit',
+      persen: LOK.length ? 100 * semua.length / LOK.length : 0, labelRing: 'lokasi punya riwayat', cta: ['Lihat lokasi dengan penambahan', 'tambah'],
+      kpi: [[idn(semua.length), 'Lokasi punya riwayat', WARNA.info], [idn(tambah.length), 'Ada penambahan', WARNA.aksen], [idn(proses), 'Sedang diproses', WARNA.jingga], [idn(kirim), 'Pengiriman dicatat', WARNA.ok]],
+      grafik: { judul: 'Permintaan per bulan', fmt: v => idn(v) + ' permintaan', seri: [{ nama: 'Permintaan', warna: WARNA.info, nilai: perBulan(REQ.filter(aktif), () => 1) }] },
+      gap: { label: 'Lokasi dengan penambahan', besar: idn(tambah.length), pill: `${idn(tambah.reduce((a, x) => a + x.r.ini.length - 1, 0))} permintaan tambahan`, ket: 'meminta lagi pada kontrak yang sama',
+        worst: terbanyak && { kecil: 'Paling sering meminta', nama: terbanyak.l.nama, detail: `${terbanyak.r.ini.length} permintaan`, aksi: 'lokasi', arg: terbanyak.l.nama } } };
+  }
 
   // ---------------- MUAT + NAVIGASI ----------------
   function renderSemua() {
     const sel = $('fLok').value;
     $('fLok').innerHTML = '<option value="">Pilih lokasi</option>' + LOK.map(l => `<option value="${l.id}" ${String(l.id) === sel ? 'selected' : ''}>${esc(l.nama)}</option>`).join('');
-    renderDash(); renderAnggaran(); renderRiwayat(); renderBaris(); renderMini();
+    renderDash(); renderAnggaran(); renderRiwayat(); renderProses(); renderLokasi(); renderAlur(); renderBaris(); renderMini();
     const baru = REQ.filter(p => p.status !== 'arsip'), nb = k => baru.filter(p => k === 'semua' || stReq(p) === k).length;
     $('pChips').innerHTML = [['semua', 'Semua'], ['menunggu', 'Menunggu'], ['disetujui', 'Disetujui'], ['ditolak', 'Ditolak / revisi']].map(([k, t]) => `<button class="chip ${pF === k ? 'on' : ''}" data-k="${k}">${t} ${nb(k)}</button>`).join('');
     $('daftarBaru').innerHTML = baru.filter(p => pF === 'semua' || stReq(p) === pF).slice(0, 12).map(kartuReq).join('') || '<div class="kosong">Belum ada permintaan dari web. Permintaan lama dari spreadsheet ada di Riwayat.</div>';
@@ -404,7 +634,7 @@
     window.scrollTo({ top: 0 });
   }
   document.querySelectorAll('[data-pg]').forEach(b => { b.onclick = () => tampil(b.dataset.pg); });
-  tampil(['dashboard', 'permintaan', 'anggaran', 'riwayat'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'dashboard');
+  tampil(['dashboard', 'permintaan', 'proses', 'lokasi', 'anggaran', 'riwayat'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'dashboard');
   muat();
 </script>
 </body>
