@@ -430,13 +430,19 @@
           ${w ? `<button class="worst" ${aksiAttr(m.key, w.aksi, w.arg)}><small>${esc(w.kecil)}</small><b>${esc(w.nama)}</b><small>${esc(w.detail)}</small></button>` : '<button class="worst" disabled><small>Tidak ada yang tertunda</small><b>Semua beres ✓</b></button>'}</div></div>`;
   }
   const sisaLok = l => Number(l.rab) - Number(l.terpakai);
+  // hitungan lokasi menurut filter daftar lokasi di halaman Permintaan (hanya lokasi yang anggarannya terdaftar)
+  function hitungLokasiMinta() {
+    const semua = LOK.filter(l => Number(l.rab) > 0).map(l => ({ l, s: statusLok(l) })), n = f => semua.filter(x => f(x.s)).length;
+    return { semua, total: semua.length, proses: n(s => s === 'menunggu'), disetujui: n(s => s === 'proses' || s === 'selesai'), ditolak: n(s => s === 'ditolak'), belum: n(s => s === 'belum') };
+  }
   function miniPermintaan() {
-    const baru = REQ.filter(p => p.status !== 'arsip'), n = k => baru.filter(p => stReq(p) === k).length, tunggu = baru.filter(p => stReq(p) === 'menunggu');
+    const baru = REQ.filter(p => p.status !== 'arsip'), tunggu = baru.filter(p => stReq(p) === 'menunggu'), c = hitungLokasiMinta();
     const wy = tunggu.filter(p => p.status_yasir === 'menunggu').length, wf = tunggu.filter(p => p.status_ferry === 'menunggu').length, tertua = [...tunggu].sort((a, b) => new Date(a.tanggal || a.dibuat) - new Date(b.tanggal || b.dibuat))[0];
+    const baris = [['Proses (menunggu keputusan)', c.proses, WD.warn], ['Disetujui', c.disetujui, WD.ok], ['Ditolak / revisi', c.ditolak, WD.bad], ['Belum ada permintaan baru', c.belum, WD.track]];
     return { key: 'permintaan', kecil: 'Permintaan peralatan', judul: 'Pantau persetujuan Pak Yasir dan Pak Ferry', labelAngka: 'Nilai jual permintaan baru (tanpa yang ditolak)', angka: rpR(baru.filter(aktif).reduce((a, p) => a + Number(p.total_jual), 0)),
-      persen: baru.length ? 100 * n('disetujui') / baru.length : 0, labelRing: 'disetujui keduanya', cta: ['Lihat yang menunggu', 'menunggu'],
-      kpi: [[idn(baru.length), 'Permintaan dari web', WARNA.info], [idn(tunggu.length), 'Menunggu persetujuan', WARNA.jingga], [idn(n('disetujui')), 'Disetujui keduanya', WARNA.ok], [idn(n('ditolak')), 'Ditolak / revisi', WARNA.bahaya]],
-      grafik: { judul: 'Permintaan per bulan', fmt: v => idn(v) + ' permintaan', seri: [{ nama: 'Permintaan', warna: WARNA.info, nilai: perBulan(REQ, () => 1) }] },
+      persen: c.total ? 100 * c.disetujui / c.total : 0, labelRing: 'lokasi disetujui', cta: ['Lihat lokasi dalam proses', 'menunggu'],
+      kpi: [[idn(c.total), 'Semua lokasi', WARNA.info], [idn(c.proses), 'Proses', WARNA.jingga], [idn(c.disetujui), 'Disetujui', WARNA.ok], [idn(c.ditolak), 'Ditolak / revisi', WARNA.bahaya]],
+      grafik: { judul: 'Lokasi menurut status permintaan', html: batangH(baris.map(([l, v, w]) => ({ label: l, teks: `${v} lokasi`, segs: [{ v, warna: w, nama: 'Lokasi' }] }))), seri: [] },
       gap: { label: 'Menunggu persetujuan', besar: idn(tunggu.length), pill: `Pak Yasir ${wy} · Pak Ferry ${wf}`, ket: 'permintaan belum diputuskan',
         worst: tertua && { kecil: 'Menunggu paling lama', nama: tertua.lokasi, detail: `${hariSejak(tertua.tanggal || tertua.dibuat)} hari · no. ${tertua.id}`, aksi: 'menunggu', arg: '' } } };
   }
@@ -465,7 +471,7 @@
   function renderMini() { for (const [k, f] of Object.entries(MINI)) { const el = $('md-' + k); if (el) el.innerHTML = miniHtml(f()); } }
   const gulirKe = id => { const el = $(id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
   function aksiMini(k, a, arg) {
-    if (k === 'permintaan') { pF = a === 'menunggu' ? 'menunggu' : 'semua'; renderSemua(); gulirKe('kartuBaru'); }
+    if (k === 'permintaan') { pF = a === 'menunggu' ? 'menunggu' : 'semua'; mF = a === 'menunggu' ? 'proses' : 'semua'; mTerbuka = false; renderSemua(); gulirKe('kartuLokasiMinta'); }
     else if (k === 'anggaran') { if (a === 'lewat') { aF = 'lewat'; $('aCari').value = ''; } else { aF = 'semua'; $('aCari').value = arg; } renderAnggaran(); gulirKe('kartuAnggaran'); }
     else if (k === 'proses') { xF = a; buka = { id: null, jenis: null }; renderProses(); gulirKe('kartuProses'); }
     else if (k === 'lokasi') { if (a === 'tambah') { lF = 'tambah'; $('lCari').value = ''; } else { lF = 'semua'; $('lCari').value = arg; } renderLokasi(); gulirKe('kartuLokasi'); }
@@ -1016,12 +1022,13 @@
     mSel = String(id); $('fLok').value = mSel; $('fSumber').value = 'peralatan'; hitung();
   }
   function renderDaftarMinta() {
-    const q = $('mCari').value.trim().toLowerCase(), semua = LOK.map(l => ({ l, s: statusLok(l) }));
-    const cocok = (x, k) => k === 'semua' || (k === 'lewat' ? sisaLok(x.l) < 0 : x.s === k);
-    $('mChips').innerHTML = [['semua', 'Semua'], ['belum', 'Belum ada permintaan baru'], ['menunggu', 'Menunggu'], ['proses', 'Diproses'], ['selesai', 'Selesai'], ['ditolak', 'Ditolak / revisi'], ['lewat', 'Melebihi RAB']]
+    const q = $('mCari').value.trim().toLowerCase(), semua = LOK.filter(l => Number(l.rab) > 0).map(l => ({ l, s: statusLok(l) })); // hanya lokasi yang anggarannya sudah ada (RAB terdaftar)
+    // Proses = menunggu keputusan pimpinan; Disetujui = disetujui kedua pimpinan (belanja, kirim, atau selesai)
+    const cocok = (x, k) => k === 'semua' || (k === 'proses' ? x.s === 'menunggu' : k === 'disetujui' ? x.s === 'proses' || x.s === 'selesai' : x.s === 'ditolak');
+    $('mChips').innerHTML = [['semua', 'Semua lokasi'], ['proses', 'Proses'], ['disetujui', 'Disetujui'], ['ditolak', 'Ditolak / revisi']]
       .map(([k, t]) => `<button class="chip ${mF === k ? 'on' : ''}" data-k="${k}">${t} ${semua.filter(x => cocok(x, k)).length}</button>`).join('');
     const f = semua.filter(x => cocok(x, mF) && (!q || x.l.nama.toLowerCase().includes(q))).sort((a, b) => q ? a.l.nama.localeCompare(b.l.nama) : (URUT_LOK[a.s] - URUT_LOK[b.s]) || a.l.nama.localeCompare(b.l.nama));
-    $('mInfo').textContent = `${LOK.length} lokasi · ${semua.filter(x => x.s === 'menunggu').length} menunggu · ${semua.filter(x => x.s === 'proses').length} diproses · ${semua.filter(x => cocok(x, 'lewat')).length} melebihi RAB`;
+    $('mInfo').textContent = `${semua.length} lokasi · ${semua.filter(x => cocok(x, 'proses')).length} proses · ${semua.filter(x => cocok(x, 'disetujui')).length} disetujui · ${semua.filter(x => cocok(x, 'ditolak')).length} ditolak/revisi`;
     $('mDaftar').innerHTML = f.map(({ l, s }) => {
       const pct = Number(l.rab) ? 100 * Number(l.terpakai) / Number(l.rab) : 0, [lbl, cls] = LSTAT[s], n = reqLok(l).length;
       return `<button class="item ${String(l.id) === mSel ? 'sel' : ''}" data-k="${l.id}"><div class="nm">${esc(l.nama)}</div><div class="bar ${pct > 100 ? 'bad' : pct > 85 ? 'warn' : ''}"><i style="width:${Math.min(100, pct)}%"></i></div>
