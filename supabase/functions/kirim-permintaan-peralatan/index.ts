@@ -31,6 +31,8 @@ Deno.serve(async (req) => {
   const lokasiId = Number(body?.lokasi_id), sumber = body?.sumber === 'seragam' ? 'seragam' : 'peralatan';
   const items: any[] = Array.isArray(body?.items) ? body.items : [];
   const memo = String(body?.memo ?? '').trim().slice(0, 1000);
+  // lampiran surat: satu gambar JPG (base64) per halaman memo, PO, daftar harga, RAB
+  const gambar: string[] = Array.isArray(body?.halaman) ? body.halaman.map(String).slice(0, 12) : [];
   if (!lokasiId || !items.length) return balas({ error: 'Data permintaan belum lengkap' }, 400);
   if (items.length > 100) return balas({ error: 'Terlalu banyak item' }, 413);
 
@@ -106,7 +108,19 @@ Deno.serve(async (req) => {
   for (let n = daftar.length; teks.length > 2800 && n > 0; n--) teks = susun(n - 1);
 
   const WEB = Deno.env.get('WEB_URL') ?? 'https://izzarsohib-spec.github.io/ukuran-karyawan';
-  const urlWeb = `${WEB}/peralatan/`;
+  // tiap halaman surat disimpan di Supabase Storage (folder acak); notifikasi membuka surat.html yang menampilkan semua halaman
+  let urlSurat = '';
+  if (gambar.length) {
+    const folder = `${baru.id}-${acak().slice(0, 24)}`;
+    for (let i = 0; i < gambar.length; i++) {
+      const { error: eUp } = await db.storage.from('lampiran-surat').upload(`${folder}/${String(i + 1).padStart(2, '0')}.jpg`,
+        Uint8Array.from(atob(gambar[i]), (c) => c.charCodeAt(0)), { contentType: 'image/jpeg', upsert: false });
+      if (eUp) return balas({ error: `Tersimpan (no. ${baru.id}) tetapi halaman surat gagal disimpan`, id: baru.id }, 500);
+    }
+    urlSurat = `${WEB}/surat.html?f=${folder}&n=${gambar.length}&j=${encodeURIComponent(`${lok.nama} - Peralatan`)}`;
+    await db.from('peralatan_permintaan').update({ lampiran_url: urlSurat }).eq('id', baru.id);
+  }
+  const urlWeb = urlSurat || `${WEB}/peralatan/`;
   const hasil: Record<string, number> = {};
   for (const p of PIMPINAN) {
     const url = (a: string) => `${Deno.env.get('SUPABASE_URL')}/functions/v1/keputusan?m=peralatan&id=${baru.id}&p=${p.kunci}&t=${token[p.kunci]}&a=${a}`;
@@ -117,7 +131,7 @@ Deno.serve(async (req) => {
         headers: {
           Title: kodekan(`Permintaan peralatan: ${lok.nama} (untuk ${p.nama})`.slice(0, 120)),
           Click: urlWeb, Priority: '4', Tags: 'toolbox',
-          Actions: `http, Setujui ${p.nama}, ${url('setuju')}, method=POST, clear=true; view, Tolak/Revisi ${p.nama}, ${urlRevisi}; view, Buka web, ${urlWeb}`,
+          Actions: `http, Setujui ${p.nama}, ${url('setuju')}, method=POST, clear=true; view, Tolak/Revisi ${p.nama}, ${urlRevisi}; view, ${urlSurat ? 'Buka surat' : 'Buka web'}, ${urlWeb}`,
         },
         body: teks,
       });

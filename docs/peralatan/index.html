@@ -124,6 +124,12 @@
   .ht { display:flex; height:14px; } .ht i { display:block; height:100%; margin-left:2px; min-width:2px; } .ht i:first-child { margin-left:0; } .ht i:last-child { border-radius:0 4px 4px 0; }
   .hv { font-size:.78rem; font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
   .vtab { max-height:300px; }
+  .rabbox { margin-top:18px; padding:14px 16px; border:1px dashed var(--stroke); border-radius:16px; } .rabbox .rl { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
+  .pvm { position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.74); display:grid; place-items:center; padding:2vh 2vw; } .pvm[hidden] { display:none; }
+  .pvbox { width:min(1000px,100%); height:100%; background:#17171a; border:1px solid var(--stroke); border-radius:20px; display:flex; flex-direction:column; overflow:hidden; }
+  .pvbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:12px 16px; border-bottom:1px solid var(--stroke); } .pvbar .jd { margin-right:auto; min-width:0; }
+  .pvbar .jd b { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .pvbar .jd span { color:var(--muted); font-size:.78rem; } .pvbar .cta { padding:8px 18px; }
+  .pvbody { flex:1; overflow:auto; background:#2a2a2e; padding:12px; } .pvbody img { display:block; width:100%; max-width:900px; margin:0 auto 12px; background:#fff; }
   @media (max-width: 640px) {
     .side { display:none; } .shell { margin:0; border-radius:0; border:0; } .content { padding:18px 14px 40px; } .kop img { height:56px; } .kop { gap:12px; }
     .mobnav { display:flex; gap:6px; margin-bottom:14px; overflow-x:auto; scrollbar-width:none; }
@@ -172,7 +178,14 @@
         <label class="f" style="margin-top:14px"><span>Catatan untuk pimpinan (opsional)</span><textarea id="fMemo" rows="2" maxlength="1000" placeholder="Alasan permintaan atau keterangan lain"></textarea></label>
         <div class="sums" id="fSum"></div>
         <div class="hint" id="fPeringatan"></div>
-        <div style="margin-top:14px"><button class="cta" id="fKirim">Kirim ke Pak Yasir &amp; Pak Ferry</button></div>
+        <div class="rabbox">
+          <div class="rl"><b>Lampiran RAB</b><span class="muted">opsional · PDF, halaman 1</span></div>
+          <input type="file" id="mRabFile" accept=".pdf,application/pdf">
+          <div class="hint" id="mRabInfo">Tanpa file, halaman RAB dibuat otomatis dari data anggaran.</div>
+        </div>
+        <div class="hint" style="margin-top:10px">PDF berisi 4 halaman: Memo, PO, Daftar Harga, RAB. Pimpinan membuka surat lewat tautan di notifikasi ntfy. Periksa dulu lewat Preview.</div>
+        <button class="btn" id="fPreview" style="width:100%;margin-top:14px;border-radius:14px;padding:11px">Preview surat</button>
+        <button class="cta" id="fKirim" style="width:100%;margin-top:10px">Kirim ke Pak Yasir &amp; Pak Ferry</button>
         <div class="hint" id="fStatus" role="status"></div>
       </div>
       <div class="card" id="kartuBaru"><h3>Permintaan terakhir</h3><div class="chips" id="pChips"></div><div id="daftarBaru"></div></div>
@@ -216,6 +229,16 @@
   </div>
 </div>
 
+<div class="pvm" id="pvModal" hidden role="dialog" aria-modal="true" aria-label="Preview surat">
+  <div class="pvbox">
+    <div class="pvbar">
+      <div class="jd"><b id="pvJudul"></b><span id="pvInfo"></span></div>
+      <button class="btn" id="pvTutup">Tutup</button>
+      <button class="cta" id="pvKirim">Kirim ke Pak Yasir &amp; Pak Ferry</button>
+    </div>
+    <div class="pvbody" id="pvHalaman"></div>
+  </div>
+</div>
 <script>
   const SUPABASE_URL = 'https://vqcusagijiavaoljfrib.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxY3VzYWdpamlhdmFvbGpmcmliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0OTIzOTksImV4cCI6MjEwODA2ODM5OX0.VeslVR4UHv26LCMbkO7KP0k96r8lg7-NNLjY30iMyFk';
@@ -247,7 +270,7 @@
     const [lbl, cls] = TAHAP[tahapReq(p)] || LABEL[stReq(p)], tabel = (p.items || []).map(i => `<tr><td>${esc(i.nama)}</td><td class="r">${i.qty}</td><td class="r">${rp(i.beli)}</td><td class="r">${rp(i.jual)}</td><td class="r">${rp(i.qty * i.jual)}</td></tr>`).join('');
     return `<div class="req"><div class="rl"><b style="color:var(--text)">${esc(p.lokasi)}</b><span class="badge ${cls}">${lbl}</span></div>
       <div class="rl"><span>${tgl(p.tanggal)} · anggaran ${esc(p.sumber_anggaran)} · no. ${p.id}</span><span>Jual ${rp(p.total_jual)} · beli ${rp(p.total_beli)} · <b class="${p.untung < 0 ? 'neg' : ''}">untung ${rp(p.untung)}</b></span></div>
-      ${putusan(p)}${p.memo ? `<div class="rl"><span>Catatan: ${esc(p.memo)}</span></div>` : ''}${p.catatan ? `<div class="rl"><span>Migrasi: ${esc(p.catatan)}</span></div>` : ''}
+      ${p.lampiran_url ? `<div class="rl"><a href="${esc(p.lampiran_url)}" target="_blank" rel="noopener" style="color:var(--accent)">Buka surat permintaan (memo, PO, daftar harga, RAB)</a></div>` : ''}${putusan(p)}${p.memo ? `<div class="rl"><span>Catatan: ${esc(p.memo)}</span></div>` : ''}${p.catatan ? `<div class="rl"><span>Migrasi: ${esc(p.catatan)}</span></div>` : ''}
       <details><summary>${(p.items || []).length} peralatan</summary><div class="wrap"><table><thead><tr><th>Peralatan</th><th class="r">Qty</th><th class="r">Beli</th><th class="r">Jual</th><th class="r">Total jual</th></tr></thead><tbody>${tabel}</tbody></table></div></details></div>`;
   }
 
@@ -300,23 +323,6 @@
   $('fBaris').onchange = e => { const tr = e.target.closest('tr'); if (!tr) return; const b = baris[tr.dataset.n]; if (e.target.classList.contains('f-item')) { b.id = e.target.value; if (!b.qty) b.qty = 1; renderBaris(); } };
   $('fBaris').oninput = e => { if (!e.target.classList.contains('f-qty')) return; const tr = e.target.closest('tr'), b = baris[tr.dataset.n]; b.qty = e.target.value; const it = ITEM.find(x => String(x.id) === String(b.id)); tr.querySelector('.f-tot').textContent = it && Number(b.qty) > 0 ? rp(it.harga_jual * b.qty) : '-'; hitung(); };
   $('fBaris').onclick = e => { if (!e.target.classList.contains('x')) return; if (baris.length === 1) baris = [{ id: '', qty: '' }]; else baris.splice(e.target.closest('tr').dataset.n, 1); renderBaris(); };
-  $('fKirim').onclick = async () => {
-    const st = $('fStatus'), btn = $('fKirim'), l = lokAktif(); st.className = 'hint bad';
-    const isi = baris.filter(b => b.id || b.qty);
-    if (!l) { st.textContent = 'Pilih lokasi dulu.'; return; }
-    if (!isi.length || isi.some(b => !b.id || !Number.isInteger(Number(b.qty)) || Number(b.qty) < 1)) { st.textContent = 'Lengkapi peralatan dan qty (bilangan bulat, minimal 1) di setiap baris.'; return; }
-    btn.disabled = true; const label = btn.textContent; btn.textContent = 'Mengirim…'; st.textContent = '';
-    try {
-      const r = await fetch(`${SUPABASE_URL}/functions/v1/kirim-permintaan-peralatan`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lokasi_id: l.id, sumber: $('fSumber').value, items: isi.map(b => ({ item_id: Number(b.id), qty: Number(b.qty) })), memo: $('fMemo').value.trim() }) });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
-      st.className = 'hint ok'; st.textContent = `✓ Terkirim ke Pak Yasir dan Pak Ferry (permintaan no. ${j.id}). Perlu persetujuan keduanya.`;
-      baris = [{ id: '', qty: '' }]; $('fMemo').value = ''; await muat(); renderBaris();
-    } catch (e) { st.textContent = 'Gagal: ' + e.message; }
-    btn.disabled = false; btn.textContent = label;
-  };
-
   // ---------------- ANGGARAN LOKASI ----------------
   let aF = 'semua';
   function renderAnggaran() {
@@ -695,6 +701,287 @@
       + kartuG('g-sumber', 'Sumber anggaran', 'nilai jual menurut anggaran yang dipakai', batangH(sumber.map(([l, v], i) => ({ label: l, teks: rpR(v), segs: [{ v, warna: i ? WD.s2 : WD.s1, nama: 'Jual' }] })), { fmt: rpR }), tabelH(['Sumber', 'Jual'], sumber.map(([l, v]) => [l, rp(v)])));
   }
   $('dGrid').onclick = e => { const b = e.target.closest('[data-vm]'); if (!b) return; const [id, m] = b.dataset.vm.split('|'); modeG.set(id, m); renderGrafikDash(); };
+
+  // ================= SURAT PERMINTAAN (PDF) =================
+  // Sama seperti seragam: Memo (harga jual), PO (harga beli), Daftar Harga, dan RAB (lampiran PDF atau dibuat otomatis).
+  // Tiap halaman dijadikan gambar, diperiksa lewat Preview, lalu dikirim ke server; pimpinan membuka surat lewat tautan di notifikasi.
+  const TTD = { pic: ['Shohib Izzar', '(PIC Peralatan)'], dir: ['Yasir Arafat', '(Direktur)'], dirut: ['Feri Atmadi', '(Direktur Utama)'], vendor: ['Wahyu Ardianto', '(Vendor)'] };
+  const muatSkrip = src => new Promise((ok, gagal) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => gagal(new Error('Pustaka gagal dimuat')); document.head.appendChild(s); });
+  const muatGambar = src => new Promise(ok => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = src; });
+  const keBase64 = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
+  let mRabBerkas = null;
+  async function gabungPdf(utama, tambahan) { // hanya halaman 1 dari PDF RAB yang dipakai
+    if (!window.PDFLib) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js');
+    const dok = await window.PDFLib.PDFDocument.load(utama), rab = await window.PDFLib.PDFDocument.load(tambahan, { ignoreEncryption: true });
+    (await dok.copyPages(rab, [0])).forEach(p => dok.addPage(p));
+    return keBase64(await dok.save());
+  }
+  $('mRabFile').onchange = async e => {
+    const f = e.target.files[0], info = $('mRabInfo');
+    mRabBerkas = null; info.style.color = '';
+    if (!f) { info.textContent = 'Tanpa file, halaman RAB dibuat otomatis dari data anggaran.'; return; }
+    if (!(/\.pdf$/i.test(f.name) || f.type === 'application/pdf')) { info.style.color = 'var(--bad)'; info.textContent = 'Hanya file PDF.'; e.target.value = ''; return; }
+    if (f.size > 2.5 * 1024 * 1024) { info.style.color = 'var(--bad)'; info.textContent = 'File terlalu besar (maksimal 2,5 MB).'; e.target.value = ''; return; }
+    try {
+      const buf = await f.arrayBuffer();
+      if (!window.PDFLib) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js');
+      const hal = (await window.PDFLib.PDFDocument.load(buf, { ignoreEncryption: true })).getPageCount();
+      mRabBerkas = { nama: f.name, buf };
+      info.style.color = hal > 1 ? 'var(--warn)' : 'var(--ok)';
+      info.textContent = `✓ ${f.name} · ${Math.max(1, Math.round(buf.byteLength / 1024)).toLocaleString('id-ID')} KB` + (hal > 1 ? ` · ${hal} halaman, hanya halaman 1 yang dipakai sebagai RAB.` : ' · menjadi halaman RAB.');
+    } catch (err) { info.style.color = 'var(--bad)'; info.textContent = 'File PDF tidak terbaca: ' + err.message; e.target.value = ''; }
+  };
+  function kosongkanRab() { mRabBerkas = null; $('mRabFile').value = ''; $('mRabInfo').style.color = ''; $('mRabInfo').textContent = 'Tanpa file, halaman RAB dibuat otomatis dari data anggaran.'; }
+
+  // data isian form; null bila belum lengkap (pesan tampil di bawah tombol)
+  function ambilIsian() {
+    const st = $('fStatus'); st.className = 'hint bad'; st.textContent = '';
+    const l = lokAktif(), a = anggaranPilih(), isi = baris.filter(b => b.id || b.qty);
+    if (!l) { st.textContent = 'Pilih lokasi dulu.'; return null; }
+    if (!isi.length || isi.some(b => !b.id || !Number.isInteger(Number(b.qty)) || Number(b.qty) < 1)) { st.textContent = 'Lengkapi peralatan dan qty (bilangan bulat, minimal 1) di setiap baris.'; return null; }
+    const rows = isi.map(b => ({ h: ITEM.find(x => String(x.id) === String(b.id)), q: Number(b.qty) }));
+    return { l, sumber: $('fSumber').value, a: a || { rab: 0, terpakai: 0 }, isi: rows, beli: rows.reduce((t, x) => t + x.h.harga_beli * x.q, 0), jual: rows.reduce((t, x) => t + x.h.harga_jual * x.q, 0) };
+  }
+  const siapkanPdf = d => buatPdf(d, { rab: mRabBerkas });
+
+  // Tiap halaman PDF diubah jadi satu gambar JPG beresolusi tinggi (lebar 1700 px); surat.html menampilkannya selebar layar.
+  async function pdfKeHalaman(pdfB64) {
+    if (!window.pdfjsLib) {
+      await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+    const dok = await window.pdfjsLib.getDocument({ data: Uint8Array.from(atob(pdfB64), c => c.charCodeAt(0)) }).promise;
+    const LEBAR = 1700, kanvas = [];
+    for (let i = 1; i <= dok.numPages; i++) {
+      const pg = await dok.getPage(i), v0 = pg.getViewport({ scale: 1 }), v = pg.getViewport({ scale: LEBAR / v0.width });
+      const cv = document.createElement('canvas'); cv.width = Math.ceil(v.width); cv.height = Math.ceil(v.height);
+      const cx = cv.getContext('2d'); if (!cx) throw new Error('Peramban gagal membuat gambar surat. Coba gunakan Chrome atau Edge di komputer.');
+      cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+      await pg.render({ canvasContext: cx, viewport: v }).promise; kanvas.push(cv);
+    }
+    let kualitas = 0.9, blobs; // turun sedikit hanya bila total terlalu besar (batas aman kiriman sekitar 5,5 MB)
+    for (;;) {
+      blobs = await Promise.all(kanvas.map(cv => new Promise(ok => cv.toBlob(ok, 'image/jpeg', kualitas))));
+      if (blobs.some(b => !b)) throw new Error('Peramban gagal membuat gambar surat.');
+      if (blobs.reduce((a, b) => a + b.size, 0) <= 5.5 * 1048576 || kualitas <= 0.68) break;
+      kualitas -= 0.06;
+    }
+    const b64s = await Promise.all(blobs.map(blob => new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(',')[1]); fr.readAsDataURL(blob); })));
+    return { blobs, b64s, halaman: dok.numPages, mb: blobs.reduce((a, b) => a + b.size, 0) / 1048576, px: `${kanvas[0].width} × ${kanvas[0].height}` };
+  }
+
+  async function buatPdf({ l, sumber, a, isi, beli, jual }, ekstra = {}) {
+    if (!window.jspdf) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    if (!(window.jspdf && window.jspdf.jsPDF.API.autoTable)) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
+    const [kop, kaki] = await Promise.all([muatGambar('../aset/kop-surat.png'), muatGambar('../aset/kaki-surat.png')]);
+    const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' });
+    const PW = 595.28, L = 40, R = PW - 40, W = R - L, BIRU = [0, 112, 192], BAWAH = 742;
+    const now = new Date(), bln = now.getMonth() + 1, thn = now.getFullYear();
+    const urut = REQ.filter(p => p.status !== 'arsip' && new Date(p.dibuat).getMonth() + 1 === bln && new Date(p.dibuat).getFullYear() === thn).length + 1;
+    const noSurat = `${String(urut).padStart(3, '0')}/PP/RAY/${bln}/${thn}`;
+    const tglS = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const tglPanjang = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    const rpPdf = n => 'Rp' + Math.round(n).toLocaleString('id-ID');
+    const NAMA_BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    const rab = a.rab, anggota = Number(l.anggota) || 0, kontrak = Number(l.kontrak_bulan) || 12, perOrang = anggota ? rab / anggota / kontrak : 0;
+    const sumberTeks = sumber === 'seragam' ? 'Anggaran Seragam (bagian keamanan)' : 'Anggaran Peralatan';
+    const rw = riwayatLok(l), nRiw = rw.ini.length;
+    const sisa = rab - a.terpakai - jual, untung = sisa + (jual - beli), min = v => (v < 0 ? '-' : '') + rpPdf(Math.abs(v));
+    const nLalu = REQ.filter(p => p.lokasi_id === l.id && p.sumber_anggaran === sumber && stReq(p) !== 'ditolak').length;
+
+    let K = 1, y = 0; // K = skala huruf/jarak; diturunkan otomatis supaya tiap bagian muat 1 halaman
+    const dipasang = new Set();
+    const pasang = () => { // kop + kaki surat di tiap halaman
+      const n = doc.internal.getCurrentPageInfo().pageNumber; if (dipasang.has(n)) return; dipasang.add(n);
+      if (kop) doc.addImage(kop, 'PNG', L, 14, W, W * 112 / 1030);
+      if (kaki) doc.addImage(kaki, 'PNG', L, 758, W, W * 92 / 1030);
+      doc.setDrawColor(...BIRU); doc.setLineWidth(2.2); doc.line(L, 74, R, 74); doc.line(L, 752, R, 752);
+      doc.setFont('times', 'bold'); doc.setFontSize(9.5); doc.setTextColor(255, 0, 0); doc.text('HEAD OFFICE :', PW / 2, 768, { align: 'center' });
+      doc.setFont('times', 'normal'); doc.setTextColor(0, 0, 0);
+      doc.text('Jl. Sidodadi RT. 03 RW. 04 Kel. Mijen Kec. Mijen Semarang', PW / 2, 781, { align: 'center' });
+      doc.text('Telp. 024-76640213, 085 848484 222 - 085641220696', PW / 2, 794, { align: 'center' });
+      doc.setTextColor(0, 0, 255); doc.text('Email : raymitraperkasa@yahoo.co.id', PW / 2, 807, { align: 'center' }); doc.setTextColor(0, 0, 0);
+    };
+    const cek = tinggi => { if (y + tinggi > BAWAH) { doc.addPage(); pasang(); y = 100; } };
+    const huruf = (gaya = 'normal', ukuran = 10.5) => { doc.setFont('times', gaya); doc.setFontSize(ukuran * K); doc.setTextColor(0, 0, 0); };
+    const tabel = opsi => {
+      doc.autoTable({ theme: 'plain', margin: { top: 92, bottom: 110, left: L + 28, right: PW - R + 28 }, didDrawPage: pasang,
+        styles: { font: 'times', fontSize: 10 * K, cellPadding: { top: 2.6 * K, bottom: 2.6 * K, left: 4, right: 4 }, lineColor: [0, 0, 0], lineWidth: 0.5, textColor: 0 },
+        headStyles: { fontStyle: 'bold', halign: 'center', fillColor: false }, ...opsi });
+      y = doc.lastAutoTable.finalY;
+    };
+    const tandaTangan = (kolom, yy) => {
+      huruf('normal', 10.5);
+      kolom.forEach(k => doc.text(k.label, k.x, yy, { align: 'center' }));
+      kolom.forEach(k => {
+        huruf('bold', 10.5); doc.text(k.ttd[0], k.x, yy + 58 * K, { align: 'center' });
+        const w = doc.getTextWidth(k.ttd[0]); doc.setLineWidth(0.6); doc.setDrawColor(0, 0, 0); doc.line(k.x - w / 2, yy + 60 * K, k.x + w / 2, yy + 60 * K);
+        huruf('bold', 8.5); doc.setTextColor(153, 153, 153); doc.text(k.ttd[1], k.x, yy + 72 * K, { align: 'center' }); huruf();
+      });
+    };
+    // tulis satu bagian; kalau meluber ke halaman kedua, ulangi dengan skala lebih kecil sampai muat 1 halaman
+    const satuHalaman = (tulis, dengankop = true) => {
+      const awal = doc.getNumberOfPages();
+      for (const k of [1, 0.94, 0.88, 0.82, 0.76, 0.7, 0.64, 0.58]) {
+        K = k; y = 0; if (dengankop) pasang();
+        tulis();
+        if (doc.getNumberOfPages() === awal || k === 0.58) break;
+        const n = doc.getNumberOfPages(); doc.addPage();
+        for (let i = n; i >= awal; i--) doc.deletePage(i);
+        doc.setPage(awal); [...dipasang].forEach(p => { if (p >= awal) dipasang.delete(p); });
+      }
+      K = 1;
+    };
+
+    // ===== Halaman 1: SURAT MEMO INTERNAL =====
+    satuHalaman(() => {
+      huruf('bold', 16); doc.text('SURAT MEMO INTERNAL', PW / 2, 104, { align: 'center' });
+      huruf(); y = 134; const g = 14 * K;
+      [['Nomor', ':' + noSurat], ['Tanggal', ':' + tglS], ['Perihal', ': Permohonan Persetujuan Pengadaan Peralatan Kerja']].forEach(([k, v], i) => { doc.text(k, L, y + i * g); doc.text(v, L + 52, y + i * g); });
+      y += 3 * g + 8 * K;
+      huruf('bold'); doc.text('Dengan hormat,', L + 14, y); huruf(); y += 14 * K;
+      const par = doc.splitTextToSize('Sehubungan dengan kebutuhan operasional di lokasi penempatan, kami mengajukan permohonan persetujuan pengadaan peralatan kerja dengan rincian sebagai berikut:', W - 14);
+      doc.text(par, L + 14, y); y += par.length * 13 * K + 6 * K;
+      huruf('bold'); doc.text('A. Lokasi & Kebutuhan', L, y); huruf(); y += 14 * K;
+      const info = [['Lokasi Penempatan', ':' + l.nama], ['Departemen', ':' + l.bagian], ['Jumlah Anggota', ':' + (anggota || '-')], ['Sumber Anggaran', ':' + sumberTeks],
+        ...(nRiw ? [['Riwayat Lokasi', `:${nRiw} permintaan sebelumnya pada kontrak ini (Penambahan ke-${nRiw})`]] : []), ['Detail Kebutuhan', ':']];
+      info.forEach(([k, v], i) => { doc.text(k, L + 44, y + i * 13 * K); doc.text(v, L + 200, y + i * 13 * K); });
+      y += info.length * 13 * K - 4 * K;
+      tabel({ startY: y, head: [['No', 'Deskripsi Barang', 'Qty', 'Harga Jual', 'Total']],
+        body: [...isi.map((x, i) => [{ content: i + 1, styles: { halign: 'center' } }, x.h.nama, { content: x.q, styles: { halign: 'center' } }, { content: rpPdf(x.h.harga_jual), styles: { halign: 'center', fillColor: [255, 255, 0] } }, { content: rpPdf(x.h.harga_jual * x.q), styles: { halign: 'right' } }]),
+          [{ content: 'SUBTOTAL', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(jual), styles: { halign: 'right', fontStyle: 'bold' } }]],
+        columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 38 }, 3: { cellWidth: 80 }, 4: { cellWidth: 82 } } });
+      const cat = $('fMemo').value.trim();
+      if (cat) { y += 10 * K; const c = doc.splitTextToSize('Catatan: ' + cat, W - 28); huruf('italic', 10); doc.text(c, L + 28, y); y += c.length * 12 * K - 4 * K; huruf(); }
+      y += 16 * K;
+      huruf('bold'); doc.text('B. Estimasi Anggaran (RAB)', L, y); y += 8 * K;
+      if (anggota && rab > 0) { // satu baris per bulan kontrak = jumlah personil x biaya per orang per bulan
+        tabel({ startY: y, head: [['No', 'Bulan', 'Jumlah Personil', 'Biaya / Orang (Rp)', 'Total / Bulan (Rp)']],
+          body: [...Array.from({ length: kontrak }, (_, m) => [{ content: m + 1, styles: { halign: 'center' } }, NAMA_BULAN[m % 12], { content: anggota, styles: { halign: 'center' } }, { content: rpPdf(perOrang), styles: { halign: 'right' } }, { content: rpPdf(anggota * perOrang), styles: { halign: 'right' } }]),
+            [{ content: 'TOTAL', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(rab), styles: { halign: 'right', fontStyle: 'bold' } }]],
+          columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 78 }, 3: { cellWidth: 92 }, 4: { cellWidth: 92 } } });
+      } else {
+        tabel({ startY: y, body: [['Anggaran (RAB) lokasi', rpPdf(rab)], ['Sudah terpakai', rpPdf(a.terpakai)], ['Total jual permintaan ini', rpPdf(jual)], ['Sisa RAB', min(sisa)]].map(r => [r[0], { content: r[1], styles: { halign: 'right' } }]), columnStyles: { 1: { cellWidth: 120 } } });
+      }
+      y += 20 * K; cek(84 * K);
+      tandaTangan([{ x: L + 80, label: 'Diajukan Oleh,', ttd: TTD.pic }, { x: PW / 2, label: 'Disetujui Oleh,', ttd: TTD.dir }, { x: R - 80, label: 'Disetujui Oleh,', ttd: TTD.dirut }], y);
+    });
+
+    // ===== Halaman 2: PURCHASE ORDER (PO) =====
+    doc.addPage();
+    satuHalaman(() => {
+      huruf('bold', 14); doc.text('PURCHASE ORDER (PO)', PW / 2, 104, { align: 'center' });
+      y = 134; const g = 14 * K;
+      [['Tanggal', tglS], ['No. PO', noSurat], ['Lokasi', l.nama + ' - ' + l.bagian]].forEach(([k, v], i) => { huruf('bold'); doc.text(k, L, y + i * g); huruf(); doc.text(v, L + 62, y + i * g); });
+      huruf('bold'); doc.text('Detail Pesanan :', L, y + 3 * g + 4 * K); y += 3 * g + 12 * K;
+      tabel({ startY: y, head: [['No', 'Deskripsi Barang', 'Qty', 'Harga Beli', 'Total']],
+        body: [...isi.map((x, i) => [{ content: i + 1, styles: { halign: 'center' } }, x.h.nama, { content: x.q, styles: { halign: 'center' } }, { content: rpPdf(x.h.harga_beli), styles: { halign: 'right' } }, { content: rpPdf(x.h.harga_beli * x.q), styles: { halign: 'right' } }]),
+          [{ content: 'SUBTOTAL', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(beli), styles: { halign: 'right', fontStyle: 'bold' } }]],
+        columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 40 }, 3: { cellWidth: 80 }, 4: { cellWidth: 82 } } });
+      y += 28 * K; cek(160 * K); huruf();
+      doc.text('Syarat & Ketentuan:', L, y); y += 14 * K;
+      doc.text('- Spesifikasi', L, y); doc.text(': Barang sesuai deskripsi dan spesifikasi pada daftar di atas.', L + 110, y); y += 14 * K;
+      doc.text('- Waktu Pengiriman', L, y);
+      const kirim = doc.splitTextToSize(': Penyedia wajib menyelesaikan dan mengirimkan barang maksimal 1 (satu) bulan terhitung sejak PO ini ditandatangani (Maksimal tanggal: ..................................).', W - 110);
+      doc.text(kirim, L + 110, y); y += kirim.length * 13 * K + 10 * K;
+      doc.text('Mohon dokumen ini ditandatangani sebagai bukti persetujuan kerja sama.', L, y); y += 30 * K;
+      const kol = W / 4;
+      tandaTangan([{ x: L + kol * 0.5, label: 'Pemesan,', ttd: TTD.pic }, { x: L + kol * 1.5, label: 'Mengetahui,', ttd: TTD.dir }, { x: L + kol * 2.5, label: 'Mengetahui,', ttd: TTD.dirut }, { x: L + kol * 3.5, label: 'Penyedia,', ttd: TTD.vendor }], y);
+    });
+
+    // ===== Halaman 3: DAFTAR HARGA (dari tabel peralatan_item; QTY terisi otomatis dari item permintaan) =====
+    doc.addPage();
+    satuHalaman(() => {
+      const qty = new Map(isi.map(x => [String(x.h.id), x.q])), M = 28, TW = 371;
+      let totalQ = 0, totalH = 0;
+      const body = ITEM.map((h, i) => {
+        const q = qty.get(String(h.id)) || 0, b = q > 0 ? 'bold' : 'normal'; totalQ += q; totalH += q * h.harga_jual;
+        return [{ content: i + 1, styles: { halign: 'right', fontStyle: b } }, { content: h.nama, styles: { fontStyle: b } }, { content: rpPdf(h.harga_beli), styles: { halign: 'right', fontStyle: b } }, { content: rpPdf(h.harga_jual), styles: { halign: 'right', fontStyle: b } },
+          { content: q || '', styles: { halign: 'center', fontStyle: b } }, { content: q ? rpPdf(q * h.harga_jual) : '', styles: { halign: 'right', fontStyle: b } }];
+      });
+      doc.autoTable({ theme: 'grid', startY: 36, tableWidth: TW, margin: { top: 30, bottom: 20, left: M, right: PW - M - TW }, pageBreak: 'avoid',
+        styles: { font: 'helvetica', fontSize: 6.6 * K, cellPadding: { top: 0.7 * K, bottom: 0.7 * K, left: 2.5, right: 2.5 }, lineColor: [0, 0, 0], lineWidth: 0.3, textColor: 0, valign: 'middle' },
+        headStyles: { fillColor: [139, 195, 74], textColor: 0, fontStyle: 'bold', halign: 'center' }, bodyStyles: { fillColor: [255, 255, 255] }, alternateRowStyles: { fillColor: [238, 247, 227] },
+        footStyles: { fillColor: [238, 247, 227], textColor: 0, fontStyle: 'bold' }, showFoot: 'lastPage',
+        head: [['NO', 'JENIS PERALATAN', 'HARGA BELI', 'HARGA JUAL', 'QTY', 'TOTAL JUAL']], body,
+        foot: [['', '', { content: 'GRAND TOTAL', colSpan: 2, styles: { halign: 'center' } }, { content: totalQ, styles: { halign: 'center' } }, { content: rpPdf(totalH), styles: { halign: 'right' } }]],
+        columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 175 }, 2: { cellWidth: 48 }, 3: { cellWidth: 48 }, 4: { cellWidth: 24 }, 5: { cellWidth: 56 } } });
+      const yT = doc.lastAutoTable.finalY;
+      // angka panel memakai rumus yang sama dengan form, dashboard, dan notifikasi: sisa RAB = anggaran - total jual (termasuk sebelumnya); untung = sisa RAB + (jual - beli)
+      doc.autoTable({ theme: 'grid', startY: 36 + 11 * K, tableWidth: PW - 2 * M - TW - 10, margin: { top: 30, left: M + TW + 10, right: M }, pageBreak: 'avoid',
+        styles: { font: 'helvetica', fontSize: 6.8 * K, cellPadding: { top: 1.6 * K, bottom: 1.6 * K, left: 3, right: 3 }, lineColor: [0, 0, 0], lineWidth: 0.9, textColor: 0, valign: 'middle' },
+        columnStyles: { 0: { cellWidth: 98, fontStyle: 'bold' }, 1: { halign: 'right' } },
+        body: [[{ content: 'ANGGARAN CLIENT (' + sumber.toUpperCase() + ')', styles: { fillColor: [255, 255, 0] } }, rpPdf(rab)],
+          ...(a.terpakai ? [[{ content: 'SUDAH TERPAKAI (' + nLalu + ' PERMINTAAN SEBELUMNYA)', styles: { fillColor: [0, 176, 240] } }, rpPdf(a.terpakai)]] : []),
+          [{ content: 'TOTAL BELANJA PERALATAN (HARGA JUAL)', styles: { fillColor: [0, 176, 240] } }, rpPdf(jual)],
+          [{ content: 'TOTAL BELANJA SERAGAM', styles: { fillColor: [0, 176, 240] } }, 'Rp0'], ['SISA ANGGARAN', { content: min(sisa), styles: { fontStyle: 'bold' } }],
+          ['TOTAL BELI', rpPdf(beli)], ['UNTUNG (SISA + JUAL - BELI)', { content: min(untung), styles: { fontStyle: 'bold' } }]] });
+      y = yT + 14 * K;
+      const xc = M + TW * 0.68; huruf('normal', 9); doc.text(`Semarang, ${tglPanjang}`, xc, y, { align: 'center' });
+      huruf('bold', 9); doc.text(TTD.dir[0], xc, y + 34 * K, { align: 'center' }); huruf('normal', 9); doc.text('Direktur', xc, y + 44 * K, { align: 'center' }); huruf();
+      if (y + 50 * K > 832) doc.addPage(); // tanda meluber -> ulangi dengan skala lebih kecil
+    }, false);
+
+    // ===== Halaman terakhir: RAB (file PDF lampiran halaman 1; kalau tidak ada, dibuat otomatis dari data anggaran) =====
+    const rb = ekstra.rab;
+    if (!rb) {
+      doc.addPage(); pasang(); K = 1;
+      huruf('bold', 13); doc.text('RAB (RENCANA ANGGARAN BIAYA)', PW / 2, 108, { align: 'center' });
+      huruf(); doc.text('Lokasi', L, 134); doc.text(': ' + l.nama, L + 42, 134); doc.text('Sumber', L, 148); doc.text(': ' + sumberTeks, L + 42, 148);
+      tabel({ startY: 162, margin: { top: 92, bottom: 110, left: L, right: PW - R },
+        head: [['No', 'Bagian Kerja', 'Jumlah Anggota', 'Total Anggaran (Rp)']],
+        body: [[{ content: 1, styles: { halign: 'center' } }, { content: l.bagian, styles: { fontStyle: 'bold' } }, { content: anggota || '-', styles: { halign: 'center' } }, { content: rpPdf(rab), styles: { halign: 'right', fontStyle: 'bold' } }],
+          [{ content: 'TOTAL', colSpan: 3, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(rab), styles: { halign: 'right', fontStyle: 'bold' } }]],
+        columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 92 }, 3: { cellWidth: 120 } } });
+      y += 24; huruf('bold'); doc.text('Ringkasan permintaan: ' + l.bagian, L, y); y += 8;
+      tabel({ startY: y, margin: { top: 92, bottom: 110, left: L, right: PW - R },
+        body: [['Anggaran (RAB) lokasi', rpPdf(rab)], ...(a.terpakai ? [['Sudah terpakai dari RAB (' + nLalu + ' permintaan sebelumnya)', rpPdf(a.terpakai)]] : []), ['Total penjualan (harga jual)', rpPdf(jual)], ['Sisa RAB', min(sisa)], ['Total belanja (harga beli)', rpPdf(beli)], ['Untung (sisa RAB + jual - beli)', min(untung)]].map(r => [r[0], { content: r[1], styles: { halign: 'right' } }]),
+        columnStyles: { 1: { cellWidth: 140 } } });
+    }
+    if (rb) return await gabungPdf(doc.output('arraybuffer'), rb.buf);
+    return doc.output('datauristring').split(',')[1];
+  }
+
+  // halamanSiap = gambar halaman yang sudah dilihat di preview, supaya yang terkirim sama persis dengan yang diperiksa
+  async function kirimKeAtasan(d, halamanSiap, tombol) {
+    const st = $('fStatus'), label = tombol.textContent; tombol.disabled = true; tombol.textContent = 'Mengirim…'; st.className = 'hint'; st.textContent = '';
+    let sukses = false;
+    try {
+      const halaman = halamanSiap || (await pdfKeHalaman(await siapkanPdf(d))).b64s;
+      const r = await fetch(`${SUPABASE_URL}/functions/v1/kirim-permintaan-peralatan`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lokasi_id: d.l.id, sumber: d.sumber, items: d.isi.map(x => ({ item_id: x.h.id, qty: x.q })), memo: $('fMemo').value.trim(), halaman }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
+      st.className = 'hint ok'; st.textContent = `✓ Terkirim ke Pak Yasir dan Pak Ferry (permintaan no. ${j.id}). Perlu persetujuan keduanya.`;
+      baris = [{ id: '', qty: '' }]; $('fMemo').value = ''; kosongkanRab(); await muat(); renderBaris(); sukses = true;
+    } catch (e) { st.className = 'hint bad'; st.textContent = 'Gagal: ' + e.message; }
+    tombol.disabled = false; tombol.textContent = label;
+    return sukses;
+  }
+  $('fKirim').onclick = () => { const d = ambilIsian(); if (d) kirimKeAtasan(d, null, $('fKirim')); };
+
+  // ---- preview surat sebelum dikirim ----
+  let pvUrls = [], pvData = null;
+  function tutupPreview() {
+    $('pvModal').hidden = true; $('pvHalaman').innerHTML = ''; document.body.style.overflow = '';
+    pvUrls.forEach(u => URL.revokeObjectURL(u)); pvUrls = []; pvData = null;
+  }
+  $('fPreview').onclick = async () => {
+    const d = ambilIsian(); if (!d) return;
+    const btn = $('fPreview'), st = $('fStatus'); btn.disabled = true; btn.textContent = 'Menyiapkan preview…';
+    try {
+      const g = await pdfKeHalaman(await siapkanPdf(d));
+      pvUrls.forEach(u => URL.revokeObjectURL(u)); pvUrls = g.blobs.map(b => URL.createObjectURL(b)); pvData = { d, halaman: g.b64s };
+      $('pvJudul').textContent = d.l.nama; $('pvInfo').textContent = `Surat yang akan dikirim · ${g.halaman} halaman · ${g.px} px per halaman · ${g.mb.toFixed(1).replace('.', ',')} MB`;
+      $('pvHalaman').innerHTML = pvUrls.map((u, i) => `<img src="${u}" alt="Halaman ${i + 1} dari ${pvUrls.length}">`).join('');
+      $('pvModal').hidden = false; document.body.style.overflow = 'hidden'; $('pvHalaman').scrollTop = 0;
+    } catch (e) { st.className = 'hint bad'; st.textContent = 'Gagal: ' + e.message; }
+    btn.disabled = false; btn.textContent = 'Preview surat';
+  };
+  $('pvTutup').onclick = tutupPreview;
+  $('pvModal').onclick = e => { if (e.target.id === 'pvModal') tutupPreview(); };
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('pvModal').hidden) tutupPreview(); });
+  $('pvKirim').onclick = async () => { if (!pvData) return; const { d, halaman } = pvData; if (await kirimKeAtasan(d, halaman, $('pvKirim'))) tutupPreview(); };
 
   // ---------------- MUAT + NAVIGASI ----------------
   function renderSemua() {
