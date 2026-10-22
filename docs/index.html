@@ -299,7 +299,7 @@
 <body>
 <div class="shell">
   <aside class="side">
-    <button class="on" data-pg="ringkasan" title="Ringkasan" aria-label="Ringkasan"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Ringkasan</span></button>
+    <button class="on" data-pg="ringkasan" title="Dashboard Utama" aria-label="Dashboard Utama"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Dashboard Utama</span></button>
     <button data-pg="monitor" title="Monitoring pengisian" aria-label="Monitoring pengisian"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span>Monitoring Pengisian</span></button>
     <button data-pg="permintaan" title="Permintaan seragam" aria-label="Permintaan seragam"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg><span>Permintaan Seragam</span></button>
     <button data-pg="ploting" title="Ploting seragam" aria-label="Ploting seragam"><svg viewBox="0 0 24 24"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Ploting Seragam</span></button>
@@ -308,11 +308,10 @@
     <button data-pg="tagihan" title="Tagihan" aria-label="Tagihan"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg><span>Tagihan</span></button>
     <button data-pg="laporan" title="Laporan harian" aria-label="Laporan harian"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6M9 9h2"/></svg><span>Laporan Harian</span></button>
     <div class="sp"></div>
-    <button id="sKunci" title="Kode akses nama" aria-label="Kode akses nama"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>Kode Akses Nama</span></button>
   </aside>
 
   <div class="content">
-   <nav class="mobnav" id="mobnav"><button class="on" data-pg="ringkasan">Ringkasan</button><button data-pg="monitor">Monitoring</button><button data-pg="permintaan">Permintaan</button><button data-pg="ploting">Ploting</button><button data-pg="inventaris">Inventaris</button><button data-pg="pengiriman">Pengiriman</button><button data-pg="tagihan">Tagihan</button><button data-pg="laporan">Laporan</button></nav>
+   <nav class="mobnav" id="mobnav"><button class="on" data-pg="ringkasan">Dashboard</button><button data-pg="monitor">Monitoring</button><button data-pg="permintaan">Permintaan</button><button data-pg="ploting">Ploting</button><button data-pg="inventaris">Inventaris</button><button data-pg="pengiriman">Pengiriman</button><button data-pg="tagihan">Tagihan</button><button data-pg="laporan">Laporan</button></nav>
 
    <div class="page" id="pg-ringkasan">
     <header class="kop"><img src="aset/logo-ray.png" alt="Logo PT. Ray Mitra Perkasa"><div><h1>SISTEM ADMINISTRASI SERAGAM KARYAWAN</h1><div class="perusahaan">PT. RAY MITRA PERKASA</div><div class="sub">Dashboard seluruh modul · tiap bagian punya filter sendiri di atasnya</div></div></header>
@@ -768,7 +767,6 @@
   $('daftar').onclick = e => { const b = e.target.closest('.item'); if (b) pilih(b.dataset.k); };
   $('detail').onclick = e => { if (e.target.id === 'back') { terbukaHP = false; renderDetail(); } };
   $('detail').onchange = e => { if (e.target.id === 'fb') { fBagian = e.target.value; renderDetail(); } };
-  $('sKunci').onclick = () => { tampil('monitor'); window.scrollTo({ top: 0, behavior: 'smooth' }); $('kode').hidden ? $('btnKode').focus() : $('kode').focus(); };
 
   // ---- sub halaman ----
   const HALAMAN = ['ringkasan', 'monitor', 'permintaan', 'ploting', 'inventaris', 'pengiriman', 'tagihan', 'laporan'];
