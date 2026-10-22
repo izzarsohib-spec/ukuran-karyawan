@@ -65,6 +65,8 @@
   .fa { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px; }
   .pesan { font-size:.86rem; margin:8px 0; min-height:1.2em; } .pesan.ok { color:var(--ok); } .pesan.bad { color:var(--bad); }
   .bingkai { width:100%; height:80vh; min-height:520px; border:0; border-radius:14px; background:transparent; }
+  .massal { display:flex; gap:10px; flex-wrap:wrap; align-items:center; background:rgba(245,213,71,.08); border:1px solid rgba(245,213,71,.3); border-radius:16px; padding:10px 14px; margin-bottom:12px; }
+  .massal select { background:rgba(255,255,255,.07); border:1px solid var(--stroke); border-radius:12px; padding:7px 11px; min-width:0; } .massal select option { background:#202024; }
   .kosong { color:var(--muted); padding:26px 10px; text-align:center; }
   .kunci-info { text-align:center; padding:34px 16px; } .kunci-info p { color:var(--muted); max-width:460px; margin:6px auto 16px; }
   .log td.diff { max-width:520px; overflow-wrap:anywhere; font-size:.8rem; color:var(--muted); }
@@ -108,13 +110,15 @@
   async function tulis(fn, body) { await Masuk.wajib(); return rpc(fn, { kode: 'sesi', ...body }); }
 
   const GALAT_LOGIN = 'Sesi login berakhir atau akun tidak punya akses admin. Masuk lagi.';
-  const TBL = { acuan_rekap: 'Anggaran seragam', harga_seragam: 'Harga seragam', peralatan_lokasi: 'Lokasi peralatan', peralatan_item: 'Peralatan', ukuran_pekerja: 'Karyawan' };
+  const TBL = { acuan_rekap: 'Anggaran seragam', harga_seragam: 'Harga seragam', peralatan_lokasi: 'Lokasi peralatan', peralatan_item: 'Peralatan', ukuran_pekerja: 'Karyawan', cabang: 'Cabang', pic_lapangan: 'PIC lapangan', lokasi_penugasan: 'Penugasan lokasi' };
   const intOrNull = v => v === '' || v == null ? null : Math.round(Number(v));
   const numOrNull = v => v === '' || v == null ? null : Number(v);
 
   // ---------------- definisi tab ----------------
   // muat: ambil data; kolom: [judul, fungsi sel, 'r' bila rata kanan]; form(r): daftar isian (r kosong = tambah); simpan/hapus: panggil server
-  let ACUAN = [];
+  let ACUAN = [], CAB = [], PICS = [];
+  const opsiCab = (aktifSaja = true) => CAB.filter(c => !aktifSaja || c.aktif).map(c => [c.id, c.nama]);
+  const opsiPic = cab => PICS.filter(p => p.aktif && String(p.cabang_id) === String(cab)).map(p => [p.id, p.nama]);
   const TABS = {
     acuan: {
       grup: 'Seragam', nama: 'Anggaran & anggota', ket: 'RAB seragam, jumlah anggota, bagian kerja, dan masa kontrak per lokasi (dipakai di halaman Seragam). Nama lokasi harus sama dengan pilihan lokasi di Google Form supaya pengisian ukuran terhitung.',
@@ -184,6 +188,55 @@
       simpan: (v, r) => tulis('peralatan_simpan_item', { p_id: r?.id ?? null, p_nama: v.nama, p_beli: numOrNull(v.beli), p_jual: numOrNull(v.jual), p_aktif: r ? !!v.aktif : true }),
       hapus: r => tulis('admin_hapus_item_peralatan', { p_id: r.id }), namaBaris: r => r.nama
     },
+    penugasan: {
+      grup: 'Organisasi', nama: 'Lokasi & PIC', login: true, tanpaTambah: true, massal: true,
+      ket: 'Cabang dan PIC lapangan untuk setiap lokasi (Seragam dan Peralatan). Ubah satu lokasi dengan tombol Ubah, atau cari/saring lalu terapkan ke semua lokasi yang tampil sekaligus (penugasan massal).',
+      pra: async () => { [CAB, PICS] = await Promise.all([rpc('admin_daftar_cabang'), rpc('admin_daftar_pic', { kode: 'sesi' })]); },
+      muat: () => rpc('admin_daftar_penugasan', { kode: 'sesi' }), cari: r => [r.lokasi, r.cabang, r.pic].join(' '), id: r => r.lokasi,
+      statusOpsi: [['semua', 'Semua status'], ['tanpa', 'Belum ada PIC', r => !r.pic], ['ada', 'Sudah ada PIC', r => !!r.pic]],
+      saring: [['cabang', 'Semua cabang', r => r.cabang], ['pic', 'Semua PIC', r => r.pic]],
+      kolom: [['Lokasi', r => `<b>${esc(r.lokasi)}</b><div class="sub">${esc({ seragam: 'Seragam', peralatan: 'Peralatan', keduanya: 'Seragam & Peralatan' }[r.sumber] || r.sumber)} · ${num(r.anggota)} anggota</div>`],
+        ['Cabang', r => r.cabang ? `<span class="badge">${esc(r.cabang)}</span>` : '<span class="sub">belum ada</span>'], ['PIC lapangan', r => r.pic ? esc(r.pic) : '<span class="sub">belum ada</span>'], ['Diperbarui', r => r.diperbarui ? waktu(r.diperbarui) : '']],
+      kpi: d => { const per = {}; d.forEach(r => { per[r.cabang || '(belum ada cabang)'] = (per[r.cabang || '(belum ada cabang)'] || 0) + 1; });
+        return [['Lokasi', num(d.length)], ['Belum ada PIC', num(d.filter(r => !r.pic).length)], ...Object.entries(per).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => [k, num(v) + ' lokasi'])]; },
+      form: r => [
+        { k: 'lokasi', l: 'Lokasi', v: r?.lokasi, ro: true },
+        { k: 'cabang', l: 'Cabang', v: r?.cabang_id || '', sel: [['', '(belum ada cabang)'], ...opsiCab()] },
+        { k: 'pic', l: 'PIC lapangan', v: r?.pic_id || '', sel: [['', '(belum ada PIC)'], ...opsiPic(r?.cabang_id)], hint: 'Pilihan PIC mengikuti cabang yang dipilih' }],
+      simpan: (v, r) => tulis('admin_simpan_penugasan', { p_lokasi: [r.lokasi], p_cabang: intOrNull(v.cabang), p_pic: intOrNull(v.pic) }), namaBaris: r => r.lokasi
+    },
+    pic: {
+      grup: 'Organisasi', nama: 'PIC lapangan', login: true,
+      ket: 'Daftar PIC lapangan per cabang. PIC yang masih memegang lokasi tidak bisa dihapus; nonaktifkan saja, atau pindahkan lokasinya dulu di tab Lokasi & PIC.',
+      pra: async () => { CAB = await rpc('admin_daftar_cabang'); },
+      muat: () => rpc('admin_daftar_pic', { kode: 'sesi' }), cari: r => [r.nama, r.cabang, r.telepon].join(' '), id: r => r.id, mati: r => !r.aktif,
+      statusOpsi: [['semua', 'Semua status'], ['aktif', 'Aktif', r => r.aktif], ['nonaktif', 'Nonaktif', r => !r.aktif]],
+      saring: [['cabang', 'Semua cabang', r => r.cabang]],
+      kolom: [['PIC', r => `<b>${esc(r.nama)}</b>${r.catatan ? `<div class="sub">${esc(r.catatan)}</div>` : ''}`], ['Cabang', r => `<span class="badge">${esc(r.cabang)}</span>`], ['Telepon', r => esc(r.telepon || '-')], ['Lokasi dipegang', r => num(r.jumlah_lokasi), 'r'], ['Status', r => r.aktif ? '<span class="badge ok">Aktif</span>' : '<span class="badge">Nonaktif</span>']],
+      kpi: d => [['PIC', num(d.length)], ['Aktif', num(d.filter(r => r.aktif).length)], ['Lokasi terbagi', num(d.reduce((a, r) => a + r.jumlah_lokasi, 0))]],
+      form: r => [
+        { k: 'nama', l: 'Nama PIC', v: r?.nama, req: true },
+        { k: 'cabang', l: 'Cabang', v: r?.cabang_id || '', req: true, sel: opsiCab() },
+        { k: 'telepon', l: 'Telepon', v: r?.telepon },
+        { k: 'catatan', l: 'Catatan', v: r?.catatan },
+        ...(r ? [{ k: 'aktif', l: 'PIC aktif', cek: true, v: r.aktif }] : [])],
+      simpan: (v, r) => tulis('admin_simpan_pic', { p_id: r?.id ?? null, p_nama: v.nama, p_cabang: intOrNull(v.cabang), p_telepon: v.telepon, p_aktif: r ? !!v.aktif : true, p_catatan: v.catatan }),
+      hapus: r => tulis('admin_hapus_pic', { p_id: r.id }), namaBaris: r => r.nama
+    },
+    cabang: {
+      grup: 'Organisasi', nama: 'Cabang',
+      ket: 'Kantor utama dan cabang. Cabang yang masih punya PIC atau lokasi tidak bisa dihapus; nonaktifkan saja.',
+      muat: () => rpc('admin_daftar_cabang'), cari: r => [r.nama, r.kota].join(' '), id: r => r.id, mati: r => !r.aktif,
+      kolom: [['Cabang', r => `<b>${esc(r.nama)}</b>`], ['Jenis', r => r.jenis === 'pusat' ? '<span class="badge ok">Kantor pusat</span>' : '<span class="badge">Cabang</span>'], ['Kota', r => esc(r.kota || '-')], ['PIC aktif', r => num(r.jumlah_pic), 'r'], ['Lokasi', r => num(r.jumlah_lokasi), 'r'], ['Status', r => r.aktif ? '<span class="badge ok">Aktif</span>' : '<span class="badge">Nonaktif</span>']],
+      kpi: d => [['Cabang', num(d.length)], ['PIC aktif', num(d.reduce((a, r) => a + r.jumlah_pic, 0))], ['Lokasi terbagi', num(d.reduce((a, r) => a + r.jumlah_lokasi, 0))]],
+      form: r => [
+        { k: 'nama', l: 'Nama cabang', v: r?.nama, req: true },
+        { k: 'jenis', l: 'Jenis', v: r?.jenis || 'cabang', req: true, sel: [['cabang', 'Cabang'], ['pusat', 'Kantor pusat']] },
+        { k: 'kota', l: 'Kota', v: r?.kota },
+        ...(r ? [{ k: 'aktif', l: 'Cabang aktif', cek: true, v: r.aktif }] : [])],
+      simpan: (v, r) => tulis('admin_simpan_cabang', { p_id: r?.id ?? null, p_nama: v.nama, p_jenis: v.jenis, p_kota: v.kota, p_aktif: r ? !!v.aktif : true }),
+      hapus: r => tulis('admin_hapus_cabang', { p_id: r.id }), namaBaris: r => r.nama
+    },
     karyawan: {
       grup: 'Seragam', nama: 'Karyawan', login: true, ket: 'Data karyawan dan ukuran seragam. Karyawan yang keluar ditandai "Keluar" (tidak dihapus, riwayat tetap) dan tidak dihitung di pengisian. Setiap perubahan ukuran tercatat di Riwayat.',
       muat: () => rpc('admin_daftar_karyawan', { kode: 'sesi' }), cari: r => [r.nama, r.lokasi, r.bagian_kerja].join(' '), id: r => r.id, mati: r => !r.aktif,
@@ -246,6 +299,7 @@
     $('isi').innerHTML = '<div class="kosong">Memuat…</div>';
     try {
       if ((tab === 'karyawan' || tab === 'lokasi') && !ACUAN.length) ACUAN = await rpc('admin_daftar_acuan'); // untuk pilihan lokasi/bagian
+      if (t.pra) await t.pra();
       DATA[tab] = await t.muat();
       if (tab === 'acuan') ACUAN = DATA.acuan;
     } catch (e) { DATA[tab] = null; $('isi').innerHTML = `<div class="kosong" style="color:var(--bad)">${esc(e.login ? GALAT_LOGIN : 'Gagal memuat: ' + e.message)}</div>`; return; }
@@ -268,7 +322,8 @@
     const filter = (t.statusOpsi ? `<select data-s="st">${t.statusOpsi.map(([v, l, f]) => `<option value="${v}" ${(saring.st || t.statusOpsi[0][0]) === v ? 'selected' : ''}>${esc(l)}${f ? ' (' + num(d.filter(f).length) + ')' : ''}</option>`).join('')}</select>` : '')
       + (t.saring || []).map(([k, semua, f]) => `<select data-s="${k}"><option value="">${esc(semua)}</option>${uniq(d, f).map(x => `<option value="${esc(x)}" ${saring[k] === x ? 'selected' : ''}>${esc(TBL[x] || x)}</option>`).join('')}</select>`).join('');
     const b = baris(), tampil = b.slice(0, batas);
-    $('isi').innerHTML = `<div class="bar"><input type="search" id="cari" placeholder="Cari…" value="${esc(q)}">${filter}${t.simpan ? '<button class="btn cta" id="btnTambah">+ Tambah</button>' : ''}<span class="sub" style="color:var(--muted);font-size:.8rem">${num(b.length)} baris</span></div>
+    $('isi').innerHTML = `<div class="bar"><input type="search" id="cari" placeholder="Cari…" value="${esc(q)}">${filter}${t.simpan && !t.tanpaTambah ? '<button class="btn cta" id="btnTambah">+ Tambah</button>' : ''}<span class="sub" style="color:var(--muted);font-size:.8rem">${num(b.length)} baris</span></div>
+      ${t.massal ? `<div class="massal"><b>Penugasan massal</b><span class="sub">untuk ${num(b.length)} lokasi yang tampil sekarang</span><select id="bCab"><option value="">Pilih cabang</option>${opsiCab().map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join('')}</select><select id="bPic"><option value="">(tanpa PIC)</option></select><button class="btn cta" id="btnMassal">Terapkan</button></div>` : ''}
       <div id="formArea">${edit !== undefined ? formHtml() : ''}</div><div class="pesan ${pesan ? pesan[0] : ''}" id="pesan">${pesan ? esc(pesan[1]) : ''}</div>
       <div class="wrap"><table class="${t.log ? 'log' : ''}"><thead><tr>${t.kolom.map(c => `<th class="${c[2] === 'r' ? 'r' : ''}">${esc(c[0])}</th>`).join('')}${t.simpan || t.hapus ? '<th></th>' : ''}</tr></thead>
       <tbody>${tampil.map(r => `<tr class="${t.mati && t.mati(r) ? 'mati' : ''}">${t.kolom.map(c => `<td class="${c[2] || ''}">${c[2] === 'diff' ? esc(c[1](r)) : c[1](r)}</td>`).join('')}${t.simpan || t.hapus ? `<td class="aksi" data-i="${esc(t.id(r))}">${(t.aksiLain ? t.aksiLain(r) : []).map(([a, l]) => `<button class="btn" data-a="${a}">${l}</button>`).join('')}${t.simpan ? '<button class="btn" data-a="ubah">Ubah</button>' : ''}${t.hapus ? '<button class="btn bahaya" data-a="hapus">Hapus</button>' : ''}</td>` : ''}</tr>`).join('') || `<tr><td colspan="${t.kolom.length + 1}" class="kosong">Tidak ada data.</td></tr>`}</tbody></table></div>
@@ -289,6 +344,11 @@
       <div class="fa"><button class="btn cta" type="submit" id="btnSimpan">Simpan</button><button class="btn" type="button" id="btnBatal">Batal</button>${t.hitung ? '<button class="btn" type="button" id="btnHitung">Hitung RAB otomatis</button>' : ''}<span class="sub" style="color:var(--muted);font-size:.78rem">Perlu login admin untuk menyimpan.</span></div></form>`;
   }
   // bagian kerja karyawan bergantung pada lokasi yang dipilih
+  // pilihan PIC mengikuti cabang (form penugasan dan bar penugasan massal)
+  function isiPic(selCab, selPic, pilih) {
+    if (!selCab || !selPic) return; const ada = pilih || selPic.value;
+    selPic.innerHTML = '<option value="">(tanpa PIC)</option>' + opsiPic(selCab.value).map(([v, l]) => `<option value="${v}" ${String(v) === String(ada) ? 'selected' : ''}>${esc(l)}</option>`).join('');
+  }
   function isiBagian() {
     const f = $('form'); if (!f || tab !== 'karyawan' || !f.lokasi) return;
     const pilih = edit?.bagian_kerja, sekarang = f.bagian.value || pilih || '';
@@ -310,6 +370,14 @@
     if (el.dataset.t) { tab = el.dataset.t; q = ''; saring = {}; batas = 100; edit = undefined; pesan = null; gambarTab(); return muatTab(false); }
     if (el.id === 'btnMasuk') return Masuk.wajib().catch(() => {});
     if (el.id === 'btnTambah') return bukaForm(null);
+    if (el.id === 'btnMassal') {
+      const lok = baris().map(r => r.lokasi), cab = intOrNull($('bCab').value), pic = intOrNull($('bPic').value);
+      if (!lok.length) { pesan = ['bad', 'Tidak ada lokasi yang tampil.']; return gambar(); }
+      if (!cab) { pesan = ['bad', 'Pilih cabang dulu.']; return gambar(); }
+      const nc = CAB.find(c => c.id === cab).nama, np = pic ? PICS.find(p => p.id === pic).nama : 'tanpa PIC';
+      if (!confirm(`Tetapkan ${lok.length} lokasi ke cabang ${nc}, PIC: ${np}?\n\nPenugasan lama pada lokasi-lokasi ini akan diganti. Perubahan tercatat di log.`)) return;
+      return jalankan(() => tulis('admin_simpan_penugasan', { p_lokasi: lok, p_cabang: cab, p_pic: pic }), `${lok.length} lokasi ditetapkan ke ${nc} (${np}).`, el);
+    }
     if (el.id === 'btnBatal') { edit = undefined; pesan = null; return gambar(); }
     if (el.id === 'btnLagi') { batas += 100; return gambar(); }
     if (el.id === 'btnHitung') { const h = t.hitung(nilaiForm($('form'))); if (h) { $('form').rab.value = h.rab; $('pesan').className = 'pesan ok'; $('pesan').textContent = 'RAB diisi dari per orang × anggota × bulan.'; } else { $('pesan').className = 'pesan bad'; $('pesan').textContent = 'Isi anggaran per orang, jumlah anggota, dan lama kontrak dulu.'; } return; }
@@ -328,6 +396,8 @@
   document.addEventListener('change', e => {
     if (e.target.dataset.s) { saring[e.target.dataset.s] = e.target.value; batas = 100; gambar(); }
     if (e.target.name === 'lokasi' && tab === 'karyawan') isiBagian();
+    if (e.target.name === 'cabang' && tab === 'penugasan') isiPic($('form').cabang, $('form').pic, '');
+    if (e.target.id === 'bCab') isiPic($('bCab'), $('bPic'), '');
   });
   document.addEventListener('submit', e => {
     if (e.target.id !== 'form') return; e.preventDefault();
