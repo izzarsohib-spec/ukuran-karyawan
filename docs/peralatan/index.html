@@ -109,6 +109,21 @@
   .aksi input[type=number] { width:100%; }
   .tl { border-left:2px solid var(--stroke); margin:0 0 8px 6px; padding:2px 0 2px 12px; }
   details.req > summary { font-size:.95rem; color:var(--text); } details.req > summary .muted { font-size:.82rem; }
+  /* grafik Dashboard Utama (sama dengan seragam) */
+  .dgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); gap:12px; margin-bottom:18px; }
+  .vc { background:rgba(14,14,16,.45); border:1px solid var(--stroke); border-radius:18px; padding:14px 16px; min-width:0; }
+  .vh { display:flex; justify-content:space-between; gap:10px; margin-bottom:10px; } .vh b { font-size:.9rem; }
+  .vt { display:flex; gap:2px; background:rgba(255,255,255,.07); border-radius:99px; padding:2px; height:fit-content; flex:none; }
+  .vt button { border:0; background:transparent; color:var(--muted); border-radius:99px; padding:3px 10px; font-size:.72rem; } .vt button.on { background:#fff; color:#111; font-weight:600; }
+  .vsvg { width:100%; height:auto; display:block; }
+  .vleg { display:flex; gap:14px; font-size:.76rem; color:var(--muted); margin-bottom:4px; } .vleg i { display:inline-block; width:14px; height:3px; border-radius:2px; margin-right:6px; vertical-align:middle; }
+  .vbars { display:grid; gap:2px; }
+  .hb { display:grid; grid-template-columns:minmax(96px,40%) 1fr auto; gap:10px; align-items:center; padding:5px 4px; border-radius:8px; outline:none; }
+  .hb:hover, .hb:focus-visible { background:rgba(255,255,255,.06); }
+  .hl { font-size:.78rem; line-height:1.25; color:var(--muted); overflow-wrap:anywhere; }
+  .ht { display:flex; height:14px; } .ht i { display:block; height:100%; margin-left:2px; min-width:2px; } .ht i:first-child { margin-left:0; } .ht i:last-child { border-radius:0 4px 4px 0; }
+  .hv { font-size:.78rem; font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
+  .vtab { max-height:300px; }
   @media (max-width: 640px) {
     .side { display:none; } .shell { margin:0; border-radius:0; border:0; } .content { padding:18px 14px 40px; } .kop img { height:56px; } .kop { gap:12px; }
     .mobnav { display:flex; gap:6px; margin-bottom:14px; overflow-x:auto; scrollbar-width:none; }
@@ -136,10 +151,8 @@
     <section class="page" id="pg-dashboard">
       <div class="alur" id="alur"></div>
       <div class="kpi" id="kpi"></div>
-      <div class="grid2">
-        <div class="card"><h3>Pemakaian anggaran terbesar</h3><div id="topPakai"></div></div>
-        <div class="card"><h3>Permintaan terbaru</h3><div id="terbaru"></div></div>
-      </div>
+      <div class="dgrid" id="dGrid"></div>
+      <div class="card"><h3>Permintaan terbaru</h3><div id="terbaru"></div></div>
     </section>
 
     <section class="page" id="pg-permintaan" hidden>
@@ -249,9 +262,8 @@
     $('kpi').innerHTML = [['Lokasi', LOK.length, `${dipesan.length} sudah memesan`], ['Total anggaran', rpR(rab), 'RAB peralatan seluruh lokasi'], ['Terpakai', rpR(pakai), rab ? (100 * pakai / rab).toFixed(1).replace('.', ',') + '% dari anggaran' : ''],
       ['Sisa anggaran', rpR(rab - pakai), `${lewat} lokasi melebihi RAB`], ['Total jual', rpR(jual), 'tanpa yang ditolak'], ['Untung', rpR(untung), 'sisa RAB + jual − beli'], ['Menunggu persetujuan', menunggu, 'permintaan baru']]
       .map(([k, v, s]) => `<div><small>${k}</small><b class="${k === 'Untung' && untung < 0 ? 'neg' : ''}">${esc(v)}</b><em>${esc(s)}</em></div>`).join('');
-    const top = LOK.filter(l => Number(l.terpakai) > 0).map(l => ({ l, pct: Number(l.rab) ? 100 * Number(l.terpakai) / Number(l.rab) : 999 })).sort((a, b) => b.pct - a.pct).slice(0, 8);
-    $('topPakai').innerHTML = top.map(({ l, pct }) => `<div style="margin-bottom:12px"><div class="rl" style="display:flex;justify-content:space-between;gap:8px"><span>${esc(l.nama)}</span><b class="${pct > 100 ? 'neg' : ''}">${pct > 900 ? '—' : pct.toFixed(0) + '%'}</b></div><div class="bar ${pct > 100 ? 'bad' : pct > 85 ? 'warn' : ''}"><i style="width:${Math.min(100, pct)}%"></i></div></div>`).join('') || '<div class="kosong">Belum ada pemakaian.</div>';
     $('terbaru').innerHTML = REQ.slice(0, 5).map(kartuReq).join('') || '<div class="kosong">Belum ada permintaan.</div>';
+    renderGrafikDash();
   }
 
   // ---------------- PERMINTAAN ----------------
@@ -624,6 +636,65 @@
       gap: { label: 'Lokasi dengan penambahan', besar: idn(tambah.length), pill: `${idn(tambah.reduce((a, x) => a + x.r.ini.length - 1, 0))} permintaan tambahan`, ket: 'meminta lagi pada kontrak yang sama',
         worst: terbanyak && { kecil: 'Paling sering meminta', nama: terbanyak.l.nama, detail: `${terbanyak.r.ini.length} permintaan`, aksi: 'lokasi', arg: terbanyak.l.nama } } };
   }
+
+  // ================= GRAFIK DASHBOARD UTAMA (gaya sama dengan dashboard seragam: kartu dengan tombol Grafik / Tabel) =================
+  const WD = { s1: '#3987e5', s2: '#d95926', ok: '#0ca30c', warn: '#fab219', bad: '#d03b3b', track: 'rgba(255,255,255,.14)', grid: 'rgba(255,255,255,.09)', permukaan: '#19191c' };
+  const modeG = new Map();
+  const nice = v => { const p = Math.pow(10, Math.floor(Math.log10(Math.max(v, 1)))), f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; };
+  const kompak = v => v >= 1e9 ? (v / 1e9).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' M' : v >= 1e6 ? (v / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' jt' : v >= 1e3 ? (v / 1e3).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' rb' : String(v);
+  // batang horizontal: rows = [{label, segs:[{v, warna, nama}], teks, ket}]; penuh = tiap baris diskalakan ke 100% (meter)
+  function batangH(rows, { penuh = false, fmt = idn } = {}) {
+    const maks = Math.max(1, ...rows.map(r => r.segs.reduce((a, s) => a + s.v, 0)));
+    return `<div class="vbars">${rows.map(r => { const tot = r.segs.reduce((a, s) => a + s.v, 0), skala = penuh ? 100 / Math.max(tot, 1) : 100 / maks;
+      const tip = [r.label, ...(r.ket ? [r.ket] : []), ...r.segs.map(s => `${s.nama}: ${fmt(s.v)}`)].join(' · ');
+      return `<div class="hb" title="${esc(tip)}" tabindex="0"><span class="hl">${esc(r.label)}</span><div class="ht">${r.segs.filter(s => s.v > 0).map(s => `<i style="width:${(s.v * skala).toFixed(2)}%;background:${s.warna}"></i>`).join('')}</div><span class="hv">${esc(r.teks ?? fmt(tot))}</span></div>`; }).join('') || '<div class="kosong">Belum ada data.</div>'}</div>`;
+  }
+  // grafik garis per bulan dengan sumbu nilai; seri[].nilai = [[kunciBulan, nilai], ...]
+  function garisLengkap(seri, fmt) {
+    if (!seri.some(s => s.nilai.some(x => x[1] > 0))) return '<div class="kosong">Belum ada data bertanggal.</div>';
+    const V = 340, Ht = 185, L = 40, R = 12, T = 10, B = 24, n = seri[0].nilai.length, mx = Math.max(1, ...seri.flatMap(s => s.nilai.map(x => x[1]))), langkah = nice(mx / 4), ymax = langkah * 4;
+    const x = i => L + (n === 1 ? (V - L - R) / 2 : i * (V - L - R) / (n - 1)), y = v => T + (Ht - T - B) * (1 - v / ymax);
+    const grid = [0, 1, 2, 3, 4].map(k => `<line x1="${L}" x2="${V - R}" y1="${y(k * langkah)}" y2="${y(k * langkah)}" stroke="${WD.grid}"/><text x="${L - 6}" y="${y(k * langkah) + 4}" text-anchor="end" font-size="11" fill="#a4a4ae">${kompak(k * langkah)}</text>`).join('');
+    const garis = seri.map(s => `<path d="M${s.nilai.map((v, i) => `${x(i).toFixed(1)},${y(v[1]).toFixed(1)}`).join(' L')}" fill="none" stroke="${s.warna}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`
+      + s.nilai.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v[1]).toFixed(1)}" r="${i === n - 1 ? 4 : 3}" fill="${s.warna}" stroke="${WD.permukaan}" stroke-width="2" tabindex="0"><title>${esc(s.nama)} ${labelBulan(v[0])}: ${esc(fmt(v[1]))}</title></circle>`).join('')).join('');
+    const lab = (i, a) => `<text x="${x(i)}" y="${Ht - 8}" text-anchor="${a}" font-size="11" fill="#a4a4ae">${labelBulan(seri[0].nilai[i][0])}</text>`;
+    const legenda = seri.length > 1 ? `<div class="vleg">${seri.map(s => `<span><i style="background:${s.warna}"></i>${esc(s.nama)}</span>`).join('')}</div>` : '';
+    return `${legenda}<svg class="vsvg" viewBox="0 0 ${V} ${Ht}" role="img" aria-label="${esc(seri.map(s => s.nama).join(', '))} per bulan">${grid}${garis}${lab(0, 'start')}${n > 4 ? lab(Math.floor((n - 1) / 2), 'middle') : ''}${n > 1 ? lab(n - 1, 'end') : ''}</svg>`;
+  }
+  const tabelH = (head, rows) => `<div class="wrap vtab"><table><thead><tr>${head.map((h, i) => `<th class="${i ? 'r' : ''}">${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map((c, i) => `<td class="${i ? 'r' : ''}">${esc(c)}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${head.length}" class="kosong">Tidak ada data.</td></tr>`}</tbody></table></div>`;
+  function kartuG(id, judul, sub, grafik, tabel) {
+    const m = modeG.get(id) || 'grafik';
+    return `<div class="vc"><div class="vh"><div><b>${esc(judul)}</b><div class="muted">${esc(sub)}</div></div><span class="vt"><button class="${m === 'grafik' ? 'on' : ''}" data-vm="${id}|grafik">Grafik</button><button class="${m === 'tabel' ? 'on' : ''}" data-vm="${id}|tabel">Tabel</button></span></div>${m === 'grafik' ? grafik : tabel}</div>`;
+  }
+  function renderGrafikDash() {
+    const ak = REQ.filter(aktif);
+    // 1 + 2: pemakaian dan anggaran per lokasi
+    const pakai = LOK.filter(l => Number(l.terpakai) > 0).map(l => ({ l, rab: Number(l.rab), t: Number(l.terpakai), pct: Number(l.rab) ? 100 * Number(l.terpakai) / Number(l.rab) : 999 })).sort((a, b) => b.pct - a.pct).slice(0, 10);
+    const warnaPakai = x => x.t > x.rab ? WD.bad : x.pct > 85 ? WD.warn : WD.s1;
+    const besar = [...LOK].sort((a, b) => Number(b.rab) - Number(a.rab)).slice(0, 10).map(l => ({ l, rab: Number(l.rab), t: Number(l.terpakai) }));
+    // 3 + 4: status dan tahap
+    const st = [['menunggu', 'Menunggu persetujuan', WD.warn], ['disetujui', 'Disetujui keduanya', WD.ok], ['ditolak', 'Ditolak / revisi', WD.bad], ['arsip', 'Arsip sheet lama', WD.s1]].map(([k, l, w]) => [l, REQ.filter(p => stReq(p) === k).length, w]);
+    const web = REQ.filter(p => p.status !== 'arsip'), tp = [['menunggu', 'Menunggu persetujuan', WD.warn], ['belanja', 'Perlu dibelanjakan', WD.s2], ['kirim', 'Siap dikirim', WD.s1], ['jalan', 'Dalam pengiriman', '#8aa4ff'], ['selesai', 'Selesai, diterima', WD.ok]].map(([k, l, w]) => [l, web.filter(p => tahapReq(p) === k).length, w]);
+    // 5: jual dan beli per bulan
+    const jualB = perBulan(ak, p => Number(p.total_jual)), beliB = perBulan(ak, p => Number(p.total_beli));
+    // 6: peralatan terbanyak
+    const per = new Map(); for (const p of ak) for (const i of p.items || []) per.set(i.nama, (per.get(i.nama) || 0) + i.qty);
+    const top = [...per].sort((a, b) => b[1] - a[1]).slice(0, 10);
+    // 7: sumber anggaran
+    const sum = s => ak.filter(p => p.sumber_anggaran === s).reduce((a, p) => a + Number(p.total_jual), 0), sumber = [['Anggaran peralatan', sum('peralatan')], ['Anggaran seragam', sum('seragam')]];
+    $('dGrid').innerHTML =
+      kartuG('g-pakai', 'Pemakaian anggaran per lokasi', '10 lokasi dengan persentase terbesar (terpakai dari anggaran)', batangH(pakai.map(x => ({ label: x.l.nama, teks: x.pct > 900 ? 'tanpa RAB' : x.pct.toFixed(0) + '%', ket: `anggaran ${rpR(x.rab)}`, segs: [{ v: Math.min(x.t, x.rab || x.t), warna: warnaPakai(x), nama: 'Terpakai' }, { v: Math.max(x.rab - x.t, 0), warna: WD.track, nama: 'Sisa' }] })), { penuh: true, fmt: rpR }),
+        tabelH(['Lokasi', 'Anggaran', 'Terpakai', '%'], pakai.map(x => [x.l.nama, rp(x.rab), rp(x.t), x.pct > 900 ? '-' : x.pct.toFixed(0) + '%'])))
+      + kartuG('g-besar', 'Anggaran terbesar', '10 lokasi dengan anggaran tertinggi', batangH(besar.map(x => ({ label: x.l.nama, teks: `${rpR(x.t)} / ${rpR(x.rab)}`, segs: [{ v: Math.min(x.t, x.rab), warna: x.t > x.rab ? WD.bad : WD.s1, nama: 'Terpakai' }, { v: Math.max(x.rab - x.t, 0), warna: WD.track, nama: 'Sisa' }] })), { fmt: rpR }),
+        tabelH(['Lokasi', 'Anggaran', 'Terpakai', 'Sisa'], besar.map(x => [x.l.nama, rp(x.rab), rp(x.t), rp(x.rab - x.t)])))
+      + kartuG('g-status', 'Status permintaan', 'menurut persetujuan pimpinan', batangH(st.map(([l, v, w]) => ({ label: l, teks: String(v), segs: [{ v, warna: w, nama: 'Permintaan' }] }))), tabelH(['Status', 'Jumlah'], st.map(([l, v]) => [l, idn(v)])))
+      + kartuG('g-tahap', 'Tahap pengadaan', 'permintaan dari web sampai barang diterima', batangH(tp.map(([l, v, w]) => ({ label: l, teks: String(v), segs: [{ v, warna: w, nama: 'Permintaan' }] }))), tabelH(['Tahap', 'Jumlah'], tp.map(([l, v]) => [l, idn(v)])))
+      + kartuG('g-bulan', 'Jual dan beli per bulan', 'permintaan yang tidak ditolak', garisLengkap([{ nama: 'Jual', warna: WD.s1, nilai: jualB }, { nama: 'Beli', warna: WD.s2, nilai: beliB }], rpR),
+        tabelH(['Bulan', 'Jual', 'Beli'], jualB.map((v, i) => [labelBulan(v[0]), rp(v[1]), rp(beliB[i][1])])))
+      + kartuG('g-item', 'Peralatan paling banyak diminta', '10 peralatan dengan unit terbanyak', batangH(top.map(([n, q]) => ({ label: n, teks: idn(q) + ' unit', segs: [{ v: q, warna: WD.s1, nama: 'Unit' }] }))), tabelH(['Peralatan', 'Unit'], top.map(([n, q]) => [n, idn(q)])))
+      + kartuG('g-sumber', 'Sumber anggaran', 'nilai jual menurut anggaran yang dipakai', batangH(sumber.map(([l, v], i) => ({ label: l, teks: rpR(v), segs: [{ v, warna: i ? WD.s2 : WD.s1, nama: 'Jual' }] })), { fmt: rpR }), tabelH(['Sumber', 'Jual'], sumber.map(([l, v]) => [l, rp(v)])));
+  }
+  $('dGrid').onclick = e => { const b = e.target.closest('[data-vm]'); if (!b) return; const [id, m] = b.dataset.vm.split('|'); modeG.set(id, m); renderGrafikDash(); };
 
   // ---------------- MUAT + NAVIGASI ----------------
   function renderSemua() {
