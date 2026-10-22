@@ -107,6 +107,8 @@ Deno.serve(async (req) => {
   const hasil: Record<string, number> = {};
   for (const p of PIMPINAN) {
     const url = (a: string) => `${Deno.env.get('SUPABASE_URL')}/functions/v1/keputusan?id=${baru.id}&p=${p.kunci}&t=${token[p.kunci]}&a=${a}`;
+    // Tolak/Revisi membuka halaman web agar pimpinan bisa menulis alasan (tombol http ntfy tidak bisa menerima teks)
+    const urlRevisi = `${WEB}/revisi.html?id=${baru.id}&p=${p.kunci}&t=${token[p.kunci]}`;
     try {
       const r = await fetch(`https://ntfy.sh/${p.topik()}`, {
         method: 'POST',
@@ -115,7 +117,7 @@ Deno.serve(async (req) => {
           Click: urlSurat, // mengetuk notifikasi langsung membuka surat lengkap
           Priority: '4',
           Tags: 'package',
-          Actions: `http, Setujui ${p.nama}, ${url('setuju')}, method=POST, clear=true; http, Tolak/Revisi ${p.nama}, ${url('tolak')}, method=POST, clear=true; view, Buka surat, ${urlSurat}`,
+          Actions: `http, Setujui ${p.nama}, ${url('setuju')}, method=POST, clear=true; view, Tolak/Revisi ${p.nama}, ${urlRevisi}; view, Buka surat, ${urlSurat}`,
         },
         body: teks,
       });

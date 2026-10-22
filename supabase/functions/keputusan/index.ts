@@ -4,14 +4,20 @@
 // verify_jwt dimatikan karena ntfy tidak bisa mengirim JWT; keamanan lewat token acak per permintaan per pimpinan.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const teks = (s: string, status = 200) => new Response(s, { status, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+// Tombol Tolak/Revisi membuka halaman revisi.html di web; halaman itu memanggil fungsi ini dengan alasan di body JSON ({alasan}).
+// Karena itu fungsi menjawab CORS dari web administrasi.
+const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'content-type' };
+const teks = (s: string, status = 200) => new Response(s, { status, headers: { 'Content-Type': 'text/plain; charset=utf-8', ...CORS } });
 const NAMA: Record<string, string> = { yasir: 'Pak Yasir', ferry: 'Pak Ferry' };
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
   if (req.method !== 'POST') return teks('Gunakan tombol di notifikasi ntfy.', 405);
   const u = new URL(req.url), id = Number(u.searchParams.get('id')), t = u.searchParams.get('t') ?? '', a = u.searchParams.get('a'), p = u.searchParams.get('p');
   const keputusan = a === 'setuju' ? 'disetujui' : a === 'tolak' ? 'ditolak' : null;
   if (!id || t.length < 32 || !keputusan) return teks('Permintaan tidak valid.', 400);
+  let alasan = '';
+  if (keputusan === 'ditolak') { try { const b = await req.json(); alasan = String(b?.alasan ?? '').trim().slice(0, 500); } catch { /* tombol lama tanpa body */ } }
 
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const { data: r } = await db.from('permintaan')
@@ -38,6 +44,7 @@ Deno.serve(async (req) => {
   const lain = p === 'yasir' ? r.status_ferry : r.status_yasir;
   const akhir = keputusan === 'ditolak' || lain === 'ditolak' ? 'ditolak' : keputusan === 'disetujui' && lain === 'disetujui' ? 'disetujui' : 'menunggu';
   const ubah: Record<string, unknown> = p === 'yasir' ? { status_yasir: keputusan, diputuskan_yasir: now } : { status_ferry: keputusan, diputuskan_ferry: now };
+  if (alasan) ubah[p === 'yasir' ? 'alasan_yasir' : 'alasan_ferry'] = alasan;
   ubah.status = akhir; ubah.diputuskan = akhir === 'menunggu' ? null : now;
   const { error } = await db.from('permintaan').update(ubah).eq('id', id).eq(p === 'yasir' ? 'status_yasir' : 'status_ferry', 'menunggu');
   if (error) return teks('Gagal menyimpan keputusan.', 500);
