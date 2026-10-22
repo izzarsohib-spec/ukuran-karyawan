@@ -99,6 +99,7 @@
   @media (max-width:980px) { .top { grid-template-columns:1fr; } .hero { min-height:0; } .hero h2 { margin-right:min(40%,150px); font-size:1.4rem; } }
   @media (max-width:520px) { .gapcard { grid-template-columns:1fr; } .ringhero span { display:none; } .ringhero { width:min(30%,110px); right:14px; top:16px; } .ringhero b { font-size:1.2rem; } }
   /* alur pengadaan di Dashboard Utama, form belanja/kirim, dan garis waktu riwayat lokasi */
+  .ringkas { display:flex; flex-wrap:wrap; gap:6px 22px; margin:0 0 14px; color:var(--muted); font-size:.9rem; } .ringkas b { color:var(--text); font-family:var(--head); font-size:1.02rem; margin-left:2px; } .ringkas b.neg { color:var(--bad); }
   .alur { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:14px; }
   .langkah { text-align:left; background:rgba(0,0,0,.28); border:1px solid var(--stroke); border-radius:18px; padding:12px 16px; color:inherit; position:relative; }
   .langkah:hover { border-color:var(--accent); } .langkah small { color:var(--muted); font-size:.72rem; } .langkah b { display:block; font-family:var(--head); font-size:1.6rem; line-height:1.1; } .langkah span { font-size:.8rem; color:var(--muted); }
@@ -155,10 +156,8 @@
     <header class="kop"><img src="../aset/logo-ray.png" alt="Logo PT. Ray Mitra Perkasa"><div><h1>SISTEM ADMINISTRASI PERALATAN</h1><div class="perusahaan">PT. RAY MITRA PERKASA</div><div class="muted" id="sub">Memuat data…</div></div></header>
 
     <section class="page" id="pg-dashboard">
-      <div class="alur" id="alur"></div>
-      <div class="kpi" id="kpi"></div>
+      <div class="ringkas" id="ringkas"></div>
       <div class="dgrid" id="dGrid"></div>
-      <div class="card"><h3>Permintaan terbaru</h3><div id="terbaru"></div></div>
     </section>
 
     <section class="page" id="pg-permintaan" hidden>
@@ -282,10 +281,9 @@
     // sisa RAB dihitung sekali per lokasi (anggaran - total jual permintaan lokasi itu); untung = sisa RAB + jual - beli
     const dipesan = LOK.filter(l => per.some(p => p.lokasi_id === l.id)), sisaDipesan = dipesan.reduce((a, l) => a + Number(l.rab) - Number(l.terpakai), 0);
     const untung = sisaDipesan + jual - beli, menunggu = REQ.filter(p => stReq(p) === 'menunggu').length, lewat = LOK.filter(l => Number(l.rab) - Number(l.terpakai) < 0).length;
-    $('kpi').innerHTML = [['Lokasi', LOK.length, `${dipesan.length} sudah memesan`], ['Total anggaran', rpR(rab), 'RAB peralatan seluruh lokasi'], ['Terpakai', rpR(pakai), rab ? (100 * pakai / rab).toFixed(1).replace('.', ',') + '% dari anggaran' : ''],
-      ['Sisa anggaran', rpR(rab - pakai), `${lewat} lokasi melebihi RAB`], ['Total jual', rpR(jual), 'tanpa yang ditolak'], ['Untung', rpR(untung), 'sisa RAB + jual − beli'], ['Menunggu persetujuan', menunggu, 'permintaan baru']]
-      .map(([k, v, s]) => `<div><small>${k}</small><b class="${k === 'Untung' && untung < 0 ? 'neg' : ''}">${esc(v)}</b><em>${esc(s)}</em></div>`).join('');
-    $('terbaru').innerHTML = REQ.slice(0, 5).map(kartuReq).join('') || '<div class="kosong">Belum ada permintaan.</div>';
+    const rp1 = (t, v, neg) => `<span>${t} <b class="${neg ? 'neg' : ''}">${esc(v)}</b></span>`;
+    $('ringkas').innerHTML = [rp1('Anggaran', rpR(rab)), rp1('terpakai', rpR(pakai) + (rab ? ' (' + (100 * pakai / rab).toFixed(1).replace('.', ',') + '%)' : '')), rp1('sisa', rpR(rab - pakai), rab - pakai < 0), rp1('jual', rpR(jual)), rp1('untung', rpR(untung), untung < 0),
+      rp1('lokasi melebihi RAB', lewat, lewat > 0), rp1('menunggu persetujuan', menunggu)].join('');
     renderGrafikDash();
   }
 
@@ -610,14 +608,6 @@
     const kirim = [...r.total.values()].reduce((a, x) => a + x.kirim, 0), akhir = r.ini[n - 1];
     el.textContent = `Riwayat lokasi ini: ${n} permintaan pada kontrak berjalan, ${idn(kirim)} unit sudah terkirim (terakhir ${akhir.tanggal ? tgl2(akhir.tanggal) : 'tanggal tidak tercatat'}). Permintaan ini akan tercatat sebagai Penambahan ke-${n}.`;
   }
-
-  // alur di Dashboard Utama: tiap kotak bisa diklik menuju halamannya
-  function renderAlur() {
-    const web = REQ.filter(p => p.status !== 'arsip'), t = k => web.filter(p => tahapReq(p) === k).length;
-    const kotak = [['menunggu', 'Menunggu persetujuan', 'permintaan'], ['belanja', 'Perlu dibelanjakan', 'proses'], ['kirim', 'Siap dikirim', 'proses'], ['jalan', 'Dalam pengiriman', 'proses'], ['selesai', 'Selesai, diterima', 'proses']];
-    $('alur').innerHTML = kotak.map(([k, nm, pg], n) => `<button class="langkah" data-go="${pg}" data-tahap="${k}"><small>${n + 1}</small><b>${t(k)}</b><span>${nm}</span></button>`).join('');
-  }
-  $('alur').onclick = e => { const b = e.target.closest('[data-go]'); if (!b) return; if (b.dataset.go === 'proses') xF = b.dataset.tahap; else pF = 'menunggu'; renderSemua(); tampil(b.dataset.go); };
 
   // ---- mini dashboard halaman Belanja & Kirim dan Riwayat Lokasi ----
   function miniProses() {
@@ -987,7 +977,7 @@
   function renderSemua() {
     const sel = $('fLok').value;
     $('fLok').innerHTML = '<option value="">Pilih lokasi</option>' + LOK.map(l => `<option value="${l.id}" ${String(l.id) === sel ? 'selected' : ''}>${esc(l.nama)}</option>`).join('');
-    renderDash(); renderAnggaran(); renderRiwayat(); renderProses(); renderLokasi(); renderAlur(); renderBaris(); renderMini();
+    renderDash(); renderAnggaran(); renderRiwayat(); renderProses(); renderLokasi(); renderBaris(); renderMini();
     const baru = REQ.filter(p => p.status !== 'arsip'), nb = k => baru.filter(p => k === 'semua' || stReq(p) === k).length;
     $('pChips').innerHTML = [['semua', 'Semua'], ['menunggu', 'Menunggu'], ['disetujui', 'Disetujui'], ['ditolak', 'Ditolak / revisi']].map(([k, t]) => `<button class="chip ${pF === k ? 'on' : ''}" data-k="${k}">${t} ${nb(k)}</button>`).join('');
     $('daftarBaru').innerHTML = baru.filter(p => pF === 'semua' || stReq(p) === pF).slice(0, 12).map(kartuReq).join('') || '<div class="kosong">Belum ada permintaan dari web. Permintaan lama dari spreadsheet ada di Riwayat.</div>';
