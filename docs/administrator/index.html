@@ -25,7 +25,8 @@
   .kop h1 { font-size:clamp(1.3rem, 2.4vw, 2rem); letter-spacing:.01em; }
   .kop .perusahaan { font-family:var(--head); font-weight:700; font-size:.95rem; letter-spacing:.14em; color:var(--accent); margin:6px 0 4px; }
   .kop .sub { color:var(--muted); }
-  .chips { display:flex; gap:8px; flex-wrap:wrap; margin:22px 0 14px; }
+  .chips { display:flex; gap:10px 24px; flex-wrap:wrap; margin:22px 0 14px; }
+  .grup { display:flex; gap:8px; flex-wrap:wrap; align-items:center; } .grup .gl { color:var(--accent); font-size:.7rem; letter-spacing:.12em; text-transform:uppercase; font-weight:700; margin-right:2px; }
   .chip { border:1px solid var(--stroke); background:rgba(255,255,255,.05); border-radius:99px; padding:8px 16px; cursor:pointer; font-size:.88rem; color:var(--muted); font-weight:600; }
   .chip:hover { background:var(--panel2); color:var(--text); } .chip.on { background:var(--panel2); color:var(--text); border-color:rgba(255,255,255,.35); }
   .chip .kunci { font-size:.7rem; opacity:.7; margin-left:4px; }
@@ -115,7 +116,7 @@
   let ACUAN = [];
   const TABS = {
     acuan: {
-      nama: 'Anggaran & anggota seragam', ket: 'RAB seragam, jumlah anggota, bagian kerja, dan masa kontrak per lokasi (dipakai di halaman Seragam). Nama lokasi harus sama dengan pilihan lokasi di Google Form supaya pengisian ukuran terhitung.',
+      grup: 'Seragam', nama: 'Anggaran & anggota', ket: 'RAB seragam, jumlah anggota, bagian kerja, dan masa kontrak per lokasi (dipakai di halaman Seragam). Nama lokasi harus sama dengan pilihan lokasi di Google Form supaya pengisian ukuran terhitung.',
       muat: () => rpc('admin_daftar_acuan'), cari: r => [r.client, r.lokasi_form, r.bagian_kerja].join(' '), id: r => r.id,
       kolom: [['Client / lokasi', r => `<b>${esc(r.client)}</b>${r.client !== r.lokasi_form ? `<div class="sub">${esc(r.lokasi_form)}</div>` : ''}`], ['Bagian kerja', r => esc(r.bagian_kerja)], ['Anggota', r => num(r.jumlah_anggota), 'r'],
         ['Anggaran', r => rp(r.anggaran), 'r'], ['Kontrak', r => r.masa_kontrak + ' bln', 'r'], ['Per orang/bln', r => rp(r.anggaran_per_orang), 'r'], ['Karyawan aktif', r => num(r.karyawan), 'r'], ['Permintaan', r => num(r.riwayat), 'r']],
@@ -132,7 +133,7 @@
       hapus: r => tulis('admin_hapus_acuan', { p_id: r.id }), namaBaris: r => `${r.client} - ${r.bagian_kerja}`
     },
     harga: {
-      nama: 'Jenis & harga seragam', ket: 'Daftar seragam dan harga beli/jual. Harga yang diubah berlaku untuk permintaan baru; permintaan lama tetap memakai harga saat dibuat.',
+      grup: 'Seragam', nama: 'Jenis & harga seragam', ket: 'Daftar seragam dan harga beli/jual. Harga yang diubah berlaku untuk permintaan baru; permintaan lama tetap memakai harga saat dibuat.',
       muat: () => rpc('admin_daftar_harga_seragam'), cari: r => [r.kategori, r.nama].join(' '), id: r => r.no,
       kolom: [['No', r => r.no, 'r'], ['Kategori', r => esc(r.kategori)], ['Nama', r => `<b>${esc(r.nama)}</b>`], ['Harga beli', r => rp(r.harga_beli), 'r'], ['Harga jual', r => rp(r.harga_jual), 'r'], ['Selisih', r => rp(r.harga_jual - r.harga_beli), 'r'], ['Dipakai', r => num(r.dipakai), 'r']],
       kpi: d => [['Jenis seragam', num(d.length)], ['Kategori', num(uniq(d, r => r.kategori).length)], ['Rata-rata selisih', rp(d.length ? d.reduce((a, r) => a + (r.harga_jual - r.harga_beli), 0) / d.length : 0)]],
@@ -145,9 +146,10 @@
       hapus: r => tulis('admin_hapus_harga_seragam', { p_no: r.no }), namaBaris: r => r.nama
     },
     lokasi: {
-      nama: 'Lokasi & RAB peralatan', ket: 'Lokasi untuk modul Peralatan: RAB, jumlah anggota, lama kontrak, dan pemetaan ke anggaran seragam. Lokasi yang sudah punya permintaan hanya bisa dinonaktifkan.',
+      grup: 'Peralatan', nama: 'Lokasi & RAB', ket: 'Lokasi untuk modul Peralatan: RAB, jumlah anggota, lama kontrak, dan pemetaan ke anggaran seragam. Lokasi yang sudah punya permintaan hanya bisa dinonaktifkan.',
       muat: () => rpc('peralatan_kelola_lokasi'), cari: r => [r.nama, r.bagian].join(' '), id: r => r.id, mati: r => !r.aktif,
-      kolom: [['Lokasi', r => `<b>${esc(r.nama)}</b><div class="sub">${esc(r.bagian || '')}${r.dari_sumber ? '' : ' · ditambah lewat web'}</div>`], ['Anggota', r => num(r.anggota), 'r'], ['Kontrak', r => (r.kontrak_bulan || '-') + ' bln', 'r'], ['RAB', r => rp(r.rab), 'r'],
+      statusOpsi: [['semua', 'Semua status'], ['aktif', 'Aktif', r => r.aktif], ['nonaktif', 'Nonaktif', r => !r.aktif], ['tanpa', 'Belum dipetakan ke anggaran seragam', r => !r.seragam_lokasi_form], ['baru', 'Ditambahkan lewat web', r => !r.dari_sumber]],
+      kolom: [['Lokasi', r => `<b>${esc(r.nama)}</b><div class="sub">${esc(r.bagian || '')}${r.dari_sumber ? '' : ' · ditambah lewat web'}</div>`], ['Anggota', r => num(r.anggota), 'r'], ['Kontrak', r => (r.kontrak_bulan || '-') + ' bln' + (r.kontrak_mulai ? `<div class="sub">sejak ${esc(r.kontrak_mulai)}</div>` : ''), 'r'], ['RAB', r => rp(r.rab), 'r'],
         ['Anggaran seragam', r => r.seragam_lokasi_form ? esc(r.seragam_lokasi_form) : '<span class="sub">belum dipetakan</span>'], ['Permintaan', r => num(r.jumlah_permintaan), 'r'], ['Status', r => r.aktif ? '<span class="badge ok">Aktif</span>' : '<span class="badge">Nonaktif</span>']],
       kpi: d => [['Lokasi', num(d.length)], ['Aktif', num(d.filter(r => r.aktif).length)], ['Total RAB', rpR(d.reduce((a, r) => a + Number(r.rab || 0), 0))], ['Belum dipetakan', num(d.filter(r => !r.seragam_lokasi_form).length)]],
       form: r => [
@@ -156,14 +158,19 @@
         { k: 'per', l: 'Anggaran per orang/bulan (Rp)', t: 'number', v: r ? Number(r.anggaran_per_orang) || '' : '', hint: 'RAB = per orang × anggota × bulan' },
         { k: 'rab', l: 'RAB peralatan (Rp)', t: 'number', v: r ? Number(r.rab) : '', req: true, min: 0 },
         { k: 'seragam', l: 'Anggaran seragam yang dipakai', sel: [['', '(belum dipetakan)'], ...uniq(ACUAN, x => x.lokasi_form).map(x => [x, x])], v: r?.seragam_lokasi_form || '' },
+        { k: 'mulai', l: 'Awal masa kontrak saat ini', t: 'date', v: r?.kontrak_mulai || '', hint: 'Permintaan sebelum tanggal ini dianggap kontrak lama di riwayat' },
         ...(r ? [{ k: 'aktif', l: 'Lokasi aktif', cek: true, v: r.aktif }] : [])],
       hitung: v => { const a = Number(v.per) * Number(v.anggota) * Number(v.kontrak); return a > 0 ? { rab: Math.round(a) } : null; },
-      simpan: (v, r) => tulis('peralatan_simpan_lokasi', { p_id: r?.id ?? null, p_nama: v.nama, p_bagian: v.bagian, p_anggota: intOrNull(v.anggota), p_kontrak: intOrNull(v.kontrak), p_per_orang: numOrNull(v.per), p_rab: numOrNull(v.rab), p_seragam: v.seragam || '', p_aktif: r ? !!v.aktif : true }),
+      simpan: async (v, r) => {
+        const id = await tulis('peralatan_simpan_lokasi', { p_id: r?.id ?? null, p_nama: v.nama, p_bagian: v.bagian, p_anggota: intOrNull(v.anggota), p_kontrak: intOrNull(v.kontrak), p_per_orang: numOrNull(v.per), p_rab: numOrNull(v.rab), p_seragam: v.seragam || '', p_aktif: r ? !!v.aktif : true });
+        if ((v.mulai || '') !== (r?.kontrak_mulai || '')) await tulis('peralatan_atur_kontrak', { p_lokasi: id, p_mulai: v.mulai || null });
+      },
       hapus: r => tulis('admin_hapus_lokasi_peralatan', { p_id: r.id }), namaBaris: r => r.nama
     },
     item: {
-      nama: 'Peralatan & harga', ket: 'Daftar peralatan dengan harga beli dan jual. Yang sudah dipakai di permintaan hanya bisa dinonaktifkan. Menyimpan menghapus tanda "perlu ditinjau".',
+      grup: 'Peralatan', nama: 'Peralatan & harga', ket: 'Daftar peralatan dengan harga beli dan jual. Yang sudah dipakai di permintaan hanya bisa dinonaktifkan. Menyimpan menghapus tanda "perlu ditinjau".',
       muat: () => rpc('peralatan_kelola_item'), cari: r => r.nama, id: r => r.id, mati: r => !r.aktif,
+      statusOpsi: [['semua', 'Semua status'], ['aktif', 'Aktif', r => r.aktif], ['nonaktif', 'Nonaktif', r => !r.aktif], ['tinjau', 'Perlu ditinjau', r => r.perlu_ditinjau]],
       kolom: [['Peralatan', r => `<b>${esc(r.nama)}</b>${r.perlu_ditinjau ? ' <span class="badge warn">perlu ditinjau</span>' : ''}`], ['Harga beli', r => rp(r.harga_beli), 'r'], ['Harga jual', r => rp(r.harga_jual), 'r'], ['Selisih', r => rp(r.harga_jual - r.harga_beli), 'r'],
         ['Dipakai', r => num(r.dipakai), 'r'], ['Status', r => r.aktif ? '<span class="badge ok">Aktif</span>' : '<span class="badge">Nonaktif</span>']],
       kpi: d => [['Peralatan', num(d.length)], ['Aktif', num(d.filter(r => r.aktif).length)], ['Perlu ditinjau', num(d.filter(r => r.perlu_ditinjau).length)]],
@@ -173,9 +180,10 @@
       hapus: r => tulis('admin_hapus_item_peralatan', { p_id: r.id }), namaBaris: r => r.nama
     },
     karyawan: {
-      nama: 'Karyawan', login: true, ket: 'Data karyawan dan ukuran seragam. Karyawan yang keluar ditandai "Keluar" (tidak dihapus, riwayat tetap) dan tidak dihitung di pengisian. Setiap perubahan ukuran tercatat di Riwayat.',
+      grup: 'Seragam', nama: 'Karyawan', login: true, ket: 'Data karyawan dan ukuran seragam. Karyawan yang keluar ditandai "Keluar" (tidak dihapus, riwayat tetap) dan tidak dihitung di pengisian. Setiap perubahan ukuran tercatat di Riwayat.',
       muat: () => rpc('admin_daftar_karyawan', { kode: 'sesi' }), cari: r => [r.nama, r.lokasi, r.bagian_kerja].join(' '), id: r => r.id, mati: r => !r.aktif,
-      saring: [['lokasi', 'Semua lokasi', r => r.lokasi], ['status', 'Karyawan aktif', null]],
+      saring: [['lokasi', 'Semua lokasi', r => r.lokasi]],
+      statusOpsi: [['aktif', 'Karyawan aktif', r => r.aktif], ['keluar', 'Sudah keluar', r => !r.aktif], ['semua', 'Semua status']],
       kolom: [['Nama', r => `<b>${esc(r.nama)}</b>`], ['Lokasi', r => esc(r.lokasi)], ['Bagian', r => esc(r.bagian_kerja)], ['Baju', r => esc(r.ukuran_baju || '-')], ['Celana', r => esc(r.ukuran_celana || '-')], ['Sepatu', r => esc(r.ukuran_sepatu || '-')],
         ['Status', r => r.aktif ? '<span class="badge ok">Aktif</span>' : `<span class="badge bad">Keluar${r.keluar_pada ? ' ' + esc(r.keluar_pada) : ''}</span>`]],
       kpi: d => [['Karyawan aktif', num(d.filter(r => r.aktif).length)], ['Sudah keluar', num(d.filter(r => !r.aktif).length)], ['Lokasi', num(uniq(d, r => r.lokasi).length)]],
@@ -191,14 +199,14 @@
       aksiLain: r => [r.aktif ? ['keluar', 'Keluar'] : ['aktif', 'Aktifkan'], ['riwayat', 'Riwayat']]
     },
     log: {
-      nama: 'Log perubahan', login: true, ket: 'Siapa mengubah apa dan kapan (nilai lama dan baru). Hanya dibaca; tidak bisa diubah.',
+      grup: 'Sistem', nama: 'Log perubahan', login: true, ket: 'Siapa mengubah apa dan kapan (nilai lama dan baru). Hanya dibaca; tidak bisa diubah.',
       muat: () => rpc('admin_log', { kode: 'sesi', p_batas: 500 }), cari: r => [r.pengguna, TBL[r.tabel], r.aksi, ringkasLog(r)].join(' '), id: r => r.id, log: true,
       saring: [['tabel', 'Semua data', r => r.tabel]],
       kolom: [['Waktu', r => waktu(r.waktu)], ['Oleh', r => esc(r.pengguna)], ['Data', r => esc(TBL[r.tabel] || r.tabel)], ['Aksi', r => `<span class="badge ${r.aksi === 'delete' ? 'bad' : r.aksi === 'insert' ? 'ok' : 'warn'}">${r.aksi === 'delete' ? 'Hapus' : r.aksi === 'insert' ? 'Tambah' : 'Ubah'}</span>`], ['Isi', r => ringkasLog(r), 'diff']],
       kpi: d => [['Entri dimuat', num(d.length)], ['Oleh admin', num(d.filter(r => !/^sistem/.test(r.pengguna)).length)], ['Dari sistem (Form/sheet)', num(d.filter(r => /^sistem/.test(r.pengguna)).length)]]
     },
     pengguna: {
-      nama: 'Pengguna', login: true, ket: 'Akun yang boleh mengubah data. Menambah akun baru dilakukan lewat Supabase (Authentication → Users) lalu didaftarkan sebagai admin; hubungi pengembang.',
+      grup: 'Sistem', nama: 'Pengguna', login: true, ket: 'Akun yang boleh mengubah data. Menambah akun baru dilakukan lewat Supabase (Authentication → Users) lalu didaftarkan sebagai admin; hubungi pengembang.',
       muat: () => rpc('admin_daftar_pengguna', { kode: 'sesi' }), cari: r => r.email, id: r => r.email,
       kolom: [['Email', r => `<b>${esc(r.email)}</b>`], ['Peran', r => esc(r.peran)], ['Status', r => r.aktif ? '<span class="badge ok">Aktif</span>' : '<span class="badge">Nonaktif</span>'], ['Dibuat', r => waktu(r.dibuat)]],
       kpi: d => [['Pengguna', num(d.length)], ['Aktif', num(d.filter(r => r.aktif).length)]]
@@ -222,7 +230,8 @@
   const perluLogin = () => cfg().login && !Masuk.masuk();
 
   function gambarTab() {
-    $('tabs').innerHTML = Object.entries(TABS).map(([k, t]) => `<button class="chip ${k === tab ? 'on' : ''}" data-t="${k}">${esc(t.nama)}${t.login ? '<span class="kunci">🔒</span>' : ''}</button>`).join('');
+    const grup = [...new Set(Object.values(TABS).map(t => t.grup))];
+    $('tabs').innerHTML = grup.map(g => `<div class="grup"><span class="gl">${esc(g)}</span>${Object.entries(TABS).filter(([, t]) => t.grup === g).map(([k, t]) => `<button class="chip ${k === tab ? 'on' : ''}" data-t="${k}">${esc(t.nama)}${t.login ? '<span class="kunci">🔒</span>' : ''}</button>`).join('')}</div>`).join('');
   }
   async function muatTab(paksa) {
     const t = cfg(); $('ket').textContent = t.ket;
@@ -238,10 +247,8 @@
   }
   function baris() {
     const t = cfg(), d = DATA[tab] || [], kata = q.trim().toLowerCase();
-    return d.filter(r => (!kata || t.cari(r).toLowerCase().includes(kata)) && (t.saring || []).every(([k, , f]) => {
-      if (k === 'status') return saring.status === 'semua' || (saring.status === 'keluar' ? !r.aktif : r.aktif);
-      return !saring[k] || f(r) === saring[k];
-    }));
+    const st = t.statusOpsi && t.statusOpsi.find(o => o[0] === (saring.st || t.statusOpsi[0][0]));
+    return d.filter(r => (!kata || t.cari(r).toLowerCase().includes(kata)) && (!st || !st[2] || st[2](r)) && (t.saring || []).every(([k, , f]) => !saring[k] || f(r) === saring[k]));
   }
   function gambar() {
     const t = cfg(); gambarTab(); $('ket').textContent = t.ket;
@@ -251,9 +258,8 @@
     }
     const d = DATA[tab]; if (!d) return;
     $('kpis').innerHTML = t.kpi(d).map(([l, v]) => `<div class="kpi"><div class="l">${esc(l)}</div><div class="v">${esc(v)}</div></div>`).join('');
-    const filter = (t.saring || []).map(([k, semua, f]) => k === 'status'
-      ? `<select data-s="status"><option value="aktif" ${saring.status !== 'semua' && saring.status !== 'keluar' ? 'selected' : ''}>Karyawan aktif</option><option value="keluar" ${saring.status === 'keluar' ? 'selected' : ''}>Sudah keluar</option><option value="semua" ${saring.status === 'semua' ? 'selected' : ''}>Semua status</option></select>`
-      : `<select data-s="${k}"><option value="">${esc(semua)}</option>${uniq(d, f).map(x => `<option value="${esc(x)}" ${saring[k] === x ? 'selected' : ''}>${esc(TBL[x] || x)}</option>`).join('')}</select>`).join('');
+    const filter = (t.statusOpsi ? `<select data-s="st">${t.statusOpsi.map(([v, l, f]) => `<option value="${v}" ${(saring.st || t.statusOpsi[0][0]) === v ? 'selected' : ''}>${esc(l)}${f ? ' (' + num(d.filter(f).length) + ')' : ''}</option>`).join('')}</select>` : '')
+      + (t.saring || []).map(([k, semua, f]) => `<select data-s="${k}"><option value="">${esc(semua)}</option>${uniq(d, f).map(x => `<option value="${esc(x)}" ${saring[k] === x ? 'selected' : ''}>${esc(TBL[x] || x)}</option>`).join('')}</select>`).join('');
     const b = baris(), tampil = b.slice(0, batas);
     $('isi').innerHTML = `<div class="bar"><input type="search" id="cari" placeholder="Cari…" value="${esc(q)}">${filter}${t.simpan ? '<button class="btn cta" id="btnTambah">+ Tambah</button>' : ''}<span class="sub" style="color:var(--muted);font-size:.8rem">${num(b.length)} baris</span></div>
       <div id="formArea">${edit !== undefined ? formHtml() : ''}</div><div class="pesan ${pesan ? pesan[0] : ''}" id="pesan">${pesan ? esc(pesan[1]) : ''}</div>
@@ -294,7 +300,7 @@
   // ---------------- peristiwa ----------------
   document.addEventListener('click', async e => {
     const t = cfg(), el = e.target;
-    if (el.dataset.t) { tab = el.dataset.t; q = ''; saring = tab === 'karyawan' ? { status: 'aktif' } : {}; batas = 100; edit = undefined; pesan = null; gambarTab(); return muatTab(false); }
+    if (el.dataset.t) { tab = el.dataset.t; q = ''; saring = {}; batas = 100; edit = undefined; pesan = null; gambarTab(); return muatTab(false); }
     if (el.id === 'btnMasuk') return Masuk.wajib().catch(() => {});
     if (el.id === 'btnTambah') return bukaForm(null);
     if (el.id === 'btnBatal') { edit = undefined; pesan = null; return gambar(); }
@@ -323,7 +329,6 @@
   });
   window.addEventListener('masuk-ubah', () => { if (cfg().login) { DATA[tab] = null; muatTab(true); } });
 
-  if (tab === 'karyawan') saring = { status: 'aktif' };
   gambarTab(); muatTab(false);
 </script>
 </body>

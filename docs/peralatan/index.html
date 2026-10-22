@@ -163,13 +163,12 @@
     <button data-pg="permintaan" title="Permintaan Peralatan"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg><span>Permintaan Peralatan</span></button>
     <button data-pg="proses" title="Belanja &amp; Kirim"><svg viewBox="0 0 24 24"><path d="M3 4h2l2.4 11h10.2L20 7H6"/><circle cx="9" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/></svg><span>Belanja &amp; Kirim</span></button>
     <button data-pg="lokasi" title="Riwayat Lokasi"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span>Riwayat Lokasi</span></button>
-    <button data-pg="kelola" title="Kelola Data"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Kelola Data</span></button>
     <button data-pg="anggaran" title="Anggaran Lokasi"><svg viewBox="0 0 24 24"><path d="M3 20h18M6 20V10M12 20V4M18 20v-7"/></svg><span>Anggaran Lokasi</span></button>
     <button data-pg="riwayat" title="Riwayat Permintaan"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span>Riwayat Permintaan</span></button>
   </aside>
 
   <div class="content">
-    <nav class="mobnav" id="mobnav"><a href="../">‹ Utama</a><button class="on" data-pg="dashboard">Dashboard</button><button data-pg="permintaan">Permintaan</button><button data-pg="proses">Belanja &amp; Kirim</button><button data-pg="lokasi">Riwayat Lokasi</button><button data-pg="kelola">Kelola</button><button data-pg="anggaran">Anggaran</button><button data-pg="riwayat">Riwayat</button></nav>
+    <nav class="mobnav" id="mobnav"><a href="../">‹ Utama</a><button class="on" data-pg="dashboard">Dashboard</button><button data-pg="permintaan">Permintaan</button><button data-pg="proses">Belanja &amp; Kirim</button><button data-pg="lokasi">Riwayat Lokasi</button><button data-pg="anggaran">Anggaran</button><button data-pg="riwayat">Riwayat</button></nav>
     <header class="kop"><img src="../aset/logo-ray.png" alt="Logo PT. Ray Mitra Perkasa"><div><h1>SISTEM ADMINISTRASI PERALATAN</h1><div class="perusahaan">PT. RAY MITRA PERKASA</div><div class="muted" id="sub">Memuat data…</div></div></header>
 
     <section class="page" id="pg-dashboard">
@@ -230,18 +229,6 @@
         <div class="chips" id="lChips"></div>
         <input id="lCari" type="search" placeholder="Cari lokasi" style="margin-bottom:12px;max-width:340px">
         <div id="lDaftar"></div>
-      </div>
-    </section>
-
-    <section class="page" id="pg-kelola" hidden>
-      <section class="top" id="md-kelola"></section>
-      <div class="ph"><h2>Kelola Data</h2><div class="muted" id="kInfo"></div></div>
-      <div class="card" id="kartuKelola">
-        <div class="chips" id="kTabs"></div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><input id="kCari" type="search" placeholder="Cari" style="max-width:340px"><button class="cta" id="kTambah">+ Tambah</button></div>
-        <div class="chips" id="kChips"></div>
-        <div id="kForm"></div>
-        <div class="wrap" id="kTabel"></div>
       </div>
     </section>
 
@@ -482,13 +469,12 @@
       gap: { label: 'Untung seluruhnya', besar: rpR(untung), pill: 'sisa RAB + jual − beli', ket: 'dari permintaan yang tidak ditolak',
         worst: besar && { kecil: 'Permintaan terbesar', nama: besar.lokasi, detail: `jual ${rpR(besar.total_jual)} · no. ${besar.id}`, aksi: 'lokasi', arg: besar.lokasi } } };
   }
-  const MINI = { permintaan: miniPermintaan, proses: miniProses, lokasi: miniLokasi, kelola: miniKelola, anggaran: miniAnggaran, riwayat: miniRiwayat };
+  const MINI = { permintaan: miniPermintaan, proses: miniProses, lokasi: miniLokasi, anggaran: miniAnggaran, riwayat: miniRiwayat };
   function renderMini() { for (const [k, f] of Object.entries(MINI)) { const el = $('md-' + k); if (el) el.innerHTML = miniHtml(f()); } }
   const gulirKe = id => { const el = $(id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
   function aksiMini(k, a, arg) {
     if (k === 'permintaan') { pF = a === 'menunggu' ? 'menunggu' : 'semua'; mF = a === 'menunggu' ? 'proses' : 'semua'; mTerbuka = false; renderSemua(); gulirKe('kartuLokasiMinta'); }
     else if (k === 'anggaran') { if (a === 'lewat') { aF = 'lewat'; $('aCari').value = ''; } else { aF = 'semua'; $('aCari').value = arg; } renderAnggaran(); gulirKe('kartuAnggaran'); }
-    else if (k === 'kelola') { kTab = a === 'tinjau' ? 'item' : kTab; kF = a === 'tinjau' ? 'tinjau' : 'semua'; $('kCari').value = a === 'cari' ? arg : ''; if (a === 'cari') { kTab = 'item'; kF = 'semua'; } tutupFormKelola(); renderKelola(); gulirKe('kartuKelola'); }
     else if (k === 'proses') { xF = a; buka = { id: null, jenis: null }; renderProses(); gulirKe('kartuProses'); }
     else if (k === 'lokasi') { if (a === 'tambah') { lF = 'tambah'; $('lCari').value = ''; } else { lF = 'semua'; $('lCari').value = arg; } renderLokasi(); gulirKe('kartuLokasi'); }
     else if (k === 'riwayat') { if (a === 'menunggu') { rF = 'menunggu'; $('rCari').value = ''; } else if (a === 'lokasi') { rF = 'semua'; $('rCari').value = arg; } else { rF = 'semua'; $('rCari').value = ''; } renderRiwayat(); gulirKe('kartuRiwayat'); }
@@ -634,18 +620,11 @@
         <div class="wrap" style="margin-top:10px"><table><thead><tr><th>Total peralatan pada kontrak ini</th><th class="r">Terkirim</th><th class="r">Diminta</th></tr></thead><tbody>${tab || '<tr><td colspan="3" class="kosong">Belum ada.</td></tr>'}</tbody></table></div>
         <h4 style="margin:14px 0 6px">Riwayat permintaan</h4>${r.ini.map((p, n) => barisRiwayat(p, n)).join('')}
         ${r.lama.length ? `<details style="margin-top:8px"><summary>Kontrak sebelumnya (${r.lama.length} permintaan)</summary>${r.lama.map((p, n) => barisRiwayat(p, n)).join('')}</details>` : ''}
-        <div class="rl" style="margin-top:12px"><label class="f" style="margin:0"><span>Awal masa kontrak saat ini</span><input type="date" class="kk" value="${l.kontrak_mulai || ''}"></label><button class="btn" data-act="kontrak" data-lok="${l.id}">Simpan</button></div>
-        <div class="hint">Permintaan sebelum tanggal ini dipisahkan sebagai kontrak sebelumnya. Kosongkan bila belum diketahui.</div></details>`;
+        <div class="hint" style="margin-top:12px">Awal masa kontrak: ${l.kontrak_mulai ? tgl2(l.kontrak_mulai) : 'belum diisi'}. Permintaan sebelum tanggal itu dipisahkan sebagai kontrak sebelumnya. Untuk mengubahnya, buka Administrator, Lokasi &amp; RAB.</div></details>`;
     }).join('') || '<div class="kosong">Belum ada lokasi dengan riwayat.</div>';
   }
   $('lChips').onclick = e => { if (e.target.dataset.k) { lF = e.target.dataset.k; renderLokasi(); } };
   $('lCari').oninput = renderLokasi;
-  $('lDaftar').onclick = async e => {
-    const b = e.target.closest('[data-act="kontrak"]'); if (!b) return;
-    const v = b.closest('.rl').querySelector('.kk').value; b.disabled = true;
-    try { await tulis('peralatan_atur_kontrak', { p_lokasi: Number(b.dataset.lok), p_mulai: v || null }); await muat(); }
-    catch (err) { alert('Gagal: ' + err.message); b.disabled = false; }
-  };
 
   // keterangan di form permintaan: lokasi ini sudah pernah menerima apa, dan permintaan baru akan jadi penambahan ke berapa
   function infoRiwayat() {
@@ -1069,121 +1048,18 @@
   $('mChips').onclick = e => { if (e.target.dataset.k) { mF = e.target.dataset.k; mTerbuka = false; renderDaftarMinta(); } };
   $('mCari').oninput = () => { mTerbuka = false; renderDaftarMinta(); };
 
-  // ================= KELOLA DATA: LOKASI (KONTRAK BARU, RAB, ANGGOTA) DAN PERALATAN (HARGA) =================
-  // Menulis butuh kode akses. Mengubah harga atau RAB tidak mengubah harga pada permintaan yang sudah dibuat.
-  let LOKK = [], ITEMK = [], SERAG = [], kTab = 'lokasi', kF = 'semua', kEdit = null; // kEdit = { jenis, id } saat form terbuka
-  const angka = v => (v === '' || v == null || isNaN(Number(v))) ? null : Number(v);
-  const kLokasiById = id => LOKK.find(l => l.id === id), kItemById = id => ITEMK.find(i => i.id === id);
-
-  function renderKelola() {
-    $('kTabs').innerHTML = [['lokasi', `Lokasi (${LOKK.length})`], ['item', `Peralatan (${ITEMK.length})`]].map(([k, t]) => `<button class="chip ${kTab === k ? 'on' : ''}" data-t="${k}">${t}</button>`).join('');
-    $('kTambah').textContent = kTab === 'lokasi' ? '+ Tambah lokasi baru' : '+ Tambah peralatan';
-    $('kInfo').textContent = `${LOKK.filter(l => l.aktif).length} lokasi aktif · ${ITEMK.filter(i => i.aktif).length} peralatan aktif`;
-    const q = $('kCari').value.trim().toLowerCase();
-    if (kTab === 'lokasi') {
-      const cocok = (l, k) => k === 'semua' || (k === 'aktif' ? l.aktif : k === 'nonaktif' ? !l.aktif : k === 'tanpa' ? l.aktif && !l.seragam_lokasi_form : !l.dari_sumber);
-      $('kChips').innerHTML = [['semua', 'Semua'], ['aktif', 'Aktif'], ['nonaktif', 'Nonaktif'], ['tanpa', 'Belum terhubung ke anggaran seragam'], ['baru', 'Ditambahkan manual']].map(([k, t]) => `<button class="chip ${kF === k ? 'on' : ''}" data-k="${k}">${t} ${LOKK.filter(l => cocok(l, k)).length}</button>`).join('');
-      const f = LOKK.filter(l => cocok(l, kF) && (!q || l.nama.toLowerCase().includes(q)));
-      $('kTabel').innerHTML = `<table><thead><tr><th>Lokasi</th><th class="r">Anggota</th><th class="r">Kontrak</th><th class="r">RAB peralatan</th><th>Anggaran seragam</th><th class="r">Permintaan</th><th></th></tr></thead><tbody>${f.map(l => `<tr class="${l.aktif ? '' : 'mati'}">
-        <td><b>${esc(l.nama)}</b><div class="muted" style="font-size:.76rem">${esc(l.bagian)}${l.aktif ? '' : ' · nonaktif'}</div></td><td class="r">${l.anggota ?? '-'}</td><td class="r">${l.kontrak_bulan ?? '-'} bln</td><td class="r">${rp(l.rab)}</td>
-        <td>${l.seragam_lokasi_form ? esc(l.seragam_lokasi_form) : '<span class="muted">belum terhubung</span>'}</td><td class="r">${l.jumlah_permintaan}</td><td class="r"><button class="btn" data-ubah="${l.id}">Ubah</button></td></tr>`).join('') || '<tr><td colspan="7" class="kosong">Tidak ada lokasi yang cocok.</td></tr>'}</tbody></table>`;
-    } else {
-      const cocok = (i, k) => k === 'semua' || (k === 'aktif' ? i.aktif : k === 'nonaktif' ? !i.aktif : i.perlu_ditinjau);
-      $('kChips').innerHTML = [['semua', 'Semua'], ['aktif', 'Aktif'], ['nonaktif', 'Nonaktif'], ['tinjau', 'Perlu ditinjau']].map(([k, t]) => `<button class="chip ${kF === k ? 'on' : ''}" data-k="${k}">${t} ${ITEMK.filter(i => cocok(i, k)).length}</button>`).join('');
-      const f = ITEMK.filter(i => cocok(i, kF) && (!q || i.nama.toLowerCase().includes(q)));
-      $('kTabel').innerHTML = `<table><thead><tr><th>Peralatan</th><th class="r">Harga beli</th><th class="r">Harga jual</th><th class="r">Untung / unit</th><th class="r">Dipakai</th><th></th></tr></thead><tbody>${f.map(i => `<tr class="${i.aktif ? '' : 'mati'}">
-        <td><b>${esc(i.nama)}</b>${i.perlu_ditinjau ? ' <span class="badge warn">perlu ditinjau</span>' : ''}${i.aktif ? '' : ' <span class="badge">nonaktif</span>'}</td><td class="r">${rp(i.harga_beli)}</td><td class="r">${rp(i.harga_jual)}</td>
-        <td class="r ${i.harga_jual < i.harga_beli ? 'neg' : ''}">${rp(i.harga_jual - i.harga_beli)}</td><td class="r">${i.dipakai}×</td><td class="r"><button class="btn" data-ubah="${i.id}">Ubah</button></td></tr>`).join('') || '<tr><td colspan="6" class="kosong">Tidak ada peralatan yang cocok.</td></tr>'}</tbody></table>`;
-    }
-  }
-
-  // form tambah / ubah (dirender hanya saat dibuka atau ditutup, supaya ketikan tidak hilang)
-  function bukaFormKelola(jenis, id) {
-    kEdit = { jenis, id };
-    const st = '<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="cta" id="kfSimpan">Simpan</button><button class="btn" id="kfBatal">Batal</button></div><div class="hint" id="kfStatus" role="status"></div>';
-    if (jenis === 'lokasi') {
-      const l = id ? kLokasiById(id) : { nama: '', bagian: 'KEAMANAN', anggota: '', kontrak_bulan: 12, anggaran_per_orang: '', rab: '', seragam_lokasi_form: '', aktif: true };
-      $('kForm').innerHTML = `<div class="aksi"><h4>${id ? 'Ubah lokasi' : 'Lokasi baru (kontrak baru)'}</h4><div class="grid3">
-        <label class="f"><span>Nama lokasi</span><input id="kfNama" maxlength="120" value="${esc(l.nama)}" placeholder="mis. KEJARI KUDUS"></label>
-        <label class="f"><span>Bagian kerja</span><input id="kfBagian" maxlength="60" value="${esc(l.bagian)}"></label>
-        <label class="f"><span>Jumlah anggota</span><input id="kfAnggota" type="number" min="0" step="1" inputmode="numeric" value="${esc(l.anggota ?? '')}"></label>
-        <label class="f"><span>Lama kontrak (bulan)</span><input id="kfKontrak" type="number" min="1" max="60" step="1" inputmode="numeric" value="${esc(l.kontrak_bulan ?? 12)}"></label>
-        <label class="f"><span>Anggaran / orang / bulan (Rp)</span><input id="kfPerOrang" type="number" min="0" step="100" inputmode="numeric" value="${esc(l.anggaran_per_orang ?? '')}"></label>
-        <label class="f"><span>RAB peralatan seluruh kontrak (Rp)</span><input id="kfRab" type="number" min="0" step="1000" inputmode="numeric" value="${esc(l.rab ?? '')}"></label></div>
-        <div style="margin-bottom:12px"><button class="btn" id="kfHitung" type="button">Hitung RAB dari anggota × bulan × biaya per orang</button></div>
-        <label class="f"><span>Terhubung ke anggaran seragam (untuk permintaan yang memakai anggaran seragam)</span><select id="kfSeragam"><option value="">Belum terhubung</option>${SERAG.map(s => `<option value="${esc(s)}" ${s === l.seragam_lokasi_form ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></label>
-        ${id ? `<label class="f" style="display:flex;gap:8px;align-items:center"><input id="kfAktif" type="checkbox" ${l.aktif ? 'checked' : ''} style="width:auto;margin:0"><span style="margin:0">Lokasi aktif (nonaktif = hilang dari daftar permintaan, riwayat tetap ada)</span></label>` : ''}${st}</div>`;
-    } else {
-      const i = id ? kItemById(id) : { nama: '', harga_beli: '', harga_jual: '', aktif: true };
-      $('kForm').innerHTML = `<div class="aksi"><h4>${id ? 'Ubah peralatan' : 'Peralatan baru'}</h4><div class="grid3">
-        <label class="f"><span>Nama peralatan</span><input id="kfNama" maxlength="120" value="${esc(i.nama)}" placeholder="mis. RADIO HT"></label>
-        <label class="f"><span>Harga beli (Rp)</span><input id="kfBeli" type="number" min="0" step="100" inputmode="numeric" value="${esc(i.harga_beli)}"></label>
-        <label class="f"><span>Harga jual (Rp)</span><input id="kfJual" type="number" min="0" step="100" inputmode="numeric" value="${esc(i.harga_jual)}"></label></div>
-        <div class="hint" id="kfMargin"></div>
-        ${id ? `<label class="f" style="display:flex;gap:8px;align-items:center"><input id="kfAktif" type="checkbox" ${i.aktif ? 'checked' : ''} style="width:auto;margin:0"><span style="margin:0">Peralatan aktif (nonaktif = tidak muncul di pilihan permintaan baru)</span></label>` : ''}
-        <div class="hint">Harga baru hanya berlaku untuk permintaan berikutnya; permintaan yang sudah dibuat tetap memakai harga saat itu.</div>${st}</div>`;
-      hitungMargin();
-    }
-    $('kForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-  function hitungMargin() {
-    const el = $('kfMargin'); if (!el) return; const b = angka($('kfBeli').value), j = angka($('kfJual').value);
-    el.className = 'hint' + (b != null && j != null && j < b ? ' bad' : ''); el.textContent = b == null || j == null ? '' : j < b ? `Harga jual lebih rendah dari harga beli (rugi ${rp(b - j)} per unit).` : `Untung ${rp(j - b)} per unit.`;
-  }
-  function tutupFormKelola() { kEdit = null; $('kForm').innerHTML = ''; }
-
-  $('kTabs').onclick = e => { const t = e.target.dataset.t; if (t) { kTab = t; kF = 'semua'; $('kCari').value = ''; tutupFormKelola(); renderKelola(); } };
-  $('kChips').onclick = e => { if (e.target.dataset.k) { kF = e.target.dataset.k; renderKelola(); } };
-  $('kCari').oninput = renderKelola;
-  $('kTambah').onclick = () => bukaFormKelola(kTab, null);
-  $('kTabel').onclick = e => { const b = e.target.closest('[data-ubah]'); if (b) bukaFormKelola(kTab, Number(b.dataset.ubah)); };
-  $('kForm').oninput = e => { if (e.target.id === 'kfBeli' || e.target.id === 'kfJual') hitungMargin(); };
-  $('kForm').onclick = async e => {
-    const id = e.target.id; if (!id) return;
-    if (id === 'kfBatal') { tutupFormKelola(); return; }
-    if (id === 'kfHitung') {
-      const a = angka($('kfAnggota').value), k = angka($('kfKontrak').value), p = angka($('kfPerOrang').value), st = $('kfStatus');
-      if (!(a > 0 && k > 0 && p > 0)) { st.className = 'hint bad'; st.textContent = 'Isi jumlah anggota, lama kontrak, dan anggaran per orang dulu.'; return; }
-      $('kfRab').value = Math.round(a * k * p); st.className = 'hint'; st.textContent = `RAB = ${a} anggota × ${k} bulan × ${rp(p)} = ${rp(a * k * p)}`; return;
-    }
-    if (id !== 'kfSimpan') return;
-    const st = $('kfStatus'), btn = $('kfSimpan'); st.className = 'hint bad'; st.textContent = '';
-    const nama = $('kfNama').value.trim(); if (!nama) { st.textContent = 'Nama wajib diisi.'; return; }
-    btn.disabled = true; btn.textContent = 'Menyimpan…';
-    try {
-      if (kEdit.jenis === 'lokasi') {
-        if (angka($('kfRab').value) == null) { st.textContent = 'RAB wajib diisi (boleh 0).'; btn.disabled = false; btn.textContent = 'Simpan'; return; }
-        await tulis('peralatan_simpan_lokasi', { p_id: kEdit.id, p_nama: nama, p_bagian: $('kfBagian').value.trim(), p_anggota: angka($('kfAnggota').value), p_kontrak: angka($('kfKontrak').value), p_per_orang: angka($('kfPerOrang').value), p_rab: angka($('kfRab').value), p_seragam: $('kfSeragam').value, p_aktif: $('kfAktif') ? $('kfAktif').checked : null });
-      } else {
-        await tulis('peralatan_simpan_item', { p_id: kEdit.id, p_nama: nama, p_beli: angka($('kfBeli').value), p_jual: angka($('kfJual').value), p_aktif: $('kfAktif') ? $('kfAktif').checked : null });
-      }
-      tutupFormKelola(); await muat();
-    } catch (err) { st.textContent = 'Gagal: ' + err.message; btn.disabled = false; btn.textContent = 'Simpan'; }
-  };
-
-  function miniKelola() {
-    const aL = LOKK.filter(l => l.aktif), aI = ITEMK.filter(i => i.aktif), tinjau = ITEMK.filter(i => i.perlu_ditinjau), tanpa = aL.filter(l => !l.seragam_lokasi_form);
-    const top = [...aI].sort((a, b) => (b.harga_jual - b.harga_beli) - (a.harga_jual - a.harga_beli)).slice(0, 8);
-    return { key: 'kelola', kecil: 'Data induk peralatan', judul: 'Kelola lokasi, kontrak baru, dan harga peralatan', labelAngka: 'Total RAB peralatan (lokasi aktif)', angka: rpR(aL.reduce((a, l) => a + Number(l.rab), 0)),
-      persen: aL.length ? 100 * (aL.length - tanpa.length) / aL.length : 0, labelRing: 'terhubung ke seragam', cta: ['Lihat peralatan perlu ditinjau', 'tinjau'],
-      kpi: [[idn(aL.length), 'Lokasi aktif', WARNA.info], [idn(aI.length), 'Peralatan aktif', WARNA.ok], [idn(tinjau.length), 'Harga perlu ditinjau', WARNA.jingga], [idn(tanpa.length), 'Belum terhubung ke seragam', WARNA.aksen]],
-      grafik: { judul: 'Untung per unit, 8 peralatan teratas', html: batangH(top.map(i => ({ label: i.nama, teks: rpR(i.harga_jual - i.harga_beli), ket: `beli ${rp(i.harga_beli)} · jual ${rp(i.harga_jual)}`, segs: [{ v: Math.max(0, i.harga_jual - i.harga_beli), warna: WD.s1, nama: 'Untung / unit' }] })), { fmt: rpR }), seri: [] },
-      gap: { label: 'Harga perlu ditinjau', besar: idn(tinjau.length), pill: tinjau.length ? 'dari data spreadsheet lama' : 'semua sudah ditinjau', ket: 'peralatan yang harganya belum dibakukan',
-        worst: tinjau[0] && { kecil: 'Tinjau dulu', nama: tinjau[0].nama, detail: `beli ${rp(tinjau[0].harga_beli)} · jual ${rp(tinjau[0].harga_jual)}`, aksi: 'cari', arg: tinjau[0].nama } } };
-  }
-
   // ---------------- MUAT + NAVIGASI ----------------
   function renderSemua() {
     const sel = $('fLok').value;
     $('fLok').innerHTML = '<option value="">Pilih lokasi</option>' + LOK.map(l => `<option value="${l.id}" ${String(l.id) === sel ? 'selected' : ''}>${esc(l.nama)}</option>`).join('');
-    renderDash(); renderAnggaran(); renderRiwayat(); renderProses(); renderLokasi(); renderBaris(); renderDaftarMinta(); renderKelola(); renderMini();
+    renderDash(); renderAnggaran(); renderRiwayat(); renderProses(); renderLokasi(); renderBaris(); renderDaftarMinta(); renderMini();
     const baru = REQ.filter(p => p.status !== 'arsip'), nb = k => baru.filter(p => k === 'semua' || stReq(p) === k).length;
     $('pChips').innerHTML = [['semua', 'Semua'], ['menunggu', 'Menunggu'], ['disetujui', 'Disetujui'], ['ditolak', 'Ditolak / revisi']].map(([k, t]) => `<button class="chip ${pF === k ? 'on' : ''}" data-k="${k}">${t} ${nb(k)}</button>`).join('');
     $('daftarBaru').innerHTML = baru.filter(p => pF === 'semua' || stReq(p) === pF).slice(0, 12).map(kartuReq).join('') || '<div class="kosong">Belum ada permintaan dari web. Permintaan lama dari spreadsheet ada di Riwayat.</div>';
     $('sub').textContent = `${LOK.length} lokasi · ${ITEM.length} peralatan · ${REQ.length} permintaan`;
   }
   async function muat() {
-    try { [LOK, ITEM, REQ, LOKK, ITEMK, SERAG] = await Promise.all([rpc('peralatan_daftar_lokasi'), rpc('peralatan_daftar_item'), rpc('peralatan_daftar_permintaan'), rpc('peralatan_kelola_lokasi'), rpc('peralatan_kelola_item'), rpc('peralatan_daftar_seragam')]); SERAG = SERAG.map(x => x.lokasi_form); dimuat = true; renderSemua(); }
+    try { [LOK, ITEM, REQ] = await Promise.all([rpc('peralatan_daftar_lokasi'), rpc('peralatan_daftar_item'), rpc('peralatan_daftar_permintaan')]); dimuat = true; renderSemua(); }
     catch (e) { $('sub').textContent = 'Gagal memuat data: ' + e.message; }
   }
   function tampil(pg) {
@@ -1193,7 +1069,7 @@
     window.scrollTo({ top: 0 });
   }
   document.querySelectorAll('[data-pg]').forEach(b => { b.onclick = () => tampil(b.dataset.pg); });
-  tampil(['dashboard', 'permintaan', 'proses', 'lokasi', 'kelola', 'anggaran', 'riwayat'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'dashboard');
+  tampil(['dashboard', 'permintaan', 'proses', 'lokasi', 'anggaran', 'riwayat'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'dashboard');
   muat();
 </script>
 </body>
