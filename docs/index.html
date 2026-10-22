@@ -125,8 +125,7 @@
 <script src="aset/auth.js"></script>
 <script>
   // Setiap bidang dibuka dalam iframe (dibuat saat pertama dibuka, lalu dipertahankan supaya isian tidak hilang saat pindah menu).
-  // Administrator sementara membuka Kelola Data; halaman Administrator lengkap menyusul.
-  const SUMBER = { seragam: 'seragam/', peralatan: 'peralatan/', administrator: 'peralatan/#kelola' };
+  const SUMBER = { seragam: 'seragam/', peralatan: 'peralatan/', administrator: 'administrator/' };
   const menu = [...document.querySelectorAll('.side .menu[data-p]')], isi = document.querySelector('.isi');
   function buka(p) {
     if (p !== 'beranda' && !SUMBER[p]) p = 'beranda';
