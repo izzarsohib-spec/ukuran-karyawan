@@ -826,7 +826,10 @@
   let mSel = '', terbukaMinta = false, mStatusF = 'semua';
   const mAnggota = () => { const l = lokasi.find(x => x.lokasi === mSel); return l && l.bagian.find(b => b.nama === $('mBagian').value); };
   // permintaan yang ditolak/revisi tidak dihitung, karena akan dibuat ulang
-  const terpakaiSebelumnya = (lok, bag) => { const a = daftarMinta.filter(p => p.lokasi_form === lok && p.bagian_kerja === bag && stReq(p) !== 'ditolak'); return { n: a.length, t: a.reduce((s, p) => s + Number(p.total_jual || 0), 0) }; };
+  // peralatan yang memakai anggaran seragam (halaman Peralatan) ikut mengurangi sisa RAB seragam bagian itu
+  let peralatanDiSeragam = new Map();
+  const jualPeralatan = (lok, bag) => peralatanDiSeragam.get(lok + '' + bag) || 0;
+  const terpakaiSebelumnya = (lok, bag) => { const a = daftarMinta.filter(p => p.lokasi_form === lok && p.bagian_kerja === bag && stReq(p) !== 'ditolak'); return { n: a.length, t: a.reduce((s, p) => s + Number(p.total_jual || 0), 0) + jualPeralatan(lok, bag) }; };
   const mRab = () => { const a = anggaran && anggaran.peta.get(mSel); return a && a.per[$('mBagian').value] || 0; };
 
   // memilih lokasi di daftar: form dikosongkan hanya kalau lokasinya berganti
@@ -1198,6 +1201,7 @@
       const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/daftar_permintaan`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: '{}' });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       daftarMinta = await r.json(); statusMuat = true;
+      try { peralatanDiSeragam = new Map((await rpc('peralatan_terpakai_seragam', {})).map(x => [x.lokasi_form + '' + x.bagian_kerja, Number(x.jual)])); } catch (e) { peralatanDiSeragam = new Map(); }
     } catch (e) { daftarMinta = []; susunStatus(); renderDaftarMinta(); $('infoMinta').textContent = 'Gagal memuat status: ' + e.message; return; }
     susunStatus(); renderDaftarMinta(); renderPlotList(); renderKirimList(); renderTagihanList(); renderRingkasan();
   }
@@ -2125,7 +2129,7 @@
     // permintaan yang ditolak tidak dihitung; sisa RAB dihitung SEKALI per bagian kerja: anggaran - total jual semua permintaan bagian itu
     const aktif = data.filter(p => stReq(p) !== 'ditolak'), jual = aktif.reduce((a, p) => a + Number(p.total_jual || 0), 0), beli = aktif.reduce((a, p) => a + Number(p.total_beli || 0), 0);
     const bagianAktif = new Map(aktif.map(p => [p.lokasi_form + '' + p.bagian_kerja, p]));
-    const sisaRab = [...bagianAktif.values()].reduce((a, q) => a + Number(q.rab || 0) - daftarMinta.filter(p => p.lokasi_form === q.lokasi_form && p.bagian_kerja === q.bagian_kerja && stReq(p) !== 'ditolak').reduce((t, p) => t + Number(p.total_jual || 0), 0), 0);
+    const sisaRab = [...bagianAktif.values()].reduce((a, q) => a + Number(q.rab || 0) - daftarMinta.filter(p => p.lokasi_form === q.lokasi_form && p.bagian_kerja === q.bagian_kerja && stReq(p) !== 'ditolak').reduce((t, p) => t + Number(p.total_jual || 0), 0) - jualPeralatan(q.lokasi_form, q.bagian_kerja), 0);
     const untung = sisaRab + jual - beli;
     const kpi = ubin('Permintaan', idn(data.length), 'dibuat') + ubin('Disetujui keduanya', idn(n('disetujui')), pct(n('disetujui'), data.length)) + ubin('Menunggu persetujuan', idn(menunggu), `Pak Yasir ${wy} · Pak Ferry ${wf}`) + ubin('Ditolak / revisi', idn(n('ditolak')), '') + ubin('Nilai jual', rpRingkas(jual), 'total harga jual, tanpa yang ditolak') + ubin('Untung', rpRingkas(untung), 'sisa RAB + jual − beli');
     const sumbu = sumbuWaktu(f.hari, data.length ? new Date(Math.min(...data.map(p => new Date(p.dibuat)))) : null), nilai = deret(sumbu, data, p => p.dibuat);

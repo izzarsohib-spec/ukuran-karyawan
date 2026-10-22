@@ -20,14 +20,18 @@ Deno.serve(async (req) => {
   if (keputusan === 'ditolak') { try { const b = await req.json(); alasan = String(b?.alasan ?? '').trim().slice(0, 500); } catch { /* tombol lama tanpa body */ } }
 
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-  const { data: r } = await db.from('permintaan')
-    .select('client,bagian_kerja,status_yasir,status_ferry,token_yasir,token_ferry,token_keputusan').eq('id', id).maybeSingle();
+  // m=peralatan: permintaan peralatan (tabel peralatan_permintaan); tanpa m: permintaan seragam
+  const per = u.searchParams.get('m') === 'peralatan', tabel = per ? 'peralatan_permintaan' : 'permintaan';
+  const { data: r } = per
+    ? await db.from('peralatan_permintaan').select('status_yasir,status_ferry,token_yasir,token_ferry,lokasi:peralatan_lokasi(nama)').eq('id', id).maybeSingle()
+    : await db.from('permintaan').select('client,bagian_kerja,status_yasir,status_ferry,token_yasir,token_ferry,token_keputusan').eq('id', id).maybeSingle();
   if (!r) return teks('Tautan tidak dikenali.', 403);
-  const lokasi = `${r.client} - ${r.bagian_kerja}`;
+  const lokasi = per ? `peralatan ${(r as any).lokasi?.nama ?? ''}` : `${(r as any).client} - ${(r as any).bagian_kerja}`;
 
   // tautan lama (sebelum ada dua pimpinan): tanpa parameter p, memutuskan untuk keduanya sekaligus
   if (!p) {
-    if (!r.token_keputusan || r.token_keputusan !== t) return teks('Tautan tidak dikenali.', 403);
+    if (per) return teks('Permintaan tidak valid.', 400);
+    if (!(r as any).token_keputusan || (r as any).token_keputusan !== t) return teks('Tautan tidak dikenali.', 403);
     if (r.status_yasir !== 'menunggu' || r.status_ferry !== 'menunggu') return teks('Sudah diputuskan.', 409);
     const now = new Date().toISOString();
     await db.from('permintaan').update({ status: keputusan, status_yasir: keputusan, status_ferry: keputusan, diputuskan: now, diputuskan_yasir: now, diputuskan_ferry: now }).eq('id', id);
@@ -46,12 +50,12 @@ Deno.serve(async (req) => {
   const ubah: Record<string, unknown> = p === 'yasir' ? { status_yasir: keputusan, diputuskan_yasir: now } : { status_ferry: keputusan, diputuskan_ferry: now };
   if (alasan) ubah[p === 'yasir' ? 'alasan_yasir' : 'alasan_ferry'] = alasan;
   ubah.status = akhir; ubah.diputuskan = akhir === 'menunggu' ? null : now;
-  const { error } = await db.from('permintaan').update(ubah).eq('id', id).eq(p === 'yasir' ? 'status_yasir' : 'status_ferry', 'menunggu');
+  const { error } = await db.from(tabel).update(ubah).eq('id', id).eq(p === 'yasir' ? 'status_yasir' : 'status_ferry', 'menunggu');
   if (error) return teks('Gagal menyimpan keputusan.', 500);
   // jika kedua pimpinan menekan hampir bersamaan, hitung ulang status akhir dari data terbaru
-  const { data: s } = await db.from('permintaan').select('status_yasir,status_ferry').eq('id', id).single();
+  const { data: s } = await db.from(tabel).select('status_yasir,status_ferry').eq('id', id).single();
   const fin = s && (s.status_yasir === 'ditolak' || s.status_ferry === 'ditolak') ? 'ditolak' : s && s.status_yasir === 'disetujui' && s.status_ferry === 'disetujui' ? 'disetujui' : 'menunggu';
-  if (fin !== akhir) await db.from('permintaan').update({ status: fin, diputuskan: fin === 'menunggu' ? null : now }).eq('id', id);
+  if (fin !== akhir) await db.from(tabel).update({ status: fin, diputuskan: fin === 'menunggu' ? null : now }).eq('id', id);
   const sisa = fin === 'menunggu' ? ` Menunggu ${NAMA[p === 'yasir' ? 'ferry' : 'yasir']}.` : fin === 'disetujui' ? ' Disetujui oleh kedua pimpinan.' : '';
   return teks(`Tercatat: ${NAMA[p]} ${keputusan} (${lokasi}).${sisa}`);
 });

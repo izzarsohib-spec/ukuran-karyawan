@@ -43,7 +43,7 @@
 <script>
   // Parameter dari tombol di notifikasi: id = nomor permintaan, p = pimpinan (yasir|ferry), t = token pribadi pimpinan tersebut.
   const FN = 'https://vqcusagijiavaoljfrib.supabase.co/functions/v1/keputusan';
-  const q = new URLSearchParams(location.search), id = q.get('id') || '', p = q.get('p') || '', t = q.get('t') || '';
+  const q = new URLSearchParams(location.search), id = q.get('id') || '', p = q.get('p') || '', t = q.get('t') || '', m = q.get('m') === 'peralatan' ? '&m=peralatan' : '';
   const $ = i => document.getElementById(i);
   const nama = { yasir: 'Pak Yasir', ferry: 'Pak Ferry' }[p];
   if (!/^\d+$/.test(id) || !nama || t.length < 32) { $('f').hidden = true; $('sub').textContent = ''; $('pesan').innerHTML = '<span class="gagal">Tautan tidak valid.</span>'; }
@@ -54,7 +54,7 @@
     const alasan = $('alasan').value.trim(); if (!alasan) return;
     $('kirim').disabled = true; $('kirim').textContent = 'Mengirim…'; $('pesan').textContent = '';
     try {
-      const r = await fetch(`${FN}?id=${encodeURIComponent(id)}&p=${encodeURIComponent(p)}&t=${encodeURIComponent(t)}&a=tolak`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ alasan }) });
+      const r = await fetch(`${FN}?id=${encodeURIComponent(id)}&p=${encodeURIComponent(p)}&t=${encodeURIComponent(t)}&a=tolak${m}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ alasan }) });
       const teks = await r.text();
       if (r.ok) { $('f').hidden = true; $('pesan').innerHTML = ''; const s = document.createElement('div'); s.className = 'sukses'; s.textContent = teks; $('pesan').append(s); }
       else { const s = document.createElement('span'); s.className = 'gagal'; s.textContent = teks || 'Gagal mengirim.'; $('pesan').append(s); $('kirim').disabled = false; $('kirim').textContent = 'Kirim penolakan'; }

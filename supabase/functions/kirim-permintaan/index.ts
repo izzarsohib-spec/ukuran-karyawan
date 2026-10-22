@@ -61,7 +61,10 @@ Deno.serve(async (req) => {
   // sisa RAB = anggaran - total JUAL; penjualan permintaan sebelumnya pada lokasi + bagian yang sama ikut mengurangi RAB (yang ditolak/revisi tidak dihitung)
   // untung = sisa RAB + (jual - beli)
   const { data: lalu } = await db.from('permintaan').select('total_jual').eq('lokasi_form', lokasi_form).eq('bagian_kerja', bagian).or('status.is.null,status.neq.ditolak');
-  const terpakai = (lalu ?? []).reduce((a: number, x: any) => a + Number(x.total_jual || 0), 0);
+  // peralatan yang memakai anggaran seragam bagian ini ikut mengurangi RAB
+  const { data: per } = await db.rpc('peralatan_terpakai_seragam');
+  const dariPeralatan = (per ?? []).filter((x: any) => x.lokasi_form === lokasi_form && x.bagian_kerja === bagian).reduce((a: number, x: any) => a + Number(x.jual || 0), 0);
+  const terpakai = (lalu ?? []).reduce((a: number, x: any) => a + Number(x.total_jual || 0), 0) + dariPeralatan;
   const sisa = rab - terpakai - tJual, untung = sisa + (tJual - tBeli);
   const catatan = String(memo ?? '').slice(0, 1000);
 

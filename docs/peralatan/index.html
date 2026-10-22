@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Sistem Administrasi Peralatan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700&display=swap">
+<style>
+  :root {
+    --bg:#0b0b0d; --shell:#19191c; --panel:rgba(255,255,255,.075); --panel2:rgba(255,255,255,.12); --stroke:rgba(255,255,255,.12);
+    --text:#f5f5f7; --muted:#a4a4ae; --accent:#f5d547; --ok:#b9f36f; --ok-bg:rgba(185,243,111,.14); --warn:#ffb25e; --warn-bg:rgba(255,138,61,.17);
+    --bad:#ff8f86; --bad-bg:rgba(255,92,80,.17); --info:#7db7ff; --head:"Syne", "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing:border-box; }
+  html { color-scheme:dark; scroll-behavior:smooth; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  button, input, select, textarea { font:inherit; color:inherit; }
+  button { cursor:pointer; }
+  h1, h2, h3 { font-family:var(--head); margin:0; letter-spacing:-.01em; }
+  .num { font-family:var(--head); font-variant-numeric:tabular-nums; }
+  .muted { color:var(--muted); } .r { text-align:right; } .neg { color:var(--bad); }
+
+  .shell { position:relative; display:flex; margin:16px; min-height:calc(100vh - 32px); background:var(--shell); border:1px solid var(--stroke); border-radius:34px; overflow:clip; }
+  .shell::before { content:""; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(52% 38% at 52% 14%, rgba(255,122,47,.62), transparent 72%), radial-gradient(34% 30% at 100% 2%, rgba(255,196,96,.28), transparent 72%), radial-gradient(40% 36% at 0% 100%, rgba(255,110,60,.16), transparent 72%); }
+  .side { position:sticky; top:14px; align-self:flex-start; margin:14px 0 14px 14px; width:64px; flex:none; z-index:3; background:#08080a; border-radius:26px; padding:14px 12px;
+          display:flex; flex-direction:column; gap:10px; height:calc(100vh - 60px); overflow:hidden; transition:width .22s ease, margin-right .22s ease, box-shadow .22s ease; }
+  .side:hover, .side:focus-within { width:224px; margin-right:-160px; box-shadow:0 0 0 1px var(--stroke), 0 18px 48px rgba(0,0,0,.55); }
+  .side button, .side a { height:40px; border:0; border-radius:12px; background:transparent; color:var(--muted); display:flex; align-items:center; gap:14px; padding:0 10px; flex:none; font-size:13.5px; white-space:nowrap; text-align:left; text-decoration:none; }
+  .side button:hover, .side a:hover, .side button.on { background:var(--panel2); color:var(--text); }
+  .side a.home { height:44px; border-bottom:1px solid var(--stroke); border-radius:12px 12px 0 0; margin-bottom:4px; }
+  .side svg { width:20px; height:20px; flex:none; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .side span { opacity:0; transition:opacity .15s ease; pointer-events:none; }
+  .side:hover span, .side:focus-within span { opacity:1; transition-delay:.08s; }
+  .content { position:relative; z-index:1; flex:1; min-width:0; padding:24px 26px 48px; }
+  .mobnav { display:none; }
+
+  .kop { display:flex; align-items:center; gap:22px; margin-bottom:20px; }
+  .kop img { height:84px; width:auto; flex:none; filter:drop-shadow(0 0 22px rgba(255,255,255,.2)) drop-shadow(0 4px 14px rgba(0,0,0,.35)); }
+  .kop h1 { font-size:clamp(1.2rem, 2.4vw, 1.9rem); line-height:1.12; }
+  .kop .perusahaan { font-family:var(--head); font-weight:700; letter-spacing:.14em; color:var(--accent); margin:4px 0 4px; font-size:clamp(.9rem,1.5vw,1.15rem); }
+  .page[hidden] { display:none; }
+  .ph { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:12px; margin:6px 0 16px; }
+  .ph h2 { font-size:1.5rem; }
+  .card { background:var(--panel); border:1px solid var(--stroke); border-radius:24px; padding:20px; margin-bottom:18px; backdrop-filter:blur(6px); }
+  .card h3 { font-size:1.05rem; margin-bottom:12px; }
+  .kpi { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px,1fr)); gap:12px; margin-bottom:18px; }
+  .kpi > div { background:rgba(0,0,0,.28); border:1px solid var(--stroke); border-radius:18px; padding:14px 16px; }
+  .kpi small { color:var(--muted); display:block; } .kpi b { font-family:var(--head); font-size:1.35rem; display:block; margin:2px 0; } .kpi em { font-style:normal; font-size:.78rem; color:var(--muted); }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; } @media (max-width:980px) { .grid2 { grid-template-columns:1fr; } }
+  input, select, textarea { width:100%; background:rgba(0,0,0,.3); border:1px solid var(--stroke); border-radius:12px; padding:9px 12px; }
+  input:focus, select:focus, textarea:focus { outline:2px solid rgba(245,213,71,.6); outline-offset:1px; }
+  label.f { display:block; font-size:.78rem; color:var(--muted); margin-bottom:12px; } label.f > :not(span):not(small) { margin-top:5px; }
+  .btn, .cta { border:1px solid var(--stroke); background:transparent; border-radius:12px; padding:9px 16px; } .btn:hover { background:var(--panel2); }
+  .cta { background:var(--text); color:#111; border-color:var(--text); font-weight:600; } .cta:disabled { opacity:.5; cursor:default; }
+  .chip { border:1px solid var(--stroke); background:transparent; border-radius:99px; padding:6px 14px; color:var(--muted); } .chip.on { background:#fff; color:#111; border-color:#fff; font-weight:600; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+  .badge { display:inline-block; padding:3px 11px; border-radius:99px; font-size:.76rem; font-weight:600; white-space:nowrap; background:var(--panel2); color:var(--muted); }
+  .badge.ok { background:var(--ok-bg); color:var(--ok); } .badge.warn { background:var(--warn-bg); color:var(--warn); } .badge.bad { background:var(--bad-bg); color:var(--bad); }
+  .wrap { overflow-x:auto; } table { width:100%; border-collapse:collapse; font-size:.9rem; }
+  th { text-align:left; font-weight:600; color:var(--muted); font-size:.76rem; padding:8px 10px; border-bottom:1px solid var(--stroke); white-space:nowrap; }
+  td { padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.06); vertical-align:middle; } th.r, td.r { text-align:right; }
+  td input, td select { padding:7px 9px; }
+  .bar { height:8px; border-radius:99px; background:rgba(255,255,255,.12); overflow:hidden; } .bar i { display:block; height:100%; background:var(--info); border-radius:99px; } .bar.bad i { background:var(--bad); } .bar.warn i { background:var(--warn); } .bar.ok i { background:var(--ok); }
+  .sums { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:10px; margin-top:14px; } .sums > div { background:rgba(0,0,0,.28); border-radius:14px; padding:10px 12px; } .sums span { display:block; font-size:.74rem; color:var(--muted); } .sums b { font-family:var(--head); }
+  .hint { font-size:.85rem; margin-top:10px; color:var(--muted); } .hint.bad { color:var(--bad); } .hint.ok { color:var(--ok); }
+  .x { border:0; background:transparent; color:var(--muted); font-size:1rem; padding:4px 8px; border-radius:8px; } .x:hover { background:var(--bad-bg); color:var(--bad); }
+  .req { border-top:1px solid rgba(255,255,255,.08); padding:12px 0; } .req:first-child { border-top:0; }
+  .req .rl { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; color:var(--muted); font-size:.88rem; padding:2px 0; }
+  .alasan { margin:4px 0; padding:8px 10px; border-left:3px solid var(--bad); border-radius:6px; background:var(--panel2); font-size:.9rem; white-space:pre-wrap; overflow-wrap:anywhere; }
+  details summary { cursor:pointer; color:var(--muted); font-size:.85rem; margin-top:4px; } details table { margin-top:6px; }
+  .kosong { padding:22px; text-align:center; color:var(--muted); }
+  @media (max-width: 640px) {
+    .side { display:none; } .shell { margin:0; border-radius:0; border:0; } .content { padding:18px 14px 40px; } .kop img { height:56px; } .kop { gap:12px; }
+    .mobnav { display:flex; gap:6px; margin-bottom:14px; overflow-x:auto; scrollbar-width:none; }
+    .mobnav button, .mobnav a { flex:none; padding:8px 14px; border:1px solid var(--stroke); background:transparent; border-radius:99px; color:var(--muted); text-decoration:none; }
+    .mobnav button.on { background:#fff; color:#111; border-color:#fff; font-weight:600; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <a class="home" href="../" title="Halaman Utama" aria-label="Halaman Utama"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span>Halaman Utama</span></a>
+    <button class="on" data-pg="dashboard" title="Dashboard Utama"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Dashboard Utama</span></button>
+    <button data-pg="permintaan" title="Permintaan Peralatan"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg><span>Permintaan Peralatan</span></button>
+    <button data-pg="anggaran" title="Anggaran Lokasi"><svg viewBox="0 0 24 24"><path d="M3 20h18M6 20V10M12 20V4M18 20v-7"/></svg><span>Anggaran Lokasi</span></button>
+    <button data-pg="riwayat" title="Riwayat Permintaan"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span>Riwayat Permintaan</span></button>
+  </aside>
+
+  <div class="content">
+    <nav class="mobnav" id="mobnav"><a href="../">‹ Utama</a><button class="on" data-pg="dashboard">Dashboard</button><button data-pg="permintaan">Permintaan</button><button data-pg="anggaran">Anggaran</button><button data-pg="riwayat">Riwayat</button></nav>
+    <header class="kop"><img src="../aset/logo-ray.png" alt="Logo PT. Ray Mitra Perkasa"><div><h1>SISTEM ADMINISTRASI PERALATAN</h1><div class="perusahaan">PT. RAY MITRA PERKASA</div><div class="muted" id="sub">Memuat data…</div></div></header>
+
+    <section class="page" id="pg-dashboard">
+      <div class="kpi" id="kpi"></div>
+      <div class="grid2">
+        <div class="card"><h3>Pemakaian anggaran terbesar</h3><div id="topPakai"></div></div>
+        <div class="card"><h3>Permintaan terbaru</h3><div id="terbaru"></div></div>
+      </div>
+    </section>
+
+    <section class="page" id="pg-permintaan" hidden>
+      <div class="ph"><h2>Permintaan Peralatan</h2></div>
+      <div class="card">
+        <h3>Buat permintaan</h3>
+        <div class="grid2">
+          <label class="f"><span>Lokasi</span><select id="fLok"></select></label>
+          <label class="f"><span>Sumber anggaran</span>
+            <select id="fSumber"><option value="peralatan">Anggaran peralatan</option><option value="seragam">Anggaran seragam (bagian keamanan)</option></select></label>
+        </div>
+        <div class="hint" id="fInfo"></div>
+        <div class="wrap" style="margin-top:14px"><table><thead><tr><th style="min-width:230px">Peralatan</th><th style="width:100px">Qty</th><th class="r">Harga beli</th><th class="r">Harga jual</th><th class="r">Total jual</th><th></th></tr></thead><tbody id="fBaris"></tbody></table></div>
+        <div style="margin-top:10px"><button class="btn" id="fTambah">+ Tambah peralatan</button></div>
+        <label class="f" style="margin-top:14px"><span>Catatan untuk pimpinan (opsional)</span><textarea id="fMemo" rows="2" maxlength="1000" placeholder="Alasan permintaan atau keterangan lain"></textarea></label>
+        <div class="sums" id="fSum"></div>
+        <div class="hint" id="fPeringatan"></div>
+        <div style="margin-top:14px"><button class="cta" id="fKirim">Kirim ke Pak Yasir &amp; Pak Ferry</button></div>
+        <div class="hint" id="fStatus" role="status"></div>
+      </div>
+      <div class="card"><h3>Permintaan terakhir</h3><div id="daftarBaru"></div></div>
+    </section>
+
+    <section class="page" id="pg-anggaran" hidden>
+      <div class="ph"><h2>Anggaran Lokasi</h2><div class="muted">Sisa RAB = anggaran − total jual permintaan yang tidak ditolak</div></div>
+      <div class="card">
+        <div class="chips" id="aChips"></div>
+        <input id="aCari" type="search" placeholder="Cari lokasi" style="margin-bottom:12px;max-width:340px">
+        <div class="wrap"><table><thead><tr><th>Lokasi</th><th class="r">Anggaran</th><th class="r">Terpakai</th><th class="r">Sisa</th><th style="min-width:130px">Pemakaian</th><th class="r">Sisa anggaran seragam</th></tr></thead><tbody id="aBody"></tbody></table></div>
+      </div>
+    </section>
+
+    <section class="page" id="pg-riwayat" hidden>
+      <div class="ph"><h2>Riwayat Permintaan</h2><div class="muted" id="rInfo"></div></div>
+      <div class="card">
+        <div class="chips" id="rChips"></div>
+        <input id="rCari" type="search" placeholder="Cari lokasi atau peralatan" style="margin-bottom:12px;max-width:340px">
+        <div id="rDaftar"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://vqcusagijiavaoljfrib.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxY3VzYWdpamlhdmFvbGpmcmliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0OTIzOTksImV4cCI6MjEwODA2ODM5OX0.VeslVR4UHv26LCMbkO7KP0k96r8lg7-NNLjY30iMyFk';
+</script>
+<script>
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const rp = n => (Number(n) < 0 ? '-' : '') + 'Rp' + Math.abs(Math.round(Number(n) || 0)).toLocaleString('id-ID');
+  const rpR = n => { const v = Math.abs(Number(n) || 0), s = Number(n) < 0 ? '-' : ''; return s + (v >= 1e9 ? 'Rp' + (v / 1e9).toFixed(2).replace('.', ',') + ' M' : v >= 1e6 ? 'Rp' + (v / 1e6).toFixed(1).replace('.', ',') + ' jt' : rp(v)); };
+  const tgl = d => d ? new Date(d).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'tanggal tidak tercatat';
+  const H = { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` };
+  async function rpc(nama) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${nama}`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: '{}' });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.message || 'HTTP ' + r.status);
+    return j;
+  }
+
+  let LOK = [], ITEM = [], REQ = [], baris = [{ id: '', qty: '' }], dimuat = false;
+
+  // ---- status permintaan: baru dari web = dua pimpinan; asal 'migrasi-sheet' = arsip dari spreadsheet lama ----
+  const stReq = p => p.status === 'arsip' ? 'arsip' : p.status_yasir === 'ditolak' || p.status_ferry === 'ditolak' ? 'ditolak' : p.status_yasir === 'disetujui' && p.status_ferry === 'disetujui' ? 'disetujui' : 'menunggu';
+  const LABEL = { arsip: ['Arsip sheet lama', ''], menunggu: ['Menunggu persetujuan', 'warn'], disetujui: ['Disetujui', 'ok'], ditolak: ['Ditolak / revisi', 'bad'] };
+  const putusan = p => [['Pak Yasir', p.status_yasir, p.diputuskan_yasir, p.alasan_yasir], ['Pak Ferry', p.status_ferry, p.diputuskan_ferry, p.alasan_ferry]].filter(x => x[1])
+    .map(([n, st, t, al]) => `<div class="rl"><span>${n}</span><span class="badge ${st === 'disetujui' ? 'ok' : st === 'ditolak' ? 'bad' : 'warn'}">${st === 'disetujui' ? 'Disetujui' : st === 'ditolak' ? 'Ditolak / revisi' : 'Menunggu'}${t ? ' · ' + tgl(t) : ''}</span></div>${st === 'ditolak' && al ? `<div class="alasan"><b>Alasan ${n}:</b> ${esc(al)}</div>` : ''}`).join('');
+  const aktif = p => stReq(p) !== 'ditolak';
+
+  function kartuReq(p) {
+    const [lbl, cls] = LABEL[stReq(p)], tabel = (p.items || []).map(i => `<tr><td>${esc(i.nama)}</td><td class="r">${i.qty}</td><td class="r">${rp(i.beli)}</td><td class="r">${rp(i.jual)}</td><td class="r">${rp(i.qty * i.jual)}</td></tr>`).join('');
+    return `<div class="req"><div class="rl"><b style="color:var(--text)">${esc(p.lokasi)}</b><span class="badge ${cls}">${lbl}</span></div>
+      <div class="rl"><span>${tgl(p.tanggal)} · anggaran ${esc(p.sumber_anggaran)} · no. ${p.id}</span><span>Jual ${rp(p.total_jual)} · beli ${rp(p.total_beli)} · <b class="${p.untung < 0 ? 'neg' : ''}">untung ${rp(p.untung)}</b></span></div>
+      ${putusan(p)}${p.memo ? `<div class="rl"><span>Catatan: ${esc(p.memo)}</span></div>` : ''}${p.catatan ? `<div class="rl"><span>Migrasi: ${esc(p.catatan)}</span></div>` : ''}
+      <details><summary>${(p.items || []).length} peralatan</summary><div class="wrap"><table><thead><tr><th>Peralatan</th><th class="r">Qty</th><th class="r">Beli</th><th class="r">Jual</th><th class="r">Total jual</th></tr></thead><tbody>${tabel}</tbody></table></div></details></div>`;
+  }
+
+  // ---------------- DASHBOARD ----------------
+  function renderDash() {
+    const ak = REQ.filter(aktif), per = ak.filter(p => p.sumber_anggaran === 'peralatan');
+    const rab = LOK.reduce((a, l) => a + Number(l.rab), 0), pakai = LOK.reduce((a, l) => a + Number(l.terpakai), 0);
+    const jual = ak.reduce((a, p) => a + Number(p.total_jual), 0), beli = ak.reduce((a, p) => a + Number(p.total_beli), 0);
+    // sisa RAB dihitung sekali per lokasi (anggaran - total jual permintaan lokasi itu); untung = sisa RAB + jual - beli
+    const dipesan = LOK.filter(l => per.some(p => p.lokasi_id === l.id)), sisaDipesan = dipesan.reduce((a, l) => a + Number(l.rab) - Number(l.terpakai), 0);
+    const untung = sisaDipesan + jual - beli, menunggu = REQ.filter(p => stReq(p) === 'menunggu').length, lewat = LOK.filter(l => Number(l.rab) - Number(l.terpakai) < 0).length;
+    $('kpi').innerHTML = [['Lokasi', LOK.length, `${dipesan.length} sudah memesan`], ['Total anggaran', rpR(rab), 'RAB peralatan seluruh lokasi'], ['Terpakai', rpR(pakai), rab ? (100 * pakai / rab).toFixed(1).replace('.', ',') + '% dari anggaran' : ''],
+      ['Sisa anggaran', rpR(rab - pakai), `${lewat} lokasi melebihi RAB`], ['Total jual', rpR(jual), 'tanpa yang ditolak'], ['Untung', rpR(untung), 'sisa RAB + jual − beli'], ['Menunggu persetujuan', menunggu, 'permintaan baru']]
+      .map(([k, v, s]) => `<div><small>${k}</small><b class="${k === 'Untung' && untung < 0 ? 'neg' : ''}">${esc(v)}</b><em>${esc(s)}</em></div>`).join('');
+    const top = LOK.filter(l => Number(l.terpakai) > 0).map(l => ({ l, pct: Number(l.rab) ? 100 * Number(l.terpakai) / Number(l.rab) : 999 })).sort((a, b) => b.pct - a.pct).slice(0, 8);
+    $('topPakai').innerHTML = top.map(({ l, pct }) => `<div style="margin-bottom:12px"><div class="rl" style="display:flex;justify-content:space-between;gap:8px"><span>${esc(l.nama)}</span><b class="${pct > 100 ? 'neg' : ''}">${pct > 900 ? '—' : pct.toFixed(0) + '%'}</b></div><div class="bar ${pct > 100 ? 'bad' : pct > 85 ? 'warn' : ''}"><i style="width:${Math.min(100, pct)}%"></i></div></div>`).join('') || '<div class="kosong">Belum ada pemakaian.</div>';
+    $('terbaru').innerHTML = REQ.slice(0, 5).map(kartuReq).join('') || '<div class="kosong">Belum ada permintaan.</div>';
+  }
+
+  // ---------------- PERMINTAAN ----------------
+  const lokAktif = () => LOK.find(l => String(l.id) === $('fLok').value);
+  const anggaranPilih = () => {
+    const l = lokAktif(), s = $('fSumber').value; if (!l) return null;
+    return s === 'seragam' ? (l.seragam_rab == null ? null : { rab: Number(l.seragam_rab), terpakai: Number(l.seragam_terpakai) }) : { rab: Number(l.rab), terpakai: Number(l.terpakai) };
+  };
+  function renderBaris() {
+    $('fBaris').innerHTML = baris.map((b, n) => { const it = ITEM.find(x => String(x.id) === String(b.id));
+      return `<tr data-n="${n}"><td><select class="f-item"><option value="">Pilih peralatan</option>${ITEM.map(i => `<option value="${i.id}" ${String(i.id) === String(b.id) ? 'selected' : ''}>${esc(i.nama)}</option>`).join('')}</select></td>
+        <td><input class="f-qty" type="number" min="1" step="1" inputmode="numeric" placeholder="0" value="${esc(b.qty)}"></td><td class="r">${it ? rp(it.harga_beli) : '-'}</td><td class="r">${it ? rp(it.harga_jual) : '-'}</td>
+        <td class="r f-tot">${it && Number(b.qty) > 0 ? rp(it.harga_jual * b.qty) : '-'}</td><td><button class="x" title="Hapus baris" aria-label="Hapus baris">✕</button></td></tr>`; }).join('');
+    hitung();
+  }
+  function hitung() {
+    const l = lokAktif(), a = anggaranPilih(); let beli = 0, jual = 0;
+    baris.forEach(b => { const it = ITEM.find(x => String(x.id) === String(b.id)), q = Number(b.qty) || 0; if (it) { beli += it.harga_beli * q; jual += it.harga_jual * q; } });
+    const sisa = a ? a.rab - a.terpakai - jual : 0, untung = a ? sisa + (jual - beli) : jual - beli;
+    $('fSum').innerHTML = [['Anggaran', a ? rp(a.rab) : '-'], ['Sudah terpakai', a ? rp(a.terpakai) : '-'], ['Total jual', rp(jual)], ['Sisa RAB', a ? rp(sisa) : '-', a && sisa < 0], ['Total beli', rp(beli)], ['Untung', a ? rp(untung) : '-', a && untung < 0]]
+      .map(([k, v, neg]) => `<div><span>${k}</span><b class="${neg ? 'neg' : ''}">${v}</b></div>`).join('');
+    $('fPeringatan').className = 'hint bad';
+    $('fPeringatan').textContent = a && jual > a.rab - a.terpakai && jual > 0 ? `Total jual melebihi sisa RAB sebesar ${rp(jual - (a.rab - a.terpakai))}. Pimpinan akan melihat angka ini.` : '';
+    $('fInfo').textContent = !l ? '' : a ? `Anggaran ${$('fSumber').value}: ${rp(a.rab)} · terpakai ${rp(a.terpakai)} · sisa ${rp(a.rab - a.terpakai)}`
+      : `Lokasi ini belum dipetakan ke anggaran seragam bagian keamanan, jadi hanya bisa memakai anggaran peralatan.`;
+    if (!a && $('fSumber').value === 'seragam') $('fSumber').value = 'peralatan';
+    $('fSumber').querySelector('option[value="seragam"]').disabled = !!l && l.seragam_rab == null;
+  }
+  $('fLok').onchange = () => { $('fSumber').value = 'peralatan'; hitung(); };
+  $('fSumber').onchange = hitung;
+  $('fTambah').onclick = () => { baris.push({ id: '', qty: '' }); renderBaris(); };
+  $('fBaris').onchange = e => { const tr = e.target.closest('tr'); if (!tr) return; const b = baris[tr.dataset.n]; if (e.target.classList.contains('f-item')) { b.id = e.target.value; if (!b.qty) b.qty = 1; renderBaris(); } };
+  $('fBaris').oninput = e => { if (!e.target.classList.contains('f-qty')) return; const tr = e.target.closest('tr'), b = baris[tr.dataset.n]; b.qty = e.target.value; const it = ITEM.find(x => String(x.id) === String(b.id)); tr.querySelector('.f-tot').textContent = it && Number(b.qty) > 0 ? rp(it.harga_jual * b.qty) : '-'; hitung(); };
+  $('fBaris').onclick = e => { if (!e.target.classList.contains('x')) return; if (baris.length === 1) baris = [{ id: '', qty: '' }]; else baris.splice(e.target.closest('tr').dataset.n, 1); renderBaris(); };
+  $('fKirim').onclick = async () => {
+    const st = $('fStatus'), btn = $('fKirim'), l = lokAktif(); st.className = 'hint bad';
+    const isi = baris.filter(b => b.id || b.qty);
+    if (!l) { st.textContent = 'Pilih lokasi dulu.'; return; }
+    if (!isi.length || isi.some(b => !b.id || !Number.isInteger(Number(b.qty)) || Number(b.qty) < 1)) { st.textContent = 'Lengkapi peralatan dan qty (bilangan bulat, minimal 1) di setiap baris.'; return; }
+    btn.disabled = true; const label = btn.textContent; btn.textContent = 'Mengirim…'; st.textContent = '';
+    try {
+      const r = await fetch(`${SUPABASE_URL}/functions/v1/kirim-permintaan-peralatan`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lokasi_id: l.id, sumber: $('fSumber').value, items: isi.map(b => ({ item_id: Number(b.id), qty: Number(b.qty) })), memo: $('fMemo').value.trim() }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
+      st.className = 'hint ok'; st.textContent = `✓ Terkirim ke Pak Yasir dan Pak Ferry (permintaan no. ${j.id}). Perlu persetujuan keduanya.`;
+      baris = [{ id: '', qty: '' }]; $('fMemo').value = ''; await muat(); renderBaris();
+    } catch (e) { st.textContent = 'Gagal: ' + e.message; }
+    btn.disabled = false; btn.textContent = label;
+  };
+
+  // ---------------- ANGGARAN LOKASI ----------------
+  let aF = 'semua';
+  function renderAnggaran() {
+    const q = $('aCari').value.trim().toLowerCase(), sisa = l => Number(l.rab) - Number(l.terpakai);
+    const f = LOK.filter(l => (!q || l.nama.toLowerCase().includes(q)) && (aF === 'semua' || (aF === 'lewat' ? sisa(l) < 0 : aF === 'belum' ? Number(l.terpakai) === 0 : sisa(l) >= 0 && Number(l.terpakai) > 0)));
+    const n = k => LOK.filter(l => k === 'semua' || (k === 'lewat' ? sisa(l) < 0 : k === 'belum' ? Number(l.terpakai) === 0 : sisa(l) >= 0 && Number(l.terpakai) > 0)).length;
+    $('aChips').innerHTML = [['semua', 'Semua'], ['aman', 'Dalam anggaran'], ['lewat', 'Melebihi RAB'], ['belum', 'Belum memesan']].map(([k, t]) => `<button class="chip ${aF === k ? 'on' : ''}" data-k="${k}">${t} ${n(k)}</button>`).join('');
+    $('aBody').innerHTML = f.map(l => { const pct = Number(l.rab) ? 100 * Number(l.terpakai) / Number(l.rab) : 0, s = sisa(l);
+      return `<tr><td><b>${esc(l.nama)}</b>${l.dari_sumber ? '' : '<div class="muted" style="font-size:.76rem">belum ada di data sumber</div>'}</td><td class="r">${rp(l.rab)}</td><td class="r">${rp(l.terpakai)}</td><td class="r ${s < 0 ? 'neg' : ''}"><b>${rp(s)}</b></td>
+        <td><div class="bar ${pct > 100 ? 'bad' : pct > 85 ? 'warn' : ''}"><i style="width:${Math.min(100, pct)}%"></i></div></td><td class="r">${l.seragam_rab == null ? '<span class="muted">belum dipetakan</span>' : rp(Number(l.seragam_rab) - Number(l.seragam_terpakai))}</td></tr>`; }).join('') || '<tr><td colspan="6" class="kosong">Tidak ada lokasi yang cocok.</td></tr>';
+  }
+  $('aChips').onclick = e => { if (e.target.dataset.k) { aF = e.target.dataset.k; renderAnggaran(); } };
+  $('aCari').oninput = renderAnggaran;
+
+  // ---------------- RIWAYAT ----------------
+  let rF = 'semua';
+  function renderRiwayat() {
+    const q = $('rCari').value.trim().toLowerCase().split(/\s+/).filter(Boolean), n = k => REQ.filter(p => k === 'semua' || stReq(p) === k).length;
+    $('rChips').innerHTML = [['semua', 'Semua'], ['menunggu', 'Menunggu'], ['disetujui', 'Disetujui'], ['ditolak', 'Ditolak / revisi'], ['arsip', 'Arsip sheet lama']].map(([k, t]) => `<button class="chip ${rF === k ? 'on' : ''}" data-k="${k}">${t} ${n(k)}</button>`).join('');
+    const f = REQ.filter(p => (rF === 'semua' || stReq(p) === rF) && q.every(w => (p.lokasi + ' ' + (p.items || []).map(i => i.nama).join(' ')).toLowerCase().includes(w)));
+    $('rInfo').textContent = `${f.length} dari ${REQ.length} permintaan`;
+    $('rDaftar').innerHTML = f.slice(0, 120).map(kartuReq).join('') + (f.length > 120 ? `<div class="kosong">Menampilkan 120 teratas. Persempit pencarian untuk melihat yang lain.</div>` : '') || '<div class="kosong">Tidak ada permintaan yang cocok.</div>';
+  }
+  $('rChips').onclick = e => { if (e.target.dataset.k) { rF = e.target.dataset.k; renderRiwayat(); } };
+  $('rCari').oninput = renderRiwayat;
+
+  // ---------------- MUAT + NAVIGASI ----------------
+  function renderSemua() {
+    const sel = $('fLok').value;
+    $('fLok').innerHTML = '<option value="">Pilih lokasi</option>' + LOK.map(l => `<option value="${l.id}" ${String(l.id) === sel ? 'selected' : ''}>${esc(l.nama)}</option>`).join('');
+    renderDash(); renderAnggaran(); renderRiwayat(); renderBaris();
+    $('daftarBaru').innerHTML = REQ.filter(p => p.status !== 'arsip').slice(0, 8).map(kartuReq).join('') || '<div class="kosong">Belum ada permintaan dari web. Permintaan lama dari spreadsheet ada di Riwayat.</div>';
+    $('sub').textContent = `${LOK.length} lokasi · ${ITEM.length} peralatan · ${REQ.length} permintaan`;
+  }
+  async function muat() {
+    try { [LOK, ITEM, REQ] = await Promise.all([rpc('peralatan_daftar_lokasi'), rpc('peralatan_daftar_item'), rpc('peralatan_daftar_permintaan')]); dimuat = true; renderSemua(); }
+    catch (e) { $('sub').textContent = 'Gagal memuat data: ' + e.message; }
+  }
+  function tampil(pg) {
+    document.querySelectorAll('.page').forEach(p => { p.hidden = p.id !== 'pg-' + pg; });
+    document.querySelectorAll('[data-pg]').forEach(b => b.classList.toggle('on', b.dataset.pg === pg));
+    try { history.replaceState(null, '', '#' + pg); } catch (e) {}
+    window.scrollTo({ top: 0 });
+  }
+  document.querySelectorAll('[data-pg]').forEach(b => { b.onclick = () => tampil(b.dataset.pg); });
+  tampil(['dashboard', 'permintaan', 'anggaran', 'riwayat'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'dashboard');
+  muat();
+</script>
+</body>
+</html>
