@@ -10,90 +10,140 @@
 <style>
   :root {
     --bg:#0b0b0d; --shell:#19191c; --panel:rgba(255,255,255,.075); --panel2:rgba(255,255,255,.12); --stroke:rgba(255,255,255,.12);
-    --text:#f5f5f7; --muted:#a4a4ae; --accent:#f5d547; --green:#b9f36f; --ok:#b9f36f; --ok-bg:rgba(185,243,111,.14);
+    --text:#f5f5f7; --muted:#a4a4ae; --accent:#f5d547; --green:#b9f36f; --ok:#b9f36f; --ok-bg:rgba(185,243,111,.14); --bad:#ff8a80;
     --head:"Syne", "Segoe UI", system-ui, sans-serif;
   }
   * { box-sizing:border-box; }
   html { color-scheme:dark; }
   body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
   h1, h2, h3 { font-family:var(--head); margin:0; letter-spacing:-.01em; }
+  button { font:inherit; color:inherit; }
 
-  .shell { position:relative; margin:16px; min-height:calc(100vh - 32px); background:var(--shell); border:1px solid var(--stroke); border-radius:34px; overflow:clip; }
+  .shell { position:relative; margin:16px; height:calc(100vh - 32px); background:var(--shell); border:1px solid var(--stroke); border-radius:34px; overflow:clip; display:grid; grid-template-columns:252px minmax(0,1fr); }
   .shell::before { content:""; position:absolute; inset:0; pointer-events:none;
-    background:radial-gradient(52% 38% at 52% 14%, rgba(255,122,47,.62), transparent 72%),
-               radial-gradient(34% 30% at 100% 2%, rgba(255,196,96,.28), transparent 72%),
-               radial-gradient(40% 36% at 0% 100%, rgba(255,110,60,.16), transparent 72%); }
-  main { position:relative; z-index:1; max-width:1040px; margin:0 auto; padding:40px 28px 56px; }
+    background:radial-gradient(52% 38% at 52% 14%, rgba(255,122,47,.5), transparent 72%),
+               radial-gradient(34% 30% at 100% 2%, rgba(255,196,96,.24), transparent 72%),
+               radial-gradient(40% 36% at 0% 100%, rgba(255,110,60,.14), transparent 72%); }
 
-  .kop { display:flex; align-items:center; gap:26px; }
-  .kop img { height:112px; width:auto; flex:none; filter:drop-shadow(0 0 22px rgba(255,255,255,.2)) drop-shadow(0 4px 14px rgba(0,0,0,.35)); }
-  .kop h1 { font-size:clamp(1.25rem, 2.6vw, 2.15rem); line-height:1.12; letter-spacing:.01em; }
-  .kop .perusahaan { font-family:var(--head); font-weight:700; font-size:clamp(.95rem, 1.7vw, 1.35rem); letter-spacing:.14em; color:var(--accent); margin:6px 0 8px; }
+  /* ---- sidebar portal ---- */
+  .side { position:relative; z-index:2; display:flex; flex-direction:column; gap:6px; padding:22px 14px 16px; border-right:1px solid var(--stroke); background:rgba(0,0,0,.18); min-height:0; overflow-y:auto; }
+  .merek { display:flex; align-items:center; gap:11px; padding:0 8px 16px; border-bottom:1px solid var(--stroke); margin-bottom:8px; }
+  .merek img { height:44px; width:auto; flex:none; }
+  .merek b { display:block; font-family:var(--head); font-size:.8rem; line-height:1.2; letter-spacing:.03em; }
+  .merek span { display:block; color:var(--accent); font-size:.68rem; letter-spacing:.1em; margin-top:3px; font-weight:600; }
+  .menu { display:flex; align-items:center; gap:12px; width:100%; text-align:left; padding:11px 14px; border-radius:16px; border:1px solid transparent; background:none; cursor:pointer; color:var(--muted); font-weight:600; }
+  .menu svg { width:20px; height:20px; flex:none; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .menu:hover { background:var(--panel); color:var(--text); }
+  .menu.on { background:var(--panel2); color:var(--text); border-color:var(--stroke); }
+  .menu.on svg { color:var(--accent); }
+  .menu .tag { margin-left:auto; font-size:.66rem; font-weight:600; padding:2px 8px; border-radius:99px; background:rgba(255,255,255,.1); }
+  .menu[disabled] { opacity:.5; cursor:default; } .menu[disabled]:hover { background:none; color:var(--muted); }
+  .pemisah { height:1px; background:var(--stroke); margin:8px 6px; }
+  .akun { margin-top:auto; padding:12px 8px 0; border-top:1px solid var(--stroke); }
+  .akun .st { font-size:.74rem; color:var(--muted); margin-bottom:8px; line-height:1.4; }
+
+  /* ---- isi ---- */
+  .isi { position:relative; z-index:1; min-width:0; min-height:0; }
+  .isi iframe { position:absolute; inset:0; width:100%; height:100%; border:0; background:transparent; }
+  .beranda { height:100%; overflow-y:auto; padding:40px 34px 48px; }
+  .beranda > div { max-width:1000px; margin:0 auto; }
+  .kop h1 { font-size:clamp(1.25rem, 2.4vw, 2rem); line-height:1.12; letter-spacing:.01em; }
+  .kop .perusahaan { font-family:var(--head); font-weight:700; font-size:clamp(.9rem, 1.5vw, 1.2rem); letter-spacing:.14em; color:var(--accent); margin:6px 0 8px; }
   .kop .sub { color:var(--muted); }
-
-  .judul { margin:44px 0 16px; font-size:1.05rem; color:var(--muted); font-family:inherit; font-weight:500; letter-spacing:0; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(270px, 1fr)); gap:18px; }
-  .kartu { position:relative; display:flex; flex-direction:column; gap:14px; min-height:250px; padding:26px; border-radius:26px; background:var(--panel); border:1px solid var(--stroke);
-           color:inherit; text-decoration:none; backdrop-filter:blur(6px); transition:transform .18s ease, background .18s ease, border-color .18s ease; }
-  a.kartu:hover, a.kartu:focus-visible { transform:translateY(-4px); background:var(--panel2); border-color:rgba(255,255,255,.3); outline:none; }
-  a.kartu:focus-visible { box-shadow:0 0 0 3px rgba(245,213,71,.55); }
-  .ikon { width:54px; height:54px; border-radius:16px; display:grid; place-items:center; background:rgba(255,255,255,.1); }
-  .ikon svg { width:28px; height:28px; stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
-  .kartu h3 { font-size:1.45rem; }
-  .kartu p { margin:0; color:var(--muted); font-size:.93rem; }
+  .judul { margin:34px 0 16px; font-size:1.02rem; color:var(--muted); font-family:inherit; font-weight:500; letter-spacing:0; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; }
+  .kartu { position:relative; display:flex; flex-direction:column; gap:12px; min-height:230px; padding:24px; border-radius:26px; background:var(--panel); border:1px solid var(--stroke);
+           color:inherit; text-align:left; cursor:pointer; backdrop-filter:blur(6px); transition:transform .18s ease, background .18s ease, border-color .18s ease; }
+  .kartu:hover, .kartu:focus-visible { transform:translateY(-4px); background:var(--panel2); border-color:rgba(255,255,255,.3); outline:none; }
+  .kartu:focus-visible { box-shadow:0 0 0 3px rgba(245,213,71,.55); }
+  .ikon { width:50px; height:50px; border-radius:15px; display:grid; place-items:center; background:rgba(255,255,255,.1); }
+  .ikon svg { width:26px; height:26px; stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+  .kartu h3 { font-size:1.35rem; }
+  .kartu p { margin:0; color:var(--muted); font-size:.9rem; }
   .kartu .bawah { margin-top:auto; display:flex; align-items:center; justify-content:space-between; gap:10px; font-weight:600; }
-  .lencana { display:inline-block; padding:4px 12px; border-radius:99px; font-size:.78rem; font-weight:600; background:var(--ok-bg); color:var(--ok); }
+  .lencana { display:inline-block; padding:4px 12px; border-radius:99px; font-size:.76rem; font-weight:600; background:var(--ok-bg); color:var(--ok); }
   .lencana.nanti { background:rgba(255,255,255,.1); color:var(--muted); }
-  .buka { display:inline-flex; align-items:center; gap:8px; }
-  .buka svg { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; transition:transform .18s ease; }
-  a.kartu:hover .buka svg { transform:translateX(4px); }
-  .kartu.nanti { opacity:.62; border-style:dashed; cursor:default; }
-  footer { margin-top:44px; color:var(--muted); font-size:.82rem; }
+  .kartu.nanti { opacity:.62; border-style:dashed; cursor:default; } .kartu.nanti:hover { transform:none; background:var(--panel); border-color:var(--stroke); }
+  .catatan { margin-top:30px; padding:14px 18px; border-radius:18px; background:var(--panel); border:1px solid var(--stroke); color:var(--muted); font-size:.86rem; }
 
-  @media (max-width: 640px) {
-    .shell { margin:0; border-radius:0; border:0; }
-    main { padding:26px 16px 40px; }
-    .kop { gap:14px; } .kop img { height:68px; }
-    .kartu { min-height:0; padding:22px; }
+  @media (max-width: 860px) {
+    .shell { margin:0; height:100vh; height:100dvh; border-radius:0; border:0; grid-template-columns:minmax(0,1fr); grid-template-rows:auto minmax(0,1fr); }
+    .side { flex-direction:row; align-items:center; gap:4px; padding:8px 10px; border-right:0; border-bottom:1px solid var(--stroke); overflow-x:auto; overflow-y:hidden; scrollbar-width:none; }
+    .side { min-width:0; } .merek, .pemisah { display:none; }
+    .menu { width:auto; flex:none; padding:8px 12px; gap:8px; } .menu .tag { display:none; }
+    .akun { margin:0 0 0 auto; padding:0 0 0 8px; border:0; flex:none; } .akun .st { display:none; }
+    .beranda { padding:24px 16px 36px; }
   }
-  @media (prefers-reduced-motion: reduce) { .kartu, .buka svg { transition:none; } a.kartu:hover { transform:none; } }
+  @media (prefers-reduced-motion: reduce) { .kartu { transition:none; } .kartu:hover { transform:none; } }
 </style>
 </head>
 <body>
 <div class="shell">
-  <main>
-    <header class="kop">
-      <img src="aset/logo-ray.png" alt="Logo PT. Ray Mitra Perkasa">
-      <div>
+  <nav class="side" aria-label="Menu utama">
+    <div class="merek"><img src="aset/logo-ray.png" alt="Logo PT. Ray Mitra Perkasa"><div><b>SISTEM ADMINISTRASI PENGADAAN</b><span>PT. RAY MITRA PERKASA</span></div></div>
+    <button class="menu on" data-p="beranda"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>Beranda</button>
+    <button class="menu" data-p="seragam"><svg viewBox="0 0 24 24"><path d="M8 3 3 6l2 4 3-1v12h8V9l3 1 2-4-5-3a4 4 0 0 1-8 0z"/></svg>Seragam</button>
+    <button class="menu" data-p="peralatan"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg>Peralatan</button>
+    <button class="menu" disabled title="Segera hadir"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3"/><path d="M7.5 15h9"/></svg>Chemical<span class="tag">Segera</span></button>
+    <div class="pemisah"></div>
+    <button class="menu" data-p="administrator"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.2 8 8 9 4.8-1 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>Administrator</button>
+    <div class="akun"><div class="st" id="akunSt"></div><div id="akun"></div></div>
+  </nav>
+
+  <div class="isi">
+    <div class="beranda" id="p-beranda"><div>
+      <header class="kop">
         <h1>SISTEM ADMINISTRASI PENGADAAN</h1>
         <div class="perusahaan">PT. RAY MITRA PERKASA</div>
         <div class="sub">Pengadaan seragam, peralatan, dan chemical dalam satu tempat</div>
-      </div>
-    </header>
-
-    <h2 class="judul">Pilih bidang pengadaan</h2>
-    <section class="grid" aria-label="Bidang pengadaan">
-      <a class="kartu" href="seragam/">
-        <div class="ikon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3 3 6l2 4 3-1v12h8V9l3 1 2-4-5-3a4 4 0 0 1-8 0z"/></svg></div>
-        <h3>Seragam</h3>
-        <p>Pengisian ukuran karyawan, permintaan ke pimpinan, ploting, stok, pengiriman, dan tagihan vendor.</p>
-        <div class="bawah"><span class="lencana">Aktif</span><span class="buka">Buka <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
-      </a>
-      <a class="kartu" href="peralatan/">
-        <div class="ikon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg></div>
-        <h3>Peralatan</h3>
-        <p>Permintaan ke pimpinan, belanja, pengiriman ke lokasi, dan riwayat peralatan yang pernah dikirim ke tiap lokasi.</p>
-        <div class="bawah"><span class="lencana">Aktif</span><span class="buka">Buka <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
-      </a>
-      <div class="kartu nanti" aria-disabled="true">
-        <div class="ikon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3"/><path d="M7.5 15h9"/></svg></div>
-        <h3>Chemical</h3>
-        <p>Pengadaan bahan kimia dan cairan pembersih.</p>
-        <div class="bawah"><span class="lencana nanti">Segera hadir</span></div>
-      </div>
-    </section>
-    <footer>Bidang chemical sedang dikembangkan.</footer>
-  </main>
+      </header>
+      <h2 class="judul">Pilih bidang pengadaan</h2>
+      <section class="grid" aria-label="Bidang pengadaan">
+        <button class="kartu" data-p="seragam">
+          <div class="ikon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3 3 6l2 4 3-1v12h8V9l3 1 2-4-5-3a4 4 0 0 1-8 0z"/></svg></div>
+          <h3>Seragam</h3>
+          <p>Pengisian ukuran karyawan, permintaan ke pimpinan, ploting, stok, pengiriman, dan tagihan vendor.</p>
+          <div class="bawah"><span class="lencana">Aktif</span><span>Buka ›</span></div>
+        </button>
+        <button class="kartu" data-p="peralatan">
+          <div class="ikon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg></div>
+          <h3>Peralatan</h3>
+          <p>Permintaan ke pimpinan, belanja, pengiriman ke lokasi, dan riwayat peralatan yang pernah dikirim ke tiap lokasi.</p>
+          <div class="bawah"><span class="lencana">Aktif</span><span>Buka ›</span></div>
+        </button>
+        <div class="kartu nanti" aria-disabled="true">
+          <div class="ikon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3"/><path d="M7.5 15h9"/></svg></div>
+          <h3>Chemical</h3>
+          <p>Pengadaan bahan kimia dan cairan pembersih.</p>
+          <div class="bawah"><span class="lencana nanti">Segera hadir</span></div>
+        </div>
+      </section>
+      <div class="catatan">Semua halaman bisa dibuka dan formulirnya bisa diisi tanpa login. Menyimpan, mengirim permintaan, dan membuka data karyawan memerlukan login admin (PIC Pengadaan).</div>
+    </div></div>
+  </div>
 </div>
+<script src="aset/auth.js"></script>
+<script>
+  // Setiap bidang dibuka dalam iframe (dibuat saat pertama dibuka, lalu dipertahankan supaya isian tidak hilang saat pindah menu).
+  // Administrator sementara membuka Kelola Data; halaman Administrator lengkap menyusul.
+  const SUMBER = { seragam: 'seragam/', peralatan: 'peralatan/', administrator: 'peralatan/#kelola' };
+  const menu = [...document.querySelectorAll('.side .menu[data-p]')], isi = document.querySelector('.isi');
+  function buka(p) {
+    if (p !== 'beranda' && !SUMBER[p]) p = 'beranda';
+    menu.forEach(b => b.classList.toggle('on', b.dataset.p === p));
+    document.getElementById('p-beranda').hidden = p !== 'beranda';
+    for (const k of Object.keys(SUMBER)) { const f = document.getElementById('f-' + k); if (f) f.hidden = k !== p; }
+    if (p !== 'beranda' && !document.getElementById('f-' + p)) {
+      const f = document.createElement('iframe'); f.id = 'f-' + p; f.src = SUMBER[p]; f.title = p; isi.appendChild(f);
+    }
+    if (location.hash !== '#' + p) history.replaceState(null, '', p === 'beranda' ? location.pathname : '#' + p);
+  }
+  document.addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (b && !b.disabled) buka(b.dataset.p); });
+  window.addEventListener('hashchange', () => buka(location.hash.slice(1) || 'beranda'));
+  Masuk.widget(document.getElementById('akun'));
+  const tulisSt = () => { document.getElementById('akunSt').textContent = Masuk.masuk() ? 'Masuk sebagai admin. Semua fitur menyimpan aktif.' : 'Belum masuk. Halaman bisa dibuka; menyimpan dan mengirim butuh login.'; };
+  window.addEventListener('masuk-ubah', tulisSt); tulisSt();
+  buka(location.hash.slice(1) || 'beranda');
+</script>
 </body>
 </html>

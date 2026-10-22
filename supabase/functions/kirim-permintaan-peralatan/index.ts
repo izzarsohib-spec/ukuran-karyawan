@@ -1,4 +1,4 @@
-// Menerima permintaan PERALATAN dari web (terbuka, tanpa kode akses), menyimpan ke `peralatan_permintaan`,
+// Menerima permintaan PERALATAN dari web (wajib login admin), menyimpan ke `peralatan_permintaan`,
 // lalu mengirim ringkasan ke DUA pimpinan lewat ntfy dengan tombol Setujui dan Tolak/Revisi (token terpisah per pimpinan).
 // Harga, RAB, dan terpakai selalu dihitung ulang di sini dari database; dari web hanya dipercaya: lokasi_id, sumber anggaran, id item, qty, memo.
 //   sisa RAB = anggaran - terpakai - total jual   (anggaran peralatan lokasi, atau anggaran seragam bagian KEAMANAN bila sumber = 'seragam')
@@ -22,6 +22,17 @@ const PIMPINAN = [
   { kunci: 'ferry', nama: 'Pak Ferry', topik: () => Deno.env.get('NTFY_TOPIC_FERRY') || Deno.env.get('NTFY_TOPIC')! },
 ] as const;
 
+// Hanya admin yang sedang login (PIC Pengadaan) yang boleh memakai fungsi ini: token pengguna dari header Authorization diperiksa ke Supabase Auth,
+// lalu dicocokkan dengan tabel admin_pengguna. Kunci anon (tanpa login) ditolak.
+async function adalahAdmin(db: any, req: Request): Promise<boolean> {
+  const t = (req.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
+  if (!t) return false;
+  const { data, error } = await db.auth.getUser(t);
+  if (error || !data?.user) return false;
+  const { data: a } = await db.from('admin_pengguna').select('user_id').eq('user_id', data.user.id).eq('aktif', true).maybeSingle();
+  return !!a;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
   if (req.method !== 'POST') return balas({ error: 'Metode tidak didukung' }, 405);
@@ -37,6 +48,7 @@ Deno.serve(async (req) => {
   if (items.length > 100) return balas({ error: 'Terlalu banyak item' }, 413);
 
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+  if (!(await adalahAdmin(db, req))) return balas({ error: 'Perlu login admin untuk mengirim permintaan. Masuk dulu di halaman web.' }, 401);
   const { count: baruSaja } = await db.from('peralatan_permintaan').select('id', { count: 'exact', head: true }).gte('dibuat', new Date(Date.now() - 10 * 60_000).toISOString());
   if ((baruSaja ?? 0) >= 20) return balas({ error: 'Terlalu banyak permintaan dalam 10 menit terakhir, coba lagi nanti' }, 429);
 

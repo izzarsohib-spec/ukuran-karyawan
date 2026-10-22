@@ -571,6 +571,7 @@
     <div class="pvbody" id="pvHalaman"></div>
   </div>
 </div>
+<script src="../aset/auth.js"></script>
 <script src="harga.js"></script>
 <script>
   // Anon key memang publik; aksesnya dibatasi di Supabase (view agregat tanpa nama, nama hanya lewat kode akses).
@@ -773,24 +774,24 @@
   async function bukaNama(kode, senyap) {
     try {
       const data = await ambilNama(kode);
-      if (!data.length) { if (!senyap) $('pesan').textContent = 'Kode salah.'; return false; }
+      if (!data.length) { if (!senyap) $('pesan').textContent = 'Akun ini tidak punya akses membuka nama karyawan.'; return false; }
       punyaNama = true; kelompokkanPengisi(data);
       $('labelKode').textContent = 'Nama pengisi: terbuka'; $('kode').hidden = true; $('btnKode').textContent = 'Kunci';
       $('pesan').textContent = '';
-      try { sessionStorage.setItem('kodeNama', kode); } catch (e) {}
       ringkasan(); renderDetail(); return true;
     } catch (e) { if (!senyap) $('pesan').textContent = 'Gagal: ' + e.message; return false; }
   }
   async function kunciNama() {
-    punyaNama = false; try { sessionStorage.removeItem('kodeNama'); } catch (e) {}
+    punyaNama = false;
     kelompokkanPengisi(await ambilSemua('ukuran_publik?select=*&order=id'));
-    $('labelKode').textContent = 'Nama pengisi'; $('kode').hidden = false; $('kode').value = ''; $('btnKode').textContent = 'Buka';
+    $('labelKode').textContent = 'Nama pengisi'; $('kode').hidden = true; $('btnKode').textContent = 'Buka (login)';
     ringkasan(); renderDetail();
   }
   const pilih = k => { sel = k; fBagian = ''; terbukaHP = true; renderDaftar(); };
   const keDaftar = () => $('bawah').scrollIntoView({ behavior: 'smooth' });
 
-  $('btnKode').onclick = () => punyaNama ? kunciNama() : bukaNama($('kode').value.trim(), false);
+  $('kode').hidden = true; $('btnKode').textContent = 'Buka (login)';
+  $('btnKode').onclick = async () => { if (punyaNama) return kunciNama(); try { await Masuk.wajib(); } catch (e) { return; } bukaNama('sesi', false); };
   $('kode').onkeydown = e => { if (e.key === 'Enter') $('btnKode').click(); };
   $('cari').oninput = () => { terbukaHP = false; renderDaftar(); };
   $('chips').onclick = e => { const s = e.target.dataset && e.target.dataset.s; if (s) { status = s; terbukaHP = false; renderDaftar(); } };
@@ -925,15 +926,12 @@
   function kosongkanRab() { mRabBerkas = null; $('mRabFile').value = ''; $('mRabInfo').style.color = ''; $('mRabInfo').textContent = 'Tanpa file, halaman RAB dibuat otomatis dari data anggaran.'; }
   // Data ukuran memuat nama karyawan, jadi tetap meminta kode akses (disimpan per sesi, sama seperti di Monitoring)
   async function ambilUkuran(l, bag) {
-    let kode = ''; try { kode = sessionStorage.getItem('kodeNama') || ''; } catch (e) {}
-    if (!kode) kode = (prompt('Halaman Data Ukuran memuat nama karyawan. Masukkan kode akses untuk menyertakannya:') || '').trim();
-    if (!kode) throw new Error('Dibatalkan: kode akses diperlukan untuk halaman Data Ukuran.');
+    await Masuk.wajib(); const kode = 'sesi'; // halaman Data Ukuran memuat nama karyawan, jadi perlu login
     const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/daftar_ukuran`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ kode, p_lokasi: l.lokasi, p_bagian: bag }) });
     if (!r.ok) {
-      const j = await r.json().catch(() => ({})); try { sessionStorage.removeItem('kodeNama'); } catch (e) {}
-      throw new Error(/kode/i.test(j.message || '') ? 'Kode akses salah.' : `Gagal mengambil data ukuran (HTTP ${r.status}).`);
+      const j = await r.json().catch(() => ({}));
+      throw new Error(/kode/i.test(j.message || '') ? 'Sesi login berakhir atau akun tidak punya akses admin. Masuk lagi.' : `Gagal mengambil data ukuran (HTTP ${r.status}).`);
     }
-    try { sessionStorage.setItem('kodeNama', kode); } catch (e) {}
     return r.json();
   }
   const siapkanPdf = async d => buatPdf(d, { ukuran: await ambilUkuran(d.l, d.bag), rab: mRabBerkas });
@@ -1148,8 +1146,8 @@
     return doc.output('datauristring').split(',')[1];
   }
   // ---- arsip ke Google Drive (fungsi server arsip-drive -> Apps Script milik PIC). Gagal mengarsip tidak pernah membatalkan proses utama ----
-  async function arsipDrive(jenis, id, pdf, kode) {
-    const r = await fetch(`${SUPABASE_URL}/functions/v1/arsip-drive`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ jenis, id, pdf, kode }) });
+  async function arsipDrive(jenis, id, pdf) {
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/arsip-drive`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ jenis, id, pdf }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) { const e = new Error(j.error || 'HTTP ' + r.status); e.belumDiatur = !!j.belum_diatur; throw e; }
     return j;
@@ -1162,6 +1160,7 @@
     const st = $('mStatus'), label = tombol.textContent; tombol.disabled = true; tombol.textContent = 'Mengirim…'; st.style.color = ''; st.textContent = '';
     let sukses = false;
     try {
+      await Masuk.wajib(); // mengirim permintaan ke pimpinan hanya untuk admin yang login
       const halaman = halamanSiap || (await pdfKeHalaman(await siapkanPdf(d))).b64s;
       const r = await fetch(`${SUPABASE_URL}/functions/v1/kirim-permintaan`, {
         method: 'POST', headers: { ...H, 'Content-Type': 'application/json' },
@@ -1315,7 +1314,7 @@
     return { baju: true, celana: true, sepatu: false };
   }
   let pSel = '', pBagian = '', terbukaPlot = false, pStatusF = 'semua', pData = null;
-  const kodePlot = () => { try { return sessionStorage.getItem('kodeNama') || ''; } catch (e) { return ''; } };
+  const kodePlot = () => Masuk.kode(); // 'sesi' bila sudah login, kosong bila belum
   async function rpc(nama, body) {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${nama}`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({}));
@@ -1372,8 +1371,8 @@
   // ---- membuka editor ploting untuk satu bagian kerja ----
   function tampilKodePlot(pesan) {
     const ed = $('pEditor'); ed.hidden = false;
-    ed.innerHTML = `<h3 style="margin:0 0 8px">Buka data karyawan</h3><p class="muted" style="margin:0 0 10px">Ploting memuat nama karyawan, jadi dibuka dengan kode akses.</p>
-      <div class="stkode"><input id="pKode" type="password" placeholder="Kode akses" autocomplete="off"><button class="btn" id="pBukaKode">Buka</button></div>
+    ed.innerHTML = `<h3 style="margin:0 0 8px">Buka data karyawan</h3><p class="muted" style="margin:0 0 10px">Ploting memuat nama karyawan, jadi dibuka setelah login.</p>
+      <div class="stkode"><button class="btn" id="pBukaKode">Masuk</button></div>
       <div class="hint" style="color:var(--bad)">${esc(pesan || '')}</div>`;
     ed.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -1387,7 +1386,7 @@
       const tersimpan = p.diploting_pada ? await rpc('ambil_ploting', { kode, p_permintaan: p.id }) : [];
       susunPlot(l, namaBagian, p, mentah, tersimpan);
     } catch (e) {
-      if (e.message === 'KODE') { try { sessionStorage.removeItem('kodeNama'); } catch (x) {} tampilKodePlot('Kode akses salah.'); }
+      if (e.message === 'KODE') tampilKodePlot('Sesi login berakhir atau akun tidak punya akses admin. Masuk lagi.');
       else ed.innerHTML = `<div class="hint" style="color:var(--bad)">Gagal memuat: ${esc(e.message)}</div>`;
     }
   }
@@ -1492,11 +1491,10 @@
     if (t.id === 'pTutup') { $('pEditor').hidden = true; pData = null; return; }
     if (t.id === 'pSimpan') return simpanPlot();
     if (t.id === 'pPo') return unduhPo(t);
-    if (t.id === 'pBukaKode') { const v = $('pKode').value.trim(); if (v) { try { sessionStorage.setItem('kodeNama', v); } catch (x) {} bukaPlot(pBagian); } return; }
+    if (t.id === 'pBukaKode') { Masuk.wajib().then(() => bukaPlot(pBagian)).catch(() => {}); return; }
     if (t.dataset.auto) return bagiRata(t.dataset.auto, false);
     if (t.dataset.kosong) return bagiRata(t.dataset.kosong, true);
   };
-  $('pEditor').onkeydown = e => { if (e.key === 'Enter' && e.target.id === 'pKode') $('pBukaKode').click(); };
   $('pDaftar').onclick = e => { const b = e.target.closest('.item'); if (b) { terbukaPlot = true; if (pSel !== b.dataset.k) { pSel = b.dataset.k; pData = null; $('pEditor').hidden = true; } renderPlotList(); } };
   $('pHead').onclick = e => {
     if (e.target.id === 'pBack') { terbukaPlot = false; renderPlotDetail(); return; }
@@ -1594,10 +1592,9 @@
   }
   // panggilan yang menulis data: kode akses diminta sekali per sesi
   async function rpcKode(nama, body) {
-    let kode = kodePlot(); if (!kode) kode = (prompt('Masukkan kode akses untuk menyimpan perubahan:') || '').trim();
-    if (!kode) throw new Error('Dibatalkan: kode akses diperlukan.');
-    try { const r = await rpc(nama, { kode, ...body }); try { sessionStorage.setItem('kodeNama', kode); } catch (e) {} return r; }
-    catch (e) { if (e.message === 'KODE') { try { sessionStorage.removeItem('kodeNama'); } catch (x) {} throw new Error('Kode akses salah.'); } throw e; }
+    await Masuk.wajib(); // belum login: tampilkan layar masuk dulu
+    try { return await rpc(nama, { kode: 'sesi', ...body }); }
+    catch (e) { if (e.message === 'KODE') throw new Error('Sesi login berakhir atau akun tidak punya akses admin. Masuk lagi.'); throw e; }
   }
   const NAMA_JENIS = { baju: 'Baju', celana: 'Celana', sepatu: 'Sepatu', '-': 'Barang' };
   const daftarUkuran = j => j === 'baju' ? UK_BAJU : j === 'celana' ? UK_CELANA : j === 'sepatu' ? UK_SEPATU : [];
@@ -2018,8 +2015,8 @@
   async function arsipInvoice(pid) {
     const t = tagihanAktif(pid); if (!t) return; const info = () => $('tArsipInfo');
     kabarArsip(info(), 'Mengarsipkan invoice ke Google Drive…');
-    try { const kode = kodePlot() || (prompt('Masukkan kode akses untuk mengarsipkan:') || '').trim(); if (!kode) throw new Error('kode akses diperlukan');
-      kabarArsip(info(), teksArsip(await arsipDrive('invoice', t.id, await invoicePdf(t, true), kode)), 'var(--ok)'); }
+    try { await Masuk.wajib();
+      kabarArsip(info(), teksArsip(await arsipDrive('invoice', t.id, await invoicePdf(t, true))), 'var(--ok)'); }
     catch (e) { kabarArsip(info(), ...galatArsip(e)); }
   }
   $('tDaftar').onclick = e => { const b = e.target.closest('.item'); if (b) { tTerbuka = true; tSel = Number(b.dataset.id); renderTagihanList(); } };
@@ -2440,15 +2437,14 @@
   // ---- catatan (kegiatan lain, kendala, rencana) ----
   async function muatCatatan() {
     const kode = kodePlot(), box = $('lKodeBox'); lapCatatan = new Map();
-    if (!kode) { box.innerHTML = '<div class="stkode"><input id="lKode" type="password" placeholder="Kode akses untuk membuka catatan" autocomplete="off"><button class="btn" id="lBukaKode">Buka</button></div>'; lapKodeOk = false; isiCatatan(); return; }
+    if (!kode) { box.innerHTML = '<div class="stkode"><button class="btn" id="lBukaKode">Masuk untuk membuka catatan</button></div>'; lapKodeOk = false; isiCatatan(); return; }
     try { const r = await rpc('daftar_laporan', { kode, p_dari: lapDari, p_sampai: lapSampai }); r.forEach(x => lapCatatan.set(x.tanggal, x)); lapKodeOk = true; box.innerHTML = ''; }
-    catch (e) { lapKodeOk = false; if (e.message === 'KODE') { try { sessionStorage.removeItem('kodeNama'); } catch (x) {} box.innerHTML = '<div class="hint" style="color:var(--bad)">Kode akses salah. Masukkan lagi:</div><div class="stkode"><input id="lKode" type="password" placeholder="Kode akses" autocomplete="off"><button class="btn" id="lBukaKode">Buka</button></div>'; } else box.innerHTML = `<div class="hint" style="color:var(--bad)">Gagal memuat catatan: ${esc(e.message)}</div>`; }
+    catch (e) { lapKodeOk = false; if (e.message === 'KODE') { box.innerHTML = '<div class="hint" style="color:var(--bad)">Sesi login berakhir atau akun tidak punya akses admin. Masuk lagi.</div><div class="stkode"><button class="btn" id="lBukaKode">Masuk</button></div>'; } else box.innerHTML = `<div class="hint" style="color:var(--bad)">Gagal memuat catatan: ${esc(e.message)}</div>`; }
     isiCatatan();
   }
   function isiCatatan() { if (!lapKotor) { const c = lapCatatan.get(lapSampai) || {}; $('lKeg').value = c.kegiatan || ''; $('lKen').value = c.kendala || ''; $('lRen').value = c.rencana || ''; } $('lSimpan').disabled = !lapKodeOk; }
   ['lKeg', 'lKen', 'lRen'].forEach(id => { $(id).oninput = () => { lapKotor = true; }; });
-  $('lKodeBox').onclick = e => { if (e.target.id === 'lBukaKode') { const v = $('lKode').value.trim(); if (v) { try { sessionStorage.setItem('kodeNama', v); } catch (x) {} muatCatatan(); } } };
-  $('lKodeBox').onkeydown = e => { if (e.key === 'Enter' && e.target.id === 'lKode') $('lBukaKode').click(); };
+  $('lKodeBox').onclick = e => { if (e.target.id === 'lBukaKode') Masuk.wajib().then(muatCatatan).catch(() => {}); };
   $('lSimpan').onclick = async () => {
     const btn = $('lSimpan'), ps = $('lPesan'); btn.disabled = true; btn.textContent = 'Menyimpan…'; ps.style.color = ''; ps.textContent = '';
     try { await rpcKode('simpan_laporan', { p_tanggal: lapSampai, p_kegiatan: $('lKeg').value, p_kendala: $('lKen').value, p_rencana: $('lRen').value });
@@ -2507,8 +2503,7 @@
         if (hs.length) { HARGA = hs.map(h => ({ no: h.no, kat: h.kategori, nama: h.nama, beli: h.harga_beli, jual: h.harga_jual })); renderBaris(); renderRingkasan(); }
       } catch (e) { /* pakai harga.js */ }
       susunLokasi(prog); kelompokkanPengisi(publik); ringkasan(); renderDaftar(); renderDaftarMinta(); muatStatus(); muatHilir();
-      let tersimpan = null; try { tersimpan = sessionStorage.getItem('kodeNama'); } catch (e) {}
-      if (tersimpan) bukaNama(tersimpan, true);
+      if (Masuk.masuk()) bukaNama('sesi', true);
     } catch (e) { $('info').textContent = 'Gagal memuat data: ' + e.message; }
   })();
 </script>

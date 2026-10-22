@@ -277,6 +277,7 @@
     <div class="pvbody" id="pvHalaman"></div>
   </div>
 </div>
+<script src="../aset/auth.js"></script>
 <script>
   const SUPABASE_URL = 'https://vqcusagijiavaoljfrib.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxY3VzYWdpamlhdmFvbGpmcmliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0OTIzOTksImV4cCI6MjEwODA2ODM5OX0.VeslVR4UHv26LCMbkO7KP0k96r8lg7-NNLjY30iMyFk';
@@ -513,16 +514,13 @@
   const dariWeb = p => p.status !== 'arsip' && stReq(p) === 'disetujui';
 
   async function tulis(fn, body) {
-    let kode = ''; try { kode = sessionStorage.getItem('kodeNama') || ''; } catch (e) {}
-    if (!kode) kode = (prompt('Masukkan kode akses untuk mencatat belanja dan pengiriman:') || '').trim();
-    if (!kode) throw new Error('Dibatalkan: kode akses diperlukan.');
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ kode, ...body }) });
+    await Masuk.wajib(); // belum login: tampilkan layar masuk dulu
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ kode: 'sesi', ...body }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) {
-      if (/kode akses/i.test(j.message || '')) { try { sessionStorage.removeItem('kodeNama'); } catch (e) {} throw new Error('Kode akses salah.'); }
+      if (/kode akses/i.test(j.message || '')) throw new Error('Sesi login berakhir atau akun tidak punya akses admin. Masuk lagi.');
       throw new Error(j.message || 'HTTP ' + r.status);
     }
-    try { sessionStorage.setItem('kodeNama', kode); } catch (e) {}
     return j;
   }
 
@@ -986,6 +984,7 @@
     const st = $('fStatus'), label = tombol.textContent; tombol.disabled = true; tombol.textContent = 'Mengirim…'; st.className = 'hint'; st.textContent = '';
     let sukses = false;
     try {
+      await Masuk.wajib(); // mengirim permintaan ke pimpinan hanya untuk admin yang login
       const halaman = halamanSiap || (await pdfKeHalaman(await siapkanPdf(d))).b64s;
       const r = await fetch(`${SUPABASE_URL}/functions/v1/kirim-permintaan-peralatan`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' },
         body: JSON.stringify({ lokasi_id: d.l.id, sumber: d.sumber, items: d.isi.map(x => ({ item_id: x.h.id, qty: x.q })), memo: $('fMemo').value.trim(), halaman }) });

@@ -1,4 +1,4 @@
-// Menerima permintaan seragam dari web (terbuka, tanpa kode akses), menyimpan ke tabel `permintaan`,
+// Menerima permintaan seragam dari web (wajib login admin), menyimpan ke tabel `permintaan`,
 // lalu mengirim ringkasan + lampiran gambar surat (JPG) ke DUA pimpinan lewat ntfy. Tiap pimpinan menerima notifikasinya sendiri
 // dengan tombol Setujui dan Tolak/Revisi (ntfy hanya mengizinkan maksimal 3 tombol per notifikasi).
 // Harga, RAB, dan jumlah anggota diambil ulang dari database; hanya no item, qty, memo, dan PDF yang dipercaya dari web.
@@ -23,6 +23,17 @@ const PIMPINAN = [
   { kunci: 'ferry', nama: 'Pak Ferry', topik: () => Deno.env.get('NTFY_TOPIC_FERRY') || Deno.env.get('NTFY_TOPIC')! },
 ] as const;
 
+// Hanya admin yang sedang login (PIC Pengadaan) yang boleh memakai fungsi ini: token pengguna dari header Authorization diperiksa ke Supabase Auth,
+// lalu dicocokkan dengan tabel admin_pengguna. Kunci anon (tanpa login) ditolak.
+async function adalahAdmin(db: any, req: Request): Promise<boolean> {
+  const t = (req.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
+  if (!t) return false;
+  const { data, error } = await db.auth.getUser(t);
+  if (error || !data?.user) return false;
+  const { data: a } = await db.from('admin_pengguna').select('user_id').eq('user_id', data.user.id).eq('aktif', true).maybeSingle();
+  return !!a;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
   if (req.method !== 'POST') return balas({ error: 'Metode tidak didukung' }, 405);
@@ -38,7 +49,8 @@ Deno.serve(async (req) => {
   if (items.length > 100 || gambar.reduce((a, g) => a + g.length, 0) > 14_000_000) return balas({ error: 'Permintaan terlalu besar' }, 413);
 
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-  // tanpa kode akses: batasi jumlah kiriman supaya pimpinan tidak kebanjiran notifikasi
+  if (!(await adalahAdmin(db, req))) return balas({ error: 'Perlu login admin untuk mengirim permintaan. Masuk dulu di halaman web.' }, 401);
+  // batasi jumlah kiriman supaya pimpinan tidak kebanjiran notifikasi
   const { count: baruSaja } = await db.from('permintaan').select('id', { count: 'exact', head: true }).gte('dibuat', new Date(Date.now() - 10 * 60_000).toISOString());
   if ((baruSaja ?? 0) >= 20) return balas({ error: 'Terlalu banyak permintaan dalam 10 menit terakhir, coba lagi nanti' }, 429);
 
