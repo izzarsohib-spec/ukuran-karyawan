@@ -18,7 +18,10 @@
   figure { margin:0 0 10px; }
   figcaption { color:var(--redup); font-size:.72rem; padding:6px 14px 3px; }
   /* tiap halaman selebar layar; huruf tajam karena gambar aslinya 1700 px. Cubit untuk memperbesar tetap bisa. */
-  img { display:block; width:100%; height:auto; background:var(--kartu); touch-action:pan-x pan-y pinch-zoom; }
+  img { display:block; width:100%; height:auto; background:var(--kartu); touch-action:pan-x pan-y pinch-zoom; cursor:zoom-in; }
+  /* ketuk gambar untuk memperbesar (berguna untuk halaman padat seperti Daftar Harga); geser ke samping untuk membaca, ketuk lagi untuk kembali */
+  figure.besar { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  figure.besar img { width:260%; max-width:none; cursor:zoom-out; }
   .info { padding:30px 16px; text-align:center; color:var(--redup); }
 </style>
 </head>
@@ -36,13 +39,14 @@
     isi.innerHTML = '<div class="info">Tautan surat tidak valid.</div>';
   } else {
     if (j) { document.getElementById('judul').textContent = j; document.title = j; }
-    document.getElementById('sub').textContent = `${n} halaman · cubit untuk memperbesar`;
+    document.getElementById('sub').textContent = `${n} halaman · ketuk halaman untuk memperbesar`;
     for (let i = 1; i <= n; i++) {
       const fig = document.createElement('figure'), cap = document.createElement('figcaption'), img = new Image();
       cap.textContent = `Halaman ${i} dari ${n}`;
       img.alt = `Halaman ${i} dari ${n}`; img.decoding = 'async'; if (i > 2) img.loading = 'lazy';
       img.src = `${BASE}${f}/${String(i).padStart(2, '0')}.jpg`;
       img.onerror = () => { fig.innerHTML = `<div class="info">Halaman ${i} tidak dapat dimuat.</div>`; };
+      img.onclick = () => fig.classList.toggle('besar');
       fig.append(cap, img); isi.append(fig);
     }
   }
