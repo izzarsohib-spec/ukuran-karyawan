@@ -64,6 +64,7 @@
   .fg .hint { color:var(--muted); font-size:.72rem; margin-top:3px; }
   .fa { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px; }
   .pesan { font-size:.86rem; margin:8px 0; min-height:1.2em; } .pesan.ok { color:var(--ok); } .pesan.bad { color:var(--bad); }
+  .bingkai { width:100%; height:80vh; min-height:520px; border:0; border-radius:14px; background:transparent; }
   .kosong { color:var(--muted); padding:26px 10px; text-align:center; }
   .kunci-info { text-align:center; padding:34px 16px; } .kunci-info p { color:var(--muted); max-width:460px; margin:6px auto 16px; }
   .log td.diff { max-width:520px; overflow-wrap:anywhere; font-size:.8rem; color:var(--muted); }
@@ -131,6 +132,10 @@
         { k: 'per', l: 'Anggaran per orang/bulan', t: 'number', v: r ? Number(r.anggaran_per_orang) : '', hint: 'Kosong = dihitung otomatis' }],
       simpan: (v, r) => tulis('admin_simpan_acuan', { p_id: r?.id ?? null, p_client: v.client, p_lokasi: v.lokasi, p_bagian: v.bagian, p_anggota: intOrNull(v.anggota), p_anggaran: intOrNull(v.anggaran), p_masa: intOrNull(v.masa), p_per_orang: numOrNull(v.per) }),
       hapus: r => tulis('admin_hapus_acuan', { p_id: r.id }), namaBaris: r => `${r.client} - ${r.bagian_kerja}`
+    },
+    laporan: {
+      grup: 'Seragam', nama: 'Laporan harian', frame: '../seragam/#laporan',
+      ket: 'Laporan harian kegiatan, kendala, dan rencana, lengkap dengan rekap aktivitas hari itu. Menyimpan catatan butuh login admin.'
     },
     harga: {
       grup: 'Seragam', nama: 'Jenis & harga seragam', ket: 'Daftar seragam dan harga beli/jual. Harga yang diubah berlaku untuk permintaan baru; permintaan lama tetap memakai harga saat dibuat.',
@@ -235,6 +240,7 @@
   }
   async function muatTab(paksa) {
     const t = cfg(); $('ket').textContent = t.ket;
+    if (t.frame) { gambar(); return; }
     if (perluLogin()) { gambar(); return; }
     if (DATA[tab] && !paksa) { gambar(); return; }
     $('isi').innerHTML = '<div class="kosong">Memuat…</div>';
@@ -256,6 +262,7 @@
       $('kpis').innerHTML = '';
       $('isi').innerHTML = `<div class="kunci-info"><h3>Perlu login</h3><p>${t.nama} memuat data pribadi atau catatan perubahan, jadi hanya terbuka untuk admin yang sudah masuk.</p><button class="btn cta" id="btnMasuk">Masuk</button></div>`; return;
     }
+    if (t.frame) { $('kpis').innerHTML = ''; $('isi').innerHTML = `<iframe class="bingkai" src="${t.frame}" title="${esc(t.nama)}"></iframe>`; return; }
     const d = DATA[tab]; if (!d) return;
     $('kpis').innerHTML = t.kpi(d).map(([l, v]) => `<div class="kpi"><div class="l">${esc(l)}</div><div class="v">${esc(v)}</div></div>`).join('');
     const filter = (t.statusOpsi ? `<select data-s="st">${t.statusOpsi.map(([v, l, f]) => `<option value="${v}" ${(saring.st || t.statusOpsi[0][0]) === v ? 'selected' : ''}>${esc(l)}${f ? ' (' + num(d.filter(f).length) + ')' : ''}</option>`).join('')}</select>` : '')
