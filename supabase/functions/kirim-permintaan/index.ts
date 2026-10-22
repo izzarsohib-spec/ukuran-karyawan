@@ -58,10 +58,11 @@ Deno.serve(async (req) => {
   }
   const rab = Number(ang?.anggaran) || 0;
   const tBeli = baris.reduce((a, b) => a + b.beli * b.qty, 0), tJual = baris.reduce((a, b) => a + b.jual * b.qty, 0);
-  // belanja permintaan sebelumnya pada lokasi + bagian yang sama ikut mengurangi RAB (yang ditolak/revisi tidak dihitung)
-  const { data: lalu } = await db.from('permintaan').select('total_beli').eq('lokasi_form', lokasi_form).eq('bagian_kerja', bagian).or('status.is.null,status.neq.ditolak');
-  const terpakai = (lalu ?? []).reduce((a: number, x: any) => a + Number(x.total_beli || 0), 0);
-  const sisa = rab - terpakai - tBeli, untung = (tJual - tBeli) + sisa;
+  // sisa RAB = anggaran - total JUAL; penjualan permintaan sebelumnya pada lokasi + bagian yang sama ikut mengurangi RAB (yang ditolak/revisi tidak dihitung)
+  // untung = sisa RAB + (jual - beli)
+  const { data: lalu } = await db.from('permintaan').select('total_jual').eq('lokasi_form', lokasi_form).eq('bagian_kerja', bagian).or('status.is.null,status.neq.ditolak');
+  const terpakai = (lalu ?? []).reduce((a: number, x: any) => a + Number(x.total_jual || 0), 0);
+  const sisa = rab - terpakai - tJual, untung = sisa + (tJual - tBeli);
   const catatan = String(memo ?? '').slice(0, 1000);
 
   // token sekali-pakai per permintaan DAN per pimpinan: hanya penerima notifikasi yang punya tautan keputusannya
@@ -79,10 +80,10 @@ Deno.serve(async (req) => {
     `Bagian: ${bagian} (${prog.target} anggota)`,
     '',
     `Anggaran RAB: ${rp(rab)}`,
-    ...(terpakai > 0 ? [`Sudah dibelanjakan sebelumnya: ${rp(terpakai)}`] : []),
-    `Total beli: ${rp(tBeli)}`,
+    ...(terpakai > 0 ? [`Sudah terpakai dari RAB sebelumnya: ${rp(terpakai)}`] : []),
     `Total jual: ${rp(tJual)}`,
     `Sisa RAB: ${rp(sisa)}`,
+    `Total beli: ${rp(tBeli)}`,
     `Untung: ${rp(untung)}`,
   ];
   const ekor = ['', 'Perlu persetujuan: Pak Yasir dan Pak Ferry', 'Ketuk notifikasi ini untuk membuka surat lengkap.', ...(catatan ? ['', `Catatan: ${catatan}`] : [])];

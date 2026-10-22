@@ -511,7 +511,7 @@
             <div class="sums" style="margin-top:18px">
               <div><span>Total beli</span><b class="num" id="sBeli">Rp0</b></div>
               <div><span>Total jual</span><b class="num" id="sJual">Rp0</b></div>
-              <div><span id="sTerpakaiL">Sudah dibelanjakan sebelumnya</span><b class="num" id="sTerpakai">Rp0</b></div>
+              <div><span id="sTerpakaiL">Sudah terpakai dari RAB sebelumnya</span><b class="num" id="sTerpakai">Rp0</b></div>
               <div><span>Sisa RAB</span><b class="num" id="sSisa">Rp0</b></div>
               <div><span>Total untung</span><b class="num" id="sUntung">Rp0</b></div>
             </div>
@@ -819,7 +819,7 @@
   let mSel = '', terbukaMinta = false, mStatusF = 'semua';
   const mAnggota = () => { const l = lokasi.find(x => x.lokasi === mSel); return l && l.bagian.find(b => b.nama === $('mBagian').value); };
   // permintaan yang ditolak/revisi tidak dihitung, karena akan dibuat ulang
-  const terpakaiSebelumnya = (lok, bag) => { const a = daftarMinta.filter(p => p.lokasi_form === lok && p.bagian_kerja === bag && stReq(p) !== 'ditolak'); return { n: a.length, t: a.reduce((s, p) => s + Number(p.total_beli || 0), 0) }; };
+  const terpakaiSebelumnya = (lok, bag) => { const a = daftarMinta.filter(p => p.lokasi_form === lok && p.bagian_kerja === bag && stReq(p) !== 'ditolak'); return { n: a.length, t: a.reduce((s, p) => s + Number(p.total_jual || 0), 0) }; };
   const mRab = () => { const a = anggaran && anggaran.peta.get(mSel); return a && a.per[$('mBagian').value] || 0; };
 
   // memilih lokasi di daftar: form dikosongkan hanya kalau lokasinya berganti
@@ -858,11 +858,11 @@
       tr.querySelector('.tb').textContent = h ? rp(tb) : '-'; tr.querySelector('.tj').textContent = h ? rp(tj) : '-';
       beli += tb; jual += tj;
     });
-    const rab = mRab(), lalu = terpakaiSebelumnya(mSel, $('mBagian').value), sisa = rab - lalu.t - beli, untung = (jual - beli) + sisa;
+    const rab = mRab(), lalu = terpakaiSebelumnya(mSel, $('mBagian').value), sisa = rab - lalu.t - jual, untung = sisa + (jual - beli);
     const set = (id, v) => { $(id).textContent = (v < 0 ? '-' : '') + rp(Math.abs(v)); $(id).classList.toggle('neg', v < 0); };
     set('sBeli', beli); set('sJual', jual); set('sTerpakai', lalu.t); set('sSisa', sisa); set('sUntung', untung);
-    $('sTerpakaiL').textContent = lalu.n ? `Sudah dibelanjakan (${lalu.n} permintaan sebelumnya)` : 'Sudah dibelanjakan sebelumnya';
-    $('mPeringatan').textContent = rab && beli > rab - lalu.t ? `Total beli melebihi sisa RAB sebesar ${rp(beli - (rab - lalu.t))}.` : '';
+    $('sTerpakaiL').textContent = lalu.n ? `Sudah terpakai dari RAB (${lalu.n} permintaan sebelumnya)` : 'Sudah terpakai dari RAB sebelumnya';
+    $('mPeringatan').textContent = rab && jual > rab - lalu.t ? `Total jual melebihi sisa RAB sebesar ${rp(jual - (rab - lalu.t))}.` : '';
   }
   $('mBagian').onchange = infoMinta;
   $('mTambah').onclick = () => { baris.push({ no: '', qty: '' }); renderBaris(); };
@@ -1081,16 +1081,21 @@
         styles: { font: 'helvetica', fontSize: 6.6 * K, cellPadding: { top: 0.7 * K, bottom: 0.7 * K, left: 2.5, right: 2.5 }, lineColor: [0, 0, 0], lineWidth: 0.3, textColor: 0, valign: 'middle' },
         headStyles: { fillColor: [139, 195, 74], textColor: 0, fontStyle: 'bold', halign: 'center' }, bodyStyles: { fillColor: [255, 255, 255] }, alternateRowStyles: { fillColor: [238, 247, 227] },
         footStyles: { fillColor: [238, 247, 227], textColor: 0, fontStyle: 'bold' }, showFoot: 'lastPage',
-        head: [['NO', 'JENIS SERAGAM', 'HARGA BELI', 'HARGA JUAL', 'QTY', 'TOTAL']], body,
+        head: [['NO', 'JENIS SERAGAM', 'HARGA BELI', 'HARGA JUAL', 'QTY', 'TOTAL JUAL']], body,
         foot: [['', '', { content: 'GRAND TOTAL', colSpan: 2, styles: { halign: 'center' } }, { content: totalQ, styles: { halign: 'center' } }, { content: rpPdf(totalH), styles: { halign: 'right' } }]],
         columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 175 }, 2: { cellWidth: 48 }, 3: { cellWidth: 48 }, 4: { cellWidth: 24 }, 5: { cellWidth: 56 } } });
-      const yT = doc.lastAutoTable.finalY, sisa = rab - totalH;
+      // angka panel memakai rumus yang sama dengan form permintaan, dashboard, dan notifikasi pimpinan:
+      // sisa RAB = anggaran - total jual (termasuk permintaan sebelumnya); untung = sisa RAB + (jual - beli)
+      const yT = doc.lastAutoTable.finalY, lalu = terpakaiSebelumnya(l.lokasi, bag), sisa = rab - lalu.t - jual, untung = sisa + (jual - beli), min = v => (v < 0 ? '-' : '') + rpPdf(Math.abs(v));
       // panel perhitungan di samping tabel (sama seperti sheet DAFTAR HARGA di project lama)
       doc.autoTable({ theme: 'grid', startY: 36 + 11 * K, tableWidth: PW - 2 * M - TW - 10, margin: { top: 30, left: M + TW + 10, right: M }, pageBreak: 'avoid',
         styles: { font: 'helvetica', fontSize: 6.8 * K, cellPadding: { top: 1.6 * K, bottom: 1.6 * K, left: 3, right: 3 }, lineColor: [0, 0, 0], lineWidth: 0.9, textColor: 0, valign: 'middle' },
         columnStyles: { 0: { cellWidth: 98, fontStyle: 'bold' }, 1: { halign: 'right' } },
-        body: [[{ content: 'ANGGARAN CLIENT', styles: { fillColor: [255, 255, 0] } }, rpPdf(rab)], [{ content: 'TOTAL BELANJA SERAGAM', styles: { fillColor: [0, 176, 240] } }, rpPdf(totalH)],
-          [{ content: 'TOTAL BELANJA PERALATAN', styles: { fillColor: [0, 176, 240] } }, 'Rp0'], ['SISA ANGGARAN', { content: (sisa < 0 ? '-' : '') + rpPdf(Math.abs(sisa)), styles: { fontStyle: 'bold' } }]] });
+        body: [[{ content: 'ANGGARAN CLIENT', styles: { fillColor: [255, 255, 0] } }, rpPdf(rab)],
+          ...(lalu.t ? [[{ content: 'SUDAH TERPAKAI (' + lalu.n + ' PERMINTAAN SEBELUMNYA)', styles: { fillColor: [0, 176, 240] } }, rpPdf(lalu.t)]] : []),
+          [{ content: 'TOTAL BELANJA SERAGAM (HARGA JUAL)', styles: { fillColor: [0, 176, 240] } }, rpPdf(jual)],
+          [{ content: 'TOTAL BELANJA PERALATAN', styles: { fillColor: [0, 176, 240] } }, 'Rp0'], ['SISA ANGGARAN', { content: min(sisa), styles: { fontStyle: 'bold' } }],
+          ['TOTAL BELI', rpPdf(beli)], ['UNTUNG (SISA + JUAL - BELI)', { content: min(untung), styles: { fontStyle: 'bold' } }]] });
       y = yT + 14 * K;
       const xc = M + TW * 0.68; huruf('normal', 9); doc.text(`Semarang, ${tglPanjang}`, xc, y, { align: 'center' });
       huruf('bold', 9); doc.text(TTD.dir[0], xc, y + 34 * K, { align: 'center' }); huruf('normal', 9); doc.text('Direktur', xc, y + 44 * K, { align: 'center' }); huruf();
@@ -1124,9 +1129,9 @@
           [{ content: 'TOTAL', colSpan: 3, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(semua.reduce((a, s) => a + s.rab, 0)), styles: { halign: 'right', fontStyle: 'bold' } }]],
         columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 92 }, 3: { cellWidth: 120 } } });
       y += 24; huruf('bold'); doc.text('Ringkasan permintaan: ' + bag, L, y); y += 8;
-      const lalu = terpakaiSebelumnya(l.lokasi, bag), sisa = rab - lalu.t - beli;
+      const lalu = terpakaiSebelumnya(l.lokasi, bag), sisa = rab - lalu.t - jual;
       tabel({ startY: y, margin: { top: 92, bottom: 110, left: L, right: PW - R },
-        body: [['Anggaran (RAB) bagian ini', rpPdf(rab)], ...(lalu.t ? [['Sudah dibelanjakan sebelumnya (' + lalu.n + ' permintaan)', rpPdf(lalu.t)]] : []), ['Total belanja (harga beli)', rpPdf(beli)], ['Sisa RAB', (sisa < 0 ? '-' : '') + rpPdf(Math.abs(sisa))], ['Total penjualan (harga jual)', rpPdf(jual)]].map(r => [r[0], { content: r[1], styles: { halign: 'right' } }]),
+        body: [['Anggaran (RAB) bagian ini', rpPdf(rab)], ...(lalu.t ? [['Sudah terpakai dari RAB (' + lalu.n + ' permintaan sebelumnya)', rpPdf(lalu.t)]] : []), ['Total penjualan (harga jual)', rpPdf(jual)], ['Sisa RAB', (sisa < 0 ? '-' : '') + rpPdf(Math.abs(sisa))], ['Total belanja (harga beli)', rpPdf(beli)], ['Untung (sisa RAB + jual - beli)', (sisa + jual - beli < 0 ? '-' : '') + rpPdf(Math.abs(sisa + jual - beli))]].map(r => [r[0], { content: r[1], styles: { halign: 'right' } }]),
         columnStyles: { 1: { cellWidth: 140 } } });
     }
     if (rb) return await gabungPdf(doc.output('arraybuffer'), rb.buf);
@@ -2110,8 +2115,12 @@
     const data = daftarMinta.filter(p => (!dari || new Date(p.dibuat) >= dari) && (f.bagian === 'semua' || p.bagian_kerja === f.bagian) && (f.status === 'semua' || stReq(p) === f.status));
     const n = s => data.filter(p => stReq(p) === s).length, menunggu = data.filter(p => !['disetujui', 'ditolak'].includes(stReq(p))).length;
     const wy = data.filter(p => stYasir(p) === 'menunggu' && stReq(p) !== 'ditolak').length, wf = data.filter(p => stFerry(p) === 'menunggu' && stReq(p) !== 'ditolak').length;
-    const jual = data.reduce((a, p) => a + Number(p.total_jual || 0), 0), untung = data.reduce((a, p) => a + Number(p.untung || 0), 0);
-    const kpi = ubin('Permintaan', idn(data.length), 'dibuat') + ubin('Disetujui keduanya', idn(n('disetujui')), pct(n('disetujui'), data.length)) + ubin('Menunggu persetujuan', idn(menunggu), `Pak Yasir ${wy} · Pak Ferry ${wf}`) + ubin('Ditolak / revisi', idn(n('ditolak')), '') + ubin('Nilai jual', rpRingkas(jual), 'total harga jual') + ubin('Untung', rpRingkas(untung), 'jual − beli + sisa RAB');
+    // permintaan yang ditolak tidak dihitung; sisa RAB dihitung SEKALI per bagian kerja: anggaran - total jual semua permintaan bagian itu
+    const aktif = data.filter(p => stReq(p) !== 'ditolak'), jual = aktif.reduce((a, p) => a + Number(p.total_jual || 0), 0), beli = aktif.reduce((a, p) => a + Number(p.total_beli || 0), 0);
+    const bagianAktif = new Map(aktif.map(p => [p.lokasi_form + '' + p.bagian_kerja, p]));
+    const sisaRab = [...bagianAktif.values()].reduce((a, q) => a + Number(q.rab || 0) - daftarMinta.filter(p => p.lokasi_form === q.lokasi_form && p.bagian_kerja === q.bagian_kerja && stReq(p) !== 'ditolak').reduce((t, p) => t + Number(p.total_jual || 0), 0), 0);
+    const untung = sisaRab + jual - beli;
+    const kpi = ubin('Permintaan', idn(data.length), 'dibuat') + ubin('Disetujui keduanya', idn(n('disetujui')), pct(n('disetujui'), data.length)) + ubin('Menunggu persetujuan', idn(menunggu), `Pak Yasir ${wy} · Pak Ferry ${wf}`) + ubin('Ditolak / revisi', idn(n('ditolak')), '') + ubin('Nilai jual', rpRingkas(jual), 'total harga jual, tanpa yang ditolak') + ubin('Untung', rpRingkas(untung), 'sisa RAB + jual − beli');
     const sumbu = sumbuWaktu(f.hari, data.length ? new Date(Math.min(...data.map(p => new Date(p.dibuat)))) : null), nilai = deret(sumbu, data, p => p.dibuat);
     const baris = [['menunggu', 'Menunggu keduanya', WD.warn], ['setuju_yasir', 'Disetujui Pak Yasir, menunggu Pak Ferry', WD.warn], ['setuju_ferry', 'Disetujui Pak Ferry, menunggu Pak Yasir', WD.warn], ['disetujui', 'Disetujui keduanya', WD.good], ['ditolak', 'Ditolak / revisi', WD.kritis]];
     const terbaru = data.slice(0, 8);
@@ -2264,7 +2273,7 @@
     const d = daftarMinta, n = s => d.filter(p => stReq(p) === s).length, tunggu = d.filter(p => !['disetujui', 'ditolak'].includes(stReq(p)));
     const wy = d.filter(p => stYasir(p) === 'menunggu' && stReq(p) !== 'ditolak').length, wf = d.filter(p => stFerry(p) === 'menunggu' && stReq(p) !== 'ditolak').length;
     const sumbu = bulan30(), nilai = deret(sumbu, d, p => p.dibuat), tertua = [...tunggu].sort((a, b) => new Date(a.dibuat) - new Date(b.dibuat))[0];
-    return { key: 'permintaan', kecil: 'Permintaan seragam', judul: 'Pantau persetujuan Pak Yasir dan Pak Ferry', labelAngka: 'Nilai jual seluruh permintaan', angka: rpRingkas(d.reduce((a, p) => a + Number(p.total_jual || 0), 0)),
+    return { key: 'permintaan', kecil: 'Permintaan seragam', judul: 'Pantau persetujuan Pak Yasir dan Pak Ferry', labelAngka: 'Nilai jual permintaan (tanpa yang ditolak)', angka: rpRingkas(d.filter(p => stReq(p) !== 'ditolak').reduce((a, p) => a + Number(p.total_jual || 0), 0)),
       persen: d.length ? 100 * n('disetujui') / d.length : 0, labelRing: 'disetujui keduanya', cta: ['Lihat yang menunggu', 'menunggu'],
       kpi: [[idn(d.length), 'Permintaan dibuat', BULAT.info], [idn(tunggu.length), 'Menunggu persetujuan', BULAT.jingga], [idn(n('disetujui')), 'Disetujui keduanya', BULAT.ok], [idn(n('ditolak')), 'Ditolak / revisi', BULAT.bahaya]],
       grafik: { judul: 'Permintaan dibuat 30 hari terakhir', sumbu, seri: [{ nama: 'Permintaan', warna: WD.s1, nilai }] },
