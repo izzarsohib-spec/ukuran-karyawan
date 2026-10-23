@@ -182,6 +182,13 @@ Deno.serve(async (req) => {
     const aktif = new Set((sebelumnya ?? []).filter((r: any) => !mati.has(r.permintaan_id)).map((r: any) => kunciNama(r.nama) + '|' + r.item_no));
     penerimaAktif = new Set((sebelumnya ?? []).filter((r: any) => !mati.has(r.permintaan_id)).map((r: any) => kunciNama(r.nama)));
     const ganda = [...new Set(rincian.filter((r) => aktif.has(kunciNama(r.nama) + '|' + r.item_no)).map((r) => r.nama))];
+    // nama yang ejaannya mirip dengan orang yang sudah dipesan (mis. salah ketik) dianggap kemungkinan orang yang sama: minta konfirmasi
+    const jarak = (x: string, y: string) => { const d = Array.from({ length: y.length + 1 }, (_, j) => j); for (let i = 1; i <= x.length; i++) { let prev = d[0]; d[0] = i; for (let j = 1; j <= y.length; j++) { const t = d[j]; d[j] = Math.min(d[j] + 1, d[j - 1] + 1, prev + (x[i - 1] === y[j - 1] ? 0 : 1)); prev = t; } } return d[y.length]; };
+    const mirip: string[] = [];
+    if (!ganda.length && body?.lanjut_mirip !== true) {
+      for (const r of rincian) { const k = kunciNama(r.nama); if (k.length < 6) continue; for (const e of aktif) { const [nm, no] = e.split('|'); if (Number(no) !== r.item_no || nm === k || Math.abs(nm.length - k.length) > 2) continue; if (jarak(nm, k) <= 2) { mirip.push(`${r.nama} ~ ${nm}`); break; } } }
+      if (mirip.length) return balas({ error: `Nama berikut sangat mirip dengan orang yang sudah dipesankan seragam yang sama (kemungkinan orang yang sama, salah ketik): ${[...new Set(mirip)].slice(0, 6).join('; ')}.`, perlu_konfirmasi: 'mirip' }, 409);
+    }
     if (ganda.length) return balas({ error: `Sudah ada permintaan aktif untuk seragam yang sama atas nama: ${ganda.slice(0, 8).join(', ')}${ganda.length > 8 ? ` dan ${ganda.length - 8} lainnya` : ''}. Periksa daftar permintaan; bila permintaan lama ditolak/revisi, kirim ulang setelah itu.`, ganda }, 409);
   }
 

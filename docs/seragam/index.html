@@ -499,6 +499,7 @@
       <p class="rkcat" id="kvCat"></p>
       <div id="kvIsi"></div>
     </section>
+    <section class="card pcard" id="aksPanel" hidden></section>
    </div>
 
    <div class="page" id="pg-inventaris" hidden>
@@ -2298,7 +2299,16 @@ Alasan (boleh kosong):`); if (alasan === null) return;
       if (kvPilih) [kvBaris, kvJanji, kvRiw] = await Promise.all([rpc('kekurangan_vendor', { kode: 'sesi', p_vendor: kvPilih }), rpc('janji_daftar', { kode: 'sesi', p_vendor: kvPilih }), rpc('riwayat_vendor', { kode: 'sesi', p_vendor: kvPilih })]); else { kvBaris = []; kvJanji = []; kvRiw = []; }
       kvTampil = true; kvPesan = '';
     } catch (e) { kvTampil = false; kvPesan = e.message === 'KODE' ? 'Sesi login berakhir atau akun tidak punya akses admin. Masuk lagi.' : e.message; }
-    renderKekurangan();
+    renderKekurangan(); muatAksesoris();
+  }
+  // aksesoris dipesan online: ringkasan dipesan vs diterima (tanpa ukuran, tanpa penagihan WhatsApp)
+  async function muatAksesoris() {
+    const el = $('aksPanel'); if (!el || !kvTampil) { if (el) el.hidden = true; return; }
+    try {
+      const a = await rpc('kekurangan_aksesoris', { kode: 'sesi' }); if (!a.length) { el.hidden = true; return; }
+      el.hidden = false;
+      el.innerHTML = `<h3 style="margin:0 0 4px">Aksesoris (pembelian online)</h3><div class="muted" style="margin-bottom:10px">Dipesan dari permintaan yang disetujui dan PO-nya ditandai terkirim; diterima dari catatan Inventaris dengan supplier Online.</div>` + a.map(x => { const k = Math.max(0, x.dipesan - x.diterima); return `<div class="rl"><span>${esc(x.item_nama)} <span class="muted">· dipesan ${idn(x.dipesan)} · diterima ${idn(x.diterima)}</span></span><b style="color:${k ? 'var(--warn)' : 'var(--ok)'}">${k ? idn(k) + ' pcs kurang' : 'lengkap'}</b></div>`; }).join('');
+    } catch (e) { el.hidden = true; }
   }
   function chipStatusKv(b) {
     if (!b.janji) return '<span class="badge warn">Belum ada estimasi</span>';

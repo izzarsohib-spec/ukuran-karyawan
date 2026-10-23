@@ -218,9 +218,41 @@ Deno.serve(async (req) => {
     return { url: `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/lampiran-surat/${jalur}`, nama };
   }
 
+  // PDF vendor lebih dari 30 hari dihapus dari Storage publik (dipanggil tiap pagi lewat jalur terjadwal; gagal tidak mengganggu pengingat)
+  async function hapusPdfLama() {
+    const batas = Date.now() - 30 * 86400_000, hapus: string[] = [];
+    const { data: folder } = await db.storage.from('lampiran-surat').list('', { limit: 1000, search: 'vendor-' });
+    for (const f of (folder ?? []).filter((x: any) => String(x.name).startsWith('vendor-')).slice(0, 300)) {
+      const { data: isi } = await db.storage.from('lampiran-surat').list(f.name, { limit: 50 });
+      for (const o of isi ?? []) if (o.created_at && Date.parse(o.created_at) < batas) hapus.push(`${f.name}/${o.name}`);
+    }
+    if (hapus.length) await db.storage.from('lampiran-surat').remove(hapus);
+  }
+
+  // Ringkasan harian untuk admin (ntfy topik admin): bagian siap dipesan, permintaan menunggu keputusan >2 hari, dan PO yang belum ditandai terkirim.
+  async function ringkasanAdmin() {
+    const topik = Deno.env.get('NTFY_TOPIC_ADMIN'); if (!topik) return;
+    const [{ data: prog }, { data: cak }, { data: perm }] = await Promise.all([
+      db.from('progres_pengisian').select('client,bagian_kerja,lokasi_form,target,sudah_isi'),
+      db.rpc('cakupan_permintaan'),
+      db.from('permintaan').select('id,client,bagian_kerja,dibuat,status,status_yasir,status_ferry,po_dikirim').order('dibuat'),
+    ]);
+    const dipesan = new Map((cak ?? []).map((x: any) => [x.lokasi_form + '|' + x.bagian_kerja, Number(x.penerima)]));
+    const siap = (prog ?? []).filter((p: any) => p.target > 0 && p.sudah_isi >= p.target && (dipesan.get(p.lokasi_form + '|' + p.bagian_kerja) ?? 0) < p.target);
+    const lama = (perm ?? []).filter((p: any) => (p.status ?? 'menunggu') === 'menunggu' && Date.now() - Date.parse(p.dibuat) > 2 * 86400_000);
+    const setuju = (p: any) => (p.status_yasir ?? p.status) === 'disetujui' && (p.status_ferry ?? p.status) === 'disetujui';
+    const tanpaPo = (perm ?? []).filter((p: any) => setuju(p) && !p.po_dikirim);
+    if (!siap.length && !lama.length && !tanpaPo.length) return;
+    const baris = (judul: string, l: any[]) => l.length ? [judul + ' (' + l.length + '):', ...l.slice(0, 8).map((p) => '- ' + p.client + ' / ' + p.bagian_kerja), ...(l.length > 8 ? ['- dan ' + (l.length - 8) + ' lainnya'] : []), ''] : [];
+    const teks = [...baris('Siap dipesan (Form lengkap, belum dipesankan semua)', siap), ...baris('Menunggu keputusan pimpinan lebih dari 2 hari', lama), ...baris('Disetujui tetapi PO belum ditandai terkirim ke vendor', tanpaPo)].join('\n');
+    const judul = '=?UTF-8?B?' + btoa(String.fromCharCode(...new TextEncoder().encode('Ringkasan pengadaan hari ini'))) + '?=';
+    await fetch('https://ntfy.sh/' + topik, { method: 'POST', headers: { Title: judul, Priority: '3', Tags: 'clipboard' }, body: teks.slice(0, 3500) });
+  }
+
   // ---------- jalur n8n terjadwal ----------
   if (aksi === 'otomatis_siapkan' || aksi === 'otomatis_tandai') {
     if (!dariN8n) return balas({ error: 'Tidak diizinkan' }, 401);
+    if (aksi === 'otomatis_siapkan') { try { await hapusPdfLama(); } catch { /* abaikan */ } try { await ringkasanAdmin(); } catch { /* abaikan */ } }
     if (aksi === 'otomatis_tandai') {
       const t = body?.tandai, ids: number[] = Array.isArray(t?.janji_ids) ? t.janji_ids.map(Number).filter(Number.isInteger) : [];
       if (!ids.length || (t?.tipe !== 'pengingat' && t?.tipe !== 'lanjutan')) return balas({ error: 'Data tidak valid' }, 400);
