@@ -38,6 +38,14 @@
   .menu.on svg { color:var(--accent); }
   .menu .tag { margin-left:auto; font-size:.66rem; font-weight:600; padding:2px 8px; border-radius:99px; background:rgba(255,255,255,.1); }
   .menu[disabled] { opacity:.5; cursor:default; } .menu[disabled]:hover { background:none; color:var(--muted); }
+  /* menu bercabang: halaman tiap modul muncul di bawah modul yang sedang dibuka */
+  .menu .panah { width:16px; height:16px; margin-left:auto; transition:transform .18s ease; }
+  .menu[aria-expanded="true"] .panah { transform:rotate(90deg); color:var(--accent); }
+  .anak { display:none; flex-direction:column; gap:2px; margin:2px 0 6px 21px; padding-left:10px; border-left:1px solid var(--stroke); }
+  .grup.buka .anak { display:flex; }
+  .anak button { text-align:left; padding:8px 12px; border-radius:12px; border:1px solid transparent; background:none; cursor:pointer; color:var(--muted); font-size:.88rem; }
+  .anak button:hover { background:var(--panel); color:var(--text); }
+  .anak button.on { background:var(--panel2); color:var(--text); border-color:var(--stroke); font-weight:600; }
   .pemisah { height:1px; background:var(--stroke); margin:8px 6px; }
   .filter { margin-top:14px; padding:12px 8px 0; border-top:1px solid var(--stroke); }
   .filter .st { font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:8px; }
@@ -74,6 +82,9 @@
     .side { min-width:0; } .merek, .pemisah { display:none; }
     .menu { width:auto; flex:none; padding:8px 12px; gap:8px; } .menu .tag { display:none; }
     .side { flex-wrap:wrap; overflow:visible; }
+    .grup { display:contents; } .menu .panah { display:none; }
+    .grup.buka .anak { flex:1 0 100%; order:3; flex-direction:row; margin:0; padding:2px 0; border:0; overflow-x:auto; scrollbar-width:none; }
+    .anak button { flex:none; white-space:nowrap; border-color:var(--stroke); }
     .filter { flex:1 0 100%; margin:0; padding:8px 0 0; order:5; } .filter .st { display:none; } .filter .sf.sisi { flex-direction:row; flex-wrap:wrap; } .filter .sf.sisi label { width:calc(50% - 5px); }
     .akun { margin:0 0 0 auto; padding:0 0 0 8px; border:0; flex:none; } .akun .st { display:none; }
     .beranda { padding:24px 16px 36px; }
@@ -86,8 +97,14 @@
   <nav class="side" aria-label="Menu utama">
     <div class="merek"><img src="aset/logo-ray.png" alt="Logo PT. Ray Mitra Perkasa"><div><b>SISTEM ADMINISTRASI PENGADAAN</b><span>PT. RAY MITRA PERKASA</span></div></div>
     <button class="menu on" data-p="beranda"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>Beranda</button>
-    <button class="menu" data-p="seragam"><svg viewBox="0 0 24 24"><path d="M8 3 3 6l2 4 3-1v12h8V9l3 1 2-4-5-3a4 4 0 0 1-8 0z"/></svg>Seragam</button>
-    <button class="menu" data-p="peralatan"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg>Peralatan</button>
+    <div class="grup" data-g="seragam">
+      <button class="menu" data-p="seragam" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M8 3 3 6l2 4 3-1v12h8V9l3 1 2-4-5-3a4 4 0 0 1-8 0z"/></svg>Seragam<svg class="panah" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button>
+      <div class="anak" id="anak-seragam"></div>
+    </div>
+    <div class="grup" data-g="peralatan">
+      <button class="menu" data-p="peralatan" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg>Peralatan<svg class="panah" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button>
+      <div class="anak" id="anak-peralatan"></div>
+    </div>
     <button class="menu" disabled title="Segera hadir"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3"/><path d="M7.5 15h9"/></svg>Chemical<span class="tag">Segera</span></button>
     <div class="pemisah"></div>
     <button class="menu" data-p="administrator"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.2 8 8 9 4.8-1 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>Administrator</button>
@@ -131,25 +148,51 @@
 <script src="aset/filter.js"></script>
 <script>
   // Setiap bidang dibuka dalam iframe (dibuat saat pertama dibuka, lalu dipertahankan supaya isian tidak hilang saat pindah menu).
+  // Halaman tiap modul (nama + urutan alur kerja yang sama: Dashboard, Permintaan, ..., Riwayat) dipilih dari sidebar ini dan dikirim ke iframe lewat hash.
+  // Modul chemical nanti cukup menambah satu entri di SUMBER dan MENU.
   const SUMBER = { seragam: 'seragam/', peralatan: 'peralatan/', administrator: 'administrator/' };
+  const MENU = {
+    seragam: [['ringkasan', 'Dashboard'], ['monitor', 'Pengisian Ukuran'], ['permintaan', 'Permintaan'], ['ploting', 'Ploting'], ['inventaris', 'Inventaris'], ['pengiriman', 'Pengiriman'], ['tagihan', 'Tagihan']],
+    peralatan: [['dashboard', 'Dashboard'], ['permintaan', 'Permintaan'], ['proses', 'Belanja & Kirim'], ['anggaran', 'Anggaran Lokasi'], ['riwayat', 'Riwayat Permintaan'], ['lokasi', 'Riwayat Lokasi']],
+  };
+  const subAktif = {}; // halaman terakhir yang dibuka di tiap modul
   const menu = [...document.querySelectorAll('.side .menu[data-p]')], isi = document.querySelector('.isi');
-  function buka(p) {
+  let aktif = 'beranda';
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  for (const m of Object.keys(MENU)) document.getElementById('anak-' + m).innerHTML = MENU[m].map(([k, t]) => `<button data-p="${m}" data-s="${k}">${esc(t)}</button>`).join('');
+  function tandai() {
+    menu.forEach(b => { const on = b.dataset.p === aktif; b.classList.toggle('on', on && !MENU[aktif]); b.setAttribute('aria-expanded', on && !!MENU[aktif]); });
+    document.querySelectorAll('.grup').forEach(g => g.classList.toggle('buka', g.dataset.g === aktif));
+    document.querySelectorAll('.anak button').forEach(b => b.classList.toggle('on', b.dataset.p === aktif && b.dataset.s === subAktif[aktif]));
+    const h = aktif === 'beranda' ? '' : '#' + aktif + (subAktif[aktif] ? '/' + subAktif[aktif] : '');
+    if (location.hash !== h) history.replaceState(null, '', h || location.pathname);
+  }
+  function buka(p, sub) {
     if (p !== 'beranda' && !SUMBER[p]) p = 'beranda';
-    menu.forEach(b => b.classList.toggle('on', b.dataset.p === p));
+    const daftar = MENU[p];
+    if (daftar) sub = daftar.some(x => x[0] === sub) ? sub : (subAktif[p] || daftar[0][0]); else sub = null;
+    const ganti = sub && subAktif[p] !== sub; if (sub) subAktif[p] = sub;
+    aktif = p;
     document.getElementById('p-beranda').hidden = p !== 'beranda';
     for (const k of Object.keys(SUMBER)) { const f = document.getElementById('f-' + k); if (f) f.hidden = k !== p; }
-    if (p !== 'beranda' && !document.getElementById('f-' + p)) {
-      const f = document.createElement('iframe'); f.id = 'f-' + p; f.src = SUMBER[p]; f.title = p; isi.appendChild(f);
-    }
-    if (location.hash !== '#' + p) history.replaceState(null, '', p === 'beranda' ? location.pathname : '#' + p);
+    let f = document.getElementById('f-' + p);
+    if (p !== 'beranda' && !f) { f = document.createElement('iframe'); f.id = 'f-' + p; f.src = SUMBER[p] + (sub ? '#' + sub : ''); f.title = p; isi.appendChild(f); }
+    else if (f && ganti) { try { f.contentWindow.location.hash = sub; } catch (e) { f.src = SUMBER[p] + '#' + sub; } }
+    tandai();
   }
-  document.addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (b && !b.disabled) buka(b.dataset.p); });
-  window.addEventListener('hashchange', () => buka(location.hash.slice(1) || 'beranda'));
+  const dariHash = () => { const [p, s] = location.hash.slice(1).split('/'); buka(p || 'beranda', s); };
+  document.addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (b && !b.disabled) buka(b.dataset.p, b.dataset.s); });
+  window.addEventListener('hashchange', dariHash);
+  // modul memberi tahu portal saat halamannya berpindah dari dalam (mis. tombol "Lihat yang kurang"), supaya sorotan menu ikut
+  window.addEventListener('message', e => {
+    const d = e.data; if (e.origin !== location.origin || !d || d.tipe !== 'halaman' || !MENU[d.modul] || !MENU[d.modul].some(x => x[0] === d.pg)) return;
+    subAktif[d.modul] = d.pg; if (aktif === d.modul) tandai();
+  });
   Masuk.widget(document.getElementById('akun'));
   Saring.bar(document.getElementById('filterBar'), 'sisi'); // filter cabang / PIC untuk semua halaman
   const tulisSt = () => { document.getElementById('akunSt').textContent = Masuk.masuk() ? 'Masuk sebagai admin. Semua fitur menyimpan aktif.' : 'Belum masuk. Halaman bisa dibuka; menyimpan dan mengirim butuh login.'; };
   window.addEventListener('masuk-ubah', tulisSt); tulisSt();
-  buka(location.hash.slice(1) || 'beranda');
+  dariHash();
 </script>
 </body>
 </html>

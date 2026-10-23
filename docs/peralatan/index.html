@@ -36,6 +36,11 @@
   .side:hover span, .side:focus-within span { opacity:1; transition-delay:.08s; }
   .content { position:relative; z-index:1; flex:1; min-width:0; padding:24px 26px 48px; }
   .mobnav { display:none; }
+  /* dibuka di dalam portal: menu ada di sidebar portal, jadi sidebar dan menu HP milik modul disembunyikan */
+  body.dalam .side, body.dalam .mobnav { display:none !important; }
+  body.dalam .shell { margin:0; border:0; border-radius:0; background:transparent; min-height:0; } body.dalam .shell::before { display:none; }
+  body.dalam { background:transparent; }
+  body.dalam .kop img, body.dalam .kop .perusahaan { display:none; } /* merek sudah ada di sidebar portal */
 
   .kop { display:flex; align-items:center; gap:22px; margin-bottom:20px; }
   .kop img { height:84px; width:auto; flex:none; filter:drop-shadow(0 0 22px rgba(255,255,255,.2)) drop-shadow(0 4px 14px rgba(0,0,0,.35)); }
@@ -1068,14 +1073,19 @@
     }
     catch (e) { $('sub').textContent = 'Gagal memuat data: ' + e.message; }
   }
+  if (window.top !== window.self) document.body.classList.add('dalam');
+  const HALAMAN = ['dashboard', 'permintaan', 'proses', 'lokasi', 'anggaran', 'riwayat'];
   function tampil(pg) {
     document.querySelectorAll('.page').forEach(p => { p.hidden = p.id !== 'pg-' + pg; });
     document.querySelectorAll('[data-pg]').forEach(b => b.classList.toggle('on', b.dataset.pg === pg));
     try { history.replaceState(null, '', '#' + pg); } catch (e) {}
+    if (window.parent !== window) window.parent.postMessage({ tipe: 'halaman', modul: 'peralatan', pg }, location.origin); // sorotan menu portal ikut
     window.scrollTo({ top: 0 });
   }
   document.querySelectorAll('[data-pg]').forEach(b => { b.onclick = () => tampil(b.dataset.pg); });
-  tampil(['dashboard', 'permintaan', 'proses', 'lokasi', 'anggaran', 'riwayat'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'dashboard');
+  const dariHash = () => tampil(HALAMAN.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'dashboard');
+  window.addEventListener('hashchange', dariHash); // portal mengganti halaman lewat hash
+  dariHash();
   window.addEventListener('saring-ubah', () => { mSel = ''; mTerbuka = false; muat(); }); // filter cabang / PIC berubah
   muat();
 </script>

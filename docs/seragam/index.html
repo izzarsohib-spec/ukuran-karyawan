@@ -322,6 +322,10 @@
   @media (max-width: 1100px) { .alur { grid-template-columns:repeat(2,minmax(0,1fr)); } }
   @media (max-width: 560px) { .alur { grid-template-columns:1fr; } }
   /* dibuka di dalam halaman Administrator (Laporan Harian): tanpa sidebar dan kop */
+  /* dibuka di dalam portal: menu ada di sidebar portal, jadi sidebar, menu HP, dan sub-tab milik modul disembunyikan */
+  body.dalam .side, body.dalam .mobnav, body.dalam #subtabs { display:none !important; }
+  body.dalam .shell { margin:0; border:0; border-radius:0; background:transparent; min-height:0; } body.dalam .shell::before { display:none; }
+  body.dalam { background:transparent; }
   body.embed .side, body.embed .mobnav, body.embed #subtabs { display:none !important; }
   body.embed .shell { margin:0; border:0; border-radius:0; background:transparent; min-height:0; } body.embed .shell::before { display:none; }
   body.embed .content { padding:0; }
@@ -912,6 +916,7 @@
   function renderRingkasan() { if (dashSiap) { renderDash(); renderMini(); renderLaporan(); } }
   // lima halaman: Dashboard Utama; Monitoring & Permintaan; Rekap Ukuran & Inventaris; Ploting & Pengiriman (+ penerimaan); Tagihan.
   // Halaman gabungan memakai sub-tab. Laporan Harian tidak ada di sidebar: dibuka dari halaman Administrator.
+  if (window.top !== window.self) document.body.classList.add('dalam');
   if (window.top !== window.self && location.hash === '#laporan') document.body.classList.add('embed');
   const GRUP = { ringkasan: 'ringkasan', monitor: 'monitor', permintaan: 'monitor', inventaris: 'inventaris', ploting: 'ploting', pengiriman: 'ploting', tagihan: 'tagihan' };
   const SUB = { monitor: [['monitor', 'Monitoring pengisian'], ['permintaan', 'Permintaan seragam']], ploting: [['ploting', 'Ploting seragam'], ['pengiriman', 'Pengiriman & penerimaan']] };
@@ -923,6 +928,7 @@
     $('subtabs').hidden = !sub;
     if (sub) $('subtabs').innerHTML = sub.map(([k, t]) => `<button class="chip ${k === pg ? 'on' : ''}" data-pg="${k}">${t}</button>`).join('');
     if (location.hash !== '#' + pg) history.replaceState(null, '', '#' + pg);
+    if (window.parent !== window) window.parent.postMessage({ tipe: 'halaman', modul: 'seragam', pg }, location.origin); // sorotan menu portal ikut
     window.scrollTo({ top: 0 });
     if (pg === 'permintaan' || pg === 'ploting') muatStatus();
     if (pg === 'inventaris' || pg === 'pengiriman' || pg === 'tagihan') { muatStatus(); muatHilir(); }
