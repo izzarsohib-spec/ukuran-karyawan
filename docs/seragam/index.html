@@ -1112,12 +1112,16 @@
     return `<tr data-i="${i}"><td><b>${esc(k.nama)}</b><div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></td><td>` +
       (mPool.length ? mPool.map(it => { const a = k.alloc[it.no];
         return `<div class="pit" data-no="${it.no}"><label class="pil"><input type="checkbox" class="pc" ${a ? 'checked' : ''}> ${esc(it.nama)}</label><input class="pq" type="number" min="1" value="${a ? a.qty : 1}" ${a ? '' : 'disabled'}><span class="pus">${a ? pilihanUkuran(it, a) : ''}</span></div>`; }).join('')
-        : '<span class="muted">Tambahkan seragam di langkah 1 dulu.</span>') + '</td></tr>';
+        : '<span class="muted">Tambahkan seragam di langkah 1 dulu.</span>') +
+      // menu seragam lain langsung di baris karyawan: seragam yang dipilih masuk ke daftar pesanan dan dicentang untuk orang ini
+      (opsiLain ? `<select class="tmb" title="Tambah seragam lain untuk ${esc(k.nama)}"><option value="">+ Tambah seragam lain…</option>${opsiLain}</select>` : '') + '</td></tr>';
   }
+  let opsiLain = ''; // opsi seragam yang belum ada di daftar pesanan (dibuat ulang tiap renderPembagian)
+  const susunOpsiLain = () => { const dipakai = new Set(mPool.map(x => String(x.no))); return [...new Set(HARGA.map(h => h.kat))].map(k => {
+    const o = HARGA.filter(h => h.kat === k && !dipakai.has(String(h.no))); return o.length ? `<optgroup label="${esc(k)}">${o.map(h => `<option value="${h.no}">${esc(h.nama)}</option>`).join('')}</optgroup>` : ''; }).join(''); };
   function renderPembagian() {
-    const dipakai = new Set(mPool.map(x => String(x.no)));
-    $('mPilihItem').innerHTML = '<option value="">Pilih seragam yang mau ditambahkan</option>' + [...new Set(HARGA.map(h => h.kat))].map(k => {
-      const o = HARGA.filter(h => h.kat === k && !dipakai.has(String(h.no))); return o.length ? `<optgroup label="${esc(k)}">${o.map(h => `<option value="${h.no}">${esc(h.nama)}</option>`).join('')}</optgroup>` : ''; }).join('');
+    opsiLain = susunOpsiLain();
+    $('mPilihItem').innerHTML = '<option value="">Pilih seragam yang mau ditambahkan</option>' + opsiLain;
     $('mChipItem').innerHTML = mPool.map(it => `<div class="kq pas" data-no="${it.no}"><b>${esc(it.nama)}</b><span class="kv"><span class="kt">0</span> pcs</span>
       <div class="kb"><button class="btn" data-semua="${it.no}">Beri semua karyawan</button><button class="btn" data-kosong="${it.no}">Kosongkan</button><button class="btn" data-hapus="${it.no}">Hapus</button></div></div>`).join('');
     const bag = $('mBagian').value, masuk = Masuk.masuk();
@@ -1170,6 +1174,13 @@
     if (t.dataset.hapus) { mPool = mPool.filter(x => String(x.no) !== t.dataset.hapus); mKar.forEach(k => { delete k.alloc[t.dataset.hapus]; }); renderPembagian(); }
   };
   $('mPlot').onchange = e => {
+    if (e.target.classList.contains('tmb')) { // tambah seragam lain dari baris karyawan: masuk ke daftar pesanan, lalu dicentang untuk karyawan itu
+      const no = e.target.value, i = e.target.closest('tr').dataset.i, it = no && itemMinta(no); if (!it || mPool.some(x => String(x.no) === String(no))) return;
+      mPool.push(it); renderPembagian();
+      const tr = document.querySelector(`#mPlot tbody tr[data-i="${i}"]`), div = tr && tr.querySelector(`.pit[data-no="${no}"]`), cb = div && div.querySelector('.pc');
+      if (cb) { cb.checked = true; ubahCentangMinta(div, tr, true); hitungAlokasi(); }
+      return;
+    }
     const div = e.target.closest('.pit'); if (!div) return; const tr = div.closest('tr'), k = mKar[tr.dataset.i];
     if (e.target.classList.contains('pc')) ubahCentangMinta(div, tr, e.target.checked);
     else if (k.alloc[div.dataset.no]) { const a = k.alloc[div.dataset.no]; if (e.target.classList.contains('ub')) a.baju = e.target.value; else if (e.target.classList.contains('uc')) a.celana = e.target.value; else if (e.target.classList.contains('us')) a.sepatu = e.target.value; }
