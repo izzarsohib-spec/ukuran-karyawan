@@ -234,6 +234,11 @@
   .mbar .mtool { margin-bottom:6px; } .mbar .maksi { margin-bottom:0; }
   .pplot tr.dipilih td { background:rgba(245,213,71,.07); }
   .pplot tr.sudah td { opacity:.7; }
+  .rekap { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:10px; }
+  .rk { border:1px solid var(--stroke); border-radius:14px; padding:12px 14px; background:rgba(255,255,255,.04); }
+  .rk h4 { margin:0 0 6px; font-size:.74rem; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); font-family:inherit; }
+  .rk .rl { display:flex; justify-content:space-between; gap:10px; font-size:.86rem; padding:2px 0; }
+  .rk .rt { border-top:1px dashed var(--stroke); margin-top:5px; padding-top:5px; color:var(--muted); } .rk .rt b { color:var(--text); }
   .pplot td { padding:12px 10px; }
   .kcek input, .ac, .pk { accent-color:var(--accent); }
   .kcek input { width:22px !important; height:22px; margin:1px 0 0 !important; flex:none; cursor:pointer; }
@@ -602,6 +607,9 @@
               <tbody id="mBody"></tbody>
             </table></div>
 
+            <div class="row" style="margin:18px 0 10px"><b>3. Rekap barang</b><span class="muted">dipecah per jenis, karena barang datang terpisah</span></div>
+            <div class="rekap" id="mRekap"></div>
+
             <label style="display:block;margin-top:18px;font-size:.76rem;color:var(--muted)">Memo / catatan khusus
               <textarea id="mMemo" rows="3" placeholder="Pesan untuk gudang, vendor, atau catatan tentang RAB…" style="margin-top:5px"></textarea></label>
 
@@ -618,7 +626,7 @@
               <input type="file" id="mRabFile" accept=".pdf,application/pdf">
               <div class="hint" id="mRabInfo">Tanpa file, halaman RAB dibuat otomatis dari data anggaran.</div>
             </div>
-            <div class="hint" style="margin-top:10px">PDF berisi 5 halaman: Memo, PO, Daftar Harga, Data Ukuran, RAB. Pimpinan membuka surat lewat tautan di notifikasi ntfy. Periksa dulu lewat Preview.</div>
+            <div class="hint" style="margin-top:10px">PDF berisi 6 halaman: Memo, PO, Daftar Harga, Data Ukuran, Rekap Barang (dipecah per jenis), RAB. Pimpinan membuka surat lewat tautan di notifikasi ntfy. Periksa dulu lewat Preview.</div>
             <button class="btn" id="mPreview" style="width:100%;margin-top:14px;border-radius:14px;padding:11px">Preview surat</button>
             <button class="cta" id="mKirim" style="width:100%;margin-top:10px">Kirim ke Pak Yasir &amp; Pak Ferry</button>
             <div class="hint" id="mStatus" role="status"></div>
@@ -1096,7 +1104,7 @@
         <td class="r"><b>${b.qty}</b></td>
         <td class="r tb"></td><td class="r tj"></td><td></td></tr>`;
     }).join('') || '<tr><td colspan="7" class="kosongnya">Belum ada seragam yang dibagikan.</td></tr>';
-    hitungMinta();
+    hitungMinta(); renderRekap();
   }
   function hitungMinta() {
     let beli = 0, jual = 0;
@@ -1540,6 +1548,19 @@
     y += 26; cek(92);
     tandaTangan([{ x: L + W * 0.25, label: 'Pemesan,', ttd: TTD.pic }, { x: L + W * 0.75, label: 'Penyedia,', ttd: TTD.vendor }], y);
 
+    // ===== Halaman: REKAPITULASI BARANG PER JENIS (setelan dipecah jadi baju + celana; barang dikirim vendor terpisah) =====
+    doc.addPage(); pasang(); K = 1;
+    huruf('bold', 13); doc.text('REKAPITULASI BARANG PER JENIS', PW / 2, 108, { align: 'center' });
+    huruf(); doc.text('Lokasi', L, 134); doc.text(': ' + l.client, L + 42, 134); doc.text('Bagian', L, 148); doc.text(': ' + bag, L + 42, 148);
+    huruf('italic', 9.5); doc.text('Seragam setelan dipecah menjadi baju dan celana. Barang dikirim terpisah per jenis.', L, 164); huruf();
+    const rkBarang = barisRekapPdf(rekapBarang(isi.map(x => ({ no: x.h.no, nama: x.h.nama, qty: x.q }))));
+    tabel({ startY: 176, margin: { top: 92, bottom: 110, left: L, right: PW - R }, head: [['NO', 'NAMA BARANG', 'JUMLAH (PCS)']],
+      body: rkBarang.length ? rkBarang : [[{ content: 'Belum ada barang.', colSpan: 3, styles: { halign: 'center', fontStyle: 'italic' } }]],
+      styles: { font: 'times', fontSize: 10, cellPadding: { top: 2.6, bottom: 2.6, left: 4, right: 4 }, lineColor: [0, 0, 0], lineWidth: 0.5, textColor: 0 },
+      columnStyles: { 0: { cellWidth: 34 }, 2: { cellWidth: 100 } } });
+    y += 26; cek(92);
+    tandaTangan([{ x: L + W * 0.25, label: 'Pemesan,', ttd: TTD.pic }, { x: L + W * 0.75, label: 'Penyedia,', ttd: TTD.vendor }], y);
+
     // ===== Halaman terakhir: RAB (file PDF lampiran halaman 1; kalau tidak ada, dibuat otomatis dari data anggaran) =====
     const rb = ekstra.rab;
     if (!rb) {
@@ -1744,6 +1765,35 @@
     if (kat === 'Aksesoris') return { baju: false, celana: false, sepatu: false };
     if (/^(KAOS|ATASAN|BAJU)/.test(n) || kat === 'Baju saja') return { baju: true, celana: false, sepatu: false };
     return { baju: true, celana: true, sepatu: false };
+  }
+  // Rekap barang yang dipecah per jenis, karena di lapangan barang datang terpisah (baju sendiri, celana sendiri, sepatu, aksesoris).
+  // Seragam setelan dipecah jadi baju + celana; atasan/baju saja dan celana saja digabung ke jenis yang sama
+  // (mis. SERAGAM PDL + ATASAN PDL = BAJU PDL). Hanya jumlah; harga tetap per item seperti daftar harga.
+  function rekapBarang(daftar) { // daftar: [{ no, nama, qty }] -> [{ jenis, baris: [[nama, qty]], total }]
+    const grup = { Baju: new Map(), Celana: new Map(), Sepatu: new Map(), Aksesoris: new Map() };
+    for (const x of daftar) {
+      const n = String(x.nama || '').toUpperCase().trim(), qty = Number(x.qty) || 0; if (!n || !qty) continue;
+      const uk = jenisUkuran(x.no, x.nama), dasar = n.replace(/\s*\(BAJU SAJA\)/g, '').replace(/^(SERAGAM|ATASAN|BAJU|CELANA|SETELAN)\s+/, '').trim() || n;
+      const tambah = (g, label) => grup[g].set(label, (grup[g].get(label) || 0) + qty);
+      if (uk.sepatu) tambah('Sepatu', n);
+      else if (!uk.baju && !uk.celana) tambah('Aksesoris', n);
+      else if (/^SETELAN/.test(n)) tambah('Baju', n); // setelan khusus (blazer + kemeja + celana) dibiarkan satu baris
+      else { if (uk.baju) tambah('Baju', /^KAOS\b/.test(n) ? n : 'BAJU ' + dasar); if (uk.celana) tambah('Celana', 'CELANA ' + dasar); }
+    }
+    return Object.entries(grup).map(([jenis, m]) => ({ jenis, baris: [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], 'id')), total: [...m.values()].reduce((a, b) => a + b, 0) })).filter(g => g.baris.length);
+  }
+  const barisRekapPdf = rk => { // baris tabel PDF: judul jenis, barang, subtotal
+    const out = []; let no = 0;
+    for (const g of rk) {
+      out.push([{ content: g.jenis.toUpperCase(), colSpan: 3, styles: { fontStyle: 'bold', fillColor: [232, 232, 232] } }]);
+      for (const [n, q] of g.baris) out.push([{ content: ++no, styles: { halign: 'center' } }, n, { content: q, styles: { halign: 'center' } }]);
+      out.push([{ content: 'Total ' + g.jenis.toLowerCase(), colSpan: 2, styles: { halign: 'right', fontStyle: 'bold' } }, { content: g.total, styles: { halign: 'center', fontStyle: 'bold' } }]);
+    }
+    return out;
+  };
+  function renderRekap() { // tampilan rekap di form permintaan
+    const g = rekapBarang(baris.map(b => ({ no: b.no, nama: (hargaDari(b.no) || {}).nama, qty: b.qty })));
+    $('mRekap').innerHTML = g.length ? g.map(x => `<div class="rk"><h4>${x.jenis}</h4>${x.baris.map(([n, q]) => `<div class="rl"><span>${esc(n)}</span><b>${q}</b></div>`).join('')}<div class="rl rt"><span>Total ${x.jenis.toLowerCase()}</span><b>${x.total}</b></div></div>`).join('') : '<div class="hint" style="margin:0">Belum ada seragam yang dibagikan.</div>';
   }
   let pSel = '', pBagian = '', terbukaPlot = false, pStatusF = 'semua', pData = null;
   const kodePlot = () => Masuk.kode(); // 'sesi' bila sudah login, kosong bila belum
@@ -1996,6 +2046,13 @@
       body: baris.length ? baris : [[{ content: 'Belum ada karyawan yang menerima seragam.', colSpan: 7, styles: { halign: 'center', fontStyle: 'italic' } }]],
       columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 88 }, 2: { cellWidth: 78 }, 3: { cellWidth: 34 }, 4: { cellWidth: 52 }, 5: { cellWidth: 50 } } });
     y += 26; cek(92); ttd([{ x: L + W * 0.25, label: 'Pemesan,', t: TTD.pic }, { x: L + W * 0.75, label: 'Penyedia,', t: TTD.vendor }], y);
+    // --- Rekapitulasi barang per jenis (setelan dipecah jadi baju + celana; vendor mengirim terpisah) ---
+    doc.addPage(); pasang(); huruf('bold', 13); doc.text('REKAPITULASI BARANG PER JENIS', PW / 2, 108, { align: 'center' });
+    huruf(); doc.text('Lokasi', L, 134); doc.text(': ' + l.client, L + 42, 134); doc.text('Bagian', L, 148); doc.text(': ' + bagian, L + 42, 148);
+    huruf('italic', 9.5); doc.text('Seragam setelan dipecah menjadi baju dan celana. Barang dikirim terpisah per jenis.', L, 164); huruf();
+    const rkPo = barisRekapPdf(rekapBarang(items.map(it => ({ no: it.no, nama: it.nama, qty: it.qty }))));
+    tabel({ startY: 176, head: [['NO', 'NAMA BARANG', 'JUMLAH (PCS)']], body: rkPo.length ? rkPo : [[{ content: 'Belum ada barang.', colSpan: 3, styles: { halign: 'center', fontStyle: 'italic' } }]],
+      columnStyles: { 0: { cellWidth: 34 }, 2: { cellWidth: 100 } } });
     // --- Rekap jumlah per ukuran (untuk produksi vendor) ---
     const rekap = [];
     for (const it of items) for (const [jenis, nama] of [['baju', 'Baju'], ['celana', 'Celana'], ['sepatu', 'Sepatu']]) {
