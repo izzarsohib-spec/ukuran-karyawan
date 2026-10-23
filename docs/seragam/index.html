@@ -450,8 +450,10 @@
       <div class="bar-top">
         <h3>Daftar lokasi</h3>
         <label class="search"><span aria-hidden="true">🔍</span><input id="pCari" type="search" placeholder="Cari lokasi, mis. bps cilacap"></label>
+        <button class="btn" id="pCetakBtn">PDF gudang (beberapa lokasi)</button>
         <button class="btn" id="pMuat">Muat ulang</button>
       </div>
+      <div class="pcard" id="pCetak" hidden style="margin-bottom:14px"></div>
       <div class="chips" id="pChips" style="margin-bottom:10px"></div>
       <div class="row" style="flex-wrap:wrap;gap:12px;margin-bottom:14px;font-size:.82rem"><label class="muted">Urutkan <select id="pUrut" style="margin-left:6px"><option value="prioritas">Prioritas (pekerjaan lengkap dulu)</option><option value="sedikit">Permintaan paling sedikit dulu</option><option value="banyak">Permintaan paling banyak dulu</option></select></label><label class="kcek"><input type="checkbox" id="pGrup"> Kelompokkan per PIC</label></div>
       <div class="layout">
@@ -2177,12 +2179,79 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     try { await catatanPerakitanPdf(l); } catch (x) { alert('Gagal: ' + x.message); }
     b.disabled = false; b.textContent = label;
   });
+  // ---- PDF penyiapan di gudang untuk beberapa lokasi sekaligus (format lembar kerja admin gudang, A4 mendatar) ----
+  let cetakPilih = new Set();
+  function daftarCetakGudang() { // lokasi yang sudah punya pekerjaan diploting dan lolos filter/pencarian yang sedang tampil
+    const setuju = setujuTerakhir(), q = $('pCari').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    return lokMinta().map(l => ({ l, per: l.bagian.map(b => ({ b, p: setuju.get(l.lokasi + '|' + b.nama) })).filter(x => x.p && x.p.diploting_pada) }))
+      .filter(x => x.per.length && q.every(w => x.l.kunci.includes(w))).sort((a, b) => a.l.client.localeCompare(b.l.client));
+  }
+  function renderCetakGudang() {
+    const el = $('pCetak'); if (el.hidden) return;
+    const d = daftarCetakGudang(); cetakPilih = new Set([...cetakPilih].filter(k => d.some(x => x.l.lokasi === k)));
+    el.innerHTML = `<div class="row" style="flex-wrap:wrap;gap:10px"><div><h3 style="margin:0 0 4px">PDF penyiapan seragam di gudang</h3><div class="muted">Pilih lokasi (bisa banyak). PDF memuat satu lembar per pekerjaan: lokasi, bagian kerja, anggota, daftar item dengan kolom centang, penerima, dan ukuran. Barang yang sudah dikirim tidak ikut. Mengikuti filter Area/PIC dan pencarian yang aktif.</div></div><button class="btn" id="pCetakTutup" type="button">Tutup</button></div>
+      <div class="bgact" style="margin:10px 0"><button class="btn" id="pCetakSemua" type="button">Pilih semua yang tampil (${d.length})</button><button class="btn" id="pCetakKosong" type="button">Kosongkan</button></div>
+      <div style="max-height:260px;overflow:auto;border:1px solid var(--stroke);border-radius:14px;padding:6px 12px">${d.map(x => { const pic = Saring.picDari(x.l.lokasi), ar = Saring.areaDari(x.l.lokasi), pcs = x.per.reduce((a, y) => a + pcsPermintaan(y.p), 0);
+        return `<label class="kcek" style="display:flex;gap:10px;align-items:center;padding:6px 0"><input type="checkbox" class="pcc" value="${esc(x.l.lokasi)}" ${cetakPilih.has(x.l.lokasi) ? 'checked' : ''}><span><b>${esc(x.l.client)}</b> <span class="muted">· ${x.per.length} pekerjaan · ${idn(pcs)} pcs${ar ? ' · ' + esc(ar.nama) : ''}${pic ? ' · PIC ' + esc(pic.nama) : ''}</span></span></label>`; }).join('') || '<div class="kosongnya">Belum ada lokasi yang sudah diploting untuk filter ini.</div>'}</div>
+      <div class="bgact" style="margin-top:12px"><button class="cta" id="pCetakBuat" type="button" ${cetakPilih.size ? '' : 'disabled'}>Buat PDF (${cetakPilih.size} lokasi)</button></div><div class="hint" id="pCetakPesan"></div>`;
+  }
+  async function daftarGudangPdf(kunciLokasi) {
+    if (!window.jspdf) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    if (!(window.jspdf && window.jspdf.jsPDF.API.autoTable)) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
+    const d = daftarCetakGudang().filter(x => kunciLokasi.includes(x.l.lokasi));
+    const lembar = [];
+    for (const x of d) for (const { b, p } of x.per) lembar.push({ l: x.l, b, p, rows: (await rpcKode('siap_kirim', { p_permintaan: p.id })).filter(r => !r.pengiriman_id) });
+    const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4', orientation: 'landscape' }), PW = 841.89, M = 30, tampak = lembar.filter(z => z.rows.length);
+    if (!tampak.length) throw new Error('Semua barang di lokasi yang dipilih sudah dikirim.');
+    const ringkas = new Map(), tgl = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+    tampak.forEach((z, n) => {
+      if (n) doc.addPage();
+      const kepala = () => { doc.setFont('times', 'bold'); doc.setFontSize(11); doc.text('DAFTAR PENYIAPAN SERAGAM (GUDANG)', M, 28); doc.setFont('times', 'normal'); doc.setFontSize(8.5); doc.text('Dicetak ' + tgl, PW - M, 28, { align: 'right' });
+        doc.setFontSize(10.5); doc.setFont('times', 'bold'); doc.text('Lokasi :', M, 48); doc.text('Bagian kerja :', M + 330, 48); doc.text('Anggota :', M + 600, 48);
+        doc.setFont('times', 'normal'); doc.text(doc.splitTextToSize(z.l.client, 255)[0], M + 42, 48); doc.text(doc.splitTextToSize(namaRapi(z.b.nama), 180)[0], M + 404, 48); doc.text(String(z.b.target || z.p.jumlah_anggota || '-') + ' orang', M + 648, 48); };
+      const urut = [...z.rows].sort((a, b) => a.nama.localeCompare(b.nama, 'id') || a.item_no - b.item_no);
+      const body = urut.map((r, i) => {
+        const u = jenisUkuran(r.item_no, r.item_nama), stel = u.baju && u.celana;
+        for (const [jenis, label] of komponenBarang(r.item_no, r.item_nama)) { const uk = jenis === 'Baju' ? r.ukuran_baju : jenis === 'Celana' ? r.ukuran_celana : jenis === 'Sepatu' ? r.ukuran_sepatu : '-'; const kk = `${jenis}|${namaRapi(label)}|${uk || '-'}`; ringkas.set(kk, (ringkas.get(kk) || 0) + r.qty); }
+        return [{ content: i + 1, styles: { halign: 'center' } }, namaRapi(r.item_nama) + (stel ? ' (1 stel)' : ''), { content: r.qty, styles: { halign: 'center' } }, '', r.nama, { content: r.ukuran_baju || '-', styles: { halign: 'center' } }, { content: r.ukuran_celana || '-', styles: { halign: 'center' } }, r.ukuran_sepatu ? 'Sepatu ' + r.ukuran_sepatu : '', ''];
+      });
+      for (let i = 0; i < 3; i++) body.push([{ content: urut.length + i + 1, styles: { halign: 'center', textColor: [150, 150, 150] } }, '', '', '', '', '', '', '', '']);
+      doc.autoTable({ startY: 58, head: [['No', 'Jenis item', 'Qty', 'Checkmark', 'Penerima', 'Uk baju', 'Uk celana', 'Keterangan', 'Checkmark']], body, theme: 'grid', margin: { top: 58, left: M, right: M, bottom: 28 }, didDrawPage: kepala,
+        styles: { font: 'times', fontSize: 10, cellPadding: { top: 5.5, bottom: 5.5, left: 4, right: 4 }, lineColor: [0, 0, 0], lineWidth: 0.6, textColor: 0, valign: 'middle' }, headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', halign: 'center' },
+        columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 168 }, 2: { cellWidth: 32 }, 3: { cellWidth: 62 }, 4: { cellWidth: 170 }, 5: { cellWidth: 50 }, 6: { cellWidth: 56 }, 7: { cellWidth: 156 }, 8: { cellWidth: 62 } },
+        didDrawCell: h => { if (h.section === 'body' && (h.column.index === 3 || h.column.index === 8)) { doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.7); doc.rect(h.cell.x + h.cell.width / 2 - 5.5, h.cell.y + h.cell.height / 2 - 5.5, 11, 11); } } });
+    });
+    // lembar terakhir: rekap barang yang diambil dari gudang untuk semua lokasi yang dicetak
+    doc.addPage(); doc.setFont('times', 'bold'); doc.setFontSize(12); doc.text('REKAP BARANG YANG DIAMBIL DARI GUDANG', M, 34);
+    doc.setFont('times', 'normal'); doc.setFontSize(9.5); doc.text(`${new Set(tampak.map(z => z.l.lokasi)).size} lokasi · ${tampak.length} pekerjaan · dicetak ${tgl}`, M, 48);
+    const rb = [...ringkas.entries()].map(([kk, q]) => { const [j, n, u] = kk.split('|'); return [j, n, u, q]; }).sort((a, b) => ['Baju', 'Celana', 'Sepatu', 'Aksesoris'].indexOf(a[0]) - ['Baju', 'Celana', 'Sepatu', 'Aksesoris'].indexOf(b[0]) || a[1].localeCompare(b[1], 'id') || bandingUk(a[2], b[2]));
+    doc.autoTable({ startY: 58, head: [['Jenis', 'Barang', 'Ukuran', 'Qty', 'Disiapkan']], body: [...rb.map(r => [r[0], r[1], { content: r[2], styles: { halign: 'center' } }, { content: r[3], styles: { halign: 'center' } }, '']), [{ content: 'TOTAL', colSpan: 3, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rb.reduce((a, r) => a + r[3], 0), styles: { halign: 'center', fontStyle: 'bold' } }, '']],
+      theme: 'grid', margin: { left: M, right: M, bottom: 28 }, styles: { font: 'times', fontSize: 10, cellPadding: 4, lineColor: [0, 0, 0], lineWidth: 0.6, textColor: 0 }, headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', halign: 'center' }, columnStyles: { 0: { cellWidth: 70 }, 2: { cellWidth: 70 }, 3: { cellWidth: 50 }, 4: { cellWidth: 80 } },
+      didDrawCell: h => { if (h.section === 'body' && h.column.index === 4 && h.row.index < rb.length) { doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.7); doc.rect(h.cell.x + h.cell.width / 2 - 5.5, h.cell.y + h.cell.height / 2 - 5.5, 11, 11); } } });
+    const a = document.createElement('a'); a.href = 'data:application/pdf;base64,' + doc.output('datauristring').split(',')[1]; a.download = `Penyiapan Gudang ${new Date().toISOString().slice(0, 10)}.pdf`; document.body.appendChild(a); a.click(); a.remove();
+    return { lokasi: new Set(tampak.map(z => z.l.lokasi)).size, lembar: tampak.length };
+  }
+  $('pCetakBtn').onclick = () => { $('pCetak').hidden = !$('pCetak').hidden; renderCetakGudang(); };
+  $('pCetak').onclick = async e => {
+    const t = e.target;
+    if (t.id === 'pCetakTutup') { $('pCetak').hidden = true; return; }
+    if (t.id === 'pCetakSemua') { cetakPilih = new Set(daftarCetakGudang().map(x => x.l.lokasi)); renderCetakGudang(); return; }
+    if (t.id === 'pCetakKosong') { cetakPilih = new Set(); renderCetakGudang(); return; }
+    if (t.classList.contains('pcc')) { t.checked ? cetakPilih.add(t.value) : cetakPilih.delete(t.value); renderCetakGudang(); return; }
+    if (t.id === 'pCetakBuat') {
+      const ps = $('pCetakPesan'), label = t.textContent; t.disabled = true; t.textContent = 'Menyiapkan…'; ps.style.color = '';
+      try { const h = await daftarGudangPdf([...cetakPilih]); ps.style.color = 'var(--ok)'; ps.textContent = `✓ PDF dibuat: ${h.lokasi} lokasi, ${h.lembar} lembar pekerjaan + rekap.`; }
+      catch (x) { ps.style.color = 'var(--bad)'; ps.textContent = 'Gagal: ' + x.message; }
+      t.disabled = false; t.textContent = label;
+    }
+  };
+  window.addEventListener('saring-ubah', () => { cetakPilih = new Set(); });
   $('pHead').onclick = e => {
     if (e.target.id === 'pBack') { terbukaPlot = false; renderPlotDetail(); return; }
     const bt = e.target.closest('[data-plot]'); if (bt) bukaPlot(bt.dataset.plot);
   };
   $('pChips').onclick = e => { const s = e.target.dataset && e.target.dataset.s; if (s) { pStatusF = s; terbukaPlot = false; renderPlotList(); } };
-  $('pCari').oninput = () => { terbukaPlot = false; renderPlotList(); };
+  $('pCari').oninput = () => { terbukaPlot = false; renderPlotList(); renderCetakGudang(); };
   $('pMuat').onclick = muatStatus;
 
   // ---- PO + lampiran ukuran untuk vendor (PDF) ----
