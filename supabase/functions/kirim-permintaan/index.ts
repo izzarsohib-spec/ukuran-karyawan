@@ -40,9 +40,23 @@ Deno.serve(async (req) => {
 
   let body: any;
   try { body = await req.json(); } catch { return balas({ error: 'Data tidak terbaca' }, 400); }
-  const { lokasi_form, bagian, items, memo, halaman, jpg } = body ?? {};
+  const { lokasi_form, bagian, memo, halaman, jpg, ploting } = body ?? {};
+  let items = body?.items;
   // lampiran: satu gambar JPG per halaman surat (`halaman`); `jpg` (satu gambar) tetap diterima agar versi web lama tidak rusak
   const gambar: string[] = Array.isArray(halaman) ? halaman.map(String) : jpg ? [String(jpg)] : [];
+  // pembagian seragam per karyawan (`ploting`): jumlah tiap item dihitung ulang di sini dari pembagian, bukan dari `items` kiriman web
+  const rincian: { nama: string; item_no: number; qty: number; baju: string | null; celana: string | null; sepatu: string | null }[] = [];
+  if (Array.isArray(ploting) && ploting.length) {
+    if (ploting.length > 3000) return balas({ error: 'Pembagian seragam terlalu besar' }, 413);
+    const per = new Map<number, number>();
+    for (const x of ploting) {
+      const no = Number(x?.item_no), qty = Math.floor(Number(x?.qty)), nama = String(x?.nama ?? '').trim();
+      if (!Number.isInteger(no) || !(qty > 0) || !nama || nama.length > 200) return balas({ error: 'Data pembagian seragam tidak valid' }, 400);
+      per.set(no, (per.get(no) ?? 0) + qty);
+      rincian.push({ nama, item_no: no, qty, baju: String(x?.baju ?? '').slice(0, 12) || null, celana: String(x?.celana ?? '').slice(0, 12) || null, sepatu: String(x?.sepatu ?? '').slice(0, 12) || null });
+    }
+    items = [...per.entries()].map(([no, qty]) => ({ no, qty }));
+  }
   if (!lokasi_form || !bagian || !Array.isArray(items) || !items.length || !gambar.length)
     return balas({ error: 'Data permintaan belum lengkap' }, 400);
   if (gambar.length > 40 || gambar.some((g) => !g.startsWith('/9j/'))) return balas({ error: 'Gambar tidak valid' }, 400);
@@ -88,6 +102,15 @@ Deno.serve(async (req) => {
     token_yasir: token.yasir, token_ferry: token.ferry,
   }).select('id').single();
   if (eIns) return balas({ error: 'Gagal menyimpan permintaan' }, 500);
+  // pembagian per karyawan ikut tersimpan bersama permintaan (halaman Ploting dipakai untuk koreksi setelah disetujui)
+  if (rincian.length) {
+    const { error: ePl } = await db.from('ploting').insert(rincian.map((r) => ({
+      permintaan_id: baru.id, lokasi_form, bagian_kerja: bagian, nama: r.nama.slice(0, 200), item_no: r.item_no,
+      item_nama: baris.find((b) => b.no === r.item_no)?.nama ?? '', qty: r.qty, ukuran_baju: r.baju, ukuran_celana: r.celana, ukuran_sepatu: r.sepatu,
+    })));
+    if (ePl) { await db.from('permintaan').delete().eq('id', baru.id); return balas({ error: 'Gagal menyimpan pembagian seragam, permintaan dibatalkan' }, 500); }
+    await db.from('permintaan').update({ diploting_pada: new Date().toISOString() }).eq('id', baru.id);
+  }
 
   // Angka-angka penting ditaruh PALING ATAS supaya tetap terbaca walau notifikasi dipersingkat; daftar item di bawahnya.
   const kepala = [
