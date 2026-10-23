@@ -488,6 +488,7 @@
    <div class="page" id="pg-kurang" hidden>
     <header><div><h1>Kekurangan Vendor</h1><div class="sub" id="infoKurang">Memuat data…</div></div>
       <div class="bgact"><button class="btn" id="kvMuat">Muat ulang</button></div></header>
+    <section class="card pcard" id="poPanel" hidden></section>
     <section class="card pcard" id="kvAtas">
       <div class="row" style="flex-wrap:wrap;gap:12px;margin-bottom:14px"><label class="kvpilih">Vendor<select id="kvVendor"></select></label></div>
       <div class="rkkpi" id="kvKpi"></div>
@@ -1732,7 +1733,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
       try { peralatanDiSeragam = new Map((await rpc('peralatan_terpakai_seragam', {})).map(x => [x.lokasi_form + '' + x.bagian_kerja, Number(x.jual)])); } catch (e) { peralatanDiSeragam = new Map(); }
       try { cakupan = new Map((await rpc('cakupan_permintaan', {})).map(x => [x.lokasi_form + '|' + x.bagian_kerja, x.penerima])); } catch (e) { cakupan = new Map(); }
     } catch (e) { daftarMinta = []; susunStatus(); renderDaftarMinta(); $('infoMinta').textContent = 'Gagal memuat status: ' + e.message; return; }
-    susunStatus(); renderDaftarMinta(); renderPlotList(); renderKirimList(); renderTagihanList(); renderRingkasan(); renderDetail(); renderRekapPage();
+    susunStatus(); renderDaftarMinta(); renderPlotList(); renderKirimList(); renderTagihanList(); renderRingkasan(); renderDetail(); renderRekapPage(); renderPoVendor();
   }
   function susunStatus() { // daftar sudah urut terbaru dulu, jadi yang pertama per bagian adalah permintaan terakhir
     terbaru = new Map();
@@ -2045,7 +2046,9 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     for (const k of kar) for (const it of items) { const a = k.alloc[it.no]; if (a) rincian.push({ nama: k.nama, item_no: it.no, item_nama: it.nama, qty: Number(a.qty), baju: a.baju, celana: a.celana, sepatu: a.sepatu }); }
     btn.disabled = true; btn.textContent = 'Menyimpan…'; st.style.color = ''; st.textContent = '';
     try {
-      const n = await rpc('simpan_ploting', { kode: kodePlot(), p_permintaan: p.id, p_rincian: rincian });
+      let alasan = null;
+      if (p.po_dikirim) { alasan = prompt(`PO permintaan ini sudah dikirim ke vendor (${tglTanggal(p.po_dikirim)}). Perubahan ukuran harus diberitahukan ke vendor.\n\nAlasan perubahan:`); if (!alasan || !alasan.trim()) { btn.textContent = label; btn.disabled = false; return; } }
+      const n = await rpc('simpan_ploting', { kode: kodePlot(), p_permintaan: p.id, p_rincian: rincian, p_alasan: alasan });
       pData.tersimpan = true; pData.kotor = false; st.style.color = 'var(--ok)'; st.textContent = `✓ Ploting tersimpan (${n} baris).`;
       await muatStatus();
       const baru = daftarMinta.find(x => x.id === p.id); if (baru) pData.p = baru;
@@ -2281,6 +2284,32 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     const s = selisihHariKv(b.janji.tgl_janji, hariIniWib());
     return `<span class="badge ${b.status === 'terlambat' ? 'bad' : 'ok'}">Estimasi ${tglPdkKv(b.janji.tgl_janji)} · ${ketHariKv(s)}</span>` + (b.baru > 0 ? ` <span class="badge warn">+${idn(b.baru)} belum diestimasi</span>` : '');
   }
+  // ---- PO ke vendor: kekurangan baru dihitung setelah PO ditandai terkirim ----
+  const tglTanggal = d => new Date(String(d).slice(0, 10) + "T00:00:00Z").toLocaleDateString("id-ID", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" });
+  const pcsPo = p => (p.items || []).reduce((a, i) => { const h = HARGA.find(x => String(x.no) === String(i.no)); return a + (h && h.kat === 'Aksesoris' ? 0 : Number(i.qty) || 0); }, 0);
+  function renderPoVendor() {
+    const el = $('poPanel'); if (!el) return;
+    const disetujui = daftarMinta.filter(p => stReq(p) === 'disetujui'), belum = disetujui.filter(p => !p.po_dikirim), sudah = disetujui.filter(p => p.po_dikirim).sort((a, b) => String(b.po_dicatat || b.po_dikirim).localeCompare(String(a.po_dicatat || a.po_dikirim)));
+    if (!disetujui.length) { el.hidden = true; return; }
+    el.hidden = false;
+    const baris = p => `<label class="kcek" style="display:flex;gap:10px;align-items:center;padding:6px 0"><input type="checkbox" class="poCek" value="${p.id}" checked><span><b>${esc(p.client)}</b> · ${esc(p.bagian_kerja)} <span class="muted">· ${idn(pcsPo(p))} pcs · disetujui ${tglP(p.diputuskan || p.dibuat)}</span></span></label>`;
+    el.innerHTML = belum.length
+      ? `<div class="row" style="flex-wrap:wrap;gap:10px"><div><h3 style="margin:0 0 4px">PO belum dikirim ke vendor</h3><div class="muted">${belum.length} permintaan sudah disetujui tetapi belum ditandai terkirim, jadi belum dihitung sebagai pesanan ke vendor dan belum ikut kekurangan/penagihan. Kirim PO (PDF dari form permintaan) ke vendor lalu tandai di sini.</div></div></div><div style="margin:10px 0">${belum.map(baris).join("")}</div><div class="row" style="flex-wrap:wrap;gap:10px;align-items:end"><label class="kvpilih">Tanggal PO dikirim<input type="date" id="poTgl" value="${hariIniWib()}" max="${hariIniWib()}"></label><button class="cta" id="poTandai">Tandai PO sudah dikirim ke vendor</button></div>`
+      : `<div class="row"><div><h3 style="margin:0 0 4px">PO ke vendor</h3><div class="muted">Semua permintaan yang disetujui sudah ditandai terkirim ke vendor.</div></div></div>`;
+    if (sudah.length) el.innerHTML += `<details style="margin-top:10px"><summary class="muted" style="cursor:pointer">PO yang sudah ditandai terkirim (${sudah.length})</summary>${sudah.slice(0, 15).map(p => `<div class="rl"><span>${esc(p.client)} · ${esc(p.bagian_kerja)} <span class="muted">· PO ${tglTanggal(p.po_dikirim)}</span></span><button class="btn ghost" data-pobatal="${p.id}" type="button">Batalkan</button></div>`).join("")}</details>`;
+  }
+  document.addEventListener('click', async ev => {
+    const tb = ev.target.closest('#poTandai'), bb = ev.target.closest('[data-pobatal]'); if (!tb && !bb) return;
+    const btn = tb || bb, awal = btn.textContent; btn.disabled = true;
+    try {
+      await Masuk.wajib();
+      if (tb) {
+        const ids = [...document.querySelectorAll('.poCek:checked')].map(c => Number(c.value)); if (!ids.length) throw new Error('Pilih minimal satu permintaan.');
+        btn.textContent = 'Menyimpan…'; await rpc('po_tandai', { kode: Masuk.kode(), p_ids: ids, p_tanggal: $('poTgl').value || null });
+      } else { if (!confirm('Batalkan tanda PO terkirim? Pesanan ini tidak lagi dihitung dalam kekurangan vendor.')) { btn.disabled = false; return; } await rpc('po_batal', { kode: Masuk.kode(), p_id: Number(btn.dataset.pobatal) }); }
+      await muatStatus(); if (typeof muatKekurangan === 'function') muatKekurangan();
+    } catch (e) { btn.disabled = false; btn.textContent = awal; alert('Gagal: ' + e.message); }
+  });
   function renderKekurangan() {
     if (!$('kvIsi')) return;
     $('kvTab').innerHTML = [['kurang', 'Kekurangan & estimasi'], ['riwayat', 'Riwayat pengiriman']].map(([k, t]) => `<button class="chip ${kvTab === k ? 'on' : ''}" data-t="${k}">${t}</button>`).join('');
