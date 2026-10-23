@@ -6,12 +6,22 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 
 // Tombol Tolak/Revisi membuka halaman revisi.html di web; halaman itu memanggil fungsi ini dengan alasan di body JSON ({alasan}).
 // Karena itu fungsi menjawab CORS dari web administrasi.
-const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'content-type' };
+const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'content-type' };
 const teks = (s: string, status = 200) => new Response(s, { status, headers: { 'Content-Type': 'text/plain; charset=utf-8', ...CORS } });
 const NAMA: Record<string, string> = { yasir: 'Pak Yasir', ferry: 'Pak Ferry' };
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+  // GET: ringkasan permintaan untuk halaman konfirmasi Setujui (setujui.html); hanya untuk pemegang token pimpinan yang sah
+  if (req.method === 'GET') {
+    const g = new URL(req.url), gid = Number(g.searchParams.get('id')), gp = g.searchParams.get('p') ?? '', gt = g.searchParams.get('t') ?? '';
+    if (!gid || (gp !== 'yasir' && gp !== 'ferry') || gt.length < 32) return teks('Permintaan tidak valid.', 400);
+    const dbG = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const { data: x } = await dbG.from('permintaan').select('client,bagian_kerja,dibuat,rab,total_jual,total_beli,untung,items,memo,lampiran_url,status_yasir,status_ferry,token_yasir,token_ferry').eq('id', gid).maybeSingle();
+    if (!x || (gp === 'yasir' ? x.token_yasir : x.token_ferry) !== gt) return teks('Tautan tidak dikenali.', 403);
+    const { token_yasir: _a, token_ferry: _b, ...aman } = x as any;
+    return new Response(JSON.stringify({ ...aman, saya: gp === 'yasir' ? x.status_yasir : x.status_ferry }), { headers: { 'Content-Type': 'application/json', ...CORS } });
+  }
   if (req.method !== 'POST') return teks('Gunakan tombol di notifikasi ntfy.', 405);
   const u = new URL(req.url), id = Number(u.searchParams.get('id')), t = u.searchParams.get('t') ?? '', a = u.searchParams.get('a'), p = u.searchParams.get('p');
   const keputusan = a === 'setuju' ? 'disetujui' : a === 'tolak' ? 'ditolak' : null;

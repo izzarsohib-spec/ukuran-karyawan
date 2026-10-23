@@ -1682,6 +1682,15 @@
     tombol.disabled = false; tombol.textContent = label;
     return sukses;
   }
+  document.addEventListener('click', async ev => { // tarik permintaan yang belum disetujui kedua pimpinan
+    const tr = ev.target.closest('[data-tarik]'); if (!tr) return;
+    const alasan = prompt(`Tarik permintaan no. ${tr.dataset.tarik}? Pimpinan tidak perlu memutuskannya lagi dan anggota bisa dipesankan ulang.
+
+Alasan (boleh kosong):`); if (alasan === null) return;
+    tr.disabled = true;
+    try { await Masuk.wajib(); await rpc('tarik_permintaan', { kode: Masuk.kode(), p_id: Number(tr.dataset.tarik), p_alasan: alasan || null }); await muatStatus(); }
+    catch (e) { tr.disabled = false; alert('Gagal menarik: ' + e.message); }
+  });
   document.addEventListener('click', async ev => {
     const bt = ev.target.closest('[data-ulang]'); if (!bt) return;
     const awal = bt.textContent; bt.disabled = true; bt.textContent = 'Mengirim…';
@@ -1779,8 +1788,9 @@
       return `<div class="bgr"><div class="row"><div><b>${esc(b.nama)}</b><div class="muted">${b.target} orang${ang && ang.per[b.nama] != null ? ' · RAB ' + rp(ang.per[b.nama]) : ''}</div></div>
           <div class="bgact">${badge}<button class="btn" data-buat="${esc(b.nama)}">${p ? (stReq(p) === 'ditolak' ? 'Revisi / buat ulang' : nyusul ? 'Pesankan yang menyusul' : 'Buat lagi') : 'Buat permintaan'}</button></div></div>
         ${riw.length ? `<button class="riw" data-riw="${esc(k)}">${buka ? '▾' : '▸'} Riwayat permintaan (${riw.length})</button>` : ''}
-        ${buka ? riw.map(x => `<div class="rwi"><div class="row"><span>${tglP(x.dibuat)}</span><span class="badge ${labelReq(x)[1]}">${labelReq(x)[0]}</span></div>
+        ${buka ? riw.map(x => `<div class="rwi"><div class="row"><span>${tglP(x.dibuat)}${['menunggu', 'setuju_yasir', 'setuju_ferry'].includes(stReq(x)) ? ` · menunggu ${Math.max(0, Math.floor((Date.now() - Date.parse(x.dibuat)) / 86400000))} hari` : ''}</span><span class="badge ${labelReq(x)[1]}">${labelReq(x)[0]}</span></div>
             ${putusanReq(x)}
+            ${['menunggu', 'setuju_yasir', 'setuju_ferry'].includes(stReq(x)) ? `<div class="rl"><span class="muted">Salah kirim atau perlu diubah?</span><button class="btn ghost" data-tarik="${x.id}" type="button">Tarik permintaan</button></div>` : ''}
             ${(x.items || []).map(i => `<div class="rl"><span>${i.qty} × ${esc(i.nama)}</span><span>beli ${rp(i.beli)} · jual ${rp(i.jual)}</span></div>`).join('')}
             <div class="rl"><b>Total beli ${rp(x.total_beli)} · jual ${rp(x.total_jual)}</b><b class="${x.untung < 0 ? 'neg' : ''}">Untung ${rpMin(x.untung)}</b></div>${x.memo ? `<div class="rl"><span>Catatan: ${esc(x.memo)}</span></div>` : ''}</div>`).join('') : ''}</div>`;
     }).join('');

@@ -6,7 +6,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info',
+  'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info, x-token',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 const balas = (obj: unknown, status = 200) =>
@@ -34,7 +34,7 @@ async function adalahAdmin(db: any, req: Request): Promise<boolean> {
   return !!a;
 }
 
-type Notif = { id: number; client: string; bagian: string; target: number; rab: number; terpakai: number; tJual: number; sisa: number; tBeli: number; untung: number; catatan: string; baris: { nama: string; qty: number; beli: number; jual: number }[]; urlSurat: string; token: Record<string, string> };
+type Notif = { id: number; client: string; bagian: string; target: number; rab: number; terpakai: number; tJual: number; sisa: number; tBeli: number; untung: number; pengingat?: string; catatan: string; baris: { nama: string; qty: number; beli: number; jual: number }[]; urlSurat: string; token: Record<string, string> };
 
 // Angka-angka penting ditaruh PALING ATAS supaya tetap terbaca walau notifikasi dipersingkat; daftar item di bawahnya.
 function teksNotif(n: Notif): string {
@@ -62,18 +62,19 @@ async function kirimNotif(n: Notif, daftar: string[]): Promise<Record<string, nu
   const WEB = Deno.env.get('WEB_URL') ?? 'https://izzarsohib-spec.github.io/ukuran-karyawan';
   const teks = teksNotif(n), hasil: Record<string, number> = {};
   for (const p of PIMPINAN.filter((x) => daftar.includes(x.kunci))) {
-    const url = (a: string) => `${Deno.env.get('SUPABASE_URL')}/functions/v1/keputusan?id=${n.id}&p=${p.kunci}&t=${n.token[p.kunci]}&a=${a}`;
+    // Setujui membuka halaman konfirmasi (bukan satu ketukan) supaya tidak tersetujui karena salah sentuh
+    const urlSetuju = `${WEB}/setujui.html?id=${n.id}&p=${p.kunci}&t=${n.token[p.kunci]}`;
     // Tolak/Revisi membuka halaman web agar pimpinan bisa menulis alasan (tombol http ntfy tidak bisa menerima teks)
     const urlRevisi = `${WEB}/revisi.html?id=${n.id}&p=${p.kunci}&t=${n.token[p.kunci]}`;
     try {
       const r = await fetch(`https://ntfy.sh/${p.topik()}`, {
         method: 'POST',
         headers: {
-          Title: kodekan(`Permintaan seragam: ${n.client} (untuk ${p.nama})`.slice(0, 120)),
+          Title: kodekan(`${n.pengingat ? 'PENGINGAT ' + n.pengingat + ': ' : ''}Permintaan seragam: ${n.client} (untuk ${p.nama})`.slice(0, 120)),
           Click: n.urlSurat, // mengetuk notifikasi langsung membuka surat lengkap
           Priority: '4',
           Tags: 'package',
-          Actions: `http, Setujui ${p.nama}, ${url('setuju')}, method=POST, clear=true; view, Tolak/Revisi ${p.nama}, ${urlRevisi}; view, Buka surat, ${n.urlSurat}`,
+          Actions: `view, Setujui ${p.nama}, ${urlSetuju}; view, Tolak/Revisi ${p.nama}, ${urlRevisi}; view, Buka surat, ${n.urlSurat}`,
         },
         body: teks,
       });
@@ -92,6 +93,31 @@ Deno.serve(async (req) => {
   let body: any;
   try { body = await req.json(); } catch { return balas({ error: 'Data tidak terbaca' }, 400); }
   const { lokasi_form, bagian, memo, halaman, jpg, ploting } = body ?? {};
+  // pengingat harian ke pimpinan yang belum memutuskan; dipanggil terjadwal (pg_cron) dengan header X-Token = N8N_TOKEN
+  if (body?.pengingat_pimpinan) {
+    const tokenSah = Deno.env.get('N8N_TOKEN') ?? '';
+    if (!tokenSah || req.headers.get('x-token') !== tokenSah) return balas({ error: 'Tidak diizinkan' }, 401);
+    const dbP = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const batas = new Date(Date.now() - 20 * 3600_000).toISOString();
+    const { data: sem } = await dbP.from('permintaan').select('*').lte('dibuat', batas).not('lampiran_url', 'is', null).neq('status', 'ditolak').neq('status', 'disetujui').order('dibuat');
+    const ringkas: Record<string, number> = {};
+    for (const k of PIMPINAN) {
+      const mereka = (sem ?? []).filter((p: any) => (p['status_' + k.kunci] ?? p.status ?? 'menunggu') === 'menunggu');
+      ringkas[k.kunci] = mereka.length;
+      for (const p of mereka.slice(0, 5)) {
+        const tJ = Number(p.total_jual) || 0, tB = Number(p.total_beli) || 0, rabU = Number(p.rab) || 0, sisaU = Number(p.untung) - (tJ - tB);
+        const hari = Math.max(1, Math.floor((Date.now() - Date.parse(p.dibuat)) / 86400_000));
+        await kirimNotif({ id: p.id, client: p.client, bagian: p.bagian_kerja, target: p.jumlah_anggota, rab: rabU, terpakai: rabU - sisaU - tJ, tJual: tJ, sisa: sisaU, tBeli: tB, untung: Number(p.untung) || 0,
+          pengingat: `hari ke-${hari}`, catatan: p.memo ?? '', baris: (p.items ?? []).map((b: any) => ({ nama: b.nama, qty: b.qty, beli: b.beli, jual: b.jual })),
+          urlSurat: p.lampiran_url, token: { yasir: p.token_yasir, ferry: p.token_ferry } }, [k.kunci]);
+      }
+      if (mereka.length > 5) {
+        const lain = mereka.slice(5).map((p: any) => `- ${p.client} (${p.bagian_kerja})`).join('\n');
+        try { await fetch(`https://ntfy.sh/${k.topik()}`, { method: 'POST', headers: { Title: kodekan(`${k.nama}: ${mereka.length - 5} permintaan lain masih menunggu`), Priority: '3', Tags: 'hourglass' }, body: lain.slice(0, 3000) }); } catch { /* abaikan */ }
+      }
+    }
+    return balas({ ok: true, menunggu: ringkas });
+  }
   // kirim ulang notifikasi ntfy untuk permintaan yang sudah tersimpan tetapi notifikasinya gagal (tanpa membuat permintaan baru)
   if (body?.kirim_ulang) {
     const idUlang = Number(body.kirim_ulang);
