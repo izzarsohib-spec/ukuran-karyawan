@@ -34,6 +34,57 @@ async function adalahAdmin(db: any, req: Request): Promise<boolean> {
   return !!a;
 }
 
+type Notif = { id: number; client: string; bagian: string; target: number; rab: number; terpakai: number; tJual: number; sisa: number; tBeli: number; untung: number; catatan: string; baris: { nama: string; qty: number; beli: number; jual: number }[]; urlSurat: string; token: Record<string, string> };
+
+// Angka-angka penting ditaruh PALING ATAS supaya tetap terbaca walau notifikasi dipersingkat; daftar item di bawahnya.
+function teksNotif(n: Notif): string {
+  const kepala = [
+    `${n.client}`,
+    `Bagian: ${n.bagian} (${n.target} anggota)`,
+    '',
+    `Anggaran RAB: ${rp(n.rab)}`,
+    ...(n.terpakai > 0 ? [`Sudah terpakai dari RAB sebelumnya: ${rp(n.terpakai)}`] : []),
+    `Total jual: ${rp(n.tJual)}`,
+    `Sisa RAB: ${rp(n.sisa)}`,
+    `Total beli: ${rp(n.tBeli)}`,
+    `Untung: ${rp(n.untung)}`,
+  ];
+  const ekor = ['', 'Perlu persetujuan: Pak Yasir dan Pak Ferry', 'Ketuk notifikasi ini untuk membuka surat lengkap.', ...(n.catatan ? ['', `Catatan: ${n.catatan}`] : [])];
+  const daftar = n.baris.map((b) => `- ${b.qty} x ${b.nama} | beli ${rp(b.beli)} | jual ${rp(b.jual)}`);
+  const susun = (k: number) => [...kepala, '', 'Belanja:', ...daftar.slice(0, k), ...(k < daftar.length ? [`... dan ${daftar.length - k} item lainnya (lihat surat)`] : []), ...ekor].join('\n');
+  let teks = susun(daftar.length);
+  for (let k = daftar.length; teks.length > 2800 && k > 0; k--) teks = susun(k - 1);
+  return teks;
+}
+
+// kirim ke pimpinan yang kuncinya ada di `daftar`; hasil: kode status HTTP per pimpinan (0 = gagal tersambung)
+async function kirimNotif(n: Notif, daftar: string[]): Promise<Record<string, number>> {
+  const WEB = Deno.env.get('WEB_URL') ?? 'https://izzarsohib-spec.github.io/ukuran-karyawan';
+  const teks = teksNotif(n), hasil: Record<string, number> = {};
+  for (const p of PIMPINAN.filter((x) => daftar.includes(x.kunci))) {
+    const url = (a: string) => `${Deno.env.get('SUPABASE_URL')}/functions/v1/keputusan?id=${n.id}&p=${p.kunci}&t=${n.token[p.kunci]}&a=${a}`;
+    // Tolak/Revisi membuka halaman web agar pimpinan bisa menulis alasan (tombol http ntfy tidak bisa menerima teks)
+    const urlRevisi = `${WEB}/revisi.html?id=${n.id}&p=${p.kunci}&t=${n.token[p.kunci]}`;
+    try {
+      const r = await fetch(`https://ntfy.sh/${p.topik()}`, {
+        method: 'POST',
+        headers: {
+          Title: kodekan(`Permintaan seragam: ${n.client} (untuk ${p.nama})`.slice(0, 120)),
+          Click: n.urlSurat, // mengetuk notifikasi langsung membuka surat lengkap
+          Priority: '4',
+          Tags: 'package',
+          Actions: `http, Setujui ${p.nama}, ${url('setuju')}, method=POST, clear=true; view, Tolak/Revisi ${p.nama}, ${urlRevisi}; view, Buka surat, ${n.urlSurat}`,
+        },
+        body: teks,
+      });
+      hasil[p.kunci] = r.status;
+    } catch { hasil[p.kunci] = 0; }
+  }
+  return hasil;
+}
+const sukses = (h: Record<string, number>, k: string) => h[k] >= 200 && h[k] < 300;
+const kunciNama = (n: string) => String(n).toUpperCase().replace(/\s+/g, ' ').trim();
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
   if (req.method !== 'POST') return balas({ error: 'Metode tidak didukung' }, 405);
@@ -41,6 +92,29 @@ Deno.serve(async (req) => {
   let body: any;
   try { body = await req.json(); } catch { return balas({ error: 'Data tidak terbaca' }, 400); }
   const { lokasi_form, bagian, memo, halaman, jpg, ploting } = body ?? {};
+  // kirim ulang notifikasi ntfy untuk permintaan yang sudah tersimpan tetapi notifikasinya gagal (tanpa membuat permintaan baru)
+  if (body?.kirim_ulang) {
+    const idUlang = Number(body.kirim_ulang);
+    if (!Number.isInteger(idUlang)) return balas({ error: 'Nomor permintaan tidak valid' }, 400);
+    const dbU = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    if (!(await adalahAdmin(dbU, req))) return balas({ error: 'Perlu login admin' }, 401);
+    const { data: p } = await dbU.from('permintaan').select('*').eq('id', idUlang).maybeSingle();
+    if (!p) return balas({ error: 'Permintaan tidak ditemukan' }, 404);
+    if (!p.lampiran_url) return balas({ error: 'Surat permintaan ini belum tersimpan, buat ulang permintaannya' }, 409);
+    const tunggu = PIMPINAN.filter((k) => p['terkirim_' + k.kunci] !== true && (p['status_' + k.kunci] ?? p.status ?? 'menunggu') === 'menunggu').map((k) => k.kunci);
+    if (!tunggu.length) return balas({ error: 'Semua notifikasi sudah terkirim atau permintaan sudah diputuskan' }, 409);
+    const tJ = Number(p.total_jual) || 0, tB = Number(p.total_beli) || 0, rabU = Number(p.rab) || 0, sisaU = Number(p.untung) - (tJ - tB);
+    const hasilU = await kirimNotif({ id: p.id, client: p.client, bagian: p.bagian_kerja, target: p.jumlah_anggota, rab: rabU, terpakai: rabU - sisaU - tJ,
+      tJual: tJ, sisa: sisaU, tBeli: tB, untung: Number(p.untung) || 0, catatan: p.memo ?? '',
+      baris: (p.items ?? []).map((b: any) => ({ nama: b.nama, qty: b.qty, beli: b.beli, jual: b.jual })),
+      urlSurat: p.lampiran_url, token: { yasir: p.token_yasir, ferry: p.token_ferry } }, tunggu);
+    const upd: Record<string, boolean> = {};
+    for (const k of tunggu) upd['terkirim_' + k] = sukses(hasilU, k);
+    const semua = PIMPINAN.every((k) => (('terkirim_' + k.kunci) in upd ? upd['terkirim_' + k.kunci] : p['terkirim_' + k.kunci] === true));
+    await dbU.from('permintaan').update({ ...upd, terkirim: semua }).eq('id', p.id);
+    if (!semua) return balas({ error: 'Notifikasi masih gagal terkirim ke ' + PIMPINAN.filter((k) => tunggu.includes(k.kunci) && !sukses(hasilU, k.kunci)).map((k) => k.nama).join(' dan '), id: p.id }, 502);
+    return balas({ ok: true, id: p.id, ntfy: hasilU });
+  }
   let items = body?.items;
   // lampiran: satu gambar JPG per halaman surat (`halaman`); `jpg` (satu gambar) tetap diterima agar versi web lama tidak rusak
   const gambar: string[] = Array.isArray(halaman) ? halaman.map(String) : jpg ? [String(jpg)] : [];
@@ -48,10 +122,13 @@ Deno.serve(async (req) => {
   const rincian: { nama: string; item_no: number; qty: number; baju: string | null; celana: string | null; sepatu: string | null }[] = [];
   if (Array.isArray(ploting) && ploting.length) {
     if (ploting.length > 3000) return balas({ error: 'Pembagian seragam terlalu besar' }, 413);
-    const per = new Map<number, number>();
+    const per = new Map<number, number>(), sudahAda = new Set<string>();
     for (const x of ploting) {
       const no = Number(x?.item_no), qty = Math.floor(Number(x?.qty)), nama = String(x?.nama ?? '').trim();
       if (!Number.isInteger(no) || !(qty > 0) || !nama || nama.length > 200) return balas({ error: 'Data pembagian seragam tidak valid' }, 400);
+      const kunci = kunciNama(nama) + '|' + no;
+      if (sudahAda.has(kunci)) return balas({ error: `${nama} tercantum dua kali untuk seragam yang sama dalam satu permintaan` }, 400);
+      sudahAda.add(kunci);
       per.set(no, (per.get(no) ?? 0) + qty);
       rincian.push({ nama, item_no: no, qty, baju: String(x?.baju ?? '').slice(0, 12) || null, celana: String(x?.celana ?? '').slice(0, 12) || null, sepatu: String(x?.sepatu ?? '').slice(0, 12) || null });
     }
@@ -67,6 +144,18 @@ Deno.serve(async (req) => {
   // batasi jumlah kiriman supaya pimpinan tidak kebanjiran notifikasi
   const { count: baruSaja } = await db.from('permintaan').select('id', { count: 'exact', head: true }).gte('dibuat', new Date(Date.now() - 10 * 60_000).toISOString());
   if ((baruSaja ?? 0) >= 20) return balas({ error: 'Terlalu banyak permintaan dalam 10 menit terakhir, coba lagi nanti' }, 429);
+
+  // orang yang sama tidak boleh dipesankan seragam yang sama dua kali selama permintaan sebelumnya masih aktif (menunggu/disetujui)
+  if (rincian.length) {
+    const [{ data: sebelumnya }, { data: permLama }] = await Promise.all([
+      db.from('ploting').select('nama,item_no,permintaan_id').eq('lokasi_form', lokasi_form).eq('bagian_kerja', bagian).limit(5000),
+      db.from('permintaan').select('id,status,status_yasir,status_ferry').eq('lokasi_form', lokasi_form).eq('bagian_kerja', bagian),
+    ]);
+    const mati = new Set((permLama ?? []).filter((p: any) => [p.status, p.status_yasir, p.status_ferry].includes('ditolak')).map((p: any) => p.id));
+    const aktif = new Set((sebelumnya ?? []).filter((r: any) => !mati.has(r.permintaan_id)).map((r: any) => kunciNama(r.nama) + '|' + r.item_no));
+    const ganda = [...new Set(rincian.filter((r) => aktif.has(kunciNama(r.nama) + '|' + r.item_no)).map((r) => r.nama))];
+    if (ganda.length) return balas({ error: `Sudah ada permintaan aktif untuk seragam yang sama atas nama: ${ganda.slice(0, 8).join(', ')}${ganda.length > 8 ? ` dan ${ganda.length - 8} lainnya` : ''}. Periksa daftar permintaan; bila permintaan lama ditolak/revisi, kirim ulang setelah itu.`, ganda }, 409);
+  }
 
   const nos = items.map((i: any) => Number(i.no));
   const [{ data: harga }, { data: ang }, { data: prog }] = await Promise.all([
@@ -112,24 +201,6 @@ Deno.serve(async (req) => {
     await db.from('permintaan').update({ diploting_pada: new Date().toISOString() }).eq('id', baru.id);
   }
 
-  // Angka-angka penting ditaruh PALING ATAS supaya tetap terbaca walau notifikasi dipersingkat; daftar item di bawahnya.
-  const kepala = [
-    `${prog.client}`,
-    `Bagian: ${bagian} (${prog.target} anggota)`,
-    '',
-    `Anggaran RAB: ${rp(rab)}`,
-    ...(terpakai > 0 ? [`Sudah terpakai dari RAB sebelumnya: ${rp(terpakai)}`] : []),
-    `Total jual: ${rp(tJual)}`,
-    `Sisa RAB: ${rp(sisa)}`,
-    `Total beli: ${rp(tBeli)}`,
-    `Untung: ${rp(untung)}`,
-  ];
-  const ekor = ['', 'Perlu persetujuan: Pak Yasir dan Pak Ferry', 'Ketuk notifikasi ini untuk membuka surat lengkap.', ...(catatan ? ['', `Catatan: ${catatan}`] : [])];
-  const daftar = baris.map((b) => `- ${b.qty} x ${b.nama} | beli ${rp(b.beli)} | jual ${rp(b.jual)}`);
-  const susun = (n: number) => [...kepala, '', 'Belanja:', ...daftar.slice(0, n), ...(n < daftar.length ? [`... dan ${daftar.length - n} item lainnya (lihat surat)`] : []), ...ekor].join('\n');
-  let teks = susun(daftar.length);
-  for (let n = daftar.length; teks.length > 2800 && n > 0; n--) teks = susun(n - 1);
-
   // ntfy.sh gratis membatasi lampiran 2 MB per file, dan penampil gambar HP menciutkan gambar yang sangat panjang sehingga huruf pecah.
   // Jadi tiap halaman disimpan di Supabase Storage (folder acak, tidak bisa ditebak) dan notifikasi membuka halaman web surat
   // (surat.html) yang menampilkan semua halaman selebar layar. Tidak ada lampiran gambar di notifikasi.
@@ -143,27 +214,8 @@ Deno.serve(async (req) => {
   const urlSurat = `${WEB}/surat.html?f=${folder}&n=${gambar.length}&j=${encodeURIComponent(`${prog.client} - ${bagian}`)}`;
   await db.from('permintaan').update({ lampiran_url: urlSurat }).eq('id', baru.id);
 
-  const hasil: Record<string, number> = {};
-  for (const p of PIMPINAN) {
-    const url = (a: string) => `${Deno.env.get('SUPABASE_URL')}/functions/v1/keputusan?id=${baru.id}&p=${p.kunci}&t=${token[p.kunci]}&a=${a}`;
-    // Tolak/Revisi membuka halaman web agar pimpinan bisa menulis alasan (tombol http ntfy tidak bisa menerima teks)
-    const urlRevisi = `${WEB}/revisi.html?id=${baru.id}&p=${p.kunci}&t=${token[p.kunci]}`;
-    try {
-      const r = await fetch(`https://ntfy.sh/${p.topik()}`, {
-        method: 'POST',
-        headers: {
-          Title: kodekan(`Permintaan seragam: ${prog.client} (untuk ${p.nama})`.slice(0, 120)),
-          Click: urlSurat, // mengetuk notifikasi langsung membuka surat lengkap
-          Priority: '4',
-          Tags: 'package',
-          Actions: `http, Setujui ${p.nama}, ${url('setuju')}, method=POST, clear=true; view, Tolak/Revisi ${p.nama}, ${urlRevisi}; view, Buka surat, ${urlSurat}`,
-        },
-        body: teks,
-      });
-      hasil[p.kunci] = r.status;
-    } catch { hasil[p.kunci] = 0; }
-  }
-  const ok = (k: string) => hasil[k] >= 200 && hasil[k] < 300;
+  const hasil = await kirimNotif({ id: baru.id, client: prog.client, bagian, target: prog.target, rab, terpakai, tJual, sisa, tBeli, untung, catatan, baris, urlSurat, token }, PIMPINAN.map((p) => p.kunci));
+  const ok = (k: string) => sukses(hasil, k);
   await db.from('permintaan').update({ terkirim_yasir: ok('yasir'), terkirim_ferry: ok('ferry'), terkirim: ok('yasir') && ok('ferry') }).eq('id', baru.id);
   if (!(ok('yasir') && ok('ferry'))) {
     const gagal = PIMPINAN.filter((p) => !ok(p.kunci)).map((p) => p.nama).join(' dan ');

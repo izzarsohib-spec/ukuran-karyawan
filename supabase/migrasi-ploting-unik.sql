@@ -1,0 +1,2 @@
+-- Orang yang sama tidak boleh tercatat dua kali untuk seragam yang sama dalam satu permintaan.
+create unique index if not exists ploting_unik_orang_item on public.ploting (permintaan_id, upper(btrim(regexp_replace(nama, '\s+', ' ', 'g'))), item_no);

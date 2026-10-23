@@ -1665,8 +1665,12 @@
         body: JSON.stringify({ lokasi_form: d.l.lokasi, bagian: d.bag, items: d.isi.map(x => ({ no: x.h.no, qty: x.q })), ploting: d.rincian, memo: memoMinta(), halaman })
       });
       const j = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
-      st.style.color = 'var(--ok)'; st.textContent = `✓ Terkirim ke Pak Yasir dan Pak Ferry (permintaan no. ${j.id}). Perlu persetujuan keduanya.`;
+      const tersimpanTanpaNotif = r.status === 502 && j.id; // permintaan sudah tersimpan, hanya notifikasi ntfy yang gagal
+      if (!r.ok && !tersimpanTanpaNotif) throw new Error(j.error || 'HTTP ' + r.status);
+      if (tersimpanTanpaNotif) {
+        st.style.color = 'var(--warn)'; st.textContent = `Permintaan no. ${j.id} sudah tersimpan, tetapi ${String(j.error || '').replace(/^Tersimpan \(no\. \d+\) tetapi /, '')}. `;
+        const bt = document.createElement('button'); bt.className = 'btn ghost'; bt.type = 'button'; bt.textContent = 'Kirim ulang notifikasi'; bt.dataset.ulang = j.id; st.appendChild(bt);
+      } else { st.style.color = 'var(--ok)'; st.textContent = `✓ Terkirim ke Pak Yasir dan Pak Ferry (permintaan no. ${j.id}). Perlu persetujuan keduanya.`; }
       const pdfArsip = await siapkanPdf(d).catch(() => null); // dibuat sebelum isian dikosongkan (RAB masih terpakai)
       mDraf.delete(mKunci); mPool = []; mKar = []; mDimuat = false; mCatatan = ''; $('mMemo').value = ''; kosongkanRab(); renderPembagian(); muatStatus(); sukses = true;
       if (Masuk.masuk()) muatKaryawanMinta();
@@ -1678,6 +1682,17 @@
     tombol.disabled = false; tombol.textContent = label;
     return sukses;
   }
+  document.addEventListener('click', async ev => {
+    const bt = ev.target.closest('[data-ulang]'); if (!bt) return;
+    const awal = bt.textContent; bt.disabled = true; bt.textContent = 'Mengirim…';
+    try {
+      await Masuk.wajib();
+      const r = await fetch(`${SUPABASE_URL}/functions/v1/kirim-permintaan`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ kirim_ulang: Number(bt.dataset.ulang) }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
+      bt.textContent = '✓ Terkirim'; muatStatus();
+    } catch (e) { bt.disabled = false; bt.textContent = awal; alert('Gagal mengirim ulang: ' + e.message); }
+  });
   $('mKirim').onclick = () => {
     const d = ambilIsian(); if (!d) return;
     const s = sisaMenyusul();
@@ -1691,7 +1706,7 @@
   const stReq = p => { const y = stYasir(p), f = stFerry(p); return y === 'ditolak' || f === 'ditolak' ? 'ditolak' : y === 'disetujui' && f === 'disetujui' ? 'disetujui' : y === 'disetujui' ? 'setuju_yasir' : f === 'disetujui' ? 'setuju_ferry' : 'menunggu'; };
   const labelReq = p => { const k = stReq(p); return k !== 'ditolak' ? ST[k] : ['Ditolak / Revisi · ' + [stYasir(p) === 'ditolak' ? 'Pak Yasir' : '', stFerry(p) === 'ditolak' ? 'Pak Ferry' : ''].filter(Boolean).join(' & '), 'bad']; };
   const putusanReq = x => [['Pak Yasir', stYasir(x), x.diputuskan_yasir || (x.status_yasir ? null : x.diputuskan), x.terkirim_yasir ?? x.terkirim, x.alasan_yasir], ['Pak Ferry', stFerry(x), x.diputuskan_ferry || (x.status_ferry ? null : x.diputuskan), x.terkirim_ferry ?? x.terkirim, x.alasan_ferry]]
-    .map(([n, st, t, kirim, alasan]) => `<div class="rl"><span>${n}</span><span class="badge ${st === 'disetujui' ? 'ok' : st === 'ditolak' ? 'bad' : 'warn'}">${st === 'disetujui' ? 'Disetujui' : st === 'ditolak' ? 'Ditolak / Revisi' : 'Menunggu'}${t ? ' · ' + tglP(t) : ''}${kirim === false ? ' · gagal terkirim' : ''}</span></div>${st === 'ditolak' && alasan ? `<div class="alasan"><b>Alasan ${n}:</b> ${esc(alasan)}</div>` : ''}`).join('');
+    .map(([n, st, t, kirim, alasan]) => `<div class="rl"><span>${n}</span><span class="badge ${st === 'disetujui' ? 'ok' : st === 'ditolak' ? 'bad' : 'warn'}">${st === 'disetujui' ? 'Disetujui' : st === 'ditolak' ? 'Ditolak / Revisi' : 'Menunggu'}${t ? ' · ' + tglP(t) : ''}${kirim === false ? ' · gagal terkirim' : ''}</span></div>${kirim === false && st === 'menunggu' ? `<div class="rl"><span class="muted">Notifikasi ke ${n} belum sampai.</span><button class="btn ghost" data-ulang="${x.id}" type="button">Kirim ulang notifikasi</button></div>` : ''}${st === 'ditolak' && alasan ? `<div class="alasan"><b>Alasan ${n}:</b> ${esc(alasan)}</div>` : ''}`).join('');
   const LS = { belum: ['Belum dibuat', 'neu'], sebagian: ['Belum lengkap', 'warn'], menunggu: ['Menunggu', 'warn'], setuju_yasir: ['Disetujui Pak Yasir', 'warn'], setuju_ferry: ['Disetujui Pak Ferry', 'warn'], disetujui: ['Disetujui', 'ok'], ditolak: ['Ditolak / Revisi', 'bad'], terkunci: ['', 'neu'] };
   const URUT_LS = { ditolak: 0, belum: 1, sebagian: 2, menunggu: 3, setuju_yasir: 4, setuju_ferry: 5, disetujui: 6, terkunci: 7 };
   let daftarMinta = [], statusMuat = false, terbaru = new Map(), riwBuka = new Set(), cakupan = new Map(); // cakupan: lokasi|bagian -> jumlah penerima yang sudah dipesankan (permintaan tidak ditolak)
@@ -1817,7 +1832,7 @@
   // ================= PLOTING SERAGAM =================
   // Seragam yang sudah disetujui kedua pimpinan dibagikan ke tiap karyawan (nama dan ukuran dari isian Google Form), lalu dibuat
   // PO + lampiran ukuran untuk vendor. Konsepnya sama dengan "Isi Ukuran" di panel admin lama: kuota tiap item harus pas dulu.
-  const UK_BAJU = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'L4', 'L5', 'L6', 'L7'];
+  const UK_BAJU = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL', 'L4', 'L5', 'L6', 'L7'];
   const rentang = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => String(a + i));
   const UK_CELANA = rentang(27, 50), UK_SEPATU = rentang(36, 47);
   // ukuran yang dibutuhkan sebuah item: setelan (baju + celana), baju saja, celana saja, sepatu, atau tanpa ukuran (aksesoris)
