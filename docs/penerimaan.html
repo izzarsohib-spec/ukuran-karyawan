@@ -19,9 +19,15 @@
   .rl:last-child { border-bottom:0; } .rl span:first-child { color:var(--redup); } .rl span:last-child { text-align:right; font-weight:600; }
   label { display:block; font-weight:600; font-size:.88rem; margin:12px 0 5px; }
   input[type=text], input[type=date] { width:100%; padding:11px 12px; border:1px solid var(--garis); border-radius:12px; background:transparent; color:inherit; font:inherit; }
-  .aksi { display:flex; gap:8px; margin-top:6px; } .aksi label.tombol { flex:1; padding:11px 12px; border-radius:12px; border:1px solid var(--garis); background:transparent; color:inherit; font:inherit; text-align:center; cursor:pointer; margin:0; font-weight:600; }
+  .aksi { display:flex; gap:8px; margin-top:6px; } .aksi .tombol { flex:1; padding:11px 12px; border-radius:12px; border:1px solid var(--garis); background:transparent; color:inherit; font:inherit; text-align:center; cursor:pointer; margin:0; font-weight:600; }
   .foto { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; } .foto div { position:relative; } .foto img { width:92px; height:92px; object-fit:cover; border-radius:10px; border:1px solid var(--garis); }
   .foto button { position:absolute; top:-6px; right:-6px; width:24px; height:24px; border-radius:50%; border:0; background:var(--bahaya); color:#fff; font-size:.9rem; line-height:1; }
+  #kamera { position:fixed; inset:0; background:#000; z-index:50; display:none; flex-direction:column; }
+  #kamera.buka { display:flex; } #kamera video { flex:1; min-height:0; width:100%; object-fit:cover; background:#000; }
+  #kamera .bar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 18px calc(14px + env(safe-area-inset-bottom)); background:#000; color:#fff; }
+  #kamera button { border:0; border-radius:99px; font:inherit; font-weight:700; cursor:pointer; }
+  #kamera .tutup { background:#333; color:#fff; padding:12px 20px; } #kamera .jepret { width:72px; height:72px; background:#fff; border:5px solid #888; }
+  #kamera .info { font-size:.85rem; min-width:90px; }
   .kirim { width:100%; padding:14px; border-radius:14px; border:0; background:var(--aksen); color:#fff; font:inherit; font-weight:700; font-size:1.02rem; cursor:pointer; }
   .kirim:disabled { opacity:.6; } #pesan { margin-top:10px; font-size:.92rem; } .gagal { color:var(--bahaya); } .sukses { color:var(--ok); font-weight:600; }
 </style>
@@ -35,11 +41,13 @@
       <label for="tgl">Tanggal terima</label><input type="date" id="tgl" required>
     </div>
     <div class="kartu"><h2>Foto penerimaan</h2><p class="sub">Foto seragam yang diterima dan surat jalan yang sudah ditandatangani (maksimal 8 foto).</p>
-      <div class="aksi"><label class="tombol" for="fotoKamera">📷 Ambil foto</label><label class="tombol" for="fotoIn">🖼️ Pilih dari galeri</label></div>
+      <div class="aksi"><button type="button" class="tombol" id="btnKamera">📷 Ambil foto</button><label class="tombol" for="fotoIn">🖼️ Pilih dari galeri</label></div>
+      <div class="sub" id="infoFoto" style="margin:8px 0 0"></div>
       <input type="file" id="fotoKamera" accept="image/*" capture="environment" hidden><input type="file" id="fotoIn" accept="image/*" multiple hidden><div class="foto" id="foto"></div></div>
     <button class="kirim" id="kirim" type="submit">Kirim penerimaan</button><div id="pesan" role="status"></div>
   </form>
 </main>
+<div id="kamera" role="dialog" aria-label="Kamera"><video id="video" playsinline autoplay muted></video><div class="bar"><button type="button" class="tutup" id="kTutup">Selesai</button><button type="button" class="jepret" id="kJepret" aria-label="Ambil foto"></button><div class="info" id="kInfo">0 foto</div></div></div>
 <script>
   const FN = 'https://vqcusagijiavaoljfrib.supabase.co/functions/v1/penerimaan';
   const q = new URLSearchParams(location.search), id = q.get('id') || '', t = q.get('t') || '';
@@ -49,7 +57,32 @@
   // foto diperkecil dulu di perangkat agar cepat terkirim
   const kecilkan = file => new Promise((ok, no) => { const img = new Image(), u = URL.createObjectURL(file); img.onload = () => { const m = 1280, s = Math.min(1, m / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u); ok(c.toDataURL('image/jpeg', 0.72)); }; img.onerror = () => no(new Error('Foto tidak terbaca')); img.src = u; });
   function renderFoto() { $('foto').innerHTML = fotos.map((f, i) => `<div><img src="${f}" alt="foto ${i + 1}"><button type="button" data-fx="${i}" aria-label="Hapus foto">×</button></div>`).join(''); }
-  $('fotoKamera').onchange = $('fotoIn').onchange = async e => { for (const f of [...e.target.files]) { if (fotos.length >= 8) break; try { fotos.push(await kecilkan(f)); } catch (x) { /* lewati */ } } e.target.value = ''; renderFoto(); };
+  const infoFoto = (t, galat) => { const e = $('infoFoto'); e.textContent = t || ''; e.style.color = galat ? 'var(--bahaya)' : ''; };
+  $('fotoKamera').onchange = $('fotoIn').onchange = async e => {
+    let gagal = 0; for (const f of [...e.target.files]) { if (fotos.length >= 8) { infoFoto('Maksimal 8 foto.', true); break; } try { fotos.push(await kecilkan(f)); } catch (x) { gagal++; } }
+    e.target.value = ''; renderFoto(); if (gagal) infoFoto(gagal + ' foto gagal dibaca (format tidak didukung). Coba ambil ulang atau pilih foto lain.', true); else infoFoto('');
+  };
+  // kamera di dalam halaman: pratinjau langsung + tombol jepret (tidak bergantung pada pemilih berkas bawaan browser)
+  let aliran = null;
+  const tutupKamera = () => { if (aliran) aliran.getTracks().forEach(t => t.stop()); aliran = null; $('kamera').classList.remove('buka'); renderFoto(); };
+  $('btnKamera').onclick = async () => {
+    infoFoto('');
+    if (fotos.length >= 8) { infoFoto('Maksimal 8 foto.', true); return; }
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) { infoFoto('Browser ini tidak mendukung kamera langsung. Membuka kamera bawaan HP…'); $('fotoKamera').click(); return; }
+    try {
+      aliran = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 } }, audio: false });
+      $('video').srcObject = aliran; await $('video').play().catch(() => {}); $('kInfo').textContent = fotos.length + ' foto'; $('kamera').classList.add('buka');
+    } catch (x) {
+      infoFoto('Kamera tidak bisa dibuka (' + (x && x.name === 'NotAllowedError' ? 'izin kamera ditolak. Izinkan kamera untuk situs ini, atau buka tautan ini di Chrome/Safari bukan di dalam aplikasi WhatsApp' : 'kamera tidak tersedia') + '). Mencoba kamera bawaan HP…', true);
+      $('fotoKamera').click();
+    }
+  };
+  $('kJepret').onclick = () => {
+    const v = $('video'); if (!v.videoWidth) return; if (fotos.length >= 8) { $('kInfo').textContent = 'Maksimal 8'; return; }
+    const m = 1280, sk = Math.min(1, m / Math.max(v.videoWidth, v.videoHeight)), c = document.createElement('canvas'); c.width = Math.round(v.videoWidth * sk); c.height = Math.round(v.videoHeight * sk);
+    c.getContext('2d').drawImage(v, 0, 0, c.width, c.height); fotos.push(c.toDataURL('image/jpeg', 0.72)); $('kInfo').textContent = fotos.length + ' foto ✓'; if (navigator.vibrate) navigator.vibrate(30);
+  };
+  $('kTutup').onclick = tutupKamera;
   $('foto').onclick = e => { const b = e.target.closest('[data-fx]'); if (b) { fotos.splice(Number(b.dataset.fx), 1); renderFoto(); } };
 
   async function muat() {
