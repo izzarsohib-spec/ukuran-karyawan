@@ -226,6 +226,26 @@
   .kq.kurang { border-color:var(--warn); background:var(--warn-bg); } .kq.lebih { border-color:var(--bad); background:var(--bad-bg); } .kq.pas { border-color:var(--ok); background:var(--ok-bg); }
   .kq .kb { display:flex; gap:6px; flex-wrap:wrap; } .kq .kb .btn { padding:2px 10px; font-size:.72rem; }
   .pplot { max-height:62vh; }
+  .mtool { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+  .mtool input#mCariNama { width:210px !important; margin:0 !important; }
+  .kcek { display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:.84rem; }
+  .kcek input { width:auto !important; margin:3px 0 0 !important; }
+  .maksi { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:10px 12px; margin-bottom:10px; border:1px solid var(--accent); border-radius:14px; background:rgba(245,213,71,.08); }
+  .maksi select { width:auto !important; min-width:240px; margin:0 !important; }
+  .pplot td.kn { min-width:210px; }
+  .skartu { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:6px 10px; margin:0 0 6px; border:1px solid var(--stroke); border-radius:12px; background:rgba(255,255,255,.06); }
+  .skartu > b { flex:1 1 180px; font-size:.84rem; min-width:0; }
+  .skartu .jml { display:flex; align-items:center; gap:6px; font-size:.76rem; color:var(--muted); }
+  .skartu .pq { width:64px !important; margin:0 !important; padding:5px 8px !important; }
+  .skartu select { width:auto !important; margin:0 !important; padding:5px 8px !important; font-size:.8rem !important; }
+  .skartu select.kosong { border-color:var(--bad); }
+  .skartu .xk { border:0; background:none; color:var(--muted); cursor:pointer; font-size:.95rem; padding:2px 6px; }
+  .skartu .xk:hover { color:var(--bad); }
+  .kmenu { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .kmenu select.tmb { width:auto !important; min-width:200px; margin:0 !important; padding:6px 10px !important; font-size:.82rem !important; }
+  .kmenu .salin { padding:3px 12px; font-size:.74rem; }
+  .msticky { position:sticky; bottom:8px; z-index:5; display:flex; gap:18px; flex-wrap:wrap; margin-top:14px; padding:10px 16px; border-radius:16px; background:#202024; border:1px solid var(--stroke); box-shadow:0 10px 30px rgba(0,0,0,.5); font-size:.84rem; color:var(--muted); }
+  .msticky b { color:var(--text); font-family:var(--head); font-size:.95rem; } .msticky b.neg { color:var(--bad); }
   .pplot td { vertical-align:top; white-space:normal; }
   .pit { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:5px 0; border-bottom:1px dashed var(--stroke); }
   .pit:last-child { border-bottom:0; }
@@ -547,15 +567,11 @@
               <label>Total anggaran (RAB)<input id="mRab" readonly class="hi"></label>
             </div>
 
-            <div class="row" style="margin:18px 0 10px"><b>1. Pilih seragam</b></div>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select id="mPilihItem" style="flex:1;min-width:220px;margin:0"></select><button class="btn" id="mTambah">+ Tambah seragam</button></div>
-            <div class="kuotas" id="mChipItem" style="margin-top:12px"></div>
-
-            <div class="row" style="margin:18px 0 10px"><b>2. Tentukan atas nama siapa</b><span class="muted" id="mKarInfo"></span></div>
+            <div class="row" style="margin:18px 0 10px"><b>1. Atas nama siapa</b><span class="muted" id="mKarInfo"></span></div>
             <div id="mPlot"></div>
             <div class="hint" id="mPlotPesan"></div>
 
-            <div class="row" style="margin:18px 0 10px"><b>3. Ringkasan pesanan</b><span class="muted">dihitung otomatis dari pembagian di atas</span></div>
+            <div class="row" style="margin:18px 0 10px"><b>2. Ringkasan pesanan</b><span class="muted">dihitung otomatis dari pembagian di atas</span></div>
             <div class="wrap tabelminta"><table>
               <thead><tr><th style="min-width:240px">Jenis item</th><th class="r">Harga beli</th><th class="r">Harga jual</th><th style="width:96px">Qty</th><th class="r">Total beli</th><th class="r">Total jual</th><th></th></tr></thead>
               <tbody id="mBody"></tbody>
@@ -581,6 +597,7 @@
             <button class="btn" id="mPreview" style="width:100%;margin-top:14px;border-radius:14px;padding:11px">Preview surat</button>
             <button class="cta" id="mKirim" style="width:100%;margin-top:10px">Kirim ke Pak Yasir &amp; Pak Ferry</button>
             <div class="hint" id="mStatus" role="status"></div>
+            <div class="msticky" id="mSticky" aria-live="polite"></div>
           </div>
         </div>
       </div>
@@ -1061,6 +1078,7 @@
     const rab = mRab(), lalu = terpakaiSebelumnya(mSel, $('mBagian').value), sisa = rab - lalu.t - jual, untung = sisa + (jual - beli);
     const set = (id, v) => { $(id).textContent = (v < 0 ? '-' : '') + rp(Math.abs(v)); $(id).classList.toggle('neg', v < 0); };
     set('sBeli', beli); set('sJual', jual); set('sTerpakai', lalu.t); set('sSisa', sisa); set('sUntung', untung);
+    $('mSticky').innerHTML = `<span>Total <b>${baris.reduce((a, b) => a + b.qty, 0)} pcs</b></span><span>Jual <b>${$('sJual').textContent}</b></span><span>Sisa RAB <b class="${$('sSisa').classList.contains('neg') ? 'neg' : ''}">${$('sSisa').textContent}</b></span><span>Untung <b>${$('sUntung').textContent}</b></span>`;
     $('sTerpakaiL').textContent = lalu.n ? `Sudah terpakai dari RAB (${lalu.n} permintaan sebelumnya)` : 'Sudah terpakai dari RAB sebelumnya';
     $('mPeringatan').textContent = rab && jual > rab - lalu.t ? `Total jual melebihi sisa RAB sebesar ${rp(jual - (rab - lalu.t))}.` : '';
   }
@@ -1068,16 +1086,23 @@
   $('mReset').onclick = () => { mPool = []; mKar.forEach(k => { k.alloc = {}; }); $('mMemo').value = ''; renderPembagian(); };
 
   // ---- pembagian seragam per karyawan, digabung ke form permintaan ----
-  // Pilih seragam, lalu tentukan atas nama siapa (nama + ukuran dari isian Google Form). Jumlah tiap seragam dan semua angka harga/RAB
-  // dihitung otomatis dari pembagian ini. Pembagian ikut tersimpan bersama permintaan; halaman Ploting dipakai untuk koreksi setelah disetujui.
-  let mPool = [], mKar = [], mKunci = '', mDimuat = false, mCatatan = '', mDraf = new Map(); // mDraf: isian per lokasi+bagian selama halaman terbuka
+  // Daftar karyawan (nama + ukuran dari Google Form) langsung jadi pusat kerja: tiap orang punya menu "Pilih seragam" sendiri
+  // (seragam boleh berbeda tiap orang), ditambah aksi massal untuk nama yang dicentang. Jumlah tiap seragam, harga, dan RAB dihitung otomatis.
+  // Pembagian ikut tersimpan bersama permintaan; halaman Ploting dipakai untuk koreksi setelah disetujui.
+  // mKar[i].alloc = { noItem: {qty, baju, celana, sepatu} }; mPool (seragam yang dipakai) selalu diturunkan dari alloc di hitungAlokasi().
+  let mPool = [], mKar = [], mKunci = '', mDimuat = false, mCatatan = '', mCari = '', mDraf = new Map(); // mDraf: isian per lokasi+bagian selama halaman terbuka
   const kunciMinta = () => mSel + '|' + ($('mBagian').value || '');
   const itemMinta = no => { const h = hargaDari(no); return h ? { no: h.no, nama: h.nama, uk: jenisUkuran(h.no, h.nama) } : null; };
+  const cocokNama = k => !mCari || k.nama.toLowerCase().includes(mCari);
+  // ukuran awal dari isian Google Form kalau cocok dengan pilihan yang ada
+  const alokasiAwal = (k, it) => ({ qty: 1, baju: it.uk.baju && UK_BAJU.includes(k.ref.baju) ? k.ref.baju : '', celana: it.uk.celana && UK_CELANA.includes(k.ref.celana) ? k.ref.celana : '', sepatu: it.uk.sepatu && UK_SEPATU.includes(k.ref.sepatu) ? k.ref.sepatu : '' });
+  const opsiItemMinta = (kecuali = {}) => [...new Set(HARGA.map(h => h.kat))].map(k => {
+    const o = HARGA.filter(h => h.kat === k && !kecuali[h.no]); return o.length ? `<optgroup label="${esc(k)}">${o.map(h => `<option value="${h.no}">${esc(h.nama)}</option>`).join('')}</optgroup>` : ''; }).join('');
   function gantiKonteks() { // lokasi atau bagian berganti: simpan isian yang ada, muat isian untuk yang baru
     const k = kunciMinta(); if (k === mKunci) return;
-    if (mKunci && (mPool.length || mKar.length)) mDraf.set(mKunci, { pool: mPool, kar: mKar, dimuat: mDimuat, catatan: mCatatan });
-    mKunci = k; const d = mDraf.get(k);
-    mPool = d ? d.pool : []; mKar = d ? d.kar : []; mDimuat = d ? d.dimuat : false; mCatatan = d ? d.catatan : '';
+    if (mKunci && mKar.length) mDraf.set(mKunci, { kar: mKar, dimuat: mDimuat, catatan: mCatatan });
+    mKunci = k; const d = mDraf.get(k); mCari = '';
+    mKar = d ? d.kar : []; mDimuat = d ? d.dimuat : false; mCatatan = d ? d.catatan : '';
     renderPembagian();
     if (!mDimuat && mSel && $('mBagian').value && Masuk.masuk()) muatKaryawanMinta();
   }
@@ -1089,115 +1114,111 @@
       const mentah = await ambilUkuran(l, bag);
       if (kunci !== mKunci) return; // lokasi/bagian sudah berganti selama memuat
       const unik = new Map(); for (const k of mentah) unik.set(String(k.nama || '').trim().toUpperCase(), k); // nama kembar (isi dua kali): dipakai yang terakhir
-      mKar = [...unik.values()].map(k => ({ nama: String(k.nama || '').trim(), ref: { baju: String(k.ukuran_baju || '').trim().toUpperCase(), celana: String(k.ukuran_celana || '').trim(), sepatu: String(k.ukuran_sepatu || '').trim() }, alloc: {} }));
+      mKar = [...unik.values()].map(k => ({ nama: String(k.nama || '').trim(), ref: { baju: String(k.ukuran_baju || '').trim().toUpperCase(), celana: String(k.ukuran_celana || '').trim(), sepatu: String(k.ukuran_sepatu || '').trim() }, alloc: {}, pilih: false }));
       mDimuat = true; mCatatan = '';
       const p = terbaru.get(l.lokasi + '|' + bag); // revisi: isi awal dari permintaan terakhir yang ditolak
-      if (!mPool.length && p && stReq(p) === 'ditolak' && p.diploting_pada) { try { await isiDariSebelumnya(p); } catch (e) { /* tanpa isian awal */ } }
+      if (p && stReq(p) === 'ditolak' && p.diploting_pada) { try { await isiDariSebelumnya(p); } catch (e) { /* tanpa isian awal */ } }
     } catch (e) { if (kunci === mKunci) $('mPlot').innerHTML = `<div class="hint" style="color:var(--bad)">Gagal memuat karyawan: ${esc(e.message)} <button class="btn" id="mMuatKar">Coba lagi</button></div>`; return; }
     renderPembagian();
   }
   async function isiDariSebelumnya(p) {
-    const tersimpan = await rpc('ambil_ploting', { kode: 'sesi', p_permintaan: p.id }), pool = [];
-    for (const it of p.items || []) if (!pool.some(x => String(x.no) === String(it.no))) { const x = itemMinta(it.no); if (x) pool.push(x); }
-    mPool = pool;
+    const tersimpan = await rpc('ambil_ploting', { kode: 'sesi', p_permintaan: p.id });
     for (const t of tersimpan) {
-      if (!pool.some(x => String(x.no) === String(t.item_no))) continue;
+      if (!itemMinta(t.item_no)) continue;
       let kk = mKar.find(x => x.nama.toUpperCase() === String(t.nama).toUpperCase());
-      if (!kk) { kk = { nama: t.nama, ref: { baju: '', celana: '', sepatu: '' }, alloc: {} }; mKar.push(kk); }
+      if (!kk) { kk = { nama: t.nama, ref: { baju: '', celana: '', sepatu: '' }, alloc: {}, pilih: false }; mKar.push(kk); }
       kk.alloc[t.item_no] = { qty: t.qty, baju: t.ukuran_baju || '', celana: t.ukuran_celana || '', sepatu: t.ukuran_sepatu || '' };
     }
     mCatatan = `Diisi dari permintaan no. ${p.id} yang ditolak/revisi. Ubah sesuai masukan pimpinan, lalu kirim ulang.`;
   }
   function barisKarMinta(k, i) {
-    return `<tr data-i="${i}"><td><b>${esc(k.nama)}</b><div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></td><td>` +
-      (mPool.length ? mPool.map(it => { const a = k.alloc[it.no];
-        return `<div class="pit" data-no="${it.no}"><label class="pil"><input type="checkbox" class="pc" ${a ? 'checked' : ''}> ${esc(it.nama)}</label><input class="pq" type="number" min="1" value="${a ? a.qty : 1}" ${a ? '' : 'disabled'}><span class="pus">${a ? pilihanUkuran(it, a) : ''}</span></div>`; }).join('')
-        : '<span class="muted">Tambahkan seragam di langkah 1 dulu.</span>') +
-      // menu seragam lain langsung di baris karyawan: seragam yang dipilih masuk ke daftar pesanan dan dicentang untuk orang ini
-      (opsiLain ? `<select class="tmb" title="Tambah seragam lain untuk ${esc(k.nama)}"><option value="">+ Tambah seragam lain…</option>${opsiLain}</select>` : '') + '</td></tr>';
+    const ada = Object.keys(k.alloc).filter(no => itemMinta(no)), kecuali = Object.fromEntries(ada.map(no => [no, 1]));
+    const kartu = ada.map(no => { const it = itemMinta(no), a = k.alloc[no];
+      return `<div class="skartu" data-no="${no}"><b>${esc(it.nama)}</b><label class="jml">jml <input class="pq" type="number" min="1" value="${a.qty}"></label><span class="pus">${pilihanUkuran(it, a)}</span><button class="xk" title="Hapus seragam ini" aria-label="Hapus seragam ini">✕</button></div>`; }).join('');
+    const adaLain = ada.length && mKar.some((x, j) => j !== i && x.pilih);
+    return `<tr data-i="${i}" ${cocokNama(k) ? '' : 'hidden'}><td class="kn"><label class="kcek"><input type="checkbox" class="pk" ${k.pilih ? 'checked' : ''}><span><b>${esc(k.nama)}</b><div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></span></label></td>
+      <td>${kartu}<div class="kmenu"><select class="tmb"><option value="">+ Pilih seragam…</option>${opsiItemMinta(kecuali)}</select>${adaLain ? '<button class="btn salin" title="Samakan seragam nama yang dicentang dengan orang ini">Salin ke yang dicentang</button>' : ''}</div></td></tr>`;
   }
-  let opsiLain = ''; // opsi seragam yang belum ada di daftar pesanan (dibuat ulang tiap renderPembagian)
-  const susunOpsiLain = () => { const dipakai = new Set(mPool.map(x => String(x.no))); return [...new Set(HARGA.map(h => h.kat))].map(k => {
-    const o = HARGA.filter(h => h.kat === k && !dipakai.has(String(h.no))); return o.length ? `<optgroup label="${esc(k)}">${o.map(h => `<option value="${h.no}">${esc(h.nama)}</option>`).join('')}</optgroup>` : ''; }).join(''); };
+  function renderTabel() {
+    const w = document.querySelector('#mPlot .pplot'), st = w ? w.scrollTop : 0;
+    $('mTbody').innerHTML = mKar.length ? mKar.map(barisKarMinta).join('') : '<tr><td colspan="2" class="kosongnya">Belum ada karyawan yang mengisi ukuran di Google Form untuk bagian ini. Tambahkan nama manual di bawah.</td></tr>';
+    if (w) w.scrollTop = st;
+  }
   function renderPembagian() {
-    opsiLain = susunOpsiLain();
-    $('mPilihItem').innerHTML = '<option value="">Pilih seragam yang mau ditambahkan</option>' + opsiLain;
-    $('mChipItem').innerHTML = mPool.map(it => `<div class="kq pas" data-no="${it.no}"><b>${esc(it.nama)}</b><span class="kv"><span class="kt">0</span> pcs</span>
-      <div class="kb"><button class="btn" data-semua="${it.no}">Beri semua karyawan</button><button class="btn" data-kosong="${it.no}">Kosongkan</button><button class="btn" data-hapus="${it.no}">Hapus</button></div></div>`).join('');
     const bag = $('mBagian').value, masuk = Masuk.masuk();
     if (!mSel || !bag) $('mPlot').innerHTML = '<div class="hint">Pilih lokasi dan bagian kerja dulu.</div>';
     else if (!mDimuat) $('mPlot').innerHTML = `<div class="hint">Nama dan ukuran karyawan diambil dari isian Google Form${masuk ? '.' : ' dan dibuka setelah login.'} <button class="btn" id="mMuatKar">${masuk ? 'Muat karyawan' : 'Masuk dan muat karyawan'}</button></div>`;
-    else $('mPlot').innerHTML = `${mCatatan ? `<div class="hint" style="margin:0 0 8px;color:var(--warn)">${esc(mCatatan)}</div>` : ''}
-      <div class="wrap pplot"><table><thead><tr><th style="min-width:200px">Karyawan</th><th>Seragam yang diterima</th></tr></thead><tbody>${mKar.length ? mKar.map(barisKarMinta).join('') : '<tr><td colspan="2" class="kosongnya">Belum ada karyawan yang mengisi ukuran di Google Form untuk bagian ini. Tambahkan nama manual di bawah.</td></tr>'}</tbody></table></div>
-      <div style="display:flex;gap:8px;margin-top:10px;align-items:center"><input id="mNamaBaru" placeholder="Nama karyawan yang belum ada di Form" style="margin:0"><button class="btn" id="mTambahNama" style="flex:none">+ Tambah nama</button></div>`;
+    else {
+      if (!$('mTbody')) $('mPlot').innerHTML = `<div id="mCatatanPl"></div>
+        <div class="mtool"><input id="mCariNama" placeholder="Cari nama…" autocomplete="off"><label class="kcek"><input type="checkbox" id="mPilihSemua"><span>Pilih semua nama</span></label><span class="muted" id="mDicentang"></span><button class="btn" id="mLengkapi" title="Isi ukuran yang masih kosong dari isian Google Form">Lengkapi ukuran dari Form</button></div>
+        <div class="maksi" id="mAksi" hidden><select id="mAksiItem"><option value="">+ Beri seragam ke yang dicentang…</option>${opsiItemMinta()}</select><button class="btn" id="mKosongDicentang">Kosongkan yang dicentang</button></div>
+        <div class="wrap pplot"><table><thead><tr><th style="min-width:210px">Karyawan</th><th>Seragam yang diterima (boleh berbeda tiap orang)</th></tr></thead><tbody id="mTbody"></tbody></table></div>
+        <div style="display:flex;gap:8px;margin-top:10px;align-items:center"><input id="mNamaBaru" placeholder="Nama karyawan yang belum ada di Form" style="margin:0"><button class="btn" id="mTambahNama" style="flex:none">+ Tambah nama</button></div>`;
+      $('mCatatanPl').innerHTML = mCatatan ? `<div class="hint" style="margin:0 0 8px;color:var(--warn)">${esc(mCatatan)}</div>` : '';
+      $('mCariNama').value = mCari; renderTabel();
+    }
     hitungAlokasi();
   }
   function hitungAlokasi() { // jumlah per seragam -> ringkasan pesanan dan seluruh angka harga/RAB
-    const tot = new Map(); let kosongUk = 0, penerima = 0;
+    const tot = new Map(), urut = []; let kosongUk = 0, penerima = 0;
     for (const k of mKar) {
-      if (Object.keys(k.alloc).length) penerima++;
-      for (const it of mPool) { const a = k.alloc[it.no]; if (!a) continue; tot.set(String(it.no), (tot.get(String(it.no)) || 0) + (Number(a.qty) || 0));
-        if ((it.uk.baju && !a.baju) || (it.uk.celana && !a.celana) || (it.uk.sepatu && !a.sepatu)) kosongUk++; }
+      const ada = Object.keys(k.alloc); if (ada.length) penerima++;
+      for (const no of ada) {
+        const it = itemMinta(no), a = k.alloc[no]; if (!it) continue;
+        if (!tot.has(String(no))) { tot.set(String(no), 0); urut.push(it); }
+        tot.set(String(no), tot.get(String(no)) + (Number(a.qty) || 0));
+        if ((it.uk.baju && !a.baju) || (it.uk.celana && !a.celana) || (it.uk.sepatu && !a.sepatu)) kosongUk++;
+      }
     }
-    baris = mPool.map(it => ({ no: it.no, qty: tot.get(String(it.no)) || 0 })).filter(b => b.qty > 0);
-    document.querySelectorAll('#mChipItem .kq').forEach(c => { c.querySelector('.kt').textContent = tot.get(c.dataset.no) || 0; });
-    document.querySelectorAll('#mPlot .pit').forEach(div => { const k = mKar[div.closest('tr').dataset.i], a = k && k.alloc[div.dataset.no]; if (a) div.querySelectorAll('select').forEach(s => s.classList.toggle('kosong', !s.value)); });
-    const b = mAnggota();
+    mPool = urut; baris = urut.map(it => ({ no: it.no, qty: tot.get(String(it.no)) })).filter(b => b.qty > 0);
+    document.querySelectorAll('#mTbody .skartu').forEach(div => { const k = mKar[div.closest('tr').dataset.i], a = k && k.alloc[div.dataset.no]; if (a) div.querySelectorAll('select').forEach(s => s.classList.toggle('kosong', !s.value)); });
+    const b = mAnggota(), n = mKar.filter(k => k.pilih).length;
     $('mKarInfo').textContent = mDimuat ? `${penerima} dari ${mKar.length} karyawan menerima seragam${b ? ` · target ${b.target} anggota` : ''}` : '';
-    $('mPlotPesan').textContent = kosongUk ? `${kosongUk} pilihan ukuran belum diisi.` : '';
+    $('mPlotPesan').textContent = kosongUk ? `${kosongUk} pilihan ukuran belum diisi (kotak merah).` : '';
+    if ($('mDicentang')) { $('mDicentang').textContent = n ? `${n} nama dicentang` : ''; $('mAksi').hidden = !n; const tampak = mKar.filter(cocokNama); $('mPilihSemua').checked = tampak.length > 0 && tampak.every(k => k.pilih); }
     renderBaris();
     return { kosongUk, penerima };
   }
-  function ubahCentangMinta(div, tr, cek) {
-    const k = mKar[tr.dataset.i], it = mPool.find(x => String(x.no) === div.dataset.no), q = div.querySelector('.pq');
-    if (cek) { // ukuran awal dari isian Google Form kalau cocok dengan pilihan yang ada
-      const a = { qty: 1, baju: it.uk.baju && UK_BAJU.includes(k.ref.baju) ? k.ref.baju : '', celana: it.uk.celana && UK_CELANA.includes(k.ref.celana) ? k.ref.celana : '', sepatu: it.uk.sepatu && UK_SEPATU.includes(k.ref.sepatu) ? k.ref.sepatu : '' };
-      k.alloc[it.no] = a; q.disabled = false; q.value = 1; div.querySelector('.pus').innerHTML = pilihanUkuran(it, a);
-    } else { delete k.alloc[it.no]; q.disabled = true; q.value = 1; div.querySelector('.pus').innerHTML = ''; }
-  }
-  function beriSemua(no, kosongkan) {
-    document.querySelectorAll('#mPlot tbody tr[data-i]').forEach(tr => {
-      const div = tr.querySelector(`.pit[data-no="${no}"]`); if (!div) return;
-      const cb = div.querySelector('.pc'); if (cb.checked === !kosongkan) return;
-      cb.checked = !kosongkan; ubahCentangMinta(div, tr, !kosongkan);
-    });
-    hitungAlokasi();
-  }
-  $('mTambah').onclick = () => {
-    const no = $('mPilihItem').value, it = no && itemMinta(no); if (!it || mPool.some(x => String(x.no) === String(no))) return;
-    mPool.push(it); renderPembagian();
-  };
-  $('mPilihItem').onchange = () => { if ($('mPilihItem').value) $('mTambah').click(); }; // memilih di menu langsung menambahkan seragam
-  $('mChipItem').onclick = e => {
-    const t = e.target; if (!t.dataset) return;
-    if (t.dataset.semua) return beriSemua(t.dataset.semua, false);
-    if (t.dataset.kosong) return beriSemua(t.dataset.kosong, true);
-    if (t.dataset.hapus) { mPool = mPool.filter(x => String(x.no) !== t.dataset.hapus); mKar.forEach(k => { delete k.alloc[t.dataset.hapus]; }); renderPembagian(); }
-  };
+  const perbarui = () => { renderTabel(); hitungAlokasi(); };
   $('mPlot').onchange = e => {
-    if (e.target.classList.contains('tmb')) { // tambah seragam lain dari baris karyawan: masuk ke daftar pesanan, lalu dicentang untuk karyawan itu
-      const no = e.target.value, i = e.target.closest('tr').dataset.i, it = no && itemMinta(no); if (!it || mPool.some(x => String(x.no) === String(no))) return;
-      mPool.push(it); renderPembagian();
-      const tr = document.querySelector(`#mPlot tbody tr[data-i="${i}"]`), div = tr && tr.querySelector(`.pit[data-no="${no}"]`), cb = div && div.querySelector('.pc');
-      if (cb) { cb.checked = true; ubahCentangMinta(div, tr, true); hitungAlokasi(); }
-      return;
+    const t = e.target, tr = t.closest('tr'), k = tr && mKar[tr.dataset.i];
+    if (t.id === 'mPilihSemua') { mKar.forEach(x => { if (cocokNama(x)) x.pilih = t.checked; }); return perbarui(); }
+    if (t.id === 'mAksiItem') { // beri seragam ke semua nama yang dicentang (yang sudah punya seragam itu dilewati)
+      const no = t.value, it = no && itemMinta(no); t.value = ''; if (!it) return;
+      mKar.filter(x => x.pilih).forEach(x => { if (!x.alloc[no]) x.alloc[no] = alokasiAwal(x, it); }); return perbarui();
     }
-    const div = e.target.closest('.pit'); if (!div) return; const tr = div.closest('tr'), k = mKar[tr.dataset.i];
-    if (e.target.classList.contains('pc')) ubahCentangMinta(div, tr, e.target.checked);
-    else if (k.alloc[div.dataset.no]) { const a = k.alloc[div.dataset.no]; if (e.target.classList.contains('ub')) a.baju = e.target.value; else if (e.target.classList.contains('uc')) a.celana = e.target.value; else if (e.target.classList.contains('us')) a.sepatu = e.target.value; }
+    if (!k) return;
+    if (t.classList.contains('pk')) { k.pilih = t.checked; return perbarui(); }
+    if (t.classList.contains('tmb')) { const no = t.value, it = no && itemMinta(no); if (it && !k.alloc[no]) k.alloc[no] = alokasiAwal(k, it); return perbarui(); }
+    const div = t.closest('.skartu'), a = div && k.alloc[div.dataset.no];
+    if (a) { if (t.classList.contains('ub')) a.baju = t.value; else if (t.classList.contains('uc')) a.celana = t.value; else if (t.classList.contains('us')) a.sepatu = t.value; }
     hitungAlokasi();
   };
   $('mPlot').oninput = e => {
+    if (e.target.id === 'mCariNama') { mCari = e.target.value.trim().toLowerCase(); return perbarui(); }
     if (!e.target.classList.contains('pq')) return;
-    const div = e.target.closest('.pit'), k = mKar[div.closest('tr').dataset.i], a = k.alloc[div.dataset.no]; if (a) a.qty = Math.max(1, Math.floor(Number(e.target.value)) || 1);
+    const div = e.target.closest('.skartu'), k = mKar[div.closest('tr').dataset.i], a = k.alloc[div.dataset.no]; if (a) a.qty = Math.max(1, Math.floor(Number(e.target.value)) || 1);
     hitungAlokasi();
   };
   $('mPlot').onclick = e => {
-    if (e.target.id === 'mMuatKar') { Masuk.wajib().then(() => muatKaryawanMinta()).catch(() => {}); return; }
-    if (e.target.id === 'mTambahNama') {
+    const t = e.target;
+    if (t.id === 'mMuatKar') { Masuk.wajib().then(() => muatKaryawanMinta()).catch(() => {}); return; }
+    if (t.id === 'mTambahNama') {
       const nama = $('mNamaBaru').value.trim(); if (!nama) return;
       if (mKar.some(k => k.nama.toUpperCase() === nama.toUpperCase())) { $('mPlotPesan').textContent = 'Nama itu sudah ada di daftar.'; return; }
-      mKar.push({ nama, ref: { baju: '', celana: '', sepatu: '' }, alloc: {} }); renderPembagian();
+      mKar.push({ nama, ref: { baju: '', celana: '', sepatu: '' }, alloc: {}, pilih: false }); $('mNamaBaru').value = ''; return perbarui();
+    }
+    if (t.id === 'mKosongDicentang') { mKar.filter(x => x.pilih).forEach(x => { x.alloc = {}; }); return perbarui(); }
+    if (t.id === 'mLengkapi') { // isi ukuran yang kosong dari isian Form (hanya kalau cocok dengan pilihan ukuran)
+      for (const k of mKar) for (const no of Object.keys(k.alloc)) { const it = itemMinta(no), a = k.alloc[no], awal = it && alokasiAwal(k, it); if (!it) continue; for (const j of ['baju', 'celana', 'sepatu']) if (!a[j] && awal[j]) a[j] = awal[j]; }
+      return perbarui();
+    }
+    const xk = t.closest('.xk'); if (xk) { const k = mKar[xk.closest('tr').dataset.i]; delete k.alloc[xk.closest('.skartu').dataset.no]; return perbarui(); }
+    const sl = t.closest('.salin');
+    if (sl) { // samakan seragam (jenis dan jumlah) nama yang dicentang dengan orang ini; ukuran tiap orang tetap diambil dari Form-nya
+      const sumber = mKar[sl.closest('tr').dataset.i];
+      mKar.forEach(x => { if (x === sumber || !x.pilih) return; x.alloc = {}; for (const no of Object.keys(sumber.alloc)) { const it = itemMinta(no); if (it) { x.alloc[no] = alokasiAwal(x, it); x.alloc[no].qty = sumber.alloc[no].qty; } } });
+      return perbarui();
     }
   };
   window.addEventListener('masuk-ubah', () => { if (Masuk.masuk() && !mDimuat && mSel && $('mBagian').value) muatKaryawanMinta(); });
