@@ -238,6 +238,10 @@
   .rk { border:1px solid var(--stroke); border-radius:14px; padding:12px 14px; background:rgba(255,255,255,.04); }
   .rk h4 { margin:0 0 6px; font-size:.74rem; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); font-family:inherit; }
   .rk .rl { display:flex; justify-content:space-between; gap:10px; font-size:.86rem; padding:2px 0; }
+  .rkkpi { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; margin:0 0 14px; }
+  .rkkpi > div { border:1px solid var(--stroke); border-radius:14px; padding:10px 14px; background:rgba(255,255,255,.04); }
+  .rkkpi b { display:block; font-family:var(--head); font-size:1.25rem; } .rkkpi span { color:var(--muted); font-size:.76rem; }
+  .ukc { display:inline-block; padding:2px 9px; margin:3px 5px 0 0; border-radius:99px; background:var(--panel2); font-size:.78rem; color:var(--muted); } .ukc b { color:var(--text); }
   .rk .rt { border-top:1px dashed var(--stroke); margin-top:5px; padding-top:5px; color:var(--muted); } .rk .rt b { color:var(--text); }
   .pplot td { padding:12px 10px; }
   .kcek input, .ac, .pk { accent-color:var(--accent); }
@@ -394,14 +398,14 @@
     <a class="home" href="../" title="Halaman Utama" aria-label="Halaman Utama"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span>Halaman Utama</span></a>
     <button class="on" data-pg="ringkasan" title="Dashboard Utama" aria-label="Dashboard Utama"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Dashboard Utama</span></button>
     <button data-pg="monitor" title="Monitoring & Permintaan" aria-label="Monitoring & Permintaan"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span>Monitoring & Permintaan</span></button>
-    <button data-pg="inventaris" title="Rekap Ukuran & Inventaris" aria-label="Rekap Ukuran & Inventaris"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg><span>Rekap Ukuran & Inventaris</span></button>
+    <button data-pg="rekap" title="Rekap Permintaan & Inventaris" aria-label="Rekap Permintaan & Inventaris"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg><span>Rekap Permintaan & Inventaris</span></button>
     <button data-pg="ploting" title="Ploting & Pengiriman" aria-label="Ploting & Pengiriman"><svg viewBox="0 0 24 24"><path d="M2 6h12v10H2zM14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg><span>Ploting & Pengiriman</span></button>
     <button data-pg="tagihan" title="Tagihan" aria-label="Tagihan"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg><span>Tagihan</span></button>
     <div class="sp"></div>
   </aside>
 
   <div class="content">
-   <nav class="mobnav" id="mobnav"><a class="mobhome" href="../">‹ Utama</a><button class="on" data-pg="ringkasan">Dashboard</button><button data-pg="monitor">Monitoring &amp; Permintaan</button><button data-pg="inventaris">Rekap &amp; Inventaris</button><button data-pg="ploting">Ploting &amp; Kirim</button><button data-pg="tagihan">Tagihan</button></nav>
+   <nav class="mobnav" id="mobnav"><a class="mobhome" href="../">‹ Utama</a><button class="on" data-pg="ringkasan">Dashboard</button><button data-pg="monitor">Monitoring &amp; Permintaan</button><button data-pg="rekap">Rekap &amp; Inventaris</button><button data-pg="ploting">Ploting &amp; Kirim</button><button data-pg="tagihan">Tagihan</button></nav>
    <nav class="chips subtabs" id="subtabs" hidden></nav>
 
    <div class="page" id="pg-ringkasan">
@@ -441,6 +445,19 @@
       </div>
     </section>
    </div>
+   <div class="page" id="pg-rekap" hidden>
+    <header><div><h1>Rekap Permintaan</h1><div class="sub" id="infoRekap">Memuat data…</div></div>
+      <div class="bgact"><button class="btn" id="rkMuat">Muat ulang</button><button class="btn" id="rkCsv">Unduh CSV</button></div></header>
+    <section class="card pcard">
+      <div class="row" style="margin-bottom:14px;flex-wrap:wrap;gap:10px">
+        <div class="chips" id="rkTab"></div>
+        <label class="search"><span aria-hidden="true">🔍</span><input id="rkCari" type="search" placeholder="Cari lokasi atau bagian kerja"></label>
+      </div>
+      <div class="rkkpi" id="rkKpi"></div>
+      <div id="rkIsi"></div>
+    </section>
+   </div>
+
    <div class="page" id="pg-inventaris" hidden>
     <header><div><h1>Inventaris</h1><div class="sub" id="infoInv">Memuat data…</div></div>
       <div class="bgact"><button class="btn" id="iMuat">Muat ulang</button><button class="btn" id="iOpnameBtn">Stock opname</button><button class="btn" id="iReturBtn">Retur barang</button><button class="cta" id="iMasukBtn" style="padding:8px 18px">+ Barang masuk dari supplier</button></div></header>
@@ -1037,15 +1054,15 @@
   $('detail').onchange = e => { if (e.target.id === 'fb') { fBagian = e.target.value; renderDetail(); } };
 
   // ---- sub halaman ----
-  const HALAMAN = ['ringkasan', 'monitor', 'permintaan', 'ploting', 'inventaris', 'pengiriman', 'tagihan', 'laporan'];
+  const HALAMAN = ['ringkasan', 'monitor', 'permintaan', 'rekap', 'ploting', 'inventaris', 'pengiriman', 'tagihan', 'laporan'];
   let dashSiap = false;
   function renderRingkasan() { if (dashSiap) { renderDash(); renderMini(); renderLaporan(); } }
-  // lima halaman: Dashboard Utama; Monitoring & Permintaan; Rekap Ukuran & Inventaris; Ploting & Pengiriman (+ penerimaan); Tagihan.
+  // lima halaman: Dashboard Utama; Monitoring & Permintaan; Rekap Permintaan & Inventaris; Ploting & Pengiriman (+ penerimaan); Tagihan.
   // Halaman gabungan memakai sub-tab. Laporan Harian tidak ada di sidebar: dibuka dari halaman Administrator.
   if (window.top !== window.self) document.body.classList.add('dalam');
   if (window.top !== window.self && location.hash === '#laporan') document.body.classList.add('embed');
-  const GRUP = { ringkasan: 'ringkasan', monitor: 'monitor', permintaan: 'monitor', inventaris: 'inventaris', ploting: 'ploting', pengiriman: 'ploting', tagihan: 'tagihan' };
-  const SUB = { monitor: [['monitor', 'Monitoring pengisian'], ['permintaan', 'Permintaan seragam']], ploting: [['ploting', 'Koreksi ploting'], ['pengiriman', 'Pengiriman & penerimaan']] };
+  const GRUP = { ringkasan: 'ringkasan', monitor: 'monitor', permintaan: 'monitor', rekap: 'rekap', inventaris: 'rekap', ploting: 'ploting', pengiriman: 'ploting', tagihan: 'tagihan' };
+  const SUB = { monitor: [['monitor', 'Monitoring pengisian'], ['permintaan', 'Permintaan seragam']], rekap: [['rekap', 'Rekap permintaan'], ['inventaris', 'Inventaris']], ploting:[['ploting', 'Koreksi ploting'], ['pengiriman', 'Pengiriman & penerimaan']] };
   function tampil(pg) {
     if (!HALAMAN.includes(pg)) pg = 'ringkasan';
     for (const h of HALAMAN) $('pg-' + h).hidden = h !== pg;
@@ -1057,6 +1074,7 @@
     if (window.parent !== window) window.parent.postMessage({ tipe: 'halaman', modul: 'seragam', pg: g }, location.origin); // sorotan menu portal ikut
     window.scrollTo({ top: 0 });
     if (pg === 'permintaan' || pg === 'ploting' || pg === 'monitor') muatStatus();
+    if (pg === 'rekap') { muatStatus(); muatRekapUkuran(); }
     if (pg === 'inventaris' || pg === 'pengiriman' || pg === 'tagihan') { muatStatus(); muatHilir(); }
     if (pg === 'laporan') { muatStatus(); muatHilir(); muatCatatan(); }
   }
@@ -1647,7 +1665,7 @@
       try { peralatanDiSeragam = new Map((await rpc('peralatan_terpakai_seragam', {})).map(x => [x.lokasi_form + '' + x.bagian_kerja, Number(x.jual)])); } catch (e) { peralatanDiSeragam = new Map(); }
       try { cakupan = new Map((await rpc('cakupan_permintaan', {})).map(x => [x.lokasi_form + '|' + x.bagian_kerja, x.penerima])); } catch (e) { cakupan = new Map(); }
     } catch (e) { daftarMinta = []; susunStatus(); renderDaftarMinta(); $('infoMinta').textContent = 'Gagal memuat status: ' + e.message; return; }
-    susunStatus(); renderDaftarMinta(); renderPlotList(); renderKirimList(); renderTagihanList(); renderRingkasan(); renderDetail();
+    susunStatus(); renderDaftarMinta(); renderPlotList(); renderKirimList(); renderTagihanList(); renderRingkasan(); renderDetail(); renderRekapPage();
   }
   function susunStatus() { // daftar sudah urut terbaru dulu, jadi yang pertama per bagian adalah permintaan terakhir
     terbaru = new Map();
@@ -1771,16 +1789,21 @@
   // Rekap barang yang dipecah per jenis, karena di lapangan barang datang terpisah (baju sendiri, celana sendiri, sepatu, aksesoris).
   // Seragam setelan dipecah jadi baju + celana; atasan/baju saja dan celana saja digabung ke jenis yang sama
   // (mis. SERAGAM PDL + ATASAN PDL = BAJU PDL). Hanya jumlah; harga tetap per item seperti daftar harga.
+  // komponen barang sebuah item: [[jenis, nama komponen]]; setelan menghasilkan dua (baju dan celana)
+  function komponenBarang(no, nama) {
+    const n = String(nama || '').toUpperCase().trim(); if (!n) return [];
+    const uk = jenisUkuran(no, nama), dasar = n.replace(/\s*\(BAJU SAJA\)/g, '').replace(/^(SERAGAM|ATASAN|BAJU|CELANA|SETELAN)\s+/, '').trim() || n, out = [];
+    if (uk.sepatu) out.push(['Sepatu', n]);
+    else if (!uk.baju && !uk.celana) out.push(['Aksesoris', n]);
+    else if (/^SETELAN/.test(n)) out.push(['Baju', n]); // setelan khusus (blazer + kemeja + celana) dibiarkan satu baris
+    else { if (uk.baju) out.push(['Baju', /^KAOS\b/.test(n) ? n : 'BAJU ' + dasar]); if (uk.celana) out.push(['Celana', 'CELANA ' + dasar]); }
+    return out;
+  }
   function rekapBarang(daftar) { // daftar: [{ no, nama, qty }] -> [{ jenis, baris: [[nama, qty]], total }]
     const grup = { Baju: new Map(), Celana: new Map(), Sepatu: new Map(), Aksesoris: new Map() };
     for (const x of daftar) {
-      const n = String(x.nama || '').toUpperCase().trim(), qty = Number(x.qty) || 0; if (!n || !qty) continue;
-      const uk = jenisUkuran(x.no, x.nama), dasar = n.replace(/\s*\(BAJU SAJA\)/g, '').replace(/^(SERAGAM|ATASAN|BAJU|CELANA|SETELAN)\s+/, '').trim() || n;
-      const tambah = (g, label) => grup[g].set(label, (grup[g].get(label) || 0) + qty);
-      if (uk.sepatu) tambah('Sepatu', n);
-      else if (!uk.baju && !uk.celana) tambah('Aksesoris', n);
-      else if (/^SETELAN/.test(n)) tambah('Baju', n); // setelan khusus (blazer + kemeja + celana) dibiarkan satu baris
-      else { if (uk.baju) tambah('Baju', /^KAOS\b/.test(n) ? n : 'BAJU ' + dasar); if (uk.celana) tambah('Celana', 'CELANA ' + dasar); }
+      const qty = Number(x.qty) || 0; if (!qty) continue;
+      for (const [g, label] of komponenBarang(x.no, x.nama)) grup[g].set(label, (grup[g].get(label) || 0) + qty);
     }
     return Object.entries(grup).map(([jenis, m]) => ({ jenis, baris: [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], 'id')), total: [...m.values()].reduce((a, b) => a + b, 0) })).filter(g => g.baris.length);
   }
@@ -2067,6 +2090,70 @@
       tabel({ startY: 148, margin: { top: 92, bottom: 110, left: L + 28, right: PW - R + 28 }, head: [['ITEM', 'JENIS', 'UKURAN', 'JUMLAH']], body: rekap, columnStyles: { 1: { cellWidth: 80 }, 2: { cellWidth: 60 }, 3: { cellWidth: 60 } } }); }
     return doc.output('datauristring').split(',')[1];
   }
+
+  // ================= REKAP PERMINTAAN =================
+  // Gabungan SEMUA permintaan yang sudah disetujui kedua pimpinan (termasuk permintaan susulan), mengikuti filter Cabang/PIC.
+  // Empat tampilan: per jenis barang (setelan dipecah jadi baju + celana), per ukuran (dari pembagian per karyawan), per lokasi, dan daftar permintaan.
+  const RK_TAB = [['jenis', 'Per jenis barang'], ['ukuran', 'Per ukuran'], ['lokasi', 'Per lokasi'], ['daftar', 'Daftar permintaan']];
+  let rkTab = 'jenis', rkUk = [], rkUkMuat = false;
+  const disetujuiSemua = () => daftarMinta.filter(p => stReq(p) === 'disetujui');
+  const rkCocok = (lok, bag) => { const q = $('rkCari').value.trim().toLowerCase(); return !q || `${lok} ${bag}`.toLowerCase().includes(q); };
+  const pcsPermintaan = p => (p.items || []).reduce((a, i) => a + (Number(i.qty) || 0), 0);
+  async function muatRekapUkuran() {
+    try { const r = await rpc('rekap_ukuran_disetujui', {}); await Saring.siap; rkUk = r.filter(x => Saring.boleh(x.lokasi_form)); rkUkMuat = true; } catch (e) { rkUk = []; rkUkMuat = false; }
+    renderRekapPage();
+  }
+  const urutUkuran = (a, b) => { const ia = UK_BAJU.indexOf(a), ib = UK_BAJU.indexOf(b); if (ia >= 0 && ib >= 0) return ia - ib; const na = parseFloat(a), nb = parseFloat(b); return !isNaN(na) && !isNaN(nb) ? na - nb : String(a).localeCompare(String(b), 'id', { numeric: true }); };
+  // data tiap tampilan sebagai tabel mentah (judul + baris), dipakai untuk tampilan dan unduhan CSV
+  function dataRekap() {
+    const ps = disetujuiSemua().filter(p => rkCocok(p.client || p.lokasi_form, p.bagian_kerja));
+    if (rkTab === 'jenis') {
+      const g = rekapBarang(ps.flatMap(p => (p.items || []).map(i => ({ no: i.no, nama: i.nama, qty: i.qty }))));
+      return { ps, jenis: g, kepala: ['Jenis', 'Barang', 'Jumlah'], baris: g.flatMap(x => x.baris.map(([n, q]) => [x.jenis, n, q])) };
+    }
+    if (rkTab === 'ukuran') {
+      const peta = { baju: 'Baju', celana: 'Celana', sepatu: 'Sepatu' }, per = new Map(); // "Jenis|label" -> Map(ukuran -> qty)
+      for (const r of rkUk.filter(x => rkCocok(x.lokasi_form, x.bagian_kerja))) {
+        const g = peta[r.jenis], kom = komponenBarang(r.item_no, r.item_nama).find(k => k[0] === g), label = kom ? kom[1] : String(r.item_nama).toUpperCase(), kunci = g + '|' + label;
+        if (!per.has(kunci)) per.set(kunci, new Map()); per.get(kunci).set(r.ukuran, (per.get(kunci).get(r.ukuran) || 0) + Number(r.qty));
+      }
+      // jumlah tiap barang menurut permintaan (semua yang disetujui), untuk menunjukkan berapa pcs yang belum punya data ukuran
+      const jum = new Map(); rekapBarang(ps.flatMap(p => (p.items || []).map(i => ({ no: i.no, nama: i.nama, qty: i.qty })))).forEach(x => x.baris.forEach(([n, q]) => jum.set(x.jenis + '|' + n, q)));
+      for (const k of jum.keys()) if (!k.startsWith('Aksesoris|') && !per.has(k)) per.set(k, new Map());
+      const g = ['Baju', 'Celana', 'Sepatu'].map(j => ({ jenis: j, baris: [...per.entries()].filter(([k]) => k.startsWith(j + '|')).map(([k, m]) => [k.slice(j.length + 1), [...m.entries()].sort((a, b) => urutUkuran(a[0], b[0])), Math.max(0, (jum.get(k) || 0) - [...m.values()].reduce((a, b) => a + b, 0))]).sort((a, b) => a[0].localeCompare(b[0], 'id')) })).filter(x => x.baris.length);
+      return { ps, ukuran: g, kepala: ['Jenis', 'Barang', 'Ukuran', 'Jumlah'], baris: g.flatMap(x => x.baris.flatMap(([n, m, sisa]) => [...m.map(([u, q]) => [x.jenis, n, u, q]), ...(sisa ? [[x.jenis, n, '(belum ada data ukuran)', sisa]] : [])])) };
+    }
+    if (rkTab === 'lokasi') {
+      const m = new Map();
+      for (const p of ps) { const k = p.lokasi_form + '|' + p.bagian_kerja; if (!m.has(k)) m.set(k, { client: p.client, bagian: p.bagian_kerja, anggota: p.jumlah_anggota, n: 0, pcs: 0, jual: 0, kunci: k }); const x = m.get(k); x.n++; x.pcs += pcsPermintaan(p); x.jual += Number(p.total_jual || 0); }
+      const l = [...m.values()].sort((a, b) => a.client.localeCompare(b.client));
+      return { ps, lokasi: l, kepala: ['Lokasi', 'Bagian kerja', 'Anggota', 'Penerima', 'Permintaan', 'Pcs', 'Nilai jual'], baris: l.map(x => [x.client, x.bagian, x.anggota, cakupan.get(x.kunci) || '', x.n, x.pcs, x.jual]) };
+    }
+    const d = [...ps].sort((a, b) => new Date(b.dibuat) - new Date(a.dibuat));
+    return { ps, daftar: d, kepala: ['No', 'Tanggal', 'Lokasi', 'Bagian kerja', 'Pcs', 'Nilai jual', 'Nilai beli'], baris: d.map(p => [p.id, new Date(p.dibuat).toLocaleDateString('id-ID'), p.client, p.bagian_kerja, pcsPermintaan(p), Number(p.total_jual || 0), Number(p.total_beli || 0)]) };
+  }
+  function renderRekapPage() {
+    if (!$('rkIsi')) return;
+    $('rkTab').innerHTML = RK_TAB.map(([k, t]) => `<button class="chip ${rkTab === k ? 'on' : ''}" data-t="${k}">${t}</button>`).join('');
+    if (!statusMuat) { $('infoRekap').textContent = 'Memuat data…'; $('rkIsi').innerHTML = ''; $('rkKpi').innerHTML = ''; return; }
+    const d = dataRekap(), semua = disetujuiSemua(), pcs = d.ps.reduce((a, p) => a + pcsPermintaan(p), 0), jual = d.ps.reduce((a, p) => a + Number(p.total_jual || 0), 0), beli = d.ps.reduce((a, p) => a + Number(p.total_beli || 0), 0);
+    $('infoRekap').textContent = semua.length ? `${idn(semua.length)} permintaan sudah disetujui kedua pimpinan${Saring.aktif() ? ' · ' + Saring.label() : ''}` : 'Belum ada permintaan yang disetujui Pak Yasir dan Pak Ferry';
+    $('rkKpi').innerHTML = [[idn(d.ps.length), 'Permintaan disetujui'], [idn(new Set(d.ps.map(p => p.lokasi_form)).size), 'Lokasi'], [idn(pcs), 'Total pcs'], [rpRingkas(jual), 'Nilai jual'], [rpRingkas(beli), 'Nilai beli']].map(([a, b]) => `<div><b>${a}</b><span>${b}</span></div>`).join('');
+    if (!d.ps.length) { $('rkIsi').innerHTML = '<div class="kosongnya">Tidak ada permintaan yang disetujui untuk filter ini.</div>'; return; }
+    if (rkTab === 'jenis') $('rkIsi').innerHTML = `<div class="hint" style="margin:0 0 10px">Seragam setelan dipecah jadi baju dan celana (SERAGAM PDL = Baju PDL + Celana PDL); atasan dan celana satuan digabung ke jenis yang sama.</div><div class="rekap">${d.jenis.map(x => `<div class="rk"><h4>${x.jenis}</h4>${x.baris.map(([n, q]) => `<div class="rl"><span>${esc(n)}</span><b>${idn(q)}</b></div>`).join('')}<div class="rl rt"><span>Total ${x.jenis.toLowerCase()}</span><b>${idn(x.total)}</b></div></div>`).join('')}</div>`;
+    else if (rkTab === 'ukuran') $('rkIsi').innerHTML = !rkUkMuat ? '<div class="kosongnya">Memuat rekap ukuran…</div>' : d.ukuran.length ? `<div class="hint" style="margin:0 0 10px">Jumlah tiap barang menurut ukuran, dari pembagian per karyawan. Permintaan yang dibuat sebelum ada pembagian per karyawan belum punya data ukuran; jumlahnya ditandai kuning.</div><div class="rekap">${d.ukuran.map(x => `<div class="rk"><h4>${x.jenis}</h4>${x.baris.map(([n, m, sisa]) => `<div class="rl" style="display:block"><div style="display:flex;justify-content:space-between;gap:10px"><span>${esc(n)}</span><b>${idn(m.reduce((a, [, q]) => a + q, 0) + sisa)}</b></div><div>${m.map(([u, q]) => `<span class="ukc">${esc(u)} <b>${idn(q)}</b></span>`).join('')}${sisa ? `<span class="ukc" style="color:var(--warn)">belum ada data ukuran <b>${idn(sisa)}</b></span>` : ''}</div></div>`).join('')}</div>`).join('')}</div>` : '<div class="kosongnya">Belum ada data ukuran dari pembagian per karyawan.</div>';
+    else if (rkTab === 'lokasi') $('rkIsi').innerHTML = `<div class="wrap" style="max-height:none"><table><thead><tr><th>Lokasi</th><th>Bagian kerja</th><th class="r">Anggota</th><th class="r">Penerima</th><th class="r">Permintaan</th><th class="r">Pcs</th><th class="r">Nilai jual</th></tr></thead><tbody>${d.lokasi.map(x => { const c = cakupan.get(x.kunci); return `<tr><td>${esc(x.client)}</td><td>${esc(x.bagian)}</td><td class="r">${idn(x.anggota)}</td><td class="r">${c ? (c < x.anggota ? `<span class="kurang">${c} · menyusul ${x.anggota - c}</span>` : `<span class="penuh">${c} ✓</span>`) : '-'}</td><td class="r">${x.n}</td><td class="r">${idn(x.pcs)}</td><td class="r">${rp(x.jual)}</td></tr>`; }).join('')}</tbody></table></div>`;
+    else $('rkIsi').innerHTML = `<div class="wrap" style="max-height:none"><table><thead><tr><th class="r">No</th><th>Tanggal</th><th>Lokasi</th><th>Bagian kerja</th><th class="r">Pcs</th><th class="r">Nilai jual</th><th class="r">Nilai beli</th></tr></thead><tbody>${d.daftar.map(p => `<tr><td class="r">${p.id}</td><td>${new Date(p.dibuat).toLocaleDateString('id-ID')}</td><td>${esc(p.client)}</td><td>${esc(p.bagian_kerja)}</td><td class="r">${idn(pcsPermintaan(p))}</td><td class="r">${rp(p.total_jual || 0)}</td><td class="r">${rp(p.total_beli || 0)}</td></tr>`).join('')}</tbody></table></div>`;
+  }
+  function unduhRekapCsv() {
+    const d = dataRekap(), sel = v => { const s = String(v ?? ''); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const isi = '﻿' + [d.kepala, ...d.baris].map(b => b.map(sel).join(';')).join('\r\n'), a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([isi], { type: 'text/csv;charset=utf-8' })); a.download = `rekap-permintaan-${rkTab}-${new Date().toISOString().slice(0, 10)}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  $('rkTab').onclick = e => { const t = e.target.dataset && e.target.dataset.t; if (t) { rkTab = t; renderRekapPage(); } };
+  $('rkCari').oninput = renderRekapPage;
+  $('rkMuat').onclick = () => { muatStatus(); muatRekapUkuran(); };
+  $('rkCsv').onclick = unduhRekapCsv;
 
   // ================= INVENTARIS · PENGIRIMAN · TAGIHAN =================
   // Stok disimpan sebagai buku besar gerak (masuk dari supplier, keluar karena pengiriman). Pengiriman membaca hasil ploting dan
@@ -2693,7 +2780,7 @@
   const SEK = [
     { k: 'pengisian', tahap: 'Tahap 1 · Monitoring & Permintaan', judul: 'Pengisian ukuran', sumber: 'isian Google Form karyawan', pg: 'monitor', isi: isiPengisian, filter: () => [['status', 'Status lokasi', [['semua', 'Semua status'], ['lengkap', 'Lengkap'], ['kurang', 'Masih kurang'], ['kosong', 'Belum ada yang isi']]], ['bagian', 'Bagian kerja', [['semua', 'Semua bagian'], ...bagianKerjaSemua().map(b => [b, b])]], ['hari', 'Rentang tren', HARI_OPSI]] },
     { k: 'permintaan', tahap: 'Tahap 1 · Monitoring & Permintaan', judul: 'Permintaan seragam', sumber: 'permintaan dan persetujuan pimpinan', pg: 'permintaan', isi: isiPermintaan, filter: () => [['hari', 'Periode dibuat', HARI_SEMUA], ['status', 'Status', STATUS_MINTA], ['bagian', 'Bagian kerja', [['semua', 'Semua bagian'], ...bagianKerjaSemua().map(b => [b, b])]]] },
-    { k: 'stok', tahap: 'Tahap 2 · Rekap Ukuran & Inventaris', judul: 'Stok gudang', sumber: 'inventaris dan riwayat barang', pg: 'inventaris', isi: isiStok, filter: () => [['kat', 'Kategori', [['semua', 'Semua kategori'], ...[...new Set(HARGA.map(h => h.kat))].map(k => [k, k])]], ['jenis', 'Jenis ukuran', [['semua', 'Semua jenis'], ['baju', 'Baju'], ['celana', 'Celana'], ['sepatu', 'Sepatu'], ['-', 'Tanpa ukuran']]], ['batas', 'Batas menipis', [['2', '2 pcs atau kurang'], ['5', '5 pcs atau kurang'], ['10', '10 pcs atau kurang']]], ['hari', 'Periode gerak stok', HARI_SEMUA]] },
+    { k: 'stok', tahap: 'Tahap 2 · Rekap Permintaan & Inventaris', judul: 'Stok gudang', sumber: 'inventaris dan riwayat barang', pg: 'inventaris', isi: isiStok, filter: () => [['kat', 'Kategori', [['semua', 'Semua kategori'], ...[...new Set(HARGA.map(h => h.kat))].map(k => [k, k])]], ['jenis', 'Jenis ukuran', [['semua', 'Semua jenis'], ['baju', 'Baju'], ['celana', 'Celana'], ['sepatu', 'Sepatu'], ['-', 'Tanpa ukuran']]], ['batas', 'Batas menipis', [['2', '2 pcs atau kurang'], ['5', '5 pcs atau kurang'], ['10', '10 pcs atau kurang']]], ['hari', 'Periode gerak stok', HARI_SEMUA]] },
     { k: 'kirim', tahap: 'Tahap 3 · Ploting & Pengiriman', judul: 'Pengiriman', sumber: 'surat jalan dan progres kirim', pg: 'pengiriman', isi: isiKirim, filter: () => [['status', 'Progres', [['semua', 'Semua'], ['belum', 'Belum dikirim'], ['sebagian', 'Sebagian'], ['selesai', 'Selesai dikirim']]], ['hari', 'Periode surat jalan', HARI_SEMUA]] },
     { k: 'tagihan', tahap: 'Tahap 4 · Tagihan', judul: 'Tagihan', sumber: 'invoice dan pembayaran', pg: 'tagihan', isi: isiTagihan, filter: () => [['status', 'Status', [['semua', 'Semua'], ['belum', 'Belum lunas'], ['sebagian', 'Dibayar sebagian'], ['lunas', 'Lunas']]], ['hari', 'Periode invoice', HARI_SEMUA]] },
   ];
@@ -2708,7 +2795,7 @@
     const t1 = Mk('1', 'Monitoring & Permintaan', 'monitor', [['Pengisian ukuran', adaLok ? pct(I, T) : '…'], ['Lokasi lengkap', adaLok ? `${rows.filter(x => x.i >= x.t).length} / ${rows.length}` : '…'], ['Permintaan disetujui', statusMuat ? idn(setuju) : '…']],
       [...(menunggu ? [[`${menunggu} permintaan menunggu persetujuan`, 'warn']] : []), ...(ditolak ? [[`${ditolak} permintaan ditolak / revisi`, 'bad']] : []), ...(adaLok && T - I > 0 ? [[`${idn(T - I)} anggota belum mengisi`, 'warn']] : [])]);
     const pcs = stok.reduce((a, x) => a + Number(x.saldo), 0), habis = stok.filter(x => x.saldo <= 0).length, tipis = stok.filter(x => x.saldo > 0 && x.saldo <= 2).length;
-    const t2 = Mk('2', 'Rekap Ukuran & Inventaris', 'inventaris', [['Stok di gudang', hilirMuat ? idn(pcs) + ' pcs' : '…'], ['Ukuran habis', hilirMuat ? idn(habis) : '…'], ['Ukuran menipis', hilirMuat ? idn(tipis) : '…']],
+    const t2 = Mk('2', 'Rekap Permintaan & Inventaris', 'inventaris', [['Stok di gudang', hilirMuat ? idn(pcs) + ' pcs' : '…'], ['Ukuran habis', hilirMuat ? idn(habis) : '…'], ['Ukuran menipis', hilirMuat ? idn(tipis) : '…']],
       [...(hilirMuat && habis ? [[`${idn(habis)} ukuran habis, perlu dipesan`, 'bad']] : []), ...(hilirMuat && tipis ? [[`${idn(tipis)} ukuran menipis`, 'warn']] : [])]);
     const sp = statusMuat ? ringkasPlot() : { total: 0, sudah: 0 }, dip = statusMuat ? [...setujuTerakhir().values()].filter(p => p.diploting_pada) : [];
     const tot = dip.reduce((a, p) => a + Number((progres.get(p.id) || {}).total_qty || 0), 0), krm = dip.reduce((a, p) => a + Number((progres.get(p.id) || {}).terkirim_qty || 0), 0), blmTerima = kirimAll.filter(g => g.status === 'dikirim').length;
