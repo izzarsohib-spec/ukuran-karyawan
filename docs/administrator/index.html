@@ -242,16 +242,18 @@
     },
     cabang: {
       grup: 'Organisasi', nama: 'Cabang',
-      ket: 'Kantor utama dan cabang. Cabang yang masih punya PIC atau lokasi tidak bisa dihapus; nonaktifkan saja.',
+      ket: 'Area kerja: kantor utama, cabang, dan sub-area (mis. Semarang Barat/Timur/Selatan/Kota di bawah Semarang). Area yang masih punya PIC atau lokasi tidak bisa dihapus; nonaktifkan saja.',
+      pra: async () => { CAB = await rpc('admin_daftar_cabang'); },
       muat: () => rpc('admin_daftar_cabang'), cari: r => [r.nama, r.kota].join(' '), id: r => r.id, mati: r => !r.aktif,
-      kolom: [['Cabang', r => `<b>${esc(r.nama)}</b>`], ['Jenis', r => r.jenis === 'pusat' ? '<span class="badge ok">Kantor pusat</span>' : '<span class="badge">Cabang</span>'], ['Kota', r => esc(r.kota || '-')], ['PIC aktif', r => num(r.jumlah_pic), 'r'], ['Lokasi', r => num(r.jumlah_lokasi), 'r'], ['Status', r => r.aktif ? '<span class="badge ok">Aktif</span>' : '<span class="badge">Nonaktif</span>']],
+      kolom: [['Area', r => `${r.induk ? '<span class="sub">&nbsp;&nbsp;↳</span> ' : ''}<b>${esc(r.nama)}</b>${r.induk ? `<div class="sub">sub-area ${esc(r.induk)}</div>` : ''}`], ['Jenis', r => r.jenis === 'pusat' ? '<span class="badge ok">Kantor pusat</span>' : '<span class="badge">Cabang</span>'], ['Kota', r => esc(r.kota || '-')], ['PIC aktif', r => num(r.jumlah_pic), 'r'], ['Lokasi', r => num(r.jumlah_lokasi), 'r'], ['Status', r => r.aktif ? '<span class="badge ok">Aktif</span>' : '<span class="badge">Nonaktif</span>']],
       kpi: d => [['Cabang', num(d.length)], ['PIC aktif', num(d.reduce((a, r) => a + r.jumlah_pic, 0))], ['Lokasi terbagi', num(d.reduce((a, r) => a + r.jumlah_lokasi, 0))]],
       form: r => [
         { k: 'nama', l: 'Nama cabang', v: r?.nama, req: true },
         { k: 'jenis', l: 'Jenis', v: r?.jenis || 'cabang', req: true, sel: [['cabang', 'Cabang'], ['pusat', 'Kantor pusat']] },
         { k: 'kota', l: 'Kota', v: r?.kota },
+        { k: 'induk', l: 'Sub-area dari', v: r?.induk_id || '', sel: [['', '(area utama)'], ...CAB.filter(c => !c.induk_id && (!r || c.id !== r.id)).map(c => [c.id, c.nama])], hint: 'Kosongkan untuk area utama; pilih area utama bila ini sub-area' },
         ...(r ? [{ k: 'aktif', l: 'Cabang aktif', cek: true, v: r.aktif }] : [])],
-      simpan: (v, r) => tulis('admin_simpan_cabang', { p_id: r?.id ?? null, p_nama: v.nama, p_jenis: v.jenis, p_kota: v.kota, p_aktif: r ? !!v.aktif : true }),
+      simpan: (v, r) => tulis('admin_simpan_cabang', { p_id: r?.id ?? null, p_nama: v.nama, p_jenis: v.jenis, p_kota: v.kota, p_aktif: r ? !!v.aktif : true, p_induk: intOrNull(v.induk) }),
       hapus: r => tulis('admin_hapus_cabang', { p_id: r.id }), namaBaris: r => r.nama
     },
     karyawan: {

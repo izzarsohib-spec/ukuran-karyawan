@@ -22,24 +22,27 @@
     } catch (e) { dimuat = false; }
   })();
 
+  // area yang dipilih beserta sub-areanya (id sebagai teks)
+  const turunan = id => { const x = String(id); return new Set([x, ...cab.filter(c => String(c.induk) === x).map(c => String(c.id))]); };
   const aktif = () => { const f = baca(); return dimuat && !!(f.cabang || f.pic); };
   function boleh(nama) {
     if (!aktif()) return true;
     const f = baca(), x = peta.get(String(nama == null ? '' : nama).toUpperCase());
-    if (f.pic === TANPA) return (!x || !x.p) && (!f.cabang || (!!x && String(x.c) === String(f.cabang)));
+    const area = f.cabang ? turunan(f.cabang) : null;
+    if (f.pic === TANPA) return (!x || !x.p) && (!area || (!!x && area.has(String(x.c))));
     if (f.pic) return !!x && String(x.p) === String(f.pic);
-    return !!x && String(x.c) === String(f.cabang);
+    return !!x && !!area && area.has(String(x.c));
   }
   function set(o) {
     const f = Object.assign(baca(), o);
-    if (f.pic && f.pic !== TANPA && f.cabang && !pic.some(p => String(p.id) === String(f.pic) && String(p.cabang_id) === String(f.cabang))) f.pic = '';
+    if (f.pic && f.pic !== TANPA && f.cabang && !pic.some(p => String(p.id) === String(f.pic) && turunan(f.cabang).has(String(p.cabang_id)))) f.pic = '';
     tulis(f); umumkan();
   }
   const jumlah = () => [...peta.keys()].filter(boleh).length;
   function label() {
     const f = baca(); if (!aktif()) return 'Semua lokasi';
     const c = cab.find(x => String(x.id) === String(f.cabang)), p = pic.find(x => String(x.id) === String(f.pic));
-    return f.pic === TANPA ? 'Belum ada PIC' + (c ? ' · ' + c.nama : '') : p ? 'PIC ' + p.nama : c ? 'Cabang ' + c.nama : 'Semua lokasi';
+    return f.pic === TANPA ? 'Belum ada PIC' + (c ? ' · ' + c.nama : '') : p ? 'PIC ' + p.nama : c ? (c.induk ? 'Area ' + (cab.find(x => String(x.id) === String(c.induk)) || {}).nama + ' · ' : 'Area ') + c.nama : 'Semua lokasi';
   }
 
   const CSS = `
@@ -58,13 +61,14 @@
   function bar(el, mode) {
     pasangCss();
     const gambar = () => {
-      const f = baca();
+      const f = baca(), cDip = cab.find(x => String(x.id) === String(f.cabang)), areaDipilih = cDip ? (cDip.induk || cDip.id) : '', induk = cab.filter(c => !c.induk), anak = areaDipilih ? cab.filter(c => String(c.induk) === String(areaDipilih)) : [];
       el.innerHTML = `<div class="sf ${mode || 'baris'} ${aktif() ? 'aktif' : ''}">
-        <label>Cabang<select data-f="cabang"><option value="">Semua cabang</option>${cab.map(c => `<option value="${c.id}" ${String(c.id) === String(f.cabang) ? 'selected' : ''}>${esc(c.nama)}</option>`).join('')}</select></label>
-        <label>PIC lapangan<select data-f="pic"><option value="">Semua PIC</option>${pic.filter(p => !f.cabang || String(p.cabang_id) === String(f.cabang)).map(p => `<option value="${p.id}" ${String(p.id) === String(f.pic) ? 'selected' : ''}>${esc(p.nama)}</option>`).join('')}<option value="${TANPA}" ${f.pic === TANPA ? 'selected' : ''}>Belum ada PIC</option></select></label>
+        <label>Area<select data-f="cabang"><option value="">Semua area</option>${induk.map(c => `<option value="${c.id}" ${String(c.id) === String(areaDipilih) ? 'selected' : ''}>${esc(c.nama)}</option>`).join('')}</select></label>
+        ${anak.length ? `<label>Sub-area<select data-f="sub"><option value="">Semua sub-area</option>${anak.map(c => `<option value="${c.id}" ${String(c.id) === String(f.cabang) ? 'selected' : ''}>${esc(c.nama.replace(/^SEMARANG /, ''))}</option>`).join('')}</select></label>` : ''}
+        <label>PIC lapangan<select data-f="pic"><option value="">Semua PIC</option>${pic.filter(p => !f.cabang || turunan(f.cabang).has(String(p.cabang_id))).map(p => `<option value="${p.id}" ${String(p.id) === String(f.pic) ? 'selected' : ''}>${esc(p.nama)}</option>`).join('')}<option value="${TANPA}" ${f.pic === TANPA ? 'selected' : ''}>Belum ada PIC</option></select></label>
         <div class="sk">${dimuat ? `<b>${jumlah()}</b> lokasi${aktif() ? ' · ' + esc(label()) : ''}` : 'memuat…'}</div>${aktif() ? '<button type="button" data-f="reset">Hapus filter</button>' : ''}</div>`;
     };
-    el.onchange = e => { const k = e.target.dataset && e.target.dataset.f; if (k === 'cabang') set({ cabang: e.target.value, pic: '' }); else if (k === 'pic') set({ pic: e.target.value }); };
+    el.onchange = e => { const k = e.target.dataset && e.target.dataset.f; if (k === 'cabang') set({ cabang: e.target.value, pic: '' }); else if (k === 'sub') { const c0 = cab.find(x => String(x.id) === String(baca().cabang)), ar = c0 ? (c0.induk || c0.id) : ''; set({ cabang: e.target.value || ar, pic: '' }); } else if (k === 'pic') set({ pic: e.target.value }); };
     el.onclick = e => { if (e.target.dataset && e.target.dataset.f === 'reset') set({ cabang: '', pic: '' }); };
     window.addEventListener('saring-ubah', gambar); gambar(); siap.then(gambar);
   }
