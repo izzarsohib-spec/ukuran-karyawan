@@ -1659,24 +1659,26 @@
     const s = !ada.length ? 'belum' : sr.includes('ditolak') ? 'ditolak'
       : tunda.length ? (tunda.every(x => x === 'setuju_yasir') ? 'setuju_yasir' : tunda.every(x => x === 'setuju_ferry') ? 'setuju_ferry' : 'menunggu')
       : ada.length < per.length ? 'sebagian' : 'disetujui';
-    return { s, ada: ada.length, total: per.length, per };
+    // anggota yang belum dipesankan pada bagian yang permintaannya tidak ditolak (hanya bila datanya ada; permintaan lama tanpa pembagian tidak dihitung)
+    const nyusul = l.bagian.reduce((a, b, i) => { const p = per[i], c = cakupan.get(l.lokasi + '|' + b.nama); return a + (p && stReq(p) !== 'ditolak' && c ? Math.max(0, b.target - c) : 0); }, 0);
+    return { s, ada: ada.length, total: per.length, per, nyusul };
   }
   function renderDaftarMinta() {
     const semua = lokMinta(); semua.forEach(l => { l.mi = infoLok(l); });
     const q = $('mCari').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    const f = semua.filter(l => q.every(w => l.kunci.includes(w)) && (mStatusF === 'semua' || l.mi.s === mStatusF))
+    const f = semua.filter(l => q.every(w => l.kunci.includes(w)) && (mStatusF === 'semua' || (mStatusF === 'menyusul' ? l.mi.nyusul > 0 : l.mi.s === mStatusF)))
       .sort((a, b) => q.length ? a.client.localeCompare(b.client) : (URUT_LS[a.mi.s] - URUT_LS[b.mi.s]) || a.client.localeCompare(b.client));
     if (!f.some(l => l.lokasi === mSel)) setLokasiMinta(f.length ? f[0].lokasi : '');
-    const n = s => s === 'semua' ? semua.length : semua.filter(l => l.mi.s === s).length;
-    const chips = [['semua', 'Semua'], ['belum', 'Belum dibuat'], ['sebagian', 'Belum lengkap'], ['menunggu', 'Menunggu'], ['setuju_yasir', 'Disetujui Pak Yasir'], ['setuju_ferry', 'Disetujui Pak Ferry'], ['disetujui', 'Disetujui (keduanya)'], ['ditolak', 'Ditolak / Revisi']];
+    const n = s => s === 'semua' ? semua.length : s === 'menyusul' ? semua.filter(l => l.mi.nyusul > 0).length : semua.filter(l => l.mi.s === s).length;
+    const chips = [['semua', 'Semua'], ['belum', 'Belum dibuat'], ['sebagian', 'Belum lengkap'], ['menyusul', 'Ada yang menyusul'], ['menunggu', 'Menunggu'], ['setuju_yasir', 'Disetujui Pak Yasir'], ['setuju_ferry', 'Disetujui Pak Ferry'], ['disetujui', 'Disetujui (keduanya)'], ['ditolak', 'Ditolak / Revisi']];
     $('mChips').innerHTML = chips.map(([s, t]) => `<button class="chip ${mStatusF === s ? 'on' : ''}" data-s="${s}">${t} ${n(s)}</button>`).join('');
-    $('infoMinta').textContent = semua.length ? `${semua.length} lokasi · ${n('belum')} belum dibuat · ${n('menunggu')} menunggu · ${n('disetujui')} disetujui · ${n('ditolak')} ditolak/revisi` : 'Memuat data…';
+    $('infoMinta').textContent = semua.length ? `${semua.length} lokasi · ${n('belum')} belum dibuat · ${n('menunggu')} menunggu · ${n('disetujui')} disetujui · ${n('ditolak')} ditolak/revisi${n('menyusul') ? ` · ${n('menyusul')} lokasi ada yang menyusul (${idn(semua.reduce((a, l) => a + l.mi.nyusul, 0))} orang)` : ''}` : 'Memuat data…';
     $('mDaftar').innerHTML = f.map(l => {
       const [lbl, cls] = LS[l.mi.s], pct = l.mi.total ? 100 * l.mi.ada / l.mi.total : 0;
       return `<button class="item ${l.lokasi === mSel ? 'sel' : ''}" data-k="${esc(l.lokasi)}">
          <div class="nm">${esc(l.client)}</div>
          <div class="bar ${cls === 'neu' ? '' : cls}"><i style="width:${pct}%"></i></div>
-         <div class="mt"><span>${l.mi.ada}/${l.mi.total} bagian</span><span class="badge ${cls}">${lbl}</span></div>
+         <div class="mt"><span>${l.mi.ada}/${l.mi.total} bagian${l.mi.nyusul ? ` · <b style="color:var(--warn)">menyusul ${l.mi.nyusul} orang</b>` : ''}</span><span class="badge ${cls}">${lbl}</span></div>
        </button>`;
     }).join('') || '<div class="kosongnya">Lokasi tidak ditemukan.</div>';
     renderDetailMinta();
@@ -1695,7 +1697,7 @@
     const mi = l.mi || infoLok(l), [lbl, cls] = LS[mi.s], ang = anggaran && anggaran.peta.get(l.lokasi);
     const bagian = l.bagian.map((b, i) => {
       const p = mi.per[i], k = l.lokasi + '|' + b.nama, riw = daftarMinta.filter(x => x.lokasi_form === l.lokasi && x.bagian_kerja === b.nama);
-      const sisa = Math.max(0, b.target - (cakupan.get(k) || 0)), nyusul = !!p && stReq(p) !== 'ditolak' && sisa > 0; // sebagian anggota sudah dipesankan, sisanya menyusul
+      const c0 = cakupan.get(k), sisa = c0 ? Math.max(0, b.target - c0) : 0, nyusul = !!p && stReq(p) !== 'ditolak' && sisa > 0; // sebagian anggota sudah dipesankan, sisanya menyusul
       const badge = (p ? (([t, c]) => `<span class="badge ${c}">${t}</span>`)(labelReq(p)) : '<span class="badge neu">Belum dibuat</span>') + (nyusul ? `<span class="badge warn">Menyusul ${sisa} orang</span>` : '');
       const buka = riwBuka.has(k);
       return `<div class="bgr"><div class="row"><div><b>${esc(b.nama)}</b><div class="muted">${b.target} orang${ang && ang.per[b.nama] != null ? ' · RAB ' + rp(ang.per[b.nama]) : ''}</div></div>
@@ -2790,6 +2792,8 @@
           ${w ? `<button class="worst" ${aksiAttr(m.key, w.aksi, w.arg)}><small>${esc(w.kecil)}</small><b>${esc(w.nama)}</b><small>${esc(w.detail)}</small></button>` : '<button class="worst" disabled><small>Tidak ada yang tertunda</small><b>Semua beres ✓</b></button>'}</div></div>`;
   }
   const bulan30 = () => sumbuWaktu(30);
+  // jumlah anggota yang seragamnya belum dipesankan (permintaan bertahap), seluruh lokasi yang tampil
+  const menyusulOrang = () => lokMinta().reduce((a, l) => a + (infoLok(l).nyusul || 0), 0);
   function miniPermintaan() {
     if (!statusMuat) return null;
     const d = daftarMinta, n = s => d.filter(p => stReq(p) === s).length, tunggu = d.filter(p => !['disetujui', 'ditolak'].includes(stReq(p)));
@@ -2799,7 +2803,7 @@
       persen: d.length ? 100 * n('disetujui') / d.length : 0, labelRing: 'disetujui keduanya', cta: ['Lihat yang menunggu', 'menunggu'],
       kpi: [[idn(d.length), 'Permintaan dibuat', BULAT.info], [idn(tunggu.length), 'Menunggu persetujuan', BULAT.jingga], [idn(n('disetujui')), 'Disetujui keduanya', BULAT.ok], [idn(n('ditolak')), 'Ditolak / revisi', BULAT.bahaya]],
       grafik: { judul: 'Permintaan dibuat 30 hari terakhir', sumbu, seri: [{ nama: 'Permintaan', warna: WD.s1, nilai }] },
-      gap: { label: 'Menunggu persetujuan', besar: idn(tunggu.length), pill: `Pak Yasir ${wy} · Pak Ferry ${wf}`, ket: 'permintaan belum diputuskan',
+      gap: { label: 'Menunggu persetujuan', besar: idn(tunggu.length), pill: `Pak Yasir ${wy} · Pak Ferry ${wf}`, ket: 'permintaan belum diputuskan' + (menyusulOrang() ? ` · ${idn(menyusulOrang())} orang masih menyusul` : ''),
         worst: tertua && { kecil: 'Menunggu paling lama', nama: tertua.client, detail: `${hariSejak(tertua.dibuat)} hari · ${tertua.bagian_kerja}`, aksi: 'lokasi', arg: tertua.lokasi_form } } };
   }
   function miniPloting() {
