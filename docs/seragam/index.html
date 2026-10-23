@@ -257,6 +257,13 @@
   .kvstatus { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; padding:14px 16px; border:1px solid var(--stroke); border-radius:16px; background:rgba(255,255,255,.04); }
   .kvstatus .muted { margin-top:6px; font-size:.84rem; line-height:1.5; max-width:70ch; }
   .kvpdf { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 14px; border:1px solid var(--stroke); border-radius:14px; background:rgba(255,255,255,.05); } .kvpdf .muted { font-size:.8rem; margin-top:2px; }
+  .kcek[hidden] { display:none; }
+  .kvest { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin:8px 0 4px; padding-top:8px; border-top:1px dashed var(--stroke); }
+  .kvest .badge { margin:0 4px 4px 0; } .kvset { display:flex; gap:6px; align-items:center; margin-left:auto; } .kvset input { width:auto !important; margin:0 !important; padding:5px 8px !important; font-size:.8rem !important; } .kvset .btn { padding:4px 12px; font-size:.78rem; white-space:nowrap; }
+  .kvriw { border:1px solid var(--stroke); border-radius:16px; padding:14px 16px; margin-bottom:12px; background:rgba(255,255,255,.04); }
+  .kvriwh { display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap; padding-bottom:10px; margin-bottom:8px; border-bottom:1px solid var(--stroke); }
+  .kvriwb { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:10px 22px; } .kvriwi .rl { display:flex; justify-content:space-between; gap:10px; font-size:.92rem; padding:4px 0 6px; }
+  .kvriwf { margin-top:10px; padding-top:10px; border-top:1px dashed var(--stroke); font-size:.9rem; }
   .kvjanji { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-top:12px; } .kvjanji label { display:block; font-size:.76rem; color:var(--muted); flex:1 1 220px; } .kvjanji input { margin-top:5px; }
   .rkt { max-height:none !important; } .rkt table { width:100%; border-collapse:collapse; }
   .rkt th { font-size:.74rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:600; padding:12px 16px; }
@@ -484,16 +491,12 @@
     <section class="card pcard" id="kvAtas">
       <div class="row" style="flex-wrap:wrap;gap:12px;margin-bottom:14px"><label class="kvpilih">Vendor<select id="kvVendor"></select></label></div>
       <div class="rkkpi" id="kvKpi"></div>
-      <div id="kvTagih"></div>
+      <div id="kvAksi"></div>
     </section>
-    <section class="card pcard" id="kvRincian">
-      <div class="row" style="margin-bottom:12px;flex-wrap:wrap;gap:10px"><h3 style="margin:0">Barang yang belum diterima</h3><label class="kcek" style="font-size:.84rem"><input type="checkbox" id="kvSemua"><span>Tampilkan yang sudah lengkap</span></label></div>
+    <section class="card pcard" id="kvBadan">
+      <div class="row" style="margin-bottom:14px;flex-wrap:wrap;gap:10px"><div class="chips" id="kvTab"></div><label class="kcek" id="kvSemuaWrap" style="font-size:.84rem"><input type="checkbox" id="kvSemua"><span>Tampilkan yang sudah lengkap</span></label></div>
       <p class="rkcat" id="kvCat"></p>
       <div id="kvIsi"></div>
-    </section>
-    <section class="card pcard" id="kvRiwayat" hidden>
-      <h3 style="margin:0 0 10px">Riwayat penagihan</h3>
-      <div id="kvRiw"></div>
     </section>
    </div>
 
@@ -2205,17 +2208,20 @@
   $('rkCsv').onclick = unduhRekapCsv;
 
   // ================= KEKURANGAN VENDOR =================
-  // Dipesan (permintaan disetujui, per ukuran) dikurangi diterima dari supplier (barang masuk di Inventaris), per jenis dan ukuran.
-  // Dari sini vendor ditagih kepastian kirim lewat WhatsApp (fungsi server tagih-vendor -> n8n -> WAHA); tanggal janji dicatat di sini,
-  // lalu pengingat deadline dikirim manual lewat tombol atau otomatis oleh n8n (H-2 bila deadline > 3 hari, H-1 bila 2-3 hari).
-  let kvVendor = [], kvPilih = null, kvBaris = [], kvTagih = [], kvTampil = false, kvSemua = false, kvPesan = '';
+  // Kekurangan = dipesan (semua permintaan disetujui, per ukuran) - diterima dari supplier (barang masuk di Inventaris); pesanan susulan otomatis menambahnya.
+  // Estimasi kirim dicatat PER BARANG dan melekat pada jumlah kekurangan saat dicatat. Kekurangan di atas jumlah itu = tambahan baru yang belum diestimasi;
+  // estimasi yang tanggalnya lewat sementara masih ada kekurangan = terlambat (vendor dimintai estimasi baru). Surat ke vendor berupa PDF lewat WhatsApp
+  // (fungsi server tagih-vendor -> n8n -> WAHA); pengingat otomatis dijalankan n8n tiap pukul 08.00 (H-2 / H-1 sebelum estimasi, dan tindak lanjut setelah terlewat).
+  let kvVendor = [], kvPilih = null, kvBaris = [], kvJanji = [], kvRiw = [], kvTab = 'kurang', kvTampil = false, kvSemua = false, kvPesan = '';
   const GRUP_KV = { baju: 'Baju', celana: 'Celana', sepatu: 'Sepatu' };
   const hariIniWib = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
-  const selisihHariKv = (a, b) => Math.round((Date.parse(a) - Date.parse(b)) / 864e5);
+  const selisihHariKv = (a, b) => Math.round((Date.parse(String(a).slice(0, 10)) - Date.parse(String(b).slice(0, 10))) / 864e5);
   const tglId = iso => iso ? new Date(String(iso).slice(0, 10) + 'T00:00:00Z').toLocaleDateString('id-ID', { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' }) : '-';
-  // gabungkan baris (item + jenis + ukuran) menjadi barang per komponen; kurang dijumlah per ukuran
-  function kvSusun(baris) {
-    const peta = new Map();
+  const tglPdkKv = iso => iso ? new Date(String(iso).slice(0, 10) + 'T00:00:00Z').toLocaleDateString('id-ID', { timeZone: 'UTC', day: 'numeric', month: 'short' }) : '-';
+  const ketHariKv = s => s > 1 ? `${s} hari lagi` : s === 1 ? 'besok' : s === 0 ? 'hari ini' : `terlambat ${-s} hari`;
+  // gabungkan baris (item + jenis + ukuran) menjadi barang per komponen; kurang dijumlah per ukuran; estimasi aktif dipasangkan per barang
+  function kvSusun(baris, janji) {
+    const peta = new Map(), hari = hariIniWib();
     for (const b of baris) {
       const grup = GRUP_KV[b.jenis]; if (!grup) continue;
       const kom = komponenBarang(b.item_no, b.item_nama).find(k => k[0] === grup), label = kom ? kom[1] : String(b.item_nama).toUpperCase(), k = grup + '|' + label;
@@ -2223,108 +2229,128 @@
       const x = peta.get(k); x.dipesan += Number(b.dipesan); x.diterima += Number(b.diterima);
       x.uk.set(b.ukuran, (x.uk.get(b.ukuran) || 0) + Number(b.dipesan) - Number(b.diterima));
     }
-    const urut = ['Baju', 'Celana', 'Sepatu'];
-    return [...peta.values()].map(x => { const ukuran = [...x.uk.entries()].map(([uk, s]) => [uk, Math.max(0, s)]).filter(u => u[1] > 0).sort((a, b) => urutUkuran(a[0], b[0]));
-      return { grup: x.grup, label: x.label, dipesan: x.dipesan, diterima: x.diterima, kurang: ukuran.reduce((a, u) => a + u[1], 0), ukuran }; })
-      .sort((a, b) => urut.indexOf(a.grup) - urut.indexOf(b.grup) || a.label.localeCompare(b.label, 'id'));
+    const urut = ['Baju', 'Celana', 'Sepatu'], aktif = (janji || []).filter(j => j.status === 'aktif');
+    return [...peta.values()].map(x => {
+      const ukuran = [...x.uk.entries()].map(([uk, s]) => [uk, Math.max(0, s)]).filter(u => u[1] > 0).sort((a, b) => urutUkuran(a[0], b[0]));
+      const kurang = ukuran.reduce((a, u) => a + u[1], 0), j = aktif.find(y => y.grup === x.grup && y.label === x.label) || null, tercakup = j ? Math.min(kurang, j.qty) : 0;
+      return { grup: x.grup, label: x.label, dipesan: x.dipesan, diterima: x.diterima, kurang, ukuran, janji: j, tercakup, baru: kurang - tercakup, status: !j ? 'tanpa' : String(j.tgl_janji).slice(0, 10) < hari ? 'terlambat' : 'dijanjikan' };
+    }).sort((a, b) => urut.indexOf(a.grup) - urut.indexOf(b.grup) || a.label.localeCompare(b.label, 'id'));
   }
+  const jenisSuratKv = brg => { const k = brg.filter(b => b.kurang > 0); return k.some(b => b.status === 'terlambat') ? 'lanjutan' : k.some(b => b.status === 'tanpa' || b.baru > 0) ? 'tagih' : 'ingatkan'; };
+  const LABEL_SURAT = { tagih: 'Minta estimasi kirim (WA)', ingatkan: 'Ingatkan deadline (WA)', lanjutan: 'Minta estimasi baru (WA)' };
   async function muatKekurangan() {
     if (!$('kvIsi')) return;
     if (!Masuk.masuk()) { kvTampil = false; renderKekurangan(); return; }
     try {
       kvVendor = (await rpc('admin_daftar_vendor', { kode: 'sesi' })).filter(v => v.aktif);
       if (!kvVendor.some(v => v.id === kvPilih)) kvPilih = kvVendor.length ? kvVendor[0].id : null;
-      if (kvPilih) [kvBaris, kvTagih] = await Promise.all([rpc('kekurangan_vendor', { kode: 'sesi', p_vendor: kvPilih }), rpc('tagih_daftar', { kode: 'sesi', p_vendor: kvPilih })]); else { kvBaris = []; kvTagih = []; }
+      if (kvPilih) [kvBaris, kvJanji, kvRiw] = await Promise.all([rpc('kekurangan_vendor', { kode: 'sesi', p_vendor: kvPilih }), rpc('janji_daftar', { kode: 'sesi', p_vendor: kvPilih }), rpc('riwayat_vendor', { kode: 'sesi', p_vendor: kvPilih })]); else { kvBaris = []; kvJanji = []; kvRiw = []; }
       kvTampil = true; kvPesan = '';
     } catch (e) { kvTampil = false; kvPesan = e.message === 'KODE' ? 'Sesi login berakhir atau akun tidak punya akses admin. Masuk lagi.' : e.message; }
     renderKekurangan();
   }
+  function chipStatusKv(b) {
+    if (!b.janji) return '<span class="badge warn">Belum ada estimasi</span>';
+    const s = selisihHariKv(b.janji.tgl_janji, hariIniWib());
+    return `<span class="badge ${b.status === 'terlambat' ? 'bad' : 'ok'}">Estimasi ${tglPdkKv(b.janji.tgl_janji)} · ${ketHariKv(s)}</span>` + (b.baru > 0 ? ` <span class="badge warn">+${idn(b.baru)} belum diestimasi</span>` : '');
+  }
   function renderKekurangan() {
     if (!$('kvIsi')) return;
+    $('kvTab').innerHTML = [['kurang', 'Kekurangan & estimasi'], ['riwayat', 'Riwayat pengiriman']].map(([k, t]) => `<button class="chip ${kvTab === k ? 'on' : ''}" data-t="${k}">${t}</button>`).join('');
+    $('kvSemuaWrap').hidden = kvTab !== 'kurang';
     if (!kvTampil) {
-      $('infoKurang').textContent = 'Data vendor dibuka setelah login';
-      $('kvKpi').innerHTML = ''; $('kvTagih').innerHTML = ''; $('kvRiwayat').hidden = true; $('kvCat').textContent = '';
-      $('kvVendor').innerHTML = '';
+      $('infoKurang').textContent = 'Data vendor dibuka setelah login'; $('kvKpi').innerHTML = ''; $('kvAksi').innerHTML = ''; $('kvCat').textContent = ''; $('kvVendor').innerHTML = '';
       $('kvIsi').innerHTML = `<div class="hint">${kvPesan ? esc(kvPesan) + ' ' : 'Perhitungan kekurangan dan penagihan vendor hanya untuk admin. '}<button class="btn" id="kvMasuk">Masuk dan muat</button></div>`; return;
     }
-    const v = kvVendor.find(x => x.id === kvPilih), brg = kvSusun(kvBaris), aktif = kvTagih.find(t => t.status !== 'selesai');
+    const v = kvVendor.find(x => x.id === kvPilih), brg = kvSusun(kvBaris, kvJanji), kurangAda = brg.filter(b => b.kurang > 0);
+    const dipesan = brg.reduce((a, b) => a + b.dipesan, 0), kurang = kurangAda.reduce((a, b) => a + b.kurang, 0), diterima = Math.max(0, dipesan - kurang);
     $('kvVendor').innerHTML = kvVendor.map(x => `<option value="${x.id}" ${x.id === kvPilih ? 'selected' : ''}>${esc(x.nama)}</option>`).join('') || '<option value="">Belum ada vendor</option>';
-    const dipesan = brg.reduce((a, b) => a + b.dipesan, 0), kurang = brg.reduce((a, b) => a + b.kurang, 0), diterima = Math.max(0, dipesan - kurang);
     $('infoKurang').textContent = v ? `${v.nama} · ${kurang ? idn(kurang) + ' pcs belum diterima' : 'semua sudah diterima'}` : 'Belum ada vendor aktif. Tambahkan di Administrator › Vendor.';
-    $('kvKpi').innerHTML = [[idn(dipesan), 'Dipesan (disetujui)'], [idn(diterima), 'Sudah diterima'], [idn(kurang), 'Belum diterima'], [idn(brg.filter(b => b.kurang > 0).length), 'Jenis barang kurang']].map(([a, b]) => `<div><span>${b}</span><b>${a}</b></div>`).join('');
-    // ---- panel penagihan ----
-    let t = '';
-    if (!v) t = '<div class="hint" style="margin:0">Tambahkan vendor dan nomor WhatsApp-nya di Administrator › Vendor.</div>';
+    const tanpa = kurangAda.filter(b => b.status === 'tanpa').length, telat = kurangAda.filter(b => b.status === 'terlambat').length, tambah = kurangAda.reduce((a, b) => a + (b.janji ? b.baru : 0), 0);
+    $('kvKpi').innerHTML = [[idn(dipesan), 'Dipesan (disetujui)'], [idn(diterima), 'Sudah diterima'], [idn(kurang), 'Belum diterima'], [idn(kurangAda.length), 'Jenis barang kurang']].map(([a, b]) => `<div><span>${b}</span><b>${a}</b></div>`).join('');
+    // ---- panel aksi ----
+    if (!v) $('kvAksi').innerHTML = '<div class="hint" style="margin:0">Tambahkan vendor dan nomor WhatsApp-nya di Administrator › Vendor.</div>';
     else {
-      const nomorKosong = !v.telepon;
-      const aman = nomorKosong ? '<span class="badge bad">Nomor WA belum diisi</span>' : '<span class="badge ok">WA siap</span>';
-      if (!aktif) t = `<div class="kvstatus"><div><b>Belum ada penagihan</b> ${aman}<div class="muted">${kurang ? 'Tagih kepastian kirim ke vendor lewat WhatsApp; setelah vendor membalas, catat tanggal janjinya di sini.' : 'Tidak ada kekurangan saat ini.'}</div></div>
-        <div class="bgact"><button class="cta" id="kvTagihBtn" ${kurang && !nomorKosong ? '' : 'disabled'}>Tagih kepastian kirim (WA)</button></div></div>`;
-      else {
-        const s = aktif.janji_kirim ? selisihHariKv(aktif.janji_kirim, hariIniWib()) : null;
-        const cls = s === null ? 'warn' : s < 0 ? 'bad' : s <= 2 ? 'warn' : 'ok';
-        const ket = s === null ? 'Menunggu jawaban vendor' : `Dijanjikan ${tglId(aktif.janji_kirim)} · ${s > 1 ? s + ' hari lagi' : s === 1 ? 'besok' : s === 0 ? 'hari ini' : 'terlambat ' + (-s) + ' hari'}`;
-        const oto = aktif.janji_kirim ? (() => { const h = selisihHariKv(aktif.janji_kirim, aktif.tgl_janji_dicatat || hariIniWib()) > 3 ? 2 : 1, tg = new Date(Date.parse(aktif.janji_kirim) - h * 864e5).toISOString().slice(0, 10); return `Pengingat otomatis H-${h} (${tglId(tg)})${aktif.pengingat_oto_untuk === aktif.janji_kirim ? ' sudah terkirim' : ''}`; })() : 'Pengingat otomatis aktif setelah tanggal janji dicatat';
-        t = `<div class="kvstatus"><div><b>Penagihan berjalan</b> <span class="badge ${cls}">${ket}</span> ${aman}
-            <div class="muted">Dibuat ${tglId(aktif.dibuat)} · diingatkan ${aktif.jumlah_pengingat} kali${aktif.terakhir_diingatkan ? ', terakhir ' + tglId(aktif.terakhir_diingatkan) : ''} · ${oto}${aktif.catatan ? ' · Catatan: ' + esc(aktif.catatan) : ''}</div></div>
-          <div class="bgact"><button class="btn" id="kvIngatBtn" ${kurang && !nomorKosong ? '' : 'disabled'}>${aktif.janji_kirim ? 'Ingatkan sekarang (WA)' : 'Tagih lagi (WA)'}</button><button class="btn" id="kvSelesaiBtn">Tandai selesai</button></div></div>
-          <div class="kvjanji"><label>Tanggal janji kirim dari vendor<input type="date" id="kvJanji" value="${aktif.janji_kirim ? String(aktif.janji_kirim).slice(0, 10) : ''}"></label><label>Catatan<input id="kvCatatan" maxlength="200" placeholder="mis. kirim bertahap, ekspedisi" value="${esc(aktif.catatan || '')}"></label><button class="btn" id="kvJanjiBtn">Simpan janji kirim</button></div>
-          <div class="hint" id="kvJanjiSt"></div>`;
-      }
+      const jenis = jenisSuratKv(brg), nomor = !!v.telepon, perlu = brg.filter(b => b.kurang > 0 && (b.status === 'tanpa' || b.status === 'terlambat' || b.baru > 0)).length;
+      const ket = !kurangAda.length ? 'Tidak ada kekurangan saat ini.' : [telat ? `${telat} barang melewati estimasi` : '', tanpa ? `${tanpa} barang belum ada estimasi` : '', tambah ? `+${idn(tambah)} pcs tambahan dari pesanan baru belum diestimasi` : ''].filter(Boolean).join(' · ') || 'Semua barang punya estimasi yang masih berlaku.';
+      $('kvAksi').innerHTML = `<div class="kvstatus"><div><b>${nomor ? '' : '<span class="badge bad">Nomor WA belum diisi</span> '}${esc(ket)}</b><div class="muted">Surat dikirim sebagai PDF lewat WhatsApp. Pengingat otomatis berjalan tiap pukul 08.00: H-2 atau H-1 sebelum estimasi, dan tindak lanjut sekali setelah estimasi terlewat.</div></div>
+        <div class="bgact"><button class="cta" id="kvKirimBtn" ${kurangAda.length && nomor ? '' : 'disabled'}>${LABEL_SURAT[jenis]}</button></div></div>
+        ${perlu ? `<div class="kvjanji"><label>Samakan estimasi untuk ${perlu} barang yang belum ada / terlewat / bertambah<input type="date" id="kvTglSemua" min="${hariIniWib()}"></label><button class="btn" id="kvSemuaBtn">Terapkan ke semuanya</button></div>` : ''}<div class="hint" id="kvAksiSt"></div>`;
     }
-    $('kvTagih').innerHTML = t;
-    // ---- rincian kekurangan ----
+    // ---- isi tab ----
+    if (kvTab === 'riwayat') return renderRiwayatKv();
     const tampak = brg.filter(b => kvSemua || b.kurang > 0);
-    $('kvCat').textContent = kurang ? 'Jumlah yang belum diterima per barang dan ukuran. Kelebihan satu ukuran tidak menutup kekurangan ukuran lain.' : (dipesan ? 'Semua barang yang dipesan sudah tercatat diterima dari vendor.' : 'Belum ada permintaan disetujui yang punya pembagian ukuran per karyawan.');
+    $('kvCat').textContent = kurang ? 'Jumlah yang belum diterima per barang dan ukuran. Estimasi kirim dicatat per barang; kelebihan satu ukuran tidak menutup kekurangan ukuran lain.' : (dipesan ? 'Semua barang yang dipesan sudah tercatat diterima dari vendor.' : 'Belum ada permintaan disetujui yang punya pembagian ukuran per karyawan.');
     $('kvIsi').innerHTML = tampak.length ? `<div class="rekap">${['Baju', 'Celana', 'Sepatu'].map(g => { const l = tampak.filter(b => b.grup === g); if (!l.length) return '';
-      return `<div class="rk"><div class="rkh"><h4>${g}</h4><b>${idn(l.reduce((a, b) => a + b.kurang, 0))} pcs kurang</b></div>${l.map(b => `<div class="rb"><div class="rl"><span>${esc(namaRapi(b.label))}</span><b style="color:${b.kurang ? 'var(--warn)' : 'var(--ok)'}">${b.kurang ? 'kurang ' + idn(b.kurang) : '✓ lengkap'}</b></div><div class="muted" style="font-size:.78rem;margin:-2px 0 6px">dipesan ${idn(b.dipesan)} · diterima ${idn(b.diterima)}</div>${b.ukuran.length ? `<div class="szgrid">${b.ukuran.map(([u, q]) => `<div class="sz kosong"><span>${esc(u)}</span><b>${idn(q)}</b></div>`).join('')}</div>` : ''}</div>`).join('')}</div>`; }).join('')}</div>` : '<div class="kosongnya">Tidak ada kekurangan.</div>';
-    // ---- riwayat ----
-    $('kvRiwayat').hidden = !kvTagih.length;
-    $('kvRiw').innerHTML = kvTagih.map(x => `<div class="rl" style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid rgba(255,255,255,.06)"><span>${tglId(x.dibuat)}${x.janji_kirim ? ' · janji ' + tglId(x.janji_kirim) : ''} · diingatkan ${x.jumlah_pengingat}×</span><span class="badge ${x.status === 'selesai' ? 'ok' : x.status === 'dijanjikan' ? 'warn' : 'neu'}">${x.status === 'selesai' ? 'Selesai' : x.status === 'dijanjikan' ? 'Dijanjikan' : 'Menunggu jawaban'}</span></div>`).join('');
+      return `<div class="rk"><div class="rkh"><h4>${g}</h4><b>${idn(l.reduce((a, b) => a + b.kurang, 0))} pcs kurang</b></div>${l.map(b => `<div class="rb"><div class="rl"><span>${esc(namaRapi(b.label))}</span><b style="color:${b.kurang ? 'var(--warn)' : 'var(--ok)'}">${b.kurang ? 'kurang ' + idn(b.kurang) : '✓ lengkap'}</b></div>
+        <div class="muted" style="font-size:.78rem;margin:-2px 0 6px">dipesan ${idn(b.dipesan)} · diterima ${idn(b.diterima)}</div>
+        ${b.ukuran.length ? `<div class="szgrid">${b.ukuran.map(([u, q]) => `<div class="sz kosong"><span>${esc(u)}</span><b>${idn(q)}</b></div>`).join('')}</div>` : ''}
+        ${b.kurang ? `<div class="kvest">${chipStatusKv(b)}<div class="kvset"><input type="date" class="kvtgl" data-g="${esc(b.grup)}" data-l="${esc(b.label)}" data-q="${b.kurang}" min="${hariIniWib()}" value="${b.janji ? String(b.janji.tgl_janji).slice(0, 10) : ''}"><button class="btn kvsimpan" data-g="${esc(b.grup)}" data-l="${esc(b.label)}" data-q="${b.kurang}">${b.janji ? 'Ubah estimasi' : 'Simpan estimasi'}</button></div></div>` : ''}</div>`).join('')}</div>`; }).join('')}</div>` : '<div class="kosongnya">Tidak ada kekurangan.</div>';
   }
-  // pratinjau pesan WA lalu kirim; semua lewat fungsi server tagih-vendor (nomor vendor diambil server dari database)
-  async function panggilTagih(aksi, jenis) {
-    const r = await fetch(`${SUPABASE_URL}/functions/v1/tagih-vendor`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ aksi, vendor_id: kvPilih, jenis }) });
+  // riwayat pengiriman: tiap pengiriman (tanggal + dokumen) dengan barang dan ukuran yang diterima, serta sisa kekurangan sesudahnya
+  function renderRiwayatKv() {
+    $('kvCat').textContent = kvRiw.length ? `${kvRiw.length} pengiriman tercatat dari vendor ini. Sisa kekurangan dihitung dari pesanan yang sudah disetujui sampai tanggal pengiriman dikurangi semua penerimaan sampai pengiriman itu.` : 'Belum ada barang masuk dari vendor ini yang tercatat di Inventaris.';
+    if (!kvRiw.length) { $('kvIsi').innerHTML = '<div class="kosongnya">Belum ada riwayat pengiriman.</div>'; return; }
+    $('kvIsi').innerHTML = kvRiw.map((r, i) => {
+      const peta = new Map();
+      for (const x of r.rincian || []) {
+        const grup = GRUP_KV[x.jenis], kom = grup ? komponenBarang(x.item_no, x.item_nama).find(k => k[0] === grup) : null, label = kom ? kom[1] : String(x.item_nama).toUpperCase(), k = (grup || 'Lain') + '|' + label;
+        if (!peta.has(k)) peta.set(k, { label, uk: new Map(), total: 0 }); const p = peta.get(k); p.total += Number(x.qty); if (x.ukuran && x.ukuran !== '-') p.uk.set(x.ukuran, (p.uk.get(x.ukuran) || 0) + Number(x.qty));
+      }
+      const barang = [...peta.values()].sort((a, b) => a.label.localeCompare(b.label, 'id')), sebelumnya = kvRiw[i + 1], sisa = Number(r.kurang_setelah), delta = sebelumnya ? sisa - Number(sebelumnya.kurang_setelah) : null;
+      const ketSisa = sisa === 0 ? '<b class="penuh">✓ Tidak ada kekurangan sesudah pengiriman ini</b>' : `<b class="kurang">Kekurangan sesudahnya: ${idn(sisa)} pcs</b>${delta === null ? '' : delta < 0 ? ` <span class="muted">(turun ${idn(-delta)} dari pengiriman sebelumnya)</span>` : delta > 0 ? ` <span class="muted">(naik ${idn(delta)}: ada pesanan baru yang disetujui)</span>` : ' <span class="muted">(sama seperti sebelumnya)</span>'}`;
+      return `<div class="kvriw"><div class="kvriwh"><div><b>${tglId(r.tanggal)}</b><span class="muted"> · dokumen ${esc(r.no_dokumen)}</span></div><b>${idn(r.total)} pcs diterima</b></div>
+        <div class="kvriwb">${barang.map(b => `<div class="kvriwi"><div class="rl"><span>${esc(namaRapi(b.label))}</span><b>${idn(b.total)}</b></div>${b.uk.size ? `<div class="szgrid">${[...b.uk.entries()].sort((a, c) => urutUkuran(a[0], c[0])).map(([u, q]) => `<div class="sz"><span>${esc(u)}</span><b>${idn(q)}</b></div>`).join('')}</div>` : ''}</div>`).join('')}</div>
+        <div class="kvriwf">${ketSisa}</div></div>`;
+    }).join('');
+  }
+  // pratinjau surat (PDF + keterangan WA) lalu kirim; semua lewat fungsi server tagih-vendor (nomor vendor diambil server dari database)
+  async function panggilTagih(aksi) {
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/tagih-vendor`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ aksi, vendor_id: kvPilih }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.belum_diatur ? (j.error || 'Belum diatur di server.') : j.error || 'HTTP ' + r.status);
     return j;
   }
-  async function bukaTagih(jenis) {
-    isiModal('<div class="muted">Menyusun pesan…</div>');
+  const JUDUL_SURAT = { tagih: 'Minta estimasi kirim ke vendor', ingatkan: 'Ingatkan deadline ke vendor', lanjutan: 'Minta estimasi baru ke vendor' };
+  async function bukaTagih() {
+    isiModal('<div class="muted">Menyusun surat PDF…</div>');
     try {
-      const j = await panggilTagih('pratinjau', jenis);
-      modalIngat._kv = { jenis: j.jenis };
-      isiModal(`<h3>${j.jenis === 'ingatkan' ? 'Ingatkan deadline ke vendor' : 'Tagih kepastian kirim ke vendor'}</h3>
-        <div class="muted" style="margin:4px 0 10px">Ke: <b style="color:var(--text)">${esc(j.vendor.nama)}</b> · ${j.jumlah_barang} jenis barang, ${idn(j.total_kurang)} pcs kurang</div>
-        <div class="kvpdf"><div><b>Dikirim sebagai dokumen PDF</b><div class="muted">Surat ber-kop berisi tabel kekurangan per barang dan ukuran.</div></div>${j.pdf_url ? `<a class="btn" target="_blank" rel="noopener" href="${esc(j.pdf_url)}">Buka PDF</a>` : ''}</div>
-        <div class="muted" style="margin:12px 0 4px">Pesan WhatsApp yang menyertai PDF:</div>
-        ${kotakPesan([j.teks])}
+      const j = await panggilTagih('pratinjau');
+      isiModal(`<h3>${JUDUL_SURAT[j.jenis] || 'Surat ke vendor'}</h3>
+        <div class="muted" style="margin:4px 0 10px">Ke: <b style="color:var(--text)">${esc(j.vendor.nama)}</b> · ${j.jumlah_barang} jenis barang, ${idn(j.total_kurang)} pcs kurang${j.tanpa_estimasi ? ` · ${j.tanpa_estimasi} belum ada estimasi` : ''}${j.terlambat ? ` · ${j.terlambat} terlewat` : ''}${j.tambahan_baru ? ` · +${idn(j.tambahan_baru)} tambahan baru` : ''}</div>
+        <div class="kvpdf"><div><b>Dikirim sebagai dokumen PDF</b><div class="muted">Surat ber-kop: tiap barang berupa tabel Ukuran | Qty dengan total, plus status estimasinya.</div></div>${j.pdf_url ? `<a class="btn" target="_blank" rel="noopener" href="${esc(j.pdf_url)}">Buka PDF</a>` : ''}</div>
+        <div class="muted" style="margin:12px 0 4px">Pesan WhatsApp yang menyertai PDF:</div>${kotakPesan([j.teks])}
         <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="kvKirim">Kirim PDF lewat WA bot</button><button class="btn" id="kvSalinPesan">Salin pesan</button><button class="btn" data-tutup>Tutup</button></div>
         <div class="muted" id="kvKirimSt" style="margin-top:8px"></div>`);
       modalIngat._ps = [j.teks];
-    } catch (e) { isiModal(`<h3>Tagih vendor</h3><div class="muted" style="margin:10px 0">Gagal: ${esc(e.message)}</div><button class="btn" data-tutup>Tutup</button>`); }
+    } catch (e) { isiModal(`<h3>Surat ke vendor</h3><div class="muted" style="margin:10px 0">Gagal: ${esc(e.message)}</div><button class="btn" data-tutup>Tutup</button>`); }
   }
   modalIngat.addEventListener('click', async e => {
     if (e.target.id === 'kvSalinPesan') { try { await navigator.clipboard.writeText((modalIngat._ps || []).join('\n\n')); e.target.textContent = 'Tersalin ✓'; } catch (x) { e.target.textContent = 'Gagal menyalin'; } }
     if (e.target.id === 'kvKirim') {
       const st = $('kvKirimSt'); st.style.color = 'var(--muted)'; st.textContent = 'Mengirim…'; e.target.disabled = true;
-      try { const j = await panggilTagih('kirim', modalIngat._kv && modalIngat._kv.jenis); st.style.color = 'var(--ok)'; st.textContent = `✓ Diteruskan ke bot (${j.terkirim} pesan)`; muatKekurangan(); }
+      try { await panggilTagih('kirim'); st.style.color = 'var(--ok)'; st.textContent = '✓ PDF diteruskan ke bot untuk dikirim ke vendor'; muatKekurangan(); }
       catch (x) { st.style.color = 'var(--bad)'; st.textContent = 'Gagal: ' + x.message; e.target.disabled = false; }
     }
   });
-  $('kvTagih').onclick = async e => {
-    const id = e.target.id; if (!id) return;
-    if (id === 'kvTagihBtn') return bukaTagih('tagih');
-    if (id === 'kvIngatBtn') return bukaTagih();
-    const aktif = kvTagih.find(t => t.status !== 'selesai');
-    if (id === 'kvJanjiBtn' && aktif) {
-      const st = $('kvJanjiSt'), tgl = $('kvJanji').value; if (!tgl) { st.style.color = 'var(--bad)'; st.textContent = 'Isi tanggal janji kirim dulu.'; return; }
-      try { await rpcKode('tagih_janji', { p_id: aktif.id, p_janji: tgl, p_catatan: $('kvCatatan').value }); await muatKekurangan(); const s2 = $('kvJanjiSt'); if (s2) { s2.style.color = 'var(--ok)'; s2.textContent = '✓ Janji kirim tersimpan. Pengingat otomatis akan dikirim sesuai jadwal.'; } }
+  const simpanEstimasi = (g, l, q, tgl) => rpcKode('janji_simpan', { p_vendor: kvPilih, p_grup: g, p_label: l, p_qty: Number(q), p_tgl: tgl, p_catatan: null });
+  $('kvAksi').onclick = async e => {
+    if (e.target.id === 'kvKirimBtn') return bukaTagih();
+    if (e.target.id === 'kvSemuaBtn') {
+      const tgl = $('kvTglSemua').value, st = $('kvAksiSt'); if (!tgl) { st.style.color = 'var(--bad)'; st.textContent = 'Isi tanggal estimasi dulu.'; return; }
+      const sasaran = kvSusun(kvBaris, kvJanji).filter(b => b.kurang > 0 && (b.status === 'tanpa' || b.status === 'terlambat' || b.baru > 0));
+      try { for (const b of sasaran) await simpanEstimasi(b.grup, b.label, b.kurang, tgl); await muatKekurangan(); const s2 = $('kvAksiSt'); if (s2) { s2.style.color = 'var(--ok)'; s2.textContent = `✓ Estimasi ${tglId(tgl)} tersimpan untuk ${sasaran.length} barang.`; } }
       catch (x) { st.style.color = 'var(--bad)'; st.textContent = 'Gagal: ' + x.message; }
     }
-    if (id === 'kvSelesaiBtn' && aktif && confirm('Tandai penagihan ini selesai? Pengingat otomatis akan berhenti.')) { try { await rpcKode('tagih_selesai', { p_id: aktif.id }); await muatKekurangan(); } catch (x) { alert('Gagal: ' + x.message); } }
   };
-  $('kvIsi').onclick = e => { if (e.target.id === 'kvMasuk') Masuk.wajib().then(muatKekurangan).catch(() => {}); };
+  $('kvIsi').onclick = async e => {
+    if (e.target.id === 'kvMasuk') return Masuk.wajib().then(muatKekurangan).catch(() => {});
+    const b = e.target.closest('.kvsimpan'); if (!b) return;
+    const tgl = b.parentElement.querySelector('.kvtgl').value; if (!tgl) { b.textContent = 'Isi tanggal dulu'; setTimeout(() => { b.textContent = 'Simpan estimasi'; }, 1500); return; }
+    b.disabled = true; b.textContent = 'Menyimpan…';
+    try { await simpanEstimasi(b.dataset.g, b.dataset.l, b.dataset.q, tgl); await muatKekurangan(); } catch (x) { b.disabled = false; b.textContent = 'Gagal: ' + x.message; }
+  };
+  $('kvTab').onclick = e => { const t = e.target.dataset && e.target.dataset.t; if (t) { kvTab = t; renderKekurangan(); } };
   $('kvVendor').onchange = e => { kvPilih = Number(e.target.value) || null; muatKekurangan(); };
   $('kvSemua').onchange = e => { kvSemua = e.target.checked; renderKekurangan(); };
   $('kvMuat').onclick = muatKekurangan;
