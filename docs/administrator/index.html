@@ -145,14 +145,15 @@
     harga: {
       grup: 'Seragam', nama: 'Jenis & harga seragam', ket: 'Daftar seragam dan harga beli/jual. Harga yang diubah berlaku untuk permintaan baru; permintaan lama tetap memakai harga saat dibuat.',
       muat: () => rpc('admin_daftar_harga_seragam'), cari: r => [r.kategori, r.nama].join(' '), id: r => r.no,
-      kolom: [['No', r => r.no, 'r'], ['Kategori', r => esc(r.kategori)], ['Nama', r => `<b>${esc(r.nama)}</b>`], ['Harga beli', r => rp(r.harga_beli), 'r'], ['Harga jual', r => rp(r.harga_jual), 'r'], ['Selisih', r => rp(r.harga_jual - r.harga_beli), 'r'], ['Dipakai', r => num(r.dipakai), 'r']],
+      kolom: [['No', r => r.no, 'r'], ['Kategori', r => esc(r.kategori)], ['Nama', r => `<b>${esc(r.nama)}</b>`], ['Terdiri dari', r => esc(({ 'baju+celana': 'Baju + celana', baju: 'Baju', celana: 'Celana', sepatu: 'Sepatu', aksesoris: 'Aksesoris' })[r.komponen] || r.komponen)], ['Harga beli', r => rp(r.harga_beli), 'r'], ['Harga jual', r => rp(r.harga_jual), 'r'], ['Selisih', r => rp(r.harga_jual - r.harga_beli), 'r'], ['Dipakai', r => num(r.dipakai), 'r']],
       kpi: d => [['Jenis seragam', num(d.length)], ['Kategori', num(uniq(d, r => r.kategori).length)], ['Rata-rata selisih', rp(d.length ? d.reduce((a, r) => a + (r.harga_jual - r.harga_beli), 0) / d.length : 0)]],
       form: r => [
         { k: 'kategori', l: 'Kategori', v: r?.kategori, req: true, list: uniq(DATA.harga || [], x => x.kategori) },
         { k: 'nama', l: 'Nama seragam', v: r?.nama, req: true },
+        { k: 'komponen', l: 'Terdiri dari', v: r?.komponen || 'baju+celana', req: true, sel: [['baju+celana', 'Baju + celana (setelan)'], ['baju', 'Baju saja'], ['celana', 'Celana saja'], ['sepatu', 'Sepatu'], ['aksesoris', 'Aksesoris']], hint: 'Menentukan ukuran yang diminta dan cara barang dipecah di rekap, PO, dan kekurangan vendor' },
         { k: 'beli', l: 'Harga beli (Rp)', t: 'number', v: r?.harga_beli, req: true, min: 0 },
         { k: 'jual', l: 'Harga jual (Rp)', t: 'number', v: r?.harga_jual, req: true, min: 0 }],
-      simpan: (v, r) => tulis('admin_simpan_harga_seragam', { p_no: r?.no ?? null, p_kategori: v.kategori, p_nama: v.nama, p_beli: intOrNull(v.beli), p_jual: intOrNull(v.jual) }),
+      simpan: (v, r) => tulis('admin_simpan_harga_seragam', { p_no: r?.no ?? null, p_kategori: v.kategori, p_nama: v.nama, p_beli: intOrNull(v.beli), p_jual: intOrNull(v.jual), p_komponen: v.komponen }),
       hapus: r => tulis('admin_hapus_harga_seragam', { p_no: r.no }), namaBaris: r => r.nama
     },
     lokasi: {

@@ -1823,6 +1823,8 @@
   // ukuran yang dibutuhkan sebuah item: setelan (baju + celana), baju saja, celana saja, sepatu, atau tanpa ukuran (aksesoris)
   function jenisUkuran(no, nama) {
     const n = String(nama || '').toUpperCase(), h = HARGA.find(x => String(x.no) === String(no)), kat = h ? h.kat : '';
+    // komponen eksplisit dari daftar harga (Administrator); tebakan dari nama hanya cadangan bila belum terisi
+    if (h && h.komp) return { baju: /baju/.test(h.komp), celana: /celana/.test(h.komp), sepatu: h.komp === 'sepatu' };
     if (/^CELANA/.test(n)) return { baju: false, celana: true, sepatu: false };
     if (kat === 'Sepatu' || /SEPATU/.test(n)) return { baju: false, celana: false, sepatu: true };
     if (kat === 'Aksesoris') return { baju: false, celana: false, sepatu: false };
@@ -3307,7 +3309,7 @@
       anggaran = susunAnggaran(rab);
       try {
         const hs = await ambilSemua('harga_seragam?select=*&order=no');
-        if (hs.length) { HARGA = hs.map(h => ({ no: h.no, kat: h.kategori, nama: h.nama, beli: h.harga_beli, jual: h.harga_jual })); mPool = mPool.map(x => itemMinta(x.no) || x); renderPembagian(); renderRingkasan(); }
+        if (hs.length) { HARGA = hs.map(h => ({ no: h.no, kat: h.kategori, nama: h.nama, beli: h.harga_beli, jual: h.harga_jual, komp: h.komponen })); mPool = mPool.map(x => itemMinta(x.no) || x); renderPembagian(); renderRingkasan(); }
       } catch (e) { /* pakai harga.js */ }
       susunLokasi(prog); kelompokkanPengisi(publik); ringkasan(); renderDaftar(); renderDaftarMinta(); muatStatus(); muatHilir();
       if (Masuk.masuk()) bukaNama('sesi', true);
