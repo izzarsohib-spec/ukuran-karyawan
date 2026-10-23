@@ -1014,7 +1014,7 @@
   async function kirimBot(items, el) {
     el.style.color = 'var(--muted)'; el.textContent = 'Mengirim…';
     try {
-      let terkirim = 0; const lewat = [];
+      let terkirim = 0; const lewat = [], mulai = new Date(Date.now() - 5000).toISOString();
       for (let i = 0; i < items.length; i += 20) { // server menerima maksimal 20 pesan per permintaan
         const r = await fetch(`${SUPABASE_URL}/functions/v1/ingatkan-pic`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ pesan: items.slice(i, i + 20) }) });
         const j = await r.json().catch(() => ({}));
@@ -1023,7 +1023,24 @@
       }
       el.style.color = 'var(--ok)';
       el.textContent = `✓ Diteruskan ke bot (${terkirim} pesan)` + (lewat.length ? `; dilewati: ${lewat.map(d => (d.nama || d.pic_id) + ' (' + d.alasan + ')').join(', ')}` : '');
+      if (terkirim) hasilWa(el, terkirim, mulai, el.textContent);
     } catch (x) { el.style.color = 'var(--bad)'; el.textContent = 'Gagal: ' + x.message; }
+  }
+  // bot meneruskan satu per satu dengan jeda; hasil akhir (terkirim/gagal) dicatat n8n ke wa_log, jadi dipantau sebentar di sini
+  async function hasilWa(el, jumlah, mulai, teksAwal) {
+    el.dataset.pantau = mulai; el.textContent = teksAwal + ' · memeriksa hasil…';
+    for (let i = 0; i < 24 && el.dataset.pantau === mulai; i++) {
+      await new Promise(r => setTimeout(r, 5000));
+      try {
+        const l = (await rpcKode('wa_log_terbaru', { p_batas: 80 })).filter(x => Date.parse(x.waktu) >= Date.parse(mulai) && ['terkirim', 'gagal'].includes(x.status));
+        const gagal = l.filter(x => x.status === 'gagal'), ok = l.filter(x => x.status === 'terkirim');
+        if (ok.length + gagal.length >= jumlah || i === 23) {
+          el.style.color = gagal.length ? 'var(--bad)' : 'var(--ok)';
+          el.textContent = `${gagal.length ? '⚠' : '✓'} ${ok.length} pesan sampai ke WhatsApp` + (gagal.length ? `, ${gagal.length} GAGAL (${gagal.map(x => x.nama || x.nomor).join(', ')}). Cek sesi WhatsApp bot.` : '.') + (ok.length + gagal.length < jumlah ? ' Sisanya belum terkonfirmasi.' : '');
+          return;
+        }
+      } catch (e) { el.textContent = teksAwal; return; }
+    }
   }
   const itemBot = (g, ps) => ps.map(teks => ({ pic_id: g.pic.id, teks }));
   const kotakPesan = ps => `<textarea readonly rows="8" style="width:100%;font:inherit;font-size:.8rem;border-radius:10px;padding:8px;background:rgba(255,255,255,.05);color:inherit;border:1px solid var(--stroke,rgba(255,255,255,.14))">${esc(gabungPesan(ps))}</textarea>`;

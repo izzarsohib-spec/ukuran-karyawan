@@ -249,7 +249,7 @@ Deno.serve(async (req) => {
         if (!daftar.length) continue;
         try {
           const pdf = await simpanPdf(vid, v.nama, jenis, daftar);
-          pesan.push({ vendor_id: vid, nama: v.nama, nomor, chatId: nomor + '@c.us', teks: susunKeterangan(v.nama, jenis, daftar), pdf_url: pdf.url, pdf_nama: pdf.nama,
+          pesan.push({ jenis: 'vendor', vendor_id: vid, nama: v.nama, nomor, chatId: nomor + '@c.us', teks: susunKeterangan(v.nama, jenis, daftar), pdf_url: pdf.url, pdf_nama: pdf.nama,
             tandai: { tipe, janji_ids: daftar.map((b) => b.janji!.id), total: totalKurang(daftar), pdf_url: pdf.url } });
         } catch (e) { lewat.push({ vendor_id: vid, alasan: String((e as Error).message) }); }
       }
@@ -282,7 +282,7 @@ Deno.serve(async (req) => {
   let pdf: { url: string; nama: string };
   try { pdf = await simpanPdf(vendorId, v.nama, jenis, barang); } catch (e) { return balas({ error: String((e as Error).message) }, 500); }
   try {
-    const r = await fetch(urlN8n, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': tokenN8n }, body: JSON.stringify({ pesan: [{ pic_id: null, nama: v.nama, nomor, chatId: nomor + '@c.us', teks, pdf_url: pdf.url, pdf_nama: pdf.nama }] }) });
+    const r = await fetch(urlN8n, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': tokenN8n }, body: JSON.stringify({ pesan: [{ jenis: 'vendor', pic_id: null, nama: v.nama, nomor, chatId: nomor + '@c.us', teks, pdf_url: pdf.url, pdf_nama: pdf.nama }] }) });
     if (!r.ok) return balas({ error: `n8n menolak (HTTP ${r.status})` }, 502);
   } catch (e) { return balas({ error: 'Gagal menghubungi n8n: ' + String(e).slice(0, 160) }, 502); }
   // jejak: catatan pesan dan penghitung pengingat pada estimasi yang ikut disebut
