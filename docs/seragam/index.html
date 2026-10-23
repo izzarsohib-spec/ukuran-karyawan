@@ -1860,7 +1860,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
   // ================= PLOTING SERAGAM =================
   // Seragam yang sudah disetujui kedua pimpinan dibagikan ke tiap karyawan (nama dan ukuran dari isian Google Form), lalu dibuat
   // PO + lampiran ukuran untuk vendor. Konsepnya sama dengan "Isi Ukuran" di panel admin lama: kuota tiap item harus pas dulu.
-  const UK_BAJU = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL', 'L4', 'L5', 'L6', 'L7'];
+  const UK_BAJU = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL', 'L6', 'L7'];
   const rentang = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => String(a + i));
   const UK_CELANA = rentang(27, 50), UK_SEPATU = rentang(36, 47);
   // ukuran yang dibutuhkan sebuah item: setelan (baju + celana), baju saja, celana saja, sepatu, atau tanpa ukuran (aksesoris)
@@ -2483,7 +2483,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
   let iTab = 'stok', iKat = 'semua', iAda = true, iJenis = 'semua', iBaris = [];
   const saldoItem = no => stok.filter(s => s.item_no === no);
   // urutan ukuran yang wajar: S M L XL ... untuk baju, angka naik untuk celana dan sepatu
-  const URUT_BAJU = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL', 'L4', 'L5', 'L6', 'L7'];
+  const URUT_BAJU = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL', 'L6', 'L7'];
   const rankUk = (j, u) => { if (j !== 'baju') return 0; const i = URUT_BAJU.indexOf(String(u).toUpperCase()); return i < 0 ? 99 : i; };
   const vendorKat = k => k === 'Aksesoris' ? 'Dipesan online' : 'Vendor Wahyu Ardianto';
   const supplierKat = k => k === 'Aksesoris' ? 'Online' : 'Wahyu Ardianto';

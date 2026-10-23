@@ -65,7 +65,7 @@ function susunKekurangan(baris: Baris[], janji: Janji[]): Barang[] {
     const x = peta.get(k)!; x.dipesan += Number(b.dipesan); x.diterima += Number(b.diterima);
     x.uk.set(b.ukuran, (x.uk.get(b.ukuran) ?? 0) + Number(b.dipesan) - Number(b.diterima));
   }
-  const urutUk = (a: string, b: string) => { const o = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL', 'L4', 'L5', 'L6', 'L7'], ia = o.indexOf(a), ib = o.indexOf(b); if (ia >= 0 && ib >= 0) return ia - ib; const na = parseFloat(a), nb = parseFloat(b); return !isNaN(na) && !isNaN(nb) ? na - nb : a.localeCompare(b, 'id', { numeric: true }); };
+  const urutUk = (a: string, b: string) => { const o = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL', 'L6', 'L7'], ia = o.indexOf(a), ib = o.indexOf(b); if (ia >= 0 && ib >= 0) return ia - ib; const na = parseFloat(a), nb = parseFloat(b); return !isNaN(na) && !isNaN(nb) ? na - nb : a.localeCompare(b, 'id', { numeric: true }); };
   const hari = hariIni();
   return [...peta.values()].map((x) => {
     const ukuran = [...x.uk.entries()].map(([uk, s]) => ({ uk, kurang: Math.max(0, s) })).filter((u) => u.kurang > 0).sort((a, b) => urutUk(a.uk, b.uk));
