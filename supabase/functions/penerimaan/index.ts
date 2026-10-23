@@ -1,7 +1,7 @@
 // Form penerimaan seragam di lokasi, khusus penerima. Dibuka lewat tautan bertoken (pengiriman.token_terima) tanpa login.
 //  GET  ?id=<pengiriman>&t=<token>  -> data surat jalan untuk ditampilkan di form (tanpa harga)
-//  POST {id, t, penerima, jabatan, pic_nama, tanggal_terima, catatan, item:[{id,status,catatan}], ttd_penerima, ttd_pic, foto:[...]} -> simpan penerimaan
-// Tanda tangan (PNG) dan foto (JPEG) disimpan di Storage publik (folder acak); pengiriman otomatis menjadi "diterima"; admin diberi tahu lewat ntfy.
+//  POST {id, t, penerima, tanggal_terima, foto:[dataURL jpeg...]} -> simpan penerimaan (tanda tangan dilakukan di surat jalan cetak)
+// Foto (JPEG) disimpan di Storage publik (folder acak); pengiriman otomatis menjadi "diterima"; admin diberi tahu lewat ntfy.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'content-type' };
@@ -41,42 +41,28 @@ Deno.serve(async (req) => {
     return balas({ no_surat_jalan: g.no_surat_jalan, tanggal: g.tanggal, client: g.client, bagian: g.bagian_kerja, ekspedisi: g.ekspedisi, no_resi: g.no_resi, status: g.status, pic_nama: picNama, rows: rows ?? [], sudah: pen ? { penerima: pen.penerima, tanggal_terima: pen.tanggal_terima } : null });
   }
 
-  // ---- POST: simpan penerimaan ----
+  // ---- POST: simpan penerimaan (form sederhana: nama penerima, tanggal, foto; tanda tangan ada di surat jalan cetak) ----
   if (pen || g.status === 'diterima') return balas({ error: 'Penerimaan untuk surat jalan ini sudah diisi' }, 409);
-  const penerima = teksBersih(body.penerima, 120), jabatan = teksBersih(body.jabatan, 80), picNamaIsi = teksBersih(body.pic_nama, 120) || picNama, catatan = teksBersih(body.catatan, 800);
-  const tgl = /^\d{4}-\d{2}-\d{2}$/.test(String(body.tanggal_terima)) ? String(body.tanggal_terima) : new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
+  const penerima = teksBersih(body.penerima, 120);
+  const tgl = /^d{4}-d{2}-d{2}$/.test(String(body.tanggal_terima)) ? String(body.tanggal_terima) : new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
   if (!penerima) return balas({ error: 'Nama penerima wajib diisi' }, 400);
-  const ttdPenerima = dariDataUrl(body.ttd_penerima, 'png', 600_000), ttdPic = dariDataUrl(body.ttd_pic, 'png', 600_000);
-  if (!ttdPenerima) return balas({ error: 'Tanda tangan penerima wajib diisi' }, 400);
-  if (!ttdPic) return balas({ error: 'Tanda tangan PIC wajib diisi' }, 400);
-  const fotoIn: unknown[] = Array.isArray(body.foto) ? body.foto.slice(0, 6) : [];
+  const fotoIn: unknown[] = Array.isArray(body.foto) ? body.foto.slice(0, 8) : [];
   const foto = fotoIn.map((f) => dariDataUrl(f, 'jpeg', 1_800_000)).filter((x): x is Uint8Array => !!x);
-  if (fotoIn.length && foto.length !== fotoIn.length) return balas({ error: 'Ada foto yang tidak valid atau terlalu besar' }, 400);
-  const ada = new Set((rows ?? []).map((r: any) => r.id));
-  const item: { id: number; status: string; catatan: string }[] = (Array.isArray(body.item) ? body.item : []).map((x: any) => ({ id: Number(x?.id), status: String(x?.status ?? 'sesuai'), catatan: teksBersih(x?.catatan, 300) }));
-  if (item.some((x) => !ada.has(x.id) || !STATUS.includes(x.status)) || new Set(item.map((x) => x.id)).size !== item.length) return balas({ error: 'Data baris penerimaan tidak valid' }, 400);
-  for (const r of rows ?? []) if (!item.some((x) => x.id === r.id)) item.push({ id: r.id, status: 'sesuai', catatan: '' });
-  if (item.some((x) => x.status !== 'sesuai' && !x.catatan)) return balas({ error: 'Beri catatan untuk setiap baris yang bermasalah' }, 400);
+  if (!foto.length) return balas({ error: 'Lampirkan minimal satu foto' }, 400);
+  if (foto.length !== fotoIn.length) return balas({ error: 'Ada foto yang tidak valid atau terlalu besar' }, 400);
 
   const folder = `terima-${id}-${acak().slice(0, 24)}`, url = (n: string) => `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/lampiran-surat/${folder}/${n}`;
-  const unggah = async (n: string, bytes: Uint8Array, tipe: string) => { const { error } = await db.storage.from('lampiran-surat').upload(`${folder}/${n}`, bytes, { contentType: tipe, upsert: false }); if (error) throw new Error('Gagal menyimpan berkas: ' + error.message); };
   try {
-    await unggah('ttd-penerima.png', ttdPenerima, 'image/png'); await unggah('ttd-pic.png', ttdPic, 'image/png');
-    for (let i = 0; i < foto.length; i++) await unggah(`foto-${i + 1}.jpg`, foto[i], 'image/jpeg');
+    for (let i = 0; i < foto.length; i++) { const { error } = await db.storage.from('lampiran-surat').upload(`${folder}/foto-${i + 1}.jpg`, foto[i], { contentType: 'image/jpeg', upsert: false }); if (error) throw new Error('Gagal menyimpan foto: ' + error.message); }
   } catch (e) { return balas({ error: String((e as Error).message) }, 500); }
-
-  const masalah = item.filter((x) => x.status !== 'sesuai').length;
-  const { data: baru, error: eIns } = await db.from('penerimaan').insert({ pengiriman_id: id, tanggal_terima: tgl, penerima, jabatan_penerima: jabatan || null, pic_nama: picNamaIsi || null,
-    ttd_penerima_url: url('ttd-penerima.png'), ttd_pic_url: url('ttd-pic.png'), foto_urls: foto.map((_, i) => url(`foto-${i + 1}.jpg`)), catatan: catatan || null,
-    jumlah_sesuai: item.length - masalah, jumlah_masalah: masalah }).select('id').single();
+  const { error: eIns } = await db.from('penerimaan').insert({ pengiriman_id: id, tanggal_terima: tgl, penerima, foto_urls: foto.map((_, i) => url(`foto-${i + 1}.jpg`)), jumlah_sesuai: 0, jumlah_masalah: 0 });
   if (eIns) return balas({ error: eIns.code === '23505' ? 'Penerimaan untuk surat jalan ini sudah diisi' : 'Gagal menyimpan penerimaan' }, eIns.code === '23505' ? 409 : 500);
-  await db.from('penerimaan_item').insert(item.map((x) => ({ penerimaan_id: baru.id, pengiriman_item_id: x.id, status: x.status, catatan: x.catatan || null })));
   await db.from('pengiriman').update({ status: 'diterima', diterima_pada: new Date().toISOString(), penerima }).eq('id', id);
 
   const topik = Deno.env.get('NTFY_TOPIC_ADMIN');
   if (topik) {
-    try { await fetch(`https://ntfy.sh/${topik}`, { method: 'POST', headers: { Title: kodekan(`Penerimaan diisi: ${g.client}`.slice(0, 120)), Priority: masalah ? '4' : '3', Tags: masalah ? 'warning' : 'package' },
-      body: `${g.no_surat_jalan} · ${g.bagian_kerja}\nPenerima: ${penerima}\n${item.length - masalah} baris sesuai${masalah ? `, ${masalah} bermasalah (lihat halaman Penerimaan)` : ''}` }); } catch { /* abaikan */ }
+    try { await fetch(`https://ntfy.sh/${topik}`, { method: 'POST', headers: { Title: kodekan(`Penerimaan diisi: ${g.client}`.slice(0, 120)), Priority: '3', Tags: 'package' },
+      body: `${g.no_surat_jalan} · ${g.bagian_kerja}\nPenerima: ${penerima} (${tgl})\n${foto.length} foto terlampir. Lihat di halaman Penerimaan.` }); } catch { /* abaikan */ }
   }
-  return balas({ ok: true, sesuai: item.length - masalah, masalah });
+  return balas({ ok: true, foto: foto.length });
 });

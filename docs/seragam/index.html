@@ -464,7 +464,7 @@
    </div>
 
    <div class="page" id="pg-penerimaan" hidden>
-    <header><div><h1>Penerimaan Seragam</h1><div class="sub" id="infoTerima">Memuat data…</div><div class="sub">Surat jalan, form khusus penerima di lokasi (tautan, dengan tanda tangan dan foto dokumentasi), dan berita acara penerimaan.</div></div></header>
+    <header><div><h1>Penerimaan Seragam</h1><div class="sub" id="infoTerima">Memuat data…</div><div class="sub">Surat jalan untuk dicetak (tanda tangan di kertas), form sederhana untuk penerima di lokasi (nama, tanggal, foto), dan bukti penerimaan PDF.</div></div></header>
     <section class="bawah card">
       <div class="bar-top"><h3>Daftar surat jalan</h3><label class="search"><span aria-hidden="true">🔍</span><input id="pnCari" type="search" placeholder="Cari no. surat jalan, lokasi, resi"></label><button class="btn" id="pnMuat">Muat ulang</button></div>
       <div class="chips" id="pnChips" style="margin-bottom:14px"></div>
@@ -3068,33 +3068,28 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
         <div class="rl"><span>${esc(g.ekspedisi || '-')}${g.no_resi ? ' · resi ' + esc(g.no_resi) : ''}${pic ? ' · PIC ' + esc(pic.nama) : ''}</span><span>${idn(g.jumlah_pcs)} pcs${!dikirim && g.diterima_pada ? ' · diterima ' + tglPendek(g.diterima_pada) : ''}${r.jumlah_masalah ? ` · <b style="color:var(--bad)">${r.jumlah_masalah} bermasalah</b>` : ''}${r.jumlah_foto ? ' · ' + r.jumlah_foto + ' foto' : ''}</span></div>
         <div class="bgact" style="margin-top:8px;flex-wrap:wrap"><button class="btn" data-pn="sj">Surat jalan (PDF)</button>
           ${dikirim ? `<button class="btn" data-pn="salin">Salin tautan form penerima</button>${pic ? '<button class="btn" data-pn="wa">Kirim tautan ke PIC (WA)</button>' : ''}<button class="btn" data-pn="buka">Buka form</button>` : ''}
-          ${r.penerima ? '<button class="btn" data-pn="ba">Berita acara penerimaan (PDF)</button>' : ''}</div><div class="hint" data-st style="margin-top:6px"></div></div>`;
+          ${r.penerima ? '<button class="btn" data-pn="ba">Bukti penerimaan (PDF)</button>' : ''}</div><div class="hint" data-st style="margin-top:6px"></div></div>`;
     }).join('') || `<div class="kosongnya">${semua.length ? 'Tidak ada surat jalan yang cocok.' : 'Belum ada surat jalan. Buat pengiriman di halaman Pengiriman dulu.'}</div>`;
   }
   async function suratJalanDari(g) { // data surat jalan lengkap dari pengiriman yang sudah tersimpan
     const rows = await rpcKode('detail_pengiriman', { p_id: g.id }), pic = picLokasi(g.lokasi_form);
     return { no: g.no_surat_jalan, tanggal: g.tanggal, client: g.client, bagian: g.bagian_kerja, ekspedisi: g.ekspedisi, resi: g.no_resi, penerima: g.penerima, pic: pic ? pic.nama : '', rows };
   }
-  async function beritaAcaraPdf(g) {
+  async function beritaAcaraPdf(g) { // bukti penerimaan: data dari form penerima (nama, tanggal, foto) + daftar barang surat jalan
     const d = await rpcKode('detail_penerimaan', { p_pengiriman: g.id }); if (!d) throw new Error('Penerimaan belum diisi lewat form penerima.');
-    const [k, ttdPen, ttdPic, fotos] = await Promise.all([kertasKop(), muatGambarCors(d.ttd_penerima), muatGambarCors(d.ttd_pic), Promise.all((d.foto || []).map(muatGambarCors))]);
-    const { doc, PW, L, R, W } = k; k.pasang(); k.huruf('bold', 14); doc.text('BERITA ACARA PENERIMAAN SERAGAM', PW / 2, 104, { align: 'center' }); k.y = 132;
-    const meta = [['No. Surat Jalan', g.no_surat_jalan], ['Tanggal kirim', tglPanjangId(g.tanggal)], ['Tanggal terima', tglPanjangId(d.tanggal_terima)], ['Lokasi', g.client], ['Bagian kerja', g.bagian_kerja], ['PIC lapangan', d.pic_nama || '-'], ['Penerima', d.penerima + (d.jabatan ? ' (' + d.jabatan + ')' : '')]];
+    const [rows, k, fotos] = await Promise.all([rpcKode('detail_pengiriman', { p_id: g.id }), kertasKop(), Promise.all((d.foto || []).map(muatGambarCors))]);
+    const { doc, PW, L, W } = k; k.pasang(); k.huruf('bold', 14); doc.text('BUKTI PENERIMAAN SERAGAM', PW / 2, 104, { align: 'center' }); k.y = 132;
+    const pic = picLokasi(g.lokasi_form);
+    const meta = [['No. Surat Jalan', g.no_surat_jalan], ['Tanggal kirim', tglPanjangId(g.tanggal)], ['Tanggal terima', tglPanjangId(d.tanggal_terima)], ['Lokasi', g.client], ['Bagian kerja', g.bagian_kerja], ['PIC lapangan', pic ? pic.nama : '-'], ['Penerima', d.penerima]];
     meta.forEach(([a, b], n) => { k.huruf('bold'); doc.text(a, L, k.y + n * 14); k.huruf(); doc.text(': ' + doc.splitTextToSize(String(b), W - 100)[0], L + 92, k.y + n * 14); });
     k.y += meta.length * 14 + 8;
     const uk = r => [r.ukuran_baju && 'Baju ' + r.ukuran_baju, r.ukuran_celana && 'Celana ' + r.ukuran_celana, r.ukuran_sepatu && 'Sepatu ' + r.ukuran_sepatu].filter(Boolean).join(', ') || '-';
-    const ST = { sesuai: 'Sesuai', kurang: 'Kurang', rusak: 'Rusak', salah_ukuran: 'Salah ukuran' };
-    k.tabel({ startY: k.y, head: [['NO', 'KARYAWAN', 'JENIS SERAGAM', 'UKURAN', 'QTY', 'KETERANGAN']], body: d.item.map((r, n) => [{ content: n + 1, styles: { halign: 'center' } }, r.nama, namaRapi(r.item_nama), uk(r), { content: r.qty, styles: { halign: 'center' } }, ST[r.status] + (r.catatan ? ': ' + r.catatan : '')]),
-      columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 96 }, 3: { cellWidth: 108 }, 4: { cellWidth: 32 }, 5: { cellWidth: 100 } }, styles: { font: 'times', fontSize: 9.5, cellPadding: 3, lineColor: [0, 0, 0], lineWidth: 0.5, textColor: 0 } });
-    const masalah = d.item.filter(r => r.status !== 'sesuai').length;
-    k.y += 16; k.cek(40); k.huruf('bold'); doc.text(`Ringkasan: ${d.item.length - masalah} baris sesuai${masalah ? `, ${masalah} bermasalah` : ''}.`, L, k.y); k.y += 14;
-    if (d.catatan) { k.huruf(); const t = doc.splitTextToSize('Catatan: ' + d.catatan, W); k.cek(t.length * 12 + 6); doc.text(t, L, k.y); k.y += t.length * 12 + 4; }
-    k.y += 8; k.cek(130);
-    const ttd = (x, label, nama, peran, img) => { k.huruf(); doc.text(label, x, k.y, { align: 'center' }); if (img) { const lebar = 130, tinggi = Math.min(56, lebar * img.height / img.width); doc.addImage(img, 'PNG', x - lebar / 2, k.y + 6, lebar, tinggi); }
-      k.huruf('bold'); doc.text(nama || '', x, k.y + 72, { align: 'center' }); const w = Math.max(doc.getTextWidth(nama || ''), 80); doc.setLineWidth(0.6); doc.setDrawColor(0, 0, 0); doc.line(x - w / 2, k.y + 74, x + w / 2, k.y + 74); k.huruf('bold', 8.5); doc.setTextColor(153, 153, 153); doc.text(peran, x, k.y + 86, { align: 'center' }); k.huruf(); };
-    ttd(L + W * 0.25, 'PIC Lapangan,', d.pic_nama, '(PIC Lapangan)', ttdPic); ttd(L + W * 0.75, 'Penerima,', d.penerima, '(Penerima)', ttdPen);
+    k.tabel({ startY: k.y, head: [['NO', 'KARYAWAN', 'JENIS SERAGAM', 'UKURAN', 'QTY']], body: [...rows.map((r, n) => [{ content: n + 1, styles: { halign: 'center' } }, r.nama, namaRapi(r.item_nama), uk(r), { content: r.qty, styles: { halign: 'center' } }]),
+      [{ content: 'TOTAL', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rows.reduce((a, r) => a + r.qty, 0), styles: { halign: 'center', fontStyle: 'bold' } }]],
+      columnStyles: { 0: { cellWidth: 28 }, 1: { cellWidth: 100 }, 3: { cellWidth: 120 }, 4: { cellWidth: 40 } } });
+    k.y += 18; k.cek(30); k.huruf('italic', 9.5); doc.text('Tanda tangan serah terima ada pada surat jalan cetak yang menyertai pengiriman; foto penerimaan terlampir.', L, k.y);
     if (fotos.some(Boolean)) {
-      doc.addPage(); k.pasang(); k.huruf('bold', 12); doc.text('DOKUMENTASI FOTO PENERIMAAN', PW / 2, 100, { align: 'center' });
+      doc.addPage(); k.pasang(); k.huruf('bold', 12); doc.text('FOTO PENERIMAAN', PW / 2, 100, { align: 'center' });
       const sel = (W - 12) / 2; let n = 0;
       for (const f of fotos.filter(Boolean)) {
         if (n && n % 6 === 0) { doc.addPage(); k.pasang(); }
@@ -3102,7 +3097,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
         doc.setDrawColor(190, 190, 190); doc.rect(x, y, sel, 196); doc.addImage(f, 'JPEG', x + (sel - w) / 2, y + (196 - h) / 2, w, h); n++;
       }
     }
-    k.simpan(`Berita Acara Penerimaan ${g.no_surat_jalan.replace(/\//g, '-')} ${g.client}.pdf`);
+    k.simpan(`Bukti Penerimaan ${g.no_surat_jalan.split('/').join('-')} ${g.client}.pdf`);
   }
   $('pnChips').onclick = e => { const b = e.target.closest('[data-f]'); if (b) { pnFilter = b.dataset.f; renderPenerimaan(); } };
   $('pnCari').oninput = renderPenerimaan; $('pnMuat').onclick = muatHilir;
