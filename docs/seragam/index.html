@@ -463,6 +463,14 @@
     </section>
    </div>
 
+   <div class="page" id="pg-penerimaan" hidden>
+    <header><div><h1>Penerimaan Seragam</h1><div class="sub" id="infoTerima">Memuat data…</div><div class="sub">Surat jalan, form khusus penerima di lokasi (tautan, dengan tanda tangan dan foto dokumentasi), dan berita acara penerimaan.</div></div></header>
+    <section class="bawah card">
+      <div class="bar-top"><h3>Daftar surat jalan</h3><label class="search"><span aria-hidden="true">🔍</span><input id="pnCari" type="search" placeholder="Cari no. surat jalan, lokasi, resi"></label><button class="btn" id="pnMuat">Muat ulang</button></div>
+      <div class="chips" id="pnChips" style="margin-bottom:14px"></div>
+      <div id="pnList"></div>
+    </section>
+   </div>
    <div class="page" id="pg-pengiriman" hidden>
     <header><div><h1>Pengiriman</h1><div class="sub" id="infoKirim">Memuat data…</div></div></header>
     <section class="top mini" id="md-pengiriman"></section>
@@ -1131,15 +1139,15 @@
   $('detail').onchange = e => { if (e.target.id === 'fb') { fBagian = e.target.value; renderDetail(); } };
 
   // ---- sub halaman ----
-  const HALAMAN = ['ringkasan', 'monitor', 'permintaan', 'rekap', 'kurang', 'ploting', 'inventaris', 'opname', 'pengiriman', 'tagihan', 'laporan'];
+  const HALAMAN = ['ringkasan', 'monitor', 'permintaan', 'rekap', 'kurang', 'ploting', 'inventaris', 'opname', 'pengiriman', 'penerimaan', 'tagihan', 'laporan'];
   let dashSiap = false;
   function renderRingkasan() { if (dashSiap) { renderDash(); renderMini(); renderLaporan(); } }
   // lima halaman: Dashboard Utama; Monitoring & Permintaan; Rekap Permintaan & Inventaris; Ploting & Pengiriman (+ penerimaan); Tagihan.
   // Halaman gabungan memakai sub-tab. Laporan Harian tidak ada di sidebar: dibuka dari halaman Administrator.
   if (window.top !== window.self) document.body.classList.add('dalam');
   if (window.top !== window.self && location.hash === '#laporan') document.body.classList.add('embed');
-  const GRUP = { ringkasan: 'ringkasan', monitor: 'monitor', permintaan: 'monitor', rekap: 'rekap', kurang: 'rekap', inventaris: 'rekap', opname: 'rekap', ploting: 'ploting', pengiriman: 'ploting', tagihan: 'tagihan' };
-  const SUB = { monitor: [['monitor', 'Monitoring pengisian'], ['permintaan', 'Permintaan seragam']], rekap: [['rekap', 'Rekap permintaan'], ['kurang', 'Kekurangan vendor'], ['inventaris', 'Inventaris'], ['opname', 'Stock opname']], ploting:[['ploting', 'Koreksi ploting'], ['pengiriman', 'Pengiriman & penerimaan']] };
+  const GRUP = { ringkasan: 'ringkasan', monitor: 'monitor', permintaan: 'monitor', rekap: 'rekap', kurang: 'rekap', inventaris: 'rekap', opname: 'rekap', ploting: 'ploting', pengiriman: 'ploting', penerimaan: 'ploting', tagihan: 'tagihan' };
+  const SUB = { monitor: [['monitor', 'Monitoring pengisian'], ['permintaan', 'Permintaan seragam']], rekap: [['rekap', 'Rekap permintaan'], ['kurang', 'Kekurangan vendor'], ['inventaris', 'Inventaris'], ['opname', 'Stock opname']], ploting:[['ploting', 'Koreksi ploting'], ['pengiriman', 'Pengiriman'], ['penerimaan', 'Penerimaan']] };
   function tampil(pg) {
     if (!HALAMAN.includes(pg)) pg = 'ringkasan';
     for (const h of HALAMAN) $('pg-' + h).hidden = h !== pg;
@@ -1153,7 +1161,7 @@
     if (pg === 'permintaan' || pg === 'ploting' || pg === 'monitor') muatStatus();
     if (pg === 'rekap') { muatStatus(); muatRekapUkuran(); }
     if (pg === 'kurang') muatKekurangan();
-    if (pg === 'inventaris' || pg === 'opname' || pg === 'pengiriman' || pg === 'tagihan') { muatStatus(); muatHilir(); }
+    if (pg === 'inventaris' || pg === 'opname' || pg === 'pengiriman' || pg === 'penerimaan' || pg === 'tagihan') { muatStatus(); muatHilir(); }
     if (pg === 'laporan') { muatStatus(); muatHilir(); muatCatatan(); }
   }
   document.addEventListener('click', e => { const b = e.target.closest('[data-pg]'); if (b) tampil(b.dataset.pg); });
@@ -2609,10 +2617,10 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   async function muatHilir() {
     await Saring.siap;
     try {
-      const [s, g, k, p, t, o, orc, keb] = await Promise.all([rpc('daftar_stok', {}), rpc('daftar_stok_gerak', { p_batas: 1000 }), rpc('daftar_pengiriman', {}), rpc('daftar_progres_kirim', {}), rpc('daftar_tagihan', {}), rpc('daftar_opname', {}).catch(() => []), rpc('daftar_opname_rinci', {}).catch(() => []), rpc('kebutuhan_kirim', {}).catch(() => [])]);
-      stok = s; gerak = g; kirimAll = k.filter(x => Saring.boleh(x.lokasi_form)); opnameAll = o; opnameRinci = orc; kebutuhan = keb.filter(x => true); progres = new Map(p.map(x => [x.permintaan_id, x])); tagihanAll = t.filter(x => Saring.boleh(x.lokasi_form)); hilirMuat = true;
+      const [s, g, k, p, t, o, orc, keb, trm] = await Promise.all([rpc('daftar_stok', {}), rpc('daftar_stok_gerak', { p_batas: 1000 }), rpc('daftar_pengiriman', {}), rpc('daftar_progres_kirim', {}), rpc('daftar_tagihan', {}), rpc('daftar_opname', {}).catch(() => []), rpc('daftar_opname_rinci', {}).catch(() => []), rpc('kebutuhan_kirim', {}).catch(() => []), rpc('daftar_penerimaan_ringkas', {}).catch(() => [])]);
+      stok = s; gerak = g; kirimAll = k.filter(x => Saring.boleh(x.lokasi_form)); opnameAll = o; opnameRinci = orc; kebutuhan = keb.filter(x => true); ringkasTerima = new Map(trm.map(x => [x.pengiriman_id, x])); progres = new Map(p.map(x => [x.permintaan_id, x])); tagihanAll = t.filter(x => Saring.boleh(x.lokasi_form)); hilirMuat = true;
     } catch (e) { hilirMuat = false; ['infoInv', 'infoKirim', 'infoTag'].forEach(id => { $(id).textContent = 'Gagal memuat: ' + e.message; }); return; }
-    renderInventaris(); renderOpnamePage(); renderKirimList(); renderBoardKirim(); renderTagihanList(); renderRingkasan();
+    renderInventaris(); renderOpnamePage(); renderKirimList(); renderBoardKirim(); renderPenerimaan(); renderTagihanList(); renderRingkasan();
   }
   // panggilan yang menulis data: kode akses diminta sekali per sesi
   async function rpcKode(nama, body) {
@@ -3019,7 +3027,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const dikirim = kData.rows.filter(r => kData.pilih.has(r.id));
     try {
       const h = await rpcKode('catat_pengiriman', { p_permintaan: kData.p.id, p_tanggal: $('kTgl').value || tgl0(), p_ekspedisi: $('kEks').value.trim(), p_resi: $('kResi').value.trim(), p_penerima: $('kPen').value.trim(), p_keterangan: $('kKet').value.trim(), p_ploting_ids: ids });
-      const info = { no: h.no_surat_jalan, tanggal: $('kTgl').value || tgl0(), client: kData.p.client, bagian: kData.p.bagian_kerja, ekspedisi: $('kEks').value.trim(), resi: $('kResi').value.trim(), penerima: $('kPen').value.trim(), rows: dikirim };
+      const info = { no: h.no_surat_jalan, tanggal: $('kTgl').value || tgl0(), client: kData.p.client, bagian: kData.p.bagian_kerja, pic: (Saring.picDari(kData.p.lokasi_form) || {}).nama || '', ekspedisi: $('kEks').value.trim(), resi: $('kResi').value.trim(), penerima: $('kPen').value.trim(), rows: dikirim };
       await muatHilir(); kData = null; $('kEditor').hidden = false;
       $('kEditor').innerHTML = `<div class="hint" style="color:var(--ok)">✓ Pengiriman ${esc(info.no)} tercatat dan stok sudah dipotong.</div><button class="cta" id="kUnduhSj" style="margin-top:10px">Unduh surat jalan (PDF)</button> <button class="btn" id="kTutup">Tutup</button>`;
       kSuratTerakhir = info; return;
@@ -3027,18 +3035,98 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     btn.textContent = label; isiBarisKirim();
   }
   let kSuratTerakhir = null;
-  async function suratJalanPdf(i) { // i = { no, tanggal, client, bagian, ekspedisi, resi, penerima, rows:[{nama,item_nama,qty,ukuran_*}] }
+  async function suratJalanPdf(i) { // i = { no, tanggal, client, bagian, ekspedisi, resi, penerima, pic, rows:[{nama,item_nama,qty,ukuran_*}] }
     const k = await kertasKop(), { doc, PW, L, W } = k; k.pasang(); k.huruf('bold', 14); doc.text('SURAT JALAN', PW / 2, 104, { align: 'center' }); k.y = 134;
-    [['No. Surat Jalan', i.no], ['Tanggal', new Date(i.tanggal + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })], ['Tujuan', i.client], ['Bagian', i.bagian], ['Ekspedisi', (i.ekspedisi || '-') + (i.resi ? ' · resi ' + i.resi : '')]]
-      .forEach(([a, b], n) => { k.huruf('bold'); doc.text(a, L, k.y + n * 14); k.huruf(); doc.text(': ' + b, L + 92, k.y + n * 14); });
-    k.y += 5 * 14 + 8;
+    const meta = [['No. Surat Jalan', i.no], ['Tanggal', new Date(i.tanggal + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })], ['Lokasi', i.client], ['Bagian kerja', i.bagian], ['PIC lapangan', i.pic || '-'], ['Ekspedisi', (i.ekspedisi || '-') + (i.resi ? ' · resi ' + i.resi : '')]];
+    meta.forEach(([a, b], n) => { k.huruf('bold'); doc.text(a, L, k.y + n * 14); k.huruf(); doc.text(': ' + doc.splitTextToSize(String(b), W - 100)[0], L + 92, k.y + n * 14); });
+    k.y += meta.length * 14 + 8;
     const uk = r => [r.ukuran_baju && 'Baju ' + r.ukuran_baju, r.ukuran_celana && 'Celana ' + r.ukuran_celana, r.ukuran_sepatu && 'Sepatu ' + r.ukuran_sepatu].filter(Boolean).join(', ') || '-';
-    k.tabel({ startY: k.y, head: [['NO', 'KARYAWAN', 'BARANG', 'UKURAN', 'QTY']], body: [...i.rows.map((r, n) => [{ content: n + 1, styles: { halign: 'center' } }, r.nama, r.item_nama, uk(r), { content: r.qty, styles: { halign: 'center' } }]),
+    k.tabel({ startY: k.y, head: [['NO', 'KARYAWAN', 'JENIS SERAGAM', 'UKURAN', 'QTY']], body: [...i.rows.map((r, n) => [{ content: n + 1, styles: { halign: 'center' } }, r.nama, namaRapi(r.item_nama), uk(r), { content: r.qty, styles: { halign: 'center' } }]),
       [{ content: 'TOTAL', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } }, { content: i.rows.reduce((a, r) => a + r.qty, 0), styles: { halign: 'center', fontStyle: 'bold' } }]],
       columnStyles: { 0: { cellWidth: 28 }, 1: { cellWidth: 100 }, 3: { cellWidth: 120 }, 4: { cellWidth: 40 } } });
-    k.y += 26; k.cek(92); k.ttd([{ x: L + W * 0.25, label: 'Pengirim,', t: TTD.pic }, { x: L + W * 0.75, label: 'Penerima,', t: [i.penerima || '', '(Penerima)'] }], k.y);
+    k.y += 26; k.cek(100); k.ttd([{ x: L + W / 6, label: 'Pengirim,', t: TTD.pic }, { x: L + W / 2, label: 'PIC Lapangan,', t: [i.pic || '', '(PIC Lapangan)'] }, { x: L + W * 5 / 6, label: 'Penerima,', t: [i.penerima || '', '(Penerima)'] }], k.y);
     k.simpan(`Surat Jalan ${i.no.replace(/\//g, '-')} ${i.client}.pdf`);
   }
+  // ----------------- PENERIMAAN: surat jalan, form penerima (tautan), berita acara -----------------
+  let ringkasTerima = new Map(), pnFilter = 'semua';
+  const muatGambarCors = src => new Promise(ok => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => ok(i); i.onerror = () => ok(null); i.src = src; });
+  const tglPanjangId = d => d ? new Date(String(d).slice(0, 10) + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '-';
+  const urlFormTerima = (id, tk) => new URL(`../penerimaan.html?id=${id}&t=${tk}`, location.href).href;
+  const picLokasi = nama => Saring.picDari(nama);
+  function renderPenerimaan() {
+    const el = $('pnList'); if (!el) return;
+    const semua = kirimAll.map(g => ({ g, r: ringkasTerima.get(g.id) || {}, dikirim: g.status !== 'diterima' }));
+    const n = f => f === 'semua' ? semua.length : f === 'dikirim' ? semua.filter(x => x.dikirim).length : f === 'diterima' ? semua.filter(x => !x.dikirim).length : semua.filter(x => x.r.jumlah_masalah > 0).length;
+    $('infoTerima').textContent = hilirMuat ? `${n('semua')} surat jalan · ${n('dikirim')} dalam pengiriman · ${n('diterima')} sudah diterima${n('masalah') ? ' · ' + n('masalah') + ' ada barang bermasalah' : ''}` : 'Memuat data…';
+    $('pnChips').innerHTML = [['semua', 'Semua'], ['dikirim', 'Dalam pengiriman'], ['diterima', 'Diterima'], ['masalah', 'Ada masalah']].map(([k, t]) => `<button class="chip ${pnFilter === k ? 'on' : ''}" data-f="${k}">${t} ${n(k)}</button>`).join('');
+    const q = $('pnCari').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const f = semua.filter(x => q.every(w => [x.g.no_surat_jalan, x.g.client, x.g.bagian_kerja, x.g.ekspedisi, x.g.no_resi].join(' ').toLowerCase().includes(w)) && (pnFilter === 'semua' || (pnFilter === 'dikirim' ? x.dikirim : pnFilter === 'diterima' ? !x.dikirim : x.r.jumlah_masalah > 0)))
+      .sort((a, b) => (b.dikirim - a.dikirim) || String(b.g.tanggal).localeCompare(String(a.g.tanggal)) || b.g.id - a.g.id);
+    el.innerHTML = f.map(({ g, r, dikirim }) => {
+      const pic = picLokasi(g.lokasi_form), badge = dikirim ? '<span class="badge warn">Dalam pengiriman</span>' : '<span class="badge ok">Diterima' + (r.penerima ? ' oleh ' + esc(r.penerima) : '') + '</span>';
+      return `<div class="rwi" data-g="${g.id}"><div class="row"><span><b>${esc(g.no_surat_jalan)}</b> · ${tglPendek(g.tanggal)} · ${esc(g.client)} · ${esc(namaRapi(g.bagian_kerja))}</span>${badge}</div>
+        <div class="rl"><span>${esc(g.ekspedisi || '-')}${g.no_resi ? ' · resi ' + esc(g.no_resi) : ''}${pic ? ' · PIC ' + esc(pic.nama) : ''}</span><span>${idn(g.jumlah_pcs)} pcs${!dikirim && g.diterima_pada ? ' · diterima ' + tglPendek(g.diterima_pada) : ''}${r.jumlah_masalah ? ` · <b style="color:var(--bad)">${r.jumlah_masalah} bermasalah</b>` : ''}${r.jumlah_foto ? ' · ' + r.jumlah_foto + ' foto' : ''}</span></div>
+        <div class="bgact" style="margin-top:8px;flex-wrap:wrap"><button class="btn" data-pn="sj">Surat jalan (PDF)</button>
+          ${dikirim ? `<button class="btn" data-pn="salin">Salin tautan form penerima</button>${pic ? '<button class="btn" data-pn="wa">Kirim tautan ke PIC (WA)</button>' : ''}<button class="btn" data-pn="buka">Buka form</button>` : ''}
+          ${r.penerima ? '<button class="btn" data-pn="ba">Berita acara penerimaan (PDF)</button>' : ''}</div><div class="hint" data-st style="margin-top:6px"></div></div>`;
+    }).join('') || `<div class="kosongnya">${semua.length ? 'Tidak ada surat jalan yang cocok.' : 'Belum ada surat jalan. Buat pengiriman di halaman Pengiriman dulu.'}</div>`;
+  }
+  async function suratJalanDari(g) { // data surat jalan lengkap dari pengiriman yang sudah tersimpan
+    const rows = await rpcKode('detail_pengiriman', { p_id: g.id }), pic = picLokasi(g.lokasi_form);
+    return { no: g.no_surat_jalan, tanggal: g.tanggal, client: g.client, bagian: g.bagian_kerja, ekspedisi: g.ekspedisi, resi: g.no_resi, penerima: g.penerima, pic: pic ? pic.nama : '', rows };
+  }
+  async function beritaAcaraPdf(g) {
+    const d = await rpcKode('detail_penerimaan', { p_pengiriman: g.id }); if (!d) throw new Error('Penerimaan belum diisi lewat form penerima.');
+    const [k, ttdPen, ttdPic, fotos] = await Promise.all([kertasKop(), muatGambarCors(d.ttd_penerima), muatGambarCors(d.ttd_pic), Promise.all((d.foto || []).map(muatGambarCors))]);
+    const { doc, PW, L, R, W } = k; k.pasang(); k.huruf('bold', 14); doc.text('BERITA ACARA PENERIMAAN SERAGAM', PW / 2, 104, { align: 'center' }); k.y = 132;
+    const meta = [['No. Surat Jalan', g.no_surat_jalan], ['Tanggal kirim', tglPanjangId(g.tanggal)], ['Tanggal terima', tglPanjangId(d.tanggal_terima)], ['Lokasi', g.client], ['Bagian kerja', g.bagian_kerja], ['PIC lapangan', d.pic_nama || '-'], ['Penerima', d.penerima + (d.jabatan ? ' (' + d.jabatan + ')' : '')]];
+    meta.forEach(([a, b], n) => { k.huruf('bold'); doc.text(a, L, k.y + n * 14); k.huruf(); doc.text(': ' + doc.splitTextToSize(String(b), W - 100)[0], L + 92, k.y + n * 14); });
+    k.y += meta.length * 14 + 8;
+    const uk = r => [r.ukuran_baju && 'Baju ' + r.ukuran_baju, r.ukuran_celana && 'Celana ' + r.ukuran_celana, r.ukuran_sepatu && 'Sepatu ' + r.ukuran_sepatu].filter(Boolean).join(', ') || '-';
+    const ST = { sesuai: 'Sesuai', kurang: 'Kurang', rusak: 'Rusak', salah_ukuran: 'Salah ukuran' };
+    k.tabel({ startY: k.y, head: [['NO', 'KARYAWAN', 'JENIS SERAGAM', 'UKURAN', 'QTY', 'KETERANGAN']], body: d.item.map((r, n) => [{ content: n + 1, styles: { halign: 'center' } }, r.nama, namaRapi(r.item_nama), uk(r), { content: r.qty, styles: { halign: 'center' } }, ST[r.status] + (r.catatan ? ': ' + r.catatan : '')]),
+      columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 96 }, 3: { cellWidth: 108 }, 4: { cellWidth: 32 }, 5: { cellWidth: 100 } }, styles: { font: 'times', fontSize: 9.5, cellPadding: 3, lineColor: [0, 0, 0], lineWidth: 0.5, textColor: 0 } });
+    const masalah = d.item.filter(r => r.status !== 'sesuai').length;
+    k.y += 16; k.cek(40); k.huruf('bold'); doc.text(`Ringkasan: ${d.item.length - masalah} baris sesuai${masalah ? `, ${masalah} bermasalah` : ''}.`, L, k.y); k.y += 14;
+    if (d.catatan) { k.huruf(); const t = doc.splitTextToSize('Catatan: ' + d.catatan, W); k.cek(t.length * 12 + 6); doc.text(t, L, k.y); k.y += t.length * 12 + 4; }
+    k.y += 8; k.cek(130);
+    const ttd = (x, label, nama, peran, img) => { k.huruf(); doc.text(label, x, k.y, { align: 'center' }); if (img) { const lebar = 130, tinggi = Math.min(56, lebar * img.height / img.width); doc.addImage(img, 'PNG', x - lebar / 2, k.y + 6, lebar, tinggi); }
+      k.huruf('bold'); doc.text(nama || '', x, k.y + 72, { align: 'center' }); const w = Math.max(doc.getTextWidth(nama || ''), 80); doc.setLineWidth(0.6); doc.setDrawColor(0, 0, 0); doc.line(x - w / 2, k.y + 74, x + w / 2, k.y + 74); k.huruf('bold', 8.5); doc.setTextColor(153, 153, 153); doc.text(peran, x, k.y + 86, { align: 'center' }); k.huruf(); };
+    ttd(L + W * 0.25, 'PIC Lapangan,', d.pic_nama, '(PIC Lapangan)', ttdPic); ttd(L + W * 0.75, 'Penerima,', d.penerima, '(Penerima)', ttdPen);
+    if (fotos.some(Boolean)) {
+      doc.addPage(); k.pasang(); k.huruf('bold', 12); doc.text('DOKUMENTASI FOTO PENERIMAAN', PW / 2, 100, { align: 'center' });
+      const sel = (W - 12) / 2; let n = 0;
+      for (const f of fotos.filter(Boolean)) {
+        if (n && n % 6 === 0) { doc.addPage(); k.pasang(); }
+        const kol = n % 2, bar = Math.floor((n % 6) / 2), x = L + kol * (sel + 12), y = 114 + bar * 204, sk = Math.min(sel / f.width, 196 / f.height), w = f.width * sk, h = f.height * sk;
+        doc.setDrawColor(190, 190, 190); doc.rect(x, y, sel, 196); doc.addImage(f, 'JPEG', x + (sel - w) / 2, y + (196 - h) / 2, w, h); n++;
+      }
+    }
+    k.simpan(`Berita Acara Penerimaan ${g.no_surat_jalan.replace(/\//g, '-')} ${g.client}.pdf`);
+  }
+  $('pnChips').onclick = e => { const b = e.target.closest('[data-f]'); if (b) { pnFilter = b.dataset.f; renderPenerimaan(); } };
+  $('pnCari').oninput = renderPenerimaan; $('pnMuat').onclick = muatHilir;
+  $('pnList').onclick = async e => {
+    const b = e.target.closest('[data-pn]'); if (!b) return;
+    const kartu = b.closest('[data-g]'), g = kirimAll.find(x => x.id === Number(kartu.dataset.g)), st = kartu.querySelector('[data-st]'), aksi = b.dataset.pn, label = b.textContent; if (!g) return;
+    const info = (t, w) => { st.style.color = w || 'var(--muted)'; st.textContent = t; };
+    b.disabled = true;
+    try {
+      if (aksi === 'sj') { b.textContent = 'Menyiapkan…'; await suratJalanPdf(await suratJalanDari(g)); }
+      else if (aksi === 'ba') { b.textContent = 'Menyiapkan…'; await beritaAcaraPdf(g); }
+      else {
+        const tk = await rpcKode('buat_tautan_penerimaan', { p_pengiriman: g.id }), url = urlFormTerima(g.id, tk);
+        if (aksi === 'buka') window.open(url, '_blank', 'noopener');
+        else if (aksi === 'salin') { try { await navigator.clipboard.writeText(url); info('✓ Tautan form penerima disalin. Kirim ke penerima di lokasi.', 'var(--ok)'); } catch (x) { prompt('Salin tautan form penerima:', url); } }
+        else if (aksi === 'wa') {
+          const pic = picLokasi(g.lokasi_form); if (!pic) throw new Error('PIC lokasi ini belum diatur.');
+          const teks = `Mohon penerima seragam mengisi form penerimaan:\n${g.client} - ${namaRapi(g.bagian_kerja)}\nSurat jalan ${g.no_surat_jalan}\n\nBuka tautan ini di HP penerima, periksa barang, tanda tangan, dan foto dokumentasi:\n${url}`;
+          await kirimBot([{ pic_id: pic.id, teks }], st);
+        }
+      }
+    } catch (x) { info('Gagal: ' + x.message, 'var(--bad)'); }
+    b.disabled = false; b.textContent = label;
+  };
   $('kDaftar').onclick = e => { const b = e.target.closest('.item'); if (b) { kTerbuka = true; if (kSel !== b.dataset.k) { kSel = b.dataset.k; kData = null; $('kEditor').hidden = true; } renderKirimList(); } };
   $('kHead').onclick = async e => {
     const t = e.target;
