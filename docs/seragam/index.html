@@ -452,7 +452,8 @@
         <label class="search"><span aria-hidden="true">🔍</span><input id="pCari" type="search" placeholder="Cari lokasi, mis. bps cilacap"></label>
         <button class="btn" id="pMuat">Muat ulang</button>
       </div>
-      <div class="chips" id="pChips" style="margin-bottom:14px"></div>
+      <div class="chips" id="pChips" style="margin-bottom:10px"></div>
+      <div class="row" style="flex-wrap:wrap;gap:12px;margin-bottom:14px;font-size:.82rem"><label class="muted">Urutkan <select id="pUrut" style="margin-left:6px"><option value="prioritas">Prioritas (pekerjaan lengkap dulu)</option><option value="sedikit">Permintaan paling sedikit dulu</option><option value="banyak">Permintaan paling banyak dulu</option></select></label><label class="kcek"><input type="checkbox" id="pGrup"> Kelompokkan per PIC</label></div>
       <div class="layout">
         <div class="list"><div class="scroll" id="pDaftar"></div></div>
         <div class="detail" id="pDetail"><div id="pHead"></div><div class="pcard formminta" id="pEditor" hidden></div></div>
@@ -1939,30 +1940,49 @@ Alasan (boleh kosong):`); if (alasan === null) return;
   function ringkasPlot() { const s = [...setujuTerakhir().values()]; return { total: s.length, sudah: s.filter(p => p.diploting_pada).length }; }
   function infoPlot(l, setuju) {
     const per = l.bagian.map(b => setuju.get(l.lokasi + '|' + b.nama)).filter(Boolean), sudah = per.filter(p => p.diploting_pada).length;
-    return { s: !per.length ? 'kosong' : sudah === per.length ? 'selesai' : sudah ? 'sebagian' : 'belum', total: per.length, sudah };
+    const semuaBagian = l.bagian.filter(b => b.target > 0).length, menunggu = Math.max(0, semuaBagian - per.length);
+    const pcs = per.reduce((a, p) => a + (p.items || []).reduce((b, i) => b + (Number(i.qty) || 0), 0), 0);
+    return { s: !per.length ? 'kosong' : sudah === per.length ? 'selesai' : sudah ? 'sebagian' : 'belum', total: per.length, sudah, semuaBagian, menunggu, pcs };
   }
   const LP = { belum: ['Belum diplot', 'warn'], sebagian: ['Sebagian diplot', 'warn'], selesai: ['Sudah diplot', 'ok'] };
+  // prioritas kerja: lokasi yang semua jenis pekerjaannya sudah disetujui dan paling dekat selesai diplot didahulukan; lokasi yang masih menunggu bagian lain menyusul; yang sudah selesai paling bawah
+  const urutPrioritasPlot = pi => pi.s === 'selesai' ? 9 : pi.menunggu ? 5 + (pi.s === 'sebagian' ? 0 : 1) : pi.s === 'sebagian' ? 0 : 1;
   const URUT_LP = { belum: 0, sebagian: 1, selesai: 2 };
+  let pUrut = 'prioritas', pGrup = false;
 
   function renderPlotList() {
     const setuju = setujuTerakhir();
     const semua = lokMinta().map(l => { l.pi = infoPlot(l, setuju); return l; }).filter(l => l.pi.s !== 'kosong');
     const q = $('pCari').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    const f = semua.filter(l => q.every(w => l.kunci.includes(w)) && (pStatusF === 'semua' || l.pi.s === pStatusF))
-      .sort((a, b) => q.length ? a.client.localeCompare(b.client) : (URUT_LP[a.pi.s] - URUT_LP[b.pi.s]) || a.client.localeCompare(b.client));
+    const banding = (a, b) => q.length ? a.client.localeCompare(b.client) : pUrut === 'sedikit' ? (a.pi.pcs - b.pi.pcs) || a.client.localeCompare(b.client) : pUrut === 'banyak' ? (b.pi.pcs - a.pi.pcs) || a.client.localeCompare(b.client) : (urutPrioritasPlot(a.pi) - urutPrioritasPlot(b.pi)) || a.client.localeCompare(b.client);
+    const cocokF = l => pStatusF === 'semua' || (pStatusF === 'siap' ? !l.pi.menunggu && l.pi.s !== 'selesai' : pStatusF === 'menunggu' ? l.pi.menunggu > 0 : l.pi.s === pStatusF);
+    const f = semua.filter(l => q.every(w => l.kunci.includes(w)) && cocokF(l))
+      .sort(banding);
     if (!f.some(l => l.lokasi === pSel)) { pSel = f.length ? f[0].lokasi : ''; pBagian = ''; pData = null; }
-    const n = s => s === 'semua' ? semua.length : semua.filter(l => l.pi.s === s).length;
-    $('pChips').innerHTML = [['semua', 'Semua'], ['belum', 'Belum diplot'], ['sebagian', 'Sebagian diplot'], ['selesai', 'Sudah diplot']]
+    const n = s => s === 'semua' ? semua.length : s === 'siap' ? semua.filter(l => !l.pi.menunggu && l.pi.s !== 'selesai').length : s === 'menunggu' ? semua.filter(l => l.pi.menunggu > 0).length : semua.filter(l => l.pi.s === s).length;
+    $('pChips').innerHTML = [['semua', 'Semua'], ['siap', 'Semua pekerjaan siap diplot'], ['menunggu', 'Menunggu pekerjaan lain'], ['belum', 'Belum diplot'], ['sebagian', 'Sebagian diplot'], ['selesai', 'Sudah diplot']]
       .map(([s, t]) => `<button class="chip ${pStatusF === s ? 'on' : ''}" data-s="${s}">${t} ${n(s)}</button>`).join('');
     $('infoPlot').textContent = statusMuat ? (semua.length ? `${semua.length} lokasi punya permintaan yang sudah disetujui · ${n('belum') + n('sebagian')} belum selesai diplot` : 'Belum ada permintaan yang disetujui Pak Yasir dan Pak Ferry') : 'Memuat data…';
-    $('pDaftar').innerHTML = f.map(l => {
+    const kartuPlot = l => {
       const [lbl, cls] = LP[l.pi.s], pct = l.pi.total ? 100 * l.pi.sudah / l.pi.total : 0;
+const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
       return `<button class="item ${l.lokasi === pSel ? 'sel' : ''}" data-k="${esc(l.lokasi)}"><div class="nm">${esc(l.client)}</div>
+         <div class="muted" style="font-size:.74rem;margin:-2px 0 4px">${area ? esc(area.nama) : 'area belum diatur'}${pic ? ' · PIC ' + esc(pic.nama) : ''}</div>
          <div class="bar ${cls}"><i style="width:${pct}%"></i></div>
-         <div class="mt"><span>${l.pi.sudah}/${l.pi.total} bagian diplot</span><span class="badge ${cls}">${lbl}</span></div></button>`;
-    }).join('') || `<div class="kosongnya">${semua.length ? 'Lokasi tidak ditemukan.' : 'Belum ada permintaan yang sudah disetujui kedua pimpinan.'}</div>`;
+         <div class="mt"><span>${l.pi.sudah}/${l.pi.total} pekerjaan diplot · ${idn(l.pi.pcs)} pcs${l.pi.menunggu ? ' · ' + l.pi.menunggu + ' menunggu' : ''}</span><span class="badge ${l.pi.menunggu && l.pi.s !== 'selesai' ? 'neu' : cls}">${l.pi.menunggu && l.pi.s !== 'selesai' ? 'Menunggu pekerjaan lain' : lbl}</span></div></button>`;
+    };
+    const kosongPlot = `<div class="kosongnya">${semua.length ? 'Lokasi tidak ditemukan.' : 'Belum ada permintaan yang sudah disetujui kedua pimpinan.'}</div>`;
+    if (!f.length) $('pDaftar').innerHTML = kosongPlot;
+    else if (!pGrup) $('pDaftar').innerHTML = f.map(kartuPlot).join('');
+    else { // kelompok per PIC; urutan kelompok mengikuti jumlah permintaan bila diurutkan sedikit/banyak
+      const g = new Map(); for (const l of f) { const p = Saring.picDari(l.lokasi), k = p ? p.nama : 'Belum ada PIC'; if (!g.has(k)) g.set(k, []); g.get(k).push(l); }
+      const tot = ls => ls.reduce((x, l) => x + l.pi.pcs, 0), urut = [...g.entries()].sort((x, y) => pUrut === 'sedikit' ? tot(x[1]) - tot(y[1]) : pUrut === 'banyak' ? tot(y[1]) - tot(x[1]) : x[0].localeCompare(y[0], 'id'));
+      $('pDaftar').innerHTML = urut.map(([nama, ls]) => `<div class="muted" style="margin:12px 4px 6px;font-size:.78rem;font-weight:600;letter-spacing:.02em">${esc(nama.toUpperCase())} · ${ls.length} lokasi · ${idn(tot(ls))} pcs</div>${ls.map(kartuPlot).join('')}`).join('');
+    }
     renderPlotDetail();
   }
+  $('pUrut').onchange = e => { pUrut = e.target.value; renderPlotList(); };
+  $('pGrup').onchange = e => { pGrup = e.target.checked; renderPlotList(); };
   function renderPlotDetail() {
     const l = lokasi.find(x => x.lokasi === pSel);
     $('pDetail').classList.toggle('open', terbukaPlot && !!l);
@@ -1977,7 +1997,8 @@ Alasan (boleh kosong):`); if (alasan === null) return;
           <button class="btn" data-plot="${esc(b.nama)}">${p.diploting_pada ? 'Ubah ploting' : 'Plot seragam'}</button></div></div></div>`;
     }).join('');
     $('pHead').innerHTML = `<div class="dhead"><button class="btn back" id="pBack">‹ Kembali</button>
-      <div class="row"><h2>${esc(l.client)}</h2><span class="badge ${cls}">${lbl}</span></div></div><div class="dbody">${bagian}</div>`;
+      <div class="row"><h2>${esc(l.client)}</h2><span class="badge ${cls}">${lbl}</span></div>
+      <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:10px"><span class="muted">${(a => a ? esc(a.nama) : 'area belum diatur')(Saring.areaDari(l.lokasi))}${(p => p ? ' · PIC ' + esc(p.nama) : '')(Saring.picDari(l.lokasi))} · ${mi.sudah}/${mi.total} pekerjaan diplot${mi.menunggu ? ' · ' + mi.menunggu + ' menunggu persetujuan' : ''}</span>${mi.sudah ? '<button class="btn" id="pCatatan" type="button">Catatan perakitan 1 stel (PDF)</button>' : ''}</div></div><div class="dbody">${bagian}</div>`;
     if (!pData || pData.l.lokasi !== l.lokasi) $('pEditor').hidden = true;
   }
 
@@ -2111,6 +2132,51 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     if (t.dataset.kosong) return bagiRata(t.dataset.kosong, true);
   };
   $('pDaftar').onclick = e => { const b = e.target.closest('.item'); if (b) { terbukaPlot = true; if (pSel !== b.dataset.k) { pSel = b.dataset.k; pData = null; $('pEditor').hidden = true; } renderPlotList(); } };
+  // ---- catatan perakitan: dibawa admin untuk mengumpulkan baju dan celana menjadi 1 stel per karyawan, satu lokasi (semua jenis pekerjaan) ----
+  async function catatanPerakitanPdf(l) {
+    const setuju = setujuTerakhir();
+    const per = l.bagian.map(b => ({ b, p: setuju.get(l.lokasi + '|' + b.nama) })).filter(x => x.p && x.p.diploting_pada);
+    if (!per.length) throw new Error('Belum ada pekerjaan di lokasi ini yang sudah diploting.');
+    const data = [];
+    for (const { b, p } of per) data.push({ b, p, rows: (await rpcKode('siap_kirim', { p_permintaan: p.id })) });
+    const k = await kertasKop(), { doc, PW, L, R, W } = k; k.pasang();
+    k.huruf('bold', 14); doc.text('CATATAN PERAKITAN SERAGAM', PW / 2, 100, { align: 'center' });
+    k.huruf('italic', 9.5); doc.text('Kumpulkan baju dan celana menjadi 1 stel per karyawan, lalu centang kolom Dirakit.', PW / 2, 114, { align: 'center' });
+    const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
+    const adaBelum = rows => rows.filter(r => !r.pengiriman_id), semuaStel = data.reduce((a, d) => a + new Set(adaBelum(d.rows).map(r => r.nama)).size, 0);
+    k.y = 136;
+    [['Lokasi', l.client], ['Area / PIC', (area ? area.nama : '-') + (pic ? ' · PIC ' + pic.nama : '')], ['Tanggal cetak', new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })], ['Jenis pekerjaan', data.map(d => namaRapi(d.b.nama)).join(', ')], ['Jumlah karyawan', String(semuaStel)]]
+      .forEach(([a, b], n) => { k.huruf('bold'); doc.text(a, L, k.y + n * 14); k.huruf(); doc.text(': ' + doc.splitTextToSize(b, W - 100)[0], L + 92, k.y + n * 14); });
+    k.y += 5 * 14 + 8;
+    const ringkas = new Map(); // barang yang diambil dari gudang: nama komponen + ukuran -> qty
+    for (const d of data) {
+      const baris = adaBelum(d.rows), sudah = d.rows.length - baris.length;
+      k.cek(70); k.huruf('bold', 11); doc.setFillColor(232, 238, 246); doc.rect(L, k.y - 11, W, 17, 'F'); doc.text(`${namaRapi(d.b.nama)}  (permintaan no. ${d.p.id})`, L + 4, k.y + 1);
+      k.huruf('normal', 9); doc.text(`${new Set(baris.map(r => r.nama)).size} karyawan belum dikirim${sudah ? ` · ${sudah} baris sudah dikirim (tidak dicatat di sini)` : ''}`, R - 4, k.y + 1, { align: 'right' }); k.y += 10;
+      const urut = [...baris].sort((a, b) => a.nama.localeCompare(b.nama, 'id') || a.item_no - b.item_no);
+      const body = urut.map((r, n) => {
+        const u = jenisUkuran(r.item_no, r.item_nama), stel = u.baju && u.celana;
+        for (const [jenis, label] of komponenBarang(r.item_no, r.item_nama)) { const uk = jenis === 'Baju' ? r.ukuran_baju : jenis === 'Celana' ? r.ukuran_celana : jenis === 'Sepatu' ? r.ukuran_sepatu : '-'; const kk = `${jenis}|${namaRapi(label)}|${uk || '-'}`; ringkas.set(kk, (ringkas.get(kk) || 0) + r.qty); }
+        return ['', { content: n + 1, styles: { halign: 'center' } }, r.nama, namaRapi(r.item_nama) + (stel ? ' (1 stel)' : ''), r.ukuran_baju || '-', r.ukuran_celana || '-', r.ukuran_sepatu || '-', { content: r.qty, styles: { halign: 'center' } }, ''];
+      });
+      if (!body.length) { k.huruf('italic', 9.5); doc.text('Semua barang pekerjaan ini sudah dikirim.', L + 4, k.y + 10); k.y += 24; continue; }
+      k.tabel({ startY: k.y, head: [['Dirakit', 'NO', 'KARYAWAN', 'SERAGAM', 'BAJU', 'CELANA', 'SEPATU', 'QTY', 'KETERANGAN']], body,
+        columnStyles: { 0: { cellWidth: 36 }, 1: { cellWidth: 22 }, 2: { cellWidth: 92 }, 4: { cellWidth: 38, halign: 'center' }, 5: { cellWidth: 46, halign: 'center' }, 6: { cellWidth: 44, halign: 'center' }, 7: { cellWidth: 28 }, 8: { cellWidth: 74 } }, styles: { font: 'times', fontSize: 9, cellPadding: 3, lineColor: [0, 0, 0], lineWidth: 0.5, textColor: 0 },
+        didDrawCell: h => { if (h.section === 'body' && h.column.index === 0) { doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.7); doc.rect(h.cell.x + h.cell.width / 2 - 5, h.cell.y + h.cell.height / 2 - 5, 10, 10); } } });
+      k.y += 18;
+    }
+    k.cek(60); k.huruf('bold', 11); doc.text('RINGKASAN BARANG YANG DIAMBIL DARI GUDANG', L, k.y); k.y += 6;
+    const rb = [...ringkas.entries()].map(([kk, q]) => { const [j, n, u] = kk.split('|'); return [j, n, u, q]; }).sort((a, b) => ['Baju', 'Celana', 'Sepatu', 'Aksesoris'].indexOf(a[0]) - ['Baju', 'Celana', 'Sepatu', 'Aksesoris'].indexOf(b[0]) || a[1].localeCompare(b[1], 'id') || bandingUk(a[2], b[2]));
+    k.tabel({ startY: k.y, head: [['JENIS', 'BARANG', 'UKURAN', 'QTY']], body: [...rb.map(r => [r[0], r[1], r[2], { content: r[3], styles: { halign: 'center' } }]), [{ content: 'TOTAL', colSpan: 3, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rb.reduce((a, r) => a + r[3], 0), styles: { halign: 'center', fontStyle: 'bold' } }]], columnStyles: { 0: { cellWidth: 60 }, 2: { cellWidth: 60, halign: 'center' }, 3: { cellWidth: 50 } } });
+    k.y += 22; k.cek(92); k.ttd([{ x: L + W * 0.25, label: 'Dirakit oleh,', t: ['', '(Admin gudang)'] }, { x: L + W * 0.75, label: 'Diperiksa,', t: TTD.pic }], k.y);
+    k.simpan(`Catatan Perakitan ${l.client}.pdf`);
+  }
+  $('pHead').addEventListener('click', async e => {
+    const b = e.target.closest('#pCatatan'); if (!b) return;
+    const l = lokasi.find(x => x.lokasi === pSel); if (!l) return; const label = b.textContent; b.disabled = true; b.textContent = 'Menyiapkan…';
+    try { await catatanPerakitanPdf(l); } catch (x) { alert('Gagal: ' + x.message); }
+    b.disabled = false; b.textContent = label;
+  });
   $('pHead').onclick = e => {
     if (e.target.id === 'pBack') { terbukaPlot = false; renderPlotDetail(); return; }
     const bt = e.target.closest('[data-plot]'); if (bt) bukaPlot(bt.dataset.plot);
