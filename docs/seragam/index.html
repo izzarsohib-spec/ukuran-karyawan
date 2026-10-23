@@ -202,7 +202,7 @@
   .vc { background:rgba(14,14,16,.45); border:1px solid var(--stroke); border-radius:18px; padding:14px 16px; min-width:0; }
   .vh { display:flex; justify-content:space-between; gap:10px; margin-bottom:10px; } .vh b { font-size:.9rem; }
   .vt { display:flex; gap:2px; background:rgba(255,255,255,.07); border-radius:99px; padding:2px; height:fit-content; flex:none; }
-  .vt button { border:0; background:transparent; color:var(--muted); border-radius:99px; padding:3px 10px; font-size:.72rem; } .vt button.on { background:#fff; color:#111; font-weight:600; }
+  .vt button { border:0; background:transparent; color:var(--muted); border-radius:99px; padding:6px 12px; min-height:30px; font-size:.74rem; } .vt button.on { background:#fff; color:#111; font-weight:600; }
   .vsvg { width:100%; height:auto; display:block; }
   .vleg { display:flex; gap:14px; font-size:.76rem; color:var(--muted); margin-bottom:4px; } .vleg i { display:inline-block; width:14px; height:3px; border-radius:2px; margin-right:6px; vertical-align:middle; }
   .vbars { display:grid; gap:2px; }
@@ -871,6 +871,7 @@
     $('worst').dataset.k = w ? w.lokasi : '';
     $('worst').innerHTML = w ? `<small>Kekurangan terbesar</small><b>${esc(w.client)}</b><small>kurang ${w.kurang} orang · ${w.isi}/${w.target}</small>` : '<small>Tidak ada data</small>';
     $('info').textContent = `${lokasi.length} lokasi dipantau`;
+    fetch(`${SUPABASE_URL}/rest/v1/rpc/sinkron_terakhir`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: '{}' }).then(r => r.json()).then(t => { if (!t) return; const jam = Math.round((Date.now() - Date.parse(t)) / 3600000); $('info').textContent += ` · data Form terakhir masuk ${new Date(t).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` + (jam >= 6 ? ` (${jam >= 48 ? Math.round(jam / 24) + ' hari' : jam + ' jam'} lalu, sinkron Apps Script mungkin berhenti)` : ''); }).catch(() => {});
     gambarGrafik(); renderRingkasan();
   }
 
@@ -1261,7 +1262,7 @@
     if (k.sudah) return `<tr data-i="${i}" class="sudah" ${cocokNama(k) ? '' : 'hidden'}><td class="kn"><b>${esc(k.nama)}</b><div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></td><td><span class="badge ok">✓ Sudah dipesan · permintaan no. ${k.sudah}</span></td></tr>`;
     const ada = Object.keys(k.alloc).filter(no => itemMinta(no)), kecuali = Object.fromEntries(ada.map(no => [no, 1]));
     const kartu = ada.map(no => { const it = itemMinta(no), a = k.alloc[no];
-      return `<div class="skartu" data-no="${no}"><b>${esc(it.nama)}</b><label class="jml">jml <input class="pq" type="number" min="1" value="${a.qty}"></label><span class="pus">${pilihanUkuran(it, a)}</span><button class="xk" title="Hapus seragam ini" aria-label="Hapus seragam ini">✕</button></div>`; }).join('');
+      return `<div class="skartu" data-no="${no}"><b>${esc(it.nama)}</b><label class="jml">jml <input class="pq" type="number" min="1" max="20" value="${a.qty}"></label><span class="pus">${pilihanUkuran(it, a)}</span><button class="xk" title="Hapus seragam ini" aria-label="Hapus seragam ini">✕</button></div>`; }).join('');
     const adaLain = ada.length && mKar.some((x, j) => j !== i && x.pilih);
     return `<tr data-i="${i}" class="${k.pilih ? 'dipilih' : ''}" ${cocokNama(k) ? '' : 'hidden'}><td class="kn"><label class="kcek"><input type="checkbox" class="pk" ${k.pilih ? 'checked' : ''}><span><b>${esc(k.nama)}</b><div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></span></label></td>
       <td><div class="kcards">${kartu}</div><div class="kmenu"><select class="tmb"><option value="">+ Pilih seragam…</option>${opsiItemMinta(kecuali)}</select>${adaLain ? '<button class="btn salin" title="Samakan seragam nama yang dicentang dengan orang ini">Salin ke yang dicentang</button>' : ''}</div></td></tr>`;
@@ -1322,7 +1323,7 @@
   // (yang sudah punya seragam itu hanya diubah jumlahnya, jadi panel ini juga bisa dipakai untuk penyesuaian)
   function daftarItemAksi() {
     return [...new Set(HARGA.map(h => h.kat))].map(k => `<div class="agrup">${esc(k)}</div>` + HARGA.filter(h => h.kat === k).map(h =>
-      `<label class="ai" data-nama="${esc(h.nama.toLowerCase())}"><input type="checkbox" class="ac" data-no="${h.no}"><span>${esc(h.nama)}</span><input class="aq" type="number" min="1" value="1" title="Jumlah per orang"></label>`).join('')).join('');
+      `<label class="ai" data-nama="${esc(h.nama.toLowerCase())}"><input type="checkbox" class="ac" data-no="${h.no}"><span>${esc(h.nama)}</span><input class="aq" type="number" min="1" max="20" value="1" title="Jumlah per orang"></label>`).join('')).join('');
   }
   function infoAksi() {
     const btn = $('mAksiTerapkan'); if (!btn) return;
@@ -1331,7 +1332,7 @@
     $('mAksiInfo').textContent = c ? '' : 'Centang seragam dan atur jumlah per orang.';
   }
   function terapkanAksi() {
-    const pilih = [...document.querySelectorAll('#mAksiList .ac:checked')].map(c => ({ no: c.dataset.no, qty: Math.max(1, Math.floor(Number(c.closest('.ai').querySelector('.aq').value)) || 1) }));
+    const pilih = [...document.querySelectorAll('#mAksiList .ac:checked')].map(c => ({ no: c.dataset.no, qty: Math.min(20, Math.max(1, Math.floor(Number(c.closest('.ai').querySelector('.aq').value)) || 1)) }));
     const sasaran = mKar.filter(k => k.pilih); if (!pilih.length || !sasaran.length) return;
     for (const x of sasaran) for (const p of pilih) { const it = itemMinta(p.no); if (!it) continue; if (!x.alloc[p.no]) x.alloc[p.no] = alokasiAwal(x, it); x.alloc[p.no].qty = p.qty; }
     document.querySelectorAll('#mAksiList .ac').forEach(c => { c.checked = false; c.closest('.ai').querySelector('.aq').value = 1; });
@@ -1352,7 +1353,7 @@
     if (e.target.id === 'mCariNama') { mCari = e.target.value.trim().toLowerCase(); return perbarui(); }
     if (e.target.id === 'mAksiCari') { const v = e.target.value.trim().toLowerCase(); document.querySelectorAll('#mAksiList .ai').forEach(l => { l.hidden = !!v && !l.dataset.nama.includes(v); }); return; }
     if (!e.target.classList.contains('pq')) return;
-    const div = e.target.closest('.skartu'), k = mKar[div.closest('tr').dataset.i], a = k.alloc[div.dataset.no]; if (a) a.qty = Math.max(1, Math.floor(Number(e.target.value)) || 1);
+    const div = e.target.closest('.skartu'), k = mKar[div.closest('tr').dataset.i], a = k.alloc[div.dataset.no]; if (a) a.qty = Math.min(20, Math.max(1, Math.floor(Number(e.target.value)) || 1)); if (Number(e.target.value) !== a.qty) e.target.value = a.qty;
     hitungAlokasi();
   };
   $('mPlot').onclick = e => {
@@ -2012,7 +2013,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
   function barisKar(k, i) {
     return `<tr data-i="${i}"><td><b>${esc(k.nama)}</b><div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></td><td>` +
       pData.items.map(it => { const a = k.alloc[it.no];
-        return `<div class="pit" data-no="${it.no}"><label class="pil"><input type="checkbox" class="pc" ${a ? 'checked' : ''}> ${esc(it.nama)}</label><input class="pq" type="number" min="1" value="${a ? a.qty : 1}" ${a ? '' : 'disabled'}><span class="pus">${a ? pilihanUkuran(it, a) : ''}</span></div>`; }).join('') + '</td></tr>';
+        return `<div class="pit" data-no="${it.no}"><label class="pil"><input type="checkbox" class="pc" ${a ? 'checked' : ''}> ${esc(it.nama)}</label><input class="pq" type="number" min="1" max="20" value="${a ? a.qty : 1}" ${a ? '' : 'disabled'}><span class="pus">${a ? pilihanUkuran(it, a) : ''}</span></div>`; }).join('') + '</td></tr>';
   }
   function renderPlotEditor() {
     const { items, kar, bagian, p } = pData, ed = $('pEditor'); ed.hidden = false;
@@ -2085,7 +2086,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
   };
   $('pEditor').oninput = e => {
     if (!e.target.classList.contains('pq') || !pData) return;
-    const div = e.target.closest('.pit'), k = pData.kar[div.closest('tr').dataset.i], a = k.alloc[div.dataset.no]; if (a) a.qty = Math.max(1, Math.floor(Number(e.target.value)) || 1);
+    const div = e.target.closest('.pit'), k = pData.kar[div.closest('tr').dataset.i], a = k.alloc[div.dataset.no]; if (a) a.qty = Math.min(20, Math.max(1, Math.floor(Number(e.target.value)) || 1)); if (Number(e.target.value) !== a.qty) e.target.value = a.qty;
     tandaiKotor();
   };
   $('pEditor').onclick = async e => {
@@ -2354,9 +2355,10 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     $('kvTab').innerHTML = [['kurang', 'Kekurangan & estimasi'], ['riwayat', 'Riwayat pengiriman']].map(([k, t]) => `<button class="chip ${kvTab === k ? 'on' : ''}" data-t="${k}">${t}</button>`).join('');
     $('kvSemuaWrap').hidden = kvTab !== 'kurang';
     if (!kvTampil) {
-      $('infoKurang').textContent = 'Data vendor dibuka setelah login'; $('kvKpi').innerHTML = ''; $('kvAksi').innerHTML = ''; $('kvCat').textContent = ''; $('kvVendor').innerHTML = '';
+      $('infoKurang').textContent = 'Data vendor dibuka setelah login'; $('kvKpi').innerHTML = ''; $('kvAksi').innerHTML = ''; $('kvCat').textContent = ''; $('kvVendor').innerHTML = ''; $('kvVendor').closest('label').hidden = true;
       $('kvIsi').innerHTML = `<div class="hint">${kvPesan ? esc(kvPesan) + ' ' : 'Perhitungan kekurangan dan penagihan vendor hanya untuk admin. '}<button class="btn" id="kvMasuk">Masuk dan muat</button></div>`; return;
     }
+    $('kvVendor').closest('label').hidden = false;
     const v = kvVendor.find(x => x.id === kvPilih), brg = kvSusun(kvBaris, kvJanji), kurangAda = brg.filter(b => b.kurang > 0);
     const dipesan = brg.reduce((a, b) => a + b.dipesan, 0), kurang = kurangAda.reduce((a, b) => a + b.kurang, 0), diterima = Math.max(0, dipesan - kurang);
     $('kvVendor').innerHTML = kvVendor.map(x => `<option value="${x.id}" ${x.id === kvPilih ? 'selected' : ''}>${esc(x.nama)}</option>`).join('') || '<option value="">Belum ada vendor</option>';

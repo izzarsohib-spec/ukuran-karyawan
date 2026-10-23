@@ -176,6 +176,7 @@
     const daftar = MENU[aktif];
     atas.hidden = aktif === 'beranda'; isi.classList.toggle('beratas', aktif !== 'beranda');
     tab.innerHTML = daftar ? daftar.map(([k, t]) => `<button data-p="${aktif}" data-s="${k}" class="${k === subAktif[aktif] ? 'on' : ''}">${esc(t)}</button>`).join('') : '';
+    const on = tab.querySelector('.on'); if (on) tab.scrollLeft = on.offsetLeft - (tab.clientWidth - on.offsetWidth) / 2;
     const h = aktif === 'beranda' ? '' : '#' + aktif + (subAktif[aktif] ? '/' + subAktif[aktif] : '');
     if (location.hash !== h) history.replaceState(null, '', h || location.pathname);
   }
