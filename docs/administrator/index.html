@@ -224,6 +224,21 @@
       simpan: (v, r) => tulis('admin_simpan_pic', { p_id: r?.id ?? null, p_nama: v.nama, p_cabang: intOrNull(v.cabang), p_telepon: v.telepon, p_aktif: r ? !!v.aktif : true, p_catatan: v.catatan }),
       hapus: r => tulis('admin_hapus_pic', { p_id: r.id }), namaBaris: r => r.nama
     },
+    vendor: {
+      grup: 'Organisasi', nama: 'Vendor', login: true,
+      ket: 'Vendor pemasok seragam dan sepatu. Nomor WhatsApp dipakai untuk menagih kepastian kirim dan mengingatkan deadline dari halaman Seragam › Rekap Permintaan & Inventaris › Kekurangan vendor.',
+      muat: () => rpc('admin_daftar_vendor', { kode: 'sesi' }), cari: r => [r.nama, r.telepon].join(' '), id: r => r.id, mati: r => !r.aktif,
+      statusOpsi: [['semua', 'Semua status'], ['aktif', 'Aktif', r => r.aktif], ['nonaktif', 'Nonaktif', r => !r.aktif]],
+      kolom: [['Vendor', r => `<b>${esc(r.nama)}</b>${r.catatan ? `<div class="sub">${esc(r.catatan)}</div>` : ''}`], ['WhatsApp', r => esc(r.telepon || '-')], ['Penagihan', r => num(r.jumlah_tagih), 'r'], ['Status', r => r.aktif ? '<span class="badge ok">Aktif</span>' : '<span class="badge">Nonaktif</span>']],
+      kpi: d => [['Vendor', num(d.length)], ['Aktif', num(d.filter(r => r.aktif).length)], ['Nomor WA terisi', num(d.filter(r => r.telepon).length)]],
+      form: r => [
+        { k: 'nama', l: 'Nama vendor', v: r?.nama, req: true },
+        { k: 'telepon', l: 'Nomor WhatsApp', v: r?.telepon, hint: 'Contoh: 0812-3456-7890 atau +62 812 3456 7890' },
+        { k: 'catatan', l: 'Catatan', v: r?.catatan },
+        ...(r ? [{ k: 'aktif', l: 'Vendor aktif', cek: true, v: r.aktif }] : [])],
+      simpan: (v, r) => tulis('admin_simpan_vendor', { p_id: r?.id ?? null, p_nama: v.nama, p_telepon: v.telepon, p_aktif: r ? !!v.aktif : true, p_catatan: v.catatan }),
+      hapus: r => tulis('admin_hapus_vendor', { p_id: r.id }), namaBaris: r => r.nama
+    },
     cabang: {
       grup: 'Organisasi', nama: 'Cabang',
       ket: 'Kantor utama dan cabang. Cabang yang masih punya PIC atau lokasi tidak bisa dihapus; nonaktifkan saja.',
