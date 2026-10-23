@@ -231,7 +231,17 @@
   .kcek { display:flex; align-items:flex-start; gap:8px; cursor:pointer; font-size:.84rem; }
   .kcek input { width:auto !important; margin:3px 0 0 !important; }
   .maksi { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:10px 12px; margin-bottom:10px; border:1px solid var(--accent); border-radius:14px; background:rgba(245,213,71,.08); }
-  .maksi select { width:auto !important; min-width:240px; margin:0 !important; }
+  .maksi { position:relative; }
+  .apanel { position:absolute; left:12px; top:calc(100% + 6px); z-index:6; width:min(470px, calc(100% - 24px)); display:flex; flex-direction:column; gap:8px; padding:12px; border-radius:16px; background:#202024; border:1px solid var(--stroke); box-shadow:0 18px 48px rgba(0,0,0,.55); }
+  .apanel[hidden] { display:none; }
+  .apanel input#mAksiCari { margin:0 !important; }
+  .alist { overflow:auto; max-height:300px; }
+  .agrup { font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); font-weight:700; margin:8px 0 2px; }
+  .ai { display:flex; align-items:center; gap:8px; padding:4px 2px; font-size:.84rem; cursor:pointer; }
+  .ai[hidden] { display:none; }
+  .ai span { flex:1; min-width:0; } .ai .ac { width:auto !important; margin:0 !important; }
+  .ai .aq { width:64px !important; margin:0 !important; padding:4px 8px !important; }
+  .arow { display:flex; align-items:center; justify-content:space-between; gap:10px; } .arow .cta { padding:8px 16px; }
   .pplot td.kn { min-width:210px; }
   .skartu { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:6px 10px; margin:0 0 6px; border:1px solid var(--stroke); border-radius:12px; background:rgba(255,255,255,.06); }
   .skartu > b { flex:1 1 180px; font-size:.84rem; min-width:0; }
@@ -1151,7 +1161,9 @@
     else {
       if (!$('mTbody')) $('mPlot').innerHTML = `<div id="mCatatanPl"></div>
         <div class="mtool"><input id="mCariNama" placeholder="Cari nama…" autocomplete="off"><label class="kcek"><input type="checkbox" id="mPilihSemua"><span>Pilih semua nama</span></label><span class="muted" id="mDicentang"></span><button class="btn" id="mLengkapi" title="Isi ukuran yang masih kosong dari isian Google Form">Lengkapi ukuran dari Form</button></div>
-        <div class="maksi" id="mAksi" hidden><select id="mAksiItem"><option value="">+ Beri seragam ke yang dicentang…</option>${opsiItemMinta()}</select><button class="btn" id="mKosongDicentang">Kosongkan yang dicentang</button></div>
+        <div class="maksi" id="mAksi" hidden><button class="btn" id="mAksiBtn" aria-expanded="false">+ Beri seragam ke yang dicentang ▾</button><button class="btn" id="mKosongDicentang">Kosongkan yang dicentang</button>
+          <div class="apanel" id="mAksiPanel" hidden><input id="mAksiCari" placeholder="Cari seragam…" autocomplete="off"><div class="alist" id="mAksiList">${daftarItemAksi()}</div>
+            <div class="arow"><span class="muted" id="mAksiInfo"></span><button class="cta" id="mAksiTerapkan" disabled>Terapkan</button></div></div></div>
         <div class="wrap pplot"><table><thead><tr><th style="min-width:210px">Karyawan</th><th>Seragam yang diterima (boleh berbeda tiap orang)</th></tr></thead><tbody id="mTbody"></tbody></table></div>
         <div style="display:flex;gap:8px;margin-top:10px;align-items:center"><input id="mNamaBaru" placeholder="Nama karyawan yang belum ada di Form" style="margin:0"><button class="btn" id="mTambahNama" style="flex:none">+ Tambah nama</button></div>`;
       $('mCatatanPl').innerHTML = mCatatan ? `<div class="hint" style="margin:0 0 8px;color:var(--warn)">${esc(mCatatan)}</div>` : '';
@@ -1175,18 +1187,34 @@
     const b = mAnggota(), n = mKar.filter(k => k.pilih).length;
     $('mKarInfo').textContent = mDimuat ? `${penerima} dari ${mKar.length} karyawan menerima seragam${b ? ` · target ${b.target} anggota` : ''}` : '';
     $('mPlotPesan').textContent = kosongUk ? `${kosongUk} pilihan ukuran belum diisi (kotak merah).` : '';
-    if ($('mDicentang')) { $('mDicentang').textContent = n ? `${n} nama dicentang` : ''; $('mAksi').hidden = !n; const tampak = mKar.filter(cocokNama); $('mPilihSemua').checked = tampak.length > 0 && tampak.every(k => k.pilih); }
+    if ($('mDicentang')) { $('mDicentang').textContent = n ? `${n} nama dicentang` : ''; $('mAksi').hidden = !n; if (!n) $('mAksiPanel').hidden = true; infoAksi(); const tampak = mKar.filter(cocokNama); $('mPilihSemua').checked = tampak.length > 0 && tampak.every(k => k.pilih); }
     renderBaris();
     return { kosongUk, penerima };
   }
   const perbarui = () => { renderTabel(); hitungAlokasi(); };
+  // panel "Beri seragam ke yang dicentang": centang beberapa seragam sekaligus + jumlah per orang, lalu terapkan ke semua nama yang dicentang
+  // (yang sudah punya seragam itu hanya diubah jumlahnya, jadi panel ini juga bisa dipakai untuk penyesuaian)
+  function daftarItemAksi() {
+    return [...new Set(HARGA.map(h => h.kat))].map(k => `<div class="agrup">${esc(k)}</div>` + HARGA.filter(h => h.kat === k).map(h =>
+      `<label class="ai" data-nama="${esc(h.nama.toLowerCase())}"><input type="checkbox" class="ac" data-no="${h.no}"><span>${esc(h.nama)}</span><input class="aq" type="number" min="1" value="1" title="Jumlah per orang"></label>`).join('')).join('');
+  }
+  function infoAksi() {
+    const btn = $('mAksiTerapkan'); if (!btn) return;
+    const c = document.querySelectorAll('#mAksiList .ac:checked').length, n = mKar.filter(k => k.pilih).length;
+    btn.disabled = !c || !n; btn.textContent = c ? `Terapkan ${c} seragam ke ${n} nama` : 'Terapkan';
+    $('mAksiInfo').textContent = c ? '' : 'Centang seragam dan atur jumlah per orang.';
+  }
+  function terapkanAksi() {
+    const pilih = [...document.querySelectorAll('#mAksiList .ac:checked')].map(c => ({ no: c.dataset.no, qty: Math.max(1, Math.floor(Number(c.closest('.ai').querySelector('.aq').value)) || 1) }));
+    const sasaran = mKar.filter(k => k.pilih); if (!pilih.length || !sasaran.length) return;
+    for (const x of sasaran) for (const p of pilih) { const it = itemMinta(p.no); if (!it) continue; if (!x.alloc[p.no]) x.alloc[p.no] = alokasiAwal(x, it); x.alloc[p.no].qty = p.qty; }
+    document.querySelectorAll('#mAksiList .ac').forEach(c => { c.checked = false; c.closest('.ai').querySelector('.aq').value = 1; });
+    $('mAksiPanel').hidden = true; $('mAksiBtn').setAttribute('aria-expanded', 'false'); perbarui();
+  }
   $('mPlot').onchange = e => {
     const t = e.target, tr = t.closest('tr'), k = tr && mKar[tr.dataset.i];
     if (t.id === 'mPilihSemua') { mKar.forEach(x => { if (cocokNama(x)) x.pilih = t.checked; }); return perbarui(); }
-    if (t.id === 'mAksiItem') { // beri seragam ke semua nama yang dicentang (yang sudah punya seragam itu dilewati)
-      const no = t.value, it = no && itemMinta(no); t.value = ''; if (!it) return;
-      mKar.filter(x => x.pilih).forEach(x => { if (!x.alloc[no]) x.alloc[no] = alokasiAwal(x, it); }); return perbarui();
-    }
+    if (t.classList.contains('ac')) return infoAksi();
     if (!k) return;
     if (t.classList.contains('pk')) { k.pilih = t.checked; return perbarui(); }
     if (t.classList.contains('tmb')) { const no = t.value, it = no && itemMinta(no); if (it && !k.alloc[no]) k.alloc[no] = alokasiAwal(k, it); return perbarui(); }
@@ -1196,6 +1224,7 @@
   };
   $('mPlot').oninput = e => {
     if (e.target.id === 'mCariNama') { mCari = e.target.value.trim().toLowerCase(); return perbarui(); }
+    if (e.target.id === 'mAksiCari') { const v = e.target.value.trim().toLowerCase(); document.querySelectorAll('#mAksiList .ai').forEach(l => { l.hidden = !!v && !l.dataset.nama.includes(v); }); return; }
     if (!e.target.classList.contains('pq')) return;
     const div = e.target.closest('.skartu'), k = mKar[div.closest('tr').dataset.i], a = k.alloc[div.dataset.no]; if (a) a.qty = Math.max(1, Math.floor(Number(e.target.value)) || 1);
     hitungAlokasi();
@@ -1208,6 +1237,8 @@
       if (mKar.some(k => k.nama.toUpperCase() === nama.toUpperCase())) { $('mPlotPesan').textContent = 'Nama itu sudah ada di daftar.'; return; }
       mKar.push({ nama, ref: { baju: '', celana: '', sepatu: '' }, alloc: {}, pilih: false }); $('mNamaBaru').value = ''; return perbarui();
     }
+    if (t.id === 'mAksiBtn') { const p = $('mAksiPanel'); p.hidden = !p.hidden; t.setAttribute('aria-expanded', String(!p.hidden)); infoAksi(); return; }
+    if (t.id === 'mAksiTerapkan') return terapkanAksi();
     if (t.id === 'mKosongDicentang') { mKar.filter(x => x.pilih).forEach(x => { x.alloc = {}; }); return perbarui(); }
     if (t.id === 'mLengkapi') { // isi ukuran yang kosong dari isian Form (hanya kalau cocok dengan pilihan ukuran)
       for (const k of mKar) for (const no of Object.keys(k.alloc)) { const it = itemMinta(no), a = k.alloc[no], awal = it && alokasiAwal(k, it); if (!it) continue; for (const j of ['baju', 'celana', 'sepatu']) if (!a[j] && awal[j]) a[j] = awal[j]; }
