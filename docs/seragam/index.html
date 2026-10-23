@@ -233,6 +233,7 @@
   .mbar { position:sticky; top:0; z-index:5; margin:0 -22px 10px; padding:10px 22px 8px; background:rgba(27,27,30,.97); border-bottom:1px solid var(--stroke); backdrop-filter:blur(6px); }
   .mbar .mtool { margin-bottom:6px; } .mbar .maksi { margin-bottom:0; }
   .pplot tr.dipilih td { background:rgba(245,213,71,.07); }
+  .pplot tr.sudah td { opacity:.7; }
   .pplot td { padding:12px 10px; }
   .kcek input, .ac, .pk { accent-color:var(--accent); }
   .kcek input { width:22px !important; height:22px; margin:1px 0 0 !important; flex:none; cursor:pointer; }
@@ -1139,6 +1140,12 @@
       if (kunci !== mKunci) return; // lokasi/bagian sudah berganti selama memuat
       const unik = new Map(); for (const k of mentah) unik.set(String(k.nama || '').trim().toUpperCase(), k); // nama kembar (isi dua kali): dipakai yang terakhir
       mKar = [...unik.values()].map(k => ({ nama: String(k.nama || '').trim(), ref: { baju: String(k.ukuran_baju || '').trim().toUpperCase(), celana: String(k.ukuran_celana || '').trim(), sepatu: String(k.ukuran_sepatu || '').trim() }, alloc: {}, pilih: false }));
+      // nama yang sudah dipesankan di permintaan sebelumnya (yang tidak ditolak) ditandai, supaya tidak dipesan dua kali
+      try {
+        const sb = await rpc('penerima_sebelumnya', { kode: 'sesi', p_lokasi: l.lokasi, p_bagian: bag });
+        const peta = new Map(sb.map(x => [String(x.nama).trim().toUpperCase(), x.permintaan_id]));
+        mKar.forEach(k => { const no = peta.get(k.nama.toUpperCase()); if (no) k.sudah = no; });
+      } catch (e) { /* tanpa tanda "sudah dipesan" */ }
       mDimuat = true; mCatatan = '';
       const p = terbaru.get(l.lokasi + '|' + bag); // revisi: isi awal dari permintaan terakhir yang ditolak
       if (p && stReq(p) === 'ditolak' && p.diploting_pada) { try { await isiDariSebelumnya(p); } catch (e) { /* tanpa isian awal */ } }
@@ -1156,6 +1163,7 @@
     mCatatan = `Diisi dari permintaan no. ${p.id} yang ditolak/revisi. Ubah sesuai masukan pimpinan, lalu kirim ulang.`;
   }
   function barisKarMinta(k, i) {
+    if (k.sudah) return `<tr data-i="${i}" class="sudah" ${cocokNama(k) ? '' : 'hidden'}><td class="kn"><b>${esc(k.nama)}</b><div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></td><td><span class="badge ok">✓ Sudah dipesan · permintaan no. ${k.sudah}</span></td></tr>`;
     const ada = Object.keys(k.alloc).filter(no => itemMinta(no)), kecuali = Object.fromEntries(ada.map(no => [no, 1]));
     const kartu = ada.map(no => { const it = itemMinta(no), a = k.alloc[no];
       return `<div class="skartu" data-no="${no}"><b>${esc(it.nama)}</b><label class="jml">jml <input class="pq" type="number" min="1" value="${a.qty}"></label><span class="pus">${pilihanUkuran(it, a)}</span><button class="xk" title="Hapus seragam ini" aria-label="Hapus seragam ini">✕</button></div>`; }).join('');
@@ -1198,14 +1206,23 @@
     }
     mPool = urut; baris = urut.map(it => ({ no: it.no, qty: tot.get(String(it.no)) })).filter(b => b.qty > 0);
     document.querySelectorAll('#mTbody .skartu').forEach(div => { const k = mKar[div.closest('tr').dataset.i], a = k && k.alloc[div.dataset.no]; if (a) div.querySelectorAll('select').forEach(s => s.classList.toggle('kosong', !s.value)); });
-    const b = mAnggota(), n = mKar.filter(k => k.pilih).length;
-    $('mKarInfo').textContent = mDimuat ? `${penerima} dari ${mKar.length} karyawan menerima seragam${b ? ` · target ${b.target} anggota` : ''}` : '';
+    const n = mKar.filter(k => k.pilih).length, sm = sisaMenyusul();
+    $('mKarInfo').textContent = mDimuat ? `${sm.baru} orang diberi seragam di permintaan ini${sm.sudah ? ` · ${sm.sudah} sudah dipesan sebelumnya` : ''}${sm.belum ? ` · ${sm.belum} belum (menyusul)` : ''} · target ${sm.target} anggota` : '';
     $('mPlotPesan').textContent = kosongUk ? `${kosongUk} pilihan ukuran belum diisi (kotak merah).` : '';
-    if ($('mDicentang')) { $('mDicentang').textContent = n ? `${n} nama dicentang` : ''; $('mAksi').hidden = !n; if (!n) $('mAksiPanel').hidden = true; infoAksi(); const tampak = mKar.filter(cocokNama); $('mPilihSemua').checked = tampak.length > 0 && tampak.every(k => k.pilih); }
+    if ($('mDicentang')) { $('mDicentang').textContent = n ? `${n} nama dicentang` : ''; $('mAksi').hidden = !n; if (!n) $('mAksiPanel').hidden = true; infoAksi(); const tampak = mKar.filter(k => cocokNama(k) && !k.sudah); $('mPilihSemua').checked = tampak.length > 0 && tampak.every(k => k.pilih); }
     renderBaris();
     return { kosongUk, penerima };
   }
   const perbarui = () => { renderTabel(); hitungAlokasi(); };
+  // permintaan bertahap: yang sudah dipesankan di permintaan sebelumnya dilewati; yang belum diberi seragam sekarang ditandai "menyusul"
+  function sisaMenyusul() {
+    const b = mAnggota(), target = b ? b.target : 0, sudah = mKar.filter(k => k.sudah).length, baru = mKar.filter(k => !k.sudah && Object.keys(k.alloc).length).length;
+    return { target, sudah, baru, belum: Math.max(0, target - sudah - baru) };
+  }
+  function memoMinta() { // catatan pengguna + keterangan otomatis bila baru sebagian anggota yang dipesankan (ikut ke surat dan notifikasi pimpinan)
+    const m = $('mMemo').value.trim(), s = sisaMenyusul();
+    return [m, s.belum > 0 ? `Menyusul: ${s.belum} dari ${s.target} anggota belum diberi seragam pada permintaan ini.` : ''].filter(Boolean).join('\n');
+  }
   // panel "Beri seragam ke yang dicentang": centang beberapa seragam sekaligus + jumlah per orang, lalu terapkan ke semua nama yang dicentang
   // (yang sudah punya seragam itu hanya diubah jumlahnya, jadi panel ini juga bisa dipakai untuk penyesuaian)
   function daftarItemAksi() {
@@ -1227,7 +1244,7 @@
   }
   $('mPlot').onchange = e => {
     const t = e.target, tr = t.closest('tr'), k = tr && mKar[tr.dataset.i];
-    if (t.id === 'mPilihSemua') { mKar.forEach(x => { if (cocokNama(x)) x.pilih = t.checked; }); return perbarui(); }
+    if (t.id === 'mPilihSemua') { mKar.forEach(x => { if (cocokNama(x) && !x.sudah) x.pilih = t.checked; }); return perbarui(); }
     if (t.classList.contains('ac')) return infoAksi();
     if (!k) return;
     if (t.classList.contains('pk')) { k.pilih = t.checked; return perbarui(); }
@@ -1432,7 +1449,7 @@
         body: [...isi.map((x, i) => [{ content: i + 1, styles: { halign: 'center' } }, x.h.nama, { content: x.q, styles: { halign: 'center' } }, { content: rpPdf(x.h.jual), styles: { halign: 'center', fillColor: [255, 255, 0] } }, { content: rpPdf(x.h.jual * x.q), styles: { halign: 'right' } }]),
           [{ content: 'SUBTOTAL', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(jual), styles: { halign: 'right', fontStyle: 'bold' } }]],
         columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 38 }, 3: { cellWidth: 80 }, 4: { cellWidth: 82 } } });
-      const cat = $('mMemo').value.trim();
+      const cat = memoMinta();
       if (cat) { y += 10 * K; const c = doc.splitTextToSize('Catatan: ' + cat, W - 28); huruf('italic', 10); doc.text(c, L + 28, y); y += c.length * 12 * K - 4 * K; huruf(); }
       y += 16 * K;
       huruf('bold'); doc.text('B. Estimasi Anggaran (RAB)', L, y); y += 8 * K;
@@ -1556,7 +1573,7 @@
       const halaman = halamanSiap || (await pdfKeHalaman(await siapkanPdf(d))).b64s;
       const r = await fetch(`${SUPABASE_URL}/functions/v1/kirim-permintaan`, {
         method: 'POST', headers: { ...H, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lokasi_form: d.l.lokasi, bagian: d.bag, items: d.isi.map(x => ({ no: x.h.no, qty: x.q })), ploting: d.rincian, memo: $('mMemo').value.trim(), halaman })
+        body: JSON.stringify({ lokasi_form: d.l.lokasi, bagian: d.bag, items: d.isi.map(x => ({ no: x.h.no, qty: x.q })), ploting: d.rincian, memo: memoMinta(), halaman })
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
@@ -1574,8 +1591,8 @@
   }
   $('mKirim').onclick = () => {
     const d = ambilIsian(); if (!d) return;
-    const b = mAnggota(), penerima = d.kar.filter(k => Object.keys(k.alloc).length).length;
-    if (b && penerima < b.target && !confirm(`Baru ${penerima} dari ${b.target} anggota yang diberi seragam. Tetap kirim ke pimpinan?`)) return;
+    const s = sisaMenyusul();
+    if (s.belum > 0 && !confirm(`${s.belum} dari ${s.target} anggota belum diberi seragam${s.sudah ? ` (${s.sudah} sudah dipesan sebelumnya)` : ''} dan akan menyusul di permintaan berikutnya. Tetap kirim ke pimpinan?`)) return;
     kirimKeAtasan(d, null, $('mKirim'));
   };
   // ---- status permintaan per lokasi (belum dibuat / menunggu / disetujui / ditolak-revisi) ----
@@ -1588,7 +1605,7 @@
     .map(([n, st, t, kirim, alasan]) => `<div class="rl"><span>${n}</span><span class="badge ${st === 'disetujui' ? 'ok' : st === 'ditolak' ? 'bad' : 'warn'}">${st === 'disetujui' ? 'Disetujui' : st === 'ditolak' ? 'Ditolak / Revisi' : 'Menunggu'}${t ? ' · ' + tglP(t) : ''}${kirim === false ? ' · gagal terkirim' : ''}</span></div>${st === 'ditolak' && alasan ? `<div class="alasan"><b>Alasan ${n}:</b> ${esc(alasan)}</div>` : ''}`).join('');
   const LS = { belum: ['Belum dibuat', 'neu'], sebagian: ['Belum lengkap', 'warn'], menunggu: ['Menunggu', 'warn'], setuju_yasir: ['Disetujui Pak Yasir', 'warn'], setuju_ferry: ['Disetujui Pak Ferry', 'warn'], disetujui: ['Disetujui', 'ok'], ditolak: ['Ditolak / Revisi', 'bad'], terkunci: ['', 'neu'] };
   const URUT_LS = { ditolak: 0, belum: 1, sebagian: 2, menunggu: 3, setuju_yasir: 4, setuju_ferry: 5, disetujui: 6, terkunci: 7 };
-  let daftarMinta = [], statusMuat = false, terbaru = new Map(), riwBuka = new Set();
+  let daftarMinta = [], statusMuat = false, terbaru = new Map(), riwBuka = new Set(), cakupan = new Map(); // cakupan: lokasi|bagian -> jumlah penerima yang sudah dipesankan (permintaan tidak ditolak)
   const tglP = d => new Date(d).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   const rpMin = n => (n < 0 ? '-' : '') + rp(Math.abs(n));
   const lokMinta = () => anggaran ? lokasi.filter(l => anggaran.peta.has(l.lokasi)) : lokasi;
@@ -1600,6 +1617,7 @@
       if (!r.ok) throw new Error('HTTP ' + r.status);
       daftarMinta = (await r.json()).filter(p => Saring.boleh(p.lokasi_form)); statusMuat = true;
       try { peralatanDiSeragam = new Map((await rpc('peralatan_terpakai_seragam', {})).map(x => [x.lokasi_form + '' + x.bagian_kerja, Number(x.jual)])); } catch (e) { peralatanDiSeragam = new Map(); }
+      try { cakupan = new Map((await rpc('cakupan_permintaan', {})).map(x => [x.lokasi_form + '|' + x.bagian_kerja, x.penerima])); } catch (e) { cakupan = new Map(); }
     } catch (e) { daftarMinta = []; susunStatus(); renderDaftarMinta(); $('infoMinta').textContent = 'Gagal memuat status: ' + e.message; return; }
     susunStatus(); renderDaftarMinta(); renderPlotList(); renderKirimList(); renderTagihanList(); renderRingkasan();
   }
@@ -1649,10 +1667,11 @@
     const mi = l.mi || infoLok(l), [lbl, cls] = LS[mi.s], ang = anggaran && anggaran.peta.get(l.lokasi);
     const bagian = l.bagian.map((b, i) => {
       const p = mi.per[i], k = l.lokasi + '|' + b.nama, riw = daftarMinta.filter(x => x.lokasi_form === l.lokasi && x.bagian_kerja === b.nama);
-      const badge = p ? (([t, c]) => `<span class="badge ${c}">${t}</span>`)(labelReq(p)) : '<span class="badge neu">Belum dibuat</span>';
+      const sisa = Math.max(0, b.target - (cakupan.get(k) || 0)), nyusul = !!p && stReq(p) !== 'ditolak' && sisa > 0; // sebagian anggota sudah dipesankan, sisanya menyusul
+      const badge = (p ? (([t, c]) => `<span class="badge ${c}">${t}</span>`)(labelReq(p)) : '<span class="badge neu">Belum dibuat</span>') + (nyusul ? `<span class="badge warn">Menyusul ${sisa} orang</span>` : '');
       const buka = riwBuka.has(k);
       return `<div class="bgr"><div class="row"><div><b>${esc(b.nama)}</b><div class="muted">${b.target} orang${ang && ang.per[b.nama] != null ? ' · RAB ' + rp(ang.per[b.nama]) : ''}</div></div>
-          <div class="bgact">${badge}<button class="btn" data-buat="${esc(b.nama)}">${p ? (stReq(p) === 'ditolak' ? 'Revisi / buat ulang' : 'Buat lagi') : 'Buat permintaan'}</button></div></div>
+          <div class="bgact">${badge}<button class="btn" data-buat="${esc(b.nama)}">${p ? (stReq(p) === 'ditolak' ? 'Revisi / buat ulang' : nyusul ? 'Pesankan yang menyusul' : 'Buat lagi') : 'Buat permintaan'}</button></div></div>
         ${riw.length ? `<button class="riw" data-riw="${esc(k)}">${buka ? '▾' : '▸'} Riwayat permintaan (${riw.length})</button>` : ''}
         ${buka ? riw.map(x => `<div class="rwi"><div class="row"><span>${tglP(x.dibuat)}</span><span class="badge ${labelReq(x)[1]}">${labelReq(x)[0]}</span></div>
             ${putusanReq(x)}
