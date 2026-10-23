@@ -463,6 +463,7 @@
    <div class="page" id="pg-pengiriman" hidden>
     <header><div><h1>Pengiriman</h1><div class="sub" id="infoKirim">Memuat data…</div></div></header>
     <section class="top mini" id="md-pengiriman"></section>
+    <section class="card pcard" id="kBoard" hidden></section>
     <section class="bawah card">
       <div class="bar-top"><h3>Daftar lokasi</h3><label class="search"><span aria-hidden="true">🔍</span><input id="kCari" type="search" placeholder="Cari lokasi"></label><button class="btn" id="kMuat">Muat ulang</button></div>
       <div class="chips" id="kChips" style="margin-bottom:14px"></div>
@@ -2473,10 +2474,10 @@ Alasan (boleh kosong):`); if (alasan === null) return;
   async function muatHilir() {
     await Saring.siap;
     try {
-      const [s, g, k, p, t, o, orc] = await Promise.all([rpc('daftar_stok', {}), rpc('daftar_stok_gerak', { p_batas: 1000 }), rpc('daftar_pengiriman', {}), rpc('daftar_progres_kirim', {}), rpc('daftar_tagihan', {}), rpc('daftar_opname', {}).catch(() => []), rpc('daftar_opname_rinci', {}).catch(() => [])]);
-      stok = s; gerak = g; kirimAll = k.filter(x => Saring.boleh(x.lokasi_form)); opnameAll = o; opnameRinci = orc; progres = new Map(p.map(x => [x.permintaan_id, x])); tagihanAll = t.filter(x => Saring.boleh(x.lokasi_form)); hilirMuat = true;
+      const [s, g, k, p, t, o, orc, keb] = await Promise.all([rpc('daftar_stok', {}), rpc('daftar_stok_gerak', { p_batas: 1000 }), rpc('daftar_pengiriman', {}), rpc('daftar_progres_kirim', {}), rpc('daftar_tagihan', {}), rpc('daftar_opname', {}).catch(() => []), rpc('daftar_opname_rinci', {}).catch(() => []), rpc('kebutuhan_kirim', {}).catch(() => [])]);
+      stok = s; gerak = g; kirimAll = k.filter(x => Saring.boleh(x.lokasi_form)); opnameAll = o; opnameRinci = orc; kebutuhan = keb.filter(x => true); progres = new Map(p.map(x => [x.permintaan_id, x])); tagihanAll = t.filter(x => Saring.boleh(x.lokasi_form)); hilirMuat = true;
     } catch (e) { hilirMuat = false; ['infoInv', 'infoKirim', 'infoTag'].forEach(id => { $(id).textContent = 'Gagal memuat: ' + e.message; }); return; }
-    renderInventaris(); renderOpnamePage(); renderKirimList(); renderTagihanList(); renderRingkasan();
+    renderInventaris(); renderOpnamePage(); renderKirimList(); renderBoardKirim(); renderTagihanList(); renderRingkasan();
   }
   // panggilan yang menulis data: kode akses diminta sekali per sesi
   async function rpcKode(nama, body) {
@@ -2786,6 +2787,41 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     $('kHead').innerHTML = `<div class="dhead"><button class="btn back" id="kBack">‹ Kembali</button><div class="row"><h2>${esc(l.client)}</h2><span class="badge ${cls}">${lbl}</span></div></div><div class="dbody">${bagian}</div>`;
     if (!kData || kData.lokasi !== l.lokasi) $('kEditor').hidden = true;
   }
+  // ---- panel "stok gudang -> yang bisa dikirim": stok dicocokkan ke barang yang menunggu, permintaan tertua lebih dulu ----
+  let kebutuhan = [], bdFilter = 'semua';
+  function susunBoardKirim() {
+    const sisa = new Map(stok.map(x => [`${x.item_no}|${x.jenis_ukuran}|${x.ukuran}`, Number(x.saldo)]));
+    const perMinta = new Map(), butuhTotal = new Map();
+    for (const r of kebutuhan) { // urutan dari server: persetujuan tertua dulu
+      if (!perMinta.has(r.permintaan_id)) perMinta.set(r.permintaan_id, { id: r.permintaan_id, disetujui: r.disetujui, tot: 0, ok: 0, barisTot: 0, barisOk: 0 });
+      const m = perMinta.get(r.permintaan_id), b = butuhBaris(r), ada = b.every(x => (sisa.get(x.key) || 0) >= x.q);
+      m.tot += r.qty; m.barisTot++;
+      if (ada) { b.forEach(x => sisa.set(x.key, sisa.get(x.key) - x.q)); m.ok += r.qty; m.barisOk++; }
+      for (const x of b) { const t = butuhTotal.get(x.key) || { j: x.j, u: x.u, nama: r.item_nama, q: 0 }; t.q += x.q; butuhTotal.set(x.key, t); }
+    }
+    const stokAwal = new Map(stok.map(x => [`${x.item_no}|${x.jenis_ukuran}|${x.ukuran}`, Number(x.saldo)]));
+    const kurang = [...butuhTotal.entries()].map(([k, t]) => ({ k, ...t, stok: Math.max(0, stokAwal.get(k) || 0), kurang: Math.max(0, t.q - Math.max(0, stokAwal.get(k) || 0)) })).filter(x => x.kurang > 0).sort((a, b) => b.kurang - a.kurang);
+    return { minta: [...perMinta.values()], kurang };
+  }
+  function renderBoardKirim() {
+    const el = $('kBoard'); if (!el) return;
+    if (!kebutuhan.length) { el.hidden = !hilirMuat; el.innerHTML = hilirMuat ? '<h3 style="margin:0 0 4px">Stok gudang dan yang bisa dikirim</h3><div class="muted">Tidak ada barang yang menunggu dikirim. Barang muncul di sini setelah permintaan disetujui kedua pimpinan dan diploting.</div>' : ''; return; }
+    el.hidden = false;
+    const { minta, kurang } = susunBoardKirim(), tot = minta.reduce((a, m) => a + m.tot, 0), ok = minta.reduce((a, m) => a + m.ok, 0), penuh = minta.filter(m => m.ok === m.tot).length;
+    const tampil = minta.filter(m => bdFilter === 'semua' || (bdFilter === 'bisa' && m.ok > 0) || (bdFilter === 'belum' && m.ok === 0)).filter(m => { const p = daftarMinta.find(x => x.id === m.id); return !p || Saring.boleh(p.lokasi_form); });
+    el.innerHTML = `<div class="row" style="flex-wrap:wrap;gap:10px"><div><h3 style="margin:0 0 4px">Stok gudang dan yang bisa dikirim</h3><div class="muted">Stok gudang saat ini dicocokkan ke barang yang menunggu dikirim. Permintaan yang disetujui lebih dulu mendapat stok lebih dulu; satu baris karyawan hanya dihitung bila semua barangnya (baju, celana, sepatu) tersedia.</div></div></div>
+      <div class="rkkpi" style="margin-top:12px"><div><span>Menunggu dikirim</span><b>${idn(tot)} pcs</b></div><div><span>Bisa dikirim sekarang</span><b style="color:var(--ok)">${idn(ok)} pcs</b></div><div><span>Belum ada stok</span><b style="color:${tot - ok ? 'var(--warn)' : 'var(--ok)'}">${idn(tot - ok)} pcs</b></div><div><span>Bagian siap penuh</span><b>${penuh} / ${minta.length}</b></div></div>
+      <div class="chips" id="bdChips" style="margin-bottom:10px">${[['semua', 'Semua'], ['bisa', 'Ada yang bisa dikirim'], ['belum', 'Stok belum ada']].map(([k, t]) => `<button class="chip ${bdFilter === k ? 'on' : ''}" data-f="${k}">${t}</button>`).join('')}</div>
+      ${tampil.length ? `<div class="wrap rkt"><table><thead><tr><th>Lokasi / bagian</th><th class="r">Menunggu</th><th class="r">Bisa dikirim</th><th>Status</th><th>Disetujui</th><th></th></tr></thead><tbody>${tampil.map(m => { const p = daftarMinta.find(x => x.id === m.id); const st = m.ok === m.tot ? ['Siap kirim penuh', 'ok'] : m.ok ? ['Sebagian tersedia', 'warn'] : ['Stok belum ada', 'bad'];
+        return `<tr><td><b>${esc(p ? p.client : 'permintaan ' + m.id)}</b><small>${esc(p ? namaRapi(p.bagian_kerja) : '')} · no. ${m.id}</small></td><td class="r">${idn(m.tot)}</td><td class="r"><b style="color:${m.ok ? 'var(--ok)' : 'var(--muted)'}">${idn(m.ok)}</b></td><td><span class="badge ${st[1]}">${st[0]}</span></td><td>${tglPendek(m.disetujui)}</td><td>${m.ok ? `<button class="btn" data-bdkirim="${m.id}">Kirim yang tersedia</button>` : ''}</td></tr>`; }).join('')}</tbody></table></div>` : '<div class="kosongnya">Tidak ada yang cocok dengan filter.</div>'}
+      ${kurang.length ? `<details style="margin-top:12px"><summary class="muted" style="cursor:pointer">Barang yang stoknya kurang untuk memenuhi semua (${kurang.length} baris ukuran)</summary><div style="margin-top:8px">${kurang.slice(0, 40).map(x => `<div class="rl"><span>${esc(namaRapi(x.nama))} <span class="muted">${x.j === '-' ? '' : (NAMA_JENIS[x.j] || x.j) + ' ' + esc(x.u)} · butuh ${idn(x.q)}, stok ${idn(x.stok)}</span></span><b style="color:var(--warn)">kurang ${idn(x.kurang)}</b></div>`).join('')}</div></details>` : ''}`;
+  }
+  document.addEventListener('click', e => {
+    const f = e.target.closest('#bdChips [data-f]'); if (f) { bdFilter = f.dataset.f; renderBoardKirim(); return; }
+    const b = e.target.closest('[data-bdkirim]'); if (!b) return;
+    const p = daftarMinta.find(x => x.id === Number(b.dataset.bdkirim)); if (!p) return;
+    kSel = p.lokasi_form; kTerbuka = true; kData = null; renderKirimList(); bukaKirim(p.id);
+  });
   // --- editor pengiriman ---
   function butuhBaris(r) { // satu baris ploting memakai stok per jenis ukuran
     const a = []; if (r.ukuran_baju) a.push(['baju', r.ukuran_baju]); if (r.ukuran_celana) a.push(['celana', r.ukuran_celana]); if (r.ukuran_sepatu) a.push(['sepatu', r.ukuran_sepatu]); if (!a.length) a.push(['-', '-']);
