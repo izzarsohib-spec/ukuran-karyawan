@@ -461,6 +461,7 @@
           <h2>Pantau kelengkapan data tiap lokasi</h2>
           <div class="rabtotal"><small>Total anggaran RAB seluruh lokasi</small><b class="num" id="rabTotal">-</b></div>
           <button class="cta" id="cta">Lihat yang kurang</button>
+          <button class="cta" id="ctaIngat" style="margin-left:8px">Ingatkan PIC</button>
         </div>
         <div class="ringhero" id="ringhero"></div>
         <div class="kpi" id="kpi"></div>
@@ -481,6 +482,12 @@
           <button class="worst" id="worst"></button>
         </div>
       </div>
+    </section>
+
+    <section class="bawah card" id="ingat" hidden>
+      <div class="bar-top"><h3>Ingatkan PIC lapangan</h3><button class="btn" id="ingatTutup">Tutup</button></div>
+      <div class="muted" style="margin-bottom:12px" id="ingatInfo"></div>
+      <div id="ingatDaftar"></div>
     </section>
 
     <section class="bawah card" id="bawah">
@@ -823,6 +830,78 @@
   $('chips').onclick = e => { const s = e.target.dataset && e.target.dataset.s; if (s) { status = s; terbukaHP = false; renderDaftar(); } };
   $('cta').onclick = () => { status = 'kurang'; terbukaHP = false; renderDaftar(); keDaftar(); };
   $('worst').onclick = () => { const k = $('worst').dataset.k; if (k) { status = 'semua'; $('cari').value = ''; pilih(k); keDaftar(); } };
+  // ---- Ingatkan PIC: lokasi yang masih kurang/kosong dikelompokkan per PIC lapangan, lengkap dengan rekap nama yang sudah mengisi.
+  // Pesan disusun di pesanPic(); sementara dikirim lewat tombol WhatsApp (wa.me) atau disalin. Sambungan WA bridge cukup memakai pesanPic().
+  let picTel = new Map(); // id PIC -> telepon (hanya admin login)
+  const noWa = t => { const d = String(t || '').replace(/\D/g, ''); return !d ? '' : d.startsWith('62') ? d : d.startsWith('0') ? '62' + d.slice(1) : d.startsWith('8') ? '62' + d : d; };
+  function kelompokPic() {
+    const g = new Map();
+    for (const l of lokasi) {
+      if (l.status === 'lengkap') continue;
+      const p = Saring.picDari(l.lokasi), k = p ? String(p.id) : '';
+      if (!g.has(k)) g.set(k, { pic: p, lok: [] });
+      g.get(k).lok.push(l);
+    }
+    for (const x of g.values()) x.lok.sort((a, b) => (URUT[a.status] - URUT[b.status]) || b.kurang - a.kurang);
+    return [...g.values()].sort((a, b) => (!a.pic - !b.pic) || b.lok.length - a.lok.length);
+  }
+  function pesanPic(g) {
+    const baris = g.lok.map((l, i) => {
+      const nama = (pengisi.get(l.lokasi) || []).map(p => p.nama).filter(Boolean).sort((a, b) => a.localeCompare(b));
+      const bg = l.bagian.filter(b => b.isi < b.target).map(b => `${b.nama} kurang ${b.target - b.isi}`).join(', ');
+      return `${i + 1}. ${l.client}\n   ${l.status === 'kosong' ? 'BELUM ADA yang mengisi' : `Terisi ${l.isi}/${l.target}, kurang ${l.kurang} orang`} (${bg})` +
+        (nama.length ? `\n   Sudah mengisi: ${nama.join(', ')}` : '');
+    });
+    return `Halo ${g.pic ? g.pic.nama : ''}, pengingat pengisian ukuran seragam karyawan.\n\nLokasi yang masih kurang (${g.lok.length}):\n\n${baris.join('\n\n')}\n\nMohon dibantu mengingatkan anggota yang belum mengisi Google Form ukuran seragam. Terima kasih.`;
+  }
+  async function bukaIngat() {
+    $('ingat').hidden = false; $('ingat').scrollIntoView({ behavior: 'smooth' });
+    $('ingatDaftar').innerHTML = '<div class="kosongnya">Memuat…</div>';
+    try {
+      await Masuk.wajib(); await Saring.siap;
+      if (!punyaNama) await bukaNama('sesi', true); // butuh nama pengisi untuk rekap
+      picTel = new Map((await rpcKode('admin_daftar_pic', {})).map(p => [String(p.id), p.telepon]));
+    } catch (e) { $('ingatDaftar').innerHTML = `<div class="kosongnya">Gagal: ${esc(e.message)}</div>`; return; }
+    renderIngat();
+  }
+  function renderIngat() {
+    const gs = kelompokPic(), n = gs.reduce((a, g) => a + g.lok.length, 0);
+    $('ingatInfo').textContent = gs.length ? `${n} lokasi belum lengkap di ${gs.length} kelompok PIC${Saring.aktif() ? ' (' + Saring.label() + ')' : ''}. Pesan memuat rekap nama yang sudah mengisi.` : 'Semua lokasi sudah lengkap. Tidak ada yang perlu diingatkan.';
+    $('ingatDaftar').innerHTML = gs.map((g, i) => {
+      const tel = g.pic ? noWa(picTel.get(String(g.pic.id))) : '', kosong = g.lok.filter(l => l.status === 'kosong').length;
+      return `<div class="card" style="padding:14px;margin-bottom:12px" data-i="${i}">
+        <div class="row"><b>${g.pic ? esc(g.pic.nama) : 'Belum ada PIC'}</b>
+          <span class="badge warn">${g.lok.length} lokasi${kosong ? ` · ${kosong} kosong` : ''}</span></div>
+        <div class="muted" style="margin:4px 0 8px">${!g.pic ? 'Atur PIC di Administrator › Lokasi & PIC agar bisa diingatkan.' : tel ? 'WA ' + esc(tel) : 'Nomor telepon PIC belum diisi (Administrator › PIC lapangan).'}</div>
+        <textarea readonly rows="8" style="width:100%;font:inherit;font-size:.8rem;border-radius:10px;padding:8px;background:rgba(255,255,255,.05);color:inherit;border:1px solid var(--stroke,rgba(255,255,255,.14))">${esc(pesanPic(g))}</textarea>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          ${g.pic && tel ? `<a class="btn" target="_blank" rel="noopener" href="https://wa.me/${tel}?text=${encodeURIComponent(pesanPic(g))}">Kirim lewat WhatsApp</a>` : ''}
+          ${g.pic && tel ? `<button class="btn" data-bot="${i}">Kirim lewat WA bot</button>` : ''}
+          <button class="btn" data-salin="${i}">Salin pesan</button></div>
+        <div class="muted" style="margin-top:6px" data-st="${i}"></div></div>`;
+    }).join('') + (gs.some(g => g.pic && noWa(picTel.get(String(g.pic.id)))) ? '<button class="btn" id="botSemua">Kirim ke semua PIC lewat WA bot</button><div class="muted" id="botSemuaSt" style="margin-top:6px"></div>' : '');
+    $('ingatDaftar')._gs = gs;
+  }
+  $('ctaIngat').onclick = bukaIngat;
+  $('ingatTutup').onclick = () => { $('ingat').hidden = true; };
+  window.addEventListener('saring-ubah', () => { if (!$('ingat').hidden && picTel.size) renderIngat(); });
+  // Kirim ke WA bot: fungsi server ingatkan-pic -> webhook n8n -> WAHA -> WhatsApp PIC. Nomor diambil server dari database.
+  async function kirimBot(idx, el) {
+    const gs = $('ingatDaftar')._gs, pilih = gs.filter((g, i) => idx.includes(i) && g.pic);
+    el.style.color = 'var(--muted)'; el.textContent = 'Mengirim…';
+    try {
+      const r = await fetch(`${SUPABASE_URL}/functions/v1/ingatkan-pic`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ pesan: pilih.map(g => ({ pic_id: g.pic.id, teks: pesanPic(g) })) }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.belum_diatur ? 'Sambungan n8n belum diatur di server.' : j.error || 'HTTP ' + r.status);
+      el.style.color = 'var(--ok)'; el.textContent = `✓ Diteruskan ke bot untuk ${j.terkirim} PIC` + (j.dilewati.length ? `; dilewati: ${j.dilewati.map(d => (d.nama || d.pic_id) + ' (' + d.alasan + ')').join(', ')}` : '');
+    } catch (x) { el.style.color = 'var(--bad)'; el.textContent = 'Gagal: ' + x.message; }
+  }
+  $('ingatDaftar').onclick = async e => {
+    if (e.target.id === 'botSemua') return kirimBot($('ingatDaftar')._gs.map((_, i) => i), $('botSemuaSt'));
+    const b = e.target.dataset && e.target.dataset.bot; if (b != null) return kirimBot([Number(b)], document.querySelector(`[data-st="${b}"]`));
+    const i = e.target.dataset && e.target.dataset.salin; if (i == null) return;
+    try { await navigator.clipboard.writeText(pesanPic($('ingatDaftar')._gs[i])); e.target.textContent = 'Tersalin ✓'; } catch (x) { e.target.textContent = 'Gagal menyalin'; }
+  };
   $('daftar').onclick = e => { const b = e.target.closest('.item'); if (b) pilih(b.dataset.k); };
   $('detail').onclick = e => { if (e.target.id === 'back') { terbukaHP = false; renderDetail(); } };
   $('detail').onchange = e => { if (e.target.id === 'fb') { fBagian = e.target.value; renderDetail(); } };

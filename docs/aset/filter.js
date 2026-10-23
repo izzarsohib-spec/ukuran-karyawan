@@ -70,7 +70,10 @@
   }
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-  window.Saring = { siap, boleh, aktif, set, get: baca, label, jumlah, bar, TANPA };
+  // PIC yang memegang suatu lokasi ({id, nama}) atau null bila belum ada
+  const picDari = nama => { const x = peta.get(String(nama == null ? '' : nama).toUpperCase()); return x && x.p ? pic.find(p => String(p.id) === String(x.p)) || null : null; };
+
+  window.Saring = { siap, boleh, aktif, set, get: baca, label, jumlah, bar, picDari, TANPA };
 
   // dibuka sendiri (bukan di dalam portal): pasang bar di bagian atas elemen yang ditunjuk atribut data-otomatis pada tag script
   const sc = document.currentScript;
