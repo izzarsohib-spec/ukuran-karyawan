@@ -836,6 +836,11 @@
       urut.map(p => `<tr>${punyaNama ? `<td>${esc(p.nama)}</td>` : ''}<td>${esc(p.bagian_kerja)}</td><td>${esc(p.ukuran_baju)}</td><td>${esc(p.ukuran_celana)}</td><td>${esc(p.ukuran_sepatu)}</td><td>${p.waktu ? new Date(p.waktu).toLocaleDateString('id-ID') : ''}</td></tr>`).join('') +
       '</tbody></table></div>' + (punyaNama ? '' : '<p class="muted">Nama disembunyikan. Masukkan kode akses di kanan atas untuk melihatnya.</p>');
   }
+  // keterangan pesanan seragam pada satu bagian kerja (dari data permintaan): berapa orang yang sudah dipesankan, berapa yang menyusul
+  function ketPesan(l, b) {
+    const c = cakupan.get(l.lokasi + '|' + b.nama); if (!c) return '';
+    return c >= b.target ? `<span class="rp" style="color:var(--ok)">✓ Seragam sudah dipesan untuk ${c} orang</span>` : `<span class="rp" style="color:var(--warn)">Seragam dipesan ${c} dari ${b.target} · menyusul ${b.target - c} orang</span>`;
+  }
   function renderDetail() {
     const el = $('detail'), l = lokasi.find(x => x.lokasi === sel), ang = l && anggaran && anggaran.peta.get(l.lokasi);
     el.classList.toggle('open', terbukaHP && !!l);
@@ -856,7 +861,7 @@
        </div>
        <div class="dbody">
          <div class="notif ${NADA[l.status]}">${awal}</div>
-         ${l.bagian.map(b => `<div class="bagian"><span>${esc(b.nama)}${ang && ang.per[b.nama] != null ? `<span class="rp">${rp(ang.per[b.nama])} · ${b.target} orang</span>` : ''}${b.isi < b.target ? `<button class="btn mini" data-ingat="${esc(l.lokasi)}" data-bag="${esc(b.nama)}">Ingatkan PIC</button>` : ''}</span>
+         ${l.bagian.map(b => `<div class="bagian"><span>${esc(b.nama)}${ang && ang.per[b.nama] != null ? `<span class="rp">${rp(ang.per[b.nama])} · ${b.target} orang</span>` : ''}${ketPesan(l, b)}${b.isi < b.target ? `<button class="btn mini" data-ingat="${esc(l.lokasi)}" data-bag="${esc(b.nama)}">Ingatkan PIC</button>` : ''}</span>
             <div class="bar ${b.isi >= b.target ? 'ok' : 'warn'}"><i style="width:${b.target ? 100 * b.isi / b.target : 0}%"></i></div>
             <span class="${b.isi >= b.target ? 'penuh' : 'kurang'}">${b.isi >= b.target ? '✓ ' + b.isi + '/' + b.target : 'kurang ' + (b.target - b.isi) + ' · ' + b.isi + '/' + b.target}</span></div>`).join('')}
          <div class="tt"><span>Daftar pengisi</span>
@@ -915,7 +920,9 @@
     const nama = (pengisi.get(l.lokasi) || []).filter(p => !namaBagian || p.bagian_kerja === namaBagian).map(p => p.nama).filter(Boolean).sort((a, b) => a.localeCompare(b));
     const bg = bs.filter(b => b.isi < b.target).map(b => `${b.nama} kurang ${b.target - b.isi}`).join(', ');
     const status = i === 0 ? 'BELUM ADA yang mengisi' : `Terisi ${i}/${t}, kurang ${t - i} orang`;
+    const dipesan = bs.reduce((a, b) => a + (cakupan.get(l.lokasi + '|' + b.nama) || 0), 0); // seragam sudah dipesankan untuk sebagian anggota; sisanya menunggu mereka mengisi Form
     return `${l.client}${namaBagian ? ' - ' + namaBagian : ''}\n   ${status}${namaBagian ? '' : ` (${bg})`}` +
+      (dipesan > 0 && dipesan < t ? `\n   Seragam sudah dipesan untuk ${dipesan} orang; ${t - dipesan} orang menyusul setelah mengisi Form` : '') +
       (nama.length ? `\n   Sudah mengisi:\n${nama.map((n, k) => `   ${k + 1}. ${n}`).join('\n')}` : '');
   }
   // hasilnya daftar pesan: satu bila muat, beberapa ("bagian 1/2") bila panjang; dipecah di batas antar lokasi
@@ -1041,7 +1048,7 @@
     if (location.hash !== '#' + pg) history.replaceState(null, '', '#' + pg);
     if (window.parent !== window) window.parent.postMessage({ tipe: 'halaman', modul: 'seragam', pg: g }, location.origin); // sorotan menu portal ikut
     window.scrollTo({ top: 0 });
-    if (pg === 'permintaan' || pg === 'ploting') muatStatus();
+    if (pg === 'permintaan' || pg === 'ploting' || pg === 'monitor') muatStatus();
     if (pg === 'inventaris' || pg === 'pengiriman' || pg === 'tagihan') { muatStatus(); muatHilir(); }
     if (pg === 'laporan') { muatStatus(); muatHilir(); muatCatatan(); }
   }
@@ -1619,7 +1626,7 @@
       try { peralatanDiSeragam = new Map((await rpc('peralatan_terpakai_seragam', {})).map(x => [x.lokasi_form + '' + x.bagian_kerja, Number(x.jual)])); } catch (e) { peralatanDiSeragam = new Map(); }
       try { cakupan = new Map((await rpc('cakupan_permintaan', {})).map(x => [x.lokasi_form + '|' + x.bagian_kerja, x.penerima])); } catch (e) { cakupan = new Map(); }
     } catch (e) { daftarMinta = []; susunStatus(); renderDaftarMinta(); $('infoMinta').textContent = 'Gagal memuat status: ' + e.message; return; }
-    susunStatus(); renderDaftarMinta(); renderPlotList(); renderKirimList(); renderTagihanList(); renderRingkasan();
+    susunStatus(); renderDaftarMinta(); renderPlotList(); renderKirimList(); renderTagihanList(); renderRingkasan(); renderDetail();
   }
   function susunStatus() { // daftar sudah urut terbaru dulu, jadi yang pertama per bagian adalah permintaan terakhir
     terbaru = new Map();
