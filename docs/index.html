@@ -43,15 +43,18 @@
   .menu.kecil { margin-top:auto; padding:7px 12px; font-size:.8rem; gap:9px; } .menu.kecil svg { width:16px; height:16px; }
   .menu.kecil + .akun { margin-top:8px; }
   /* bar halaman modul di atas konten (muncul saat Seragam atau Peralatan dibuka) */
-  .atas { position:absolute; top:0; left:0; right:0; z-index:3; display:flex; gap:6px; padding:14px 26px 0; overflow-x:auto; scrollbar-width:none; }
+  .atas { position:absolute; top:0; left:0; right:0; z-index:3; display:flex; align-items:center; gap:14px; padding:12px 26px 0; }
   .atas[hidden] { display:none; }
-  .atas button { flex:none; padding:8px 16px; border-radius:99px; border:1px solid var(--stroke); background:none; cursor:pointer; color:var(--muted); font-size:.86rem; white-space:nowrap; }
-  .atas button:hover { background:var(--panel); color:var(--text); }
-  .atas button.on { background:#fff; color:#111; border-color:#fff; font-weight:600; }
+  .atas .tab { display:flex; gap:6px; min-width:0; flex:1; overflow-x:auto; scrollbar-width:none; }
+  .atas .tab button { flex:none; padding:8px 13px; border-radius:99px; border:1px solid var(--stroke); background:none; cursor:pointer; color:var(--muted); font-size:.86rem; white-space:nowrap; }
+  .atas .tab button:hover { background:var(--panel); color:var(--text); }
+  .atas .tab button.on { background:#fff; color:#111; border-color:#fff; font-weight:600; }
+  /* filter cabang / PIC ringkas di kanan bar atas */
+  .atas .fbar { flex:none; margin-left:auto; } .atas .sf { flex-wrap:nowrap; align-items:center; gap:8px; }
+  .atas .sf label { font-size:0; min-width:0; } .atas .sf select { margin-top:0; min-width:0; width:122px; padding:6px 8px; font-size:.78rem; }
+  .atas .sf .sk { display:none; } .atas .sf button { padding:4px 10px; }
   .isi.beratas iframe { top:56px; height:calc(100% - 56px); }
   .pemisah { height:1px; background:var(--stroke); margin:8px 6px; }
-  .filter { margin-top:14px; padding:12px 8px 0; border-top:1px solid var(--stroke); }
-  .filter .st { font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:8px; }
   .akun { margin-top:auto; padding:12px 8px 0; border-top:1px solid var(--stroke); }
   .akun .st { font-size:.74rem; color:var(--muted); margin-bottom:8px; line-height:1.4; }
 
@@ -86,9 +89,9 @@
     .menu { width:auto; flex:none; padding:8px 12px; gap:8px; } .menu .tag { display:none; }
     .side { flex-wrap:wrap; overflow:visible; }
     .menu.kecil { margin-top:0; } .menu.kecil + .akun { margin-top:0; }
-    .atas { position:static; padding:8px 12px 0; } .isi.beratas { display:flex; flex-direction:column; }
+    .atas { position:static; padding:8px 12px 0; flex-wrap:wrap; } .atas .tab { flex:1 0 100%; } .isi.beratas { display:flex; flex-direction:column; }
     .isi.beratas iframe { position:static; flex:1; width:100%; height:auto; min-height:0; top:auto; }
-    .filter { flex:1 0 100%; margin:0; padding:8px 0 0; order:5; } .filter .st { display:none; } .filter .sf.sisi { flex-direction:row; flex-wrap:wrap; } .filter .sf.sisi label { width:calc(50% - 5px); }
+    .atas .fbar { flex:1 0 100%; margin-left:0; } .atas .sf { flex-wrap:wrap; } .atas .sf label { flex:1 1 0; } .atas .sf select { width:100%; }
     .akun { margin:0 0 0 auto; padding:0 0 0 8px; border:0; flex:none; } .akun .st { display:none; }
     .beranda { padding:24px 16px 36px; }
   }
@@ -103,13 +106,12 @@
     <button class="menu" data-p="seragam"><svg viewBox="0 0 24 24"><path d="M8 3 3 6l2 4 3-1v12h8V9l3 1 2-4-5-3a4 4 0 0 1-8 0z"/></svg>Seragam</button>
     <button class="menu" data-p="peralatan"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg>Peralatan</button>
     <button class="menu" disabled title="Segera hadir"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3"/><path d="M7.5 15h9"/></svg>Chemical<span class="tag">Segera</span></button>
-    <div class="filter"><div class="st">Filter lokasi</div><div id="filterBar"></div></div>
     <button class="menu kecil" data-p="administrator"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.2 8 8 9 4.8-1 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>Administrator</button>
     <div class="akun"><div class="st" id="akunSt"></div><div id="akun"></div></div>
   </nav>
 
   <div class="isi" id="isi">
-    <nav class="atas" id="atas" aria-label="Halaman modul" hidden></nav>
+    <nav class="atas" id="atas" aria-label="Halaman modul dan filter lokasi" hidden><div class="tab" id="tab"></div><div class="fbar" id="filterBar"></div></nav>
     <div class="beranda" id="p-beranda"><div>
       <header class="kop">
         <h1>SISTEM ADMINISTRASI PENGADAAN</h1>
@@ -149,20 +151,20 @@
   // Modul chemical nanti cukup menambah satu entri di SUMBER dan MENU.
   const SUMBER = { seragam: 'seragam/', peralatan: 'peralatan/', administrator: 'administrator/' };
   const MENU = {
-    seragam: [['ringkasan', 'Dashboard'], ['monitor', 'Pengisian Ukuran'], ['permintaan', 'Permintaan'], ['ploting', 'Ploting'], ['inventaris', 'Inventaris'], ['pengiriman', 'Pengiriman'], ['tagihan', 'Tagihan']],
+    seragam: [['ringkasan', 'Dashboard Utama'], ['monitor', 'Monitoring & Permintaan'], ['inventaris', 'Rekap Ukuran & Inventaris'], ['ploting', 'Ploting & Pengiriman'], ['tagihan', 'Tagihan']], // halaman gabungan; sub-tab-nya ada di dalam modul
     peralatan: [['dashboard', 'Dashboard'], ['permintaan', 'Permintaan'], ['proses', 'Belanja & Kirim'], ['anggaran', 'Anggaran Lokasi'], ['riwayat', 'Riwayat Permintaan'], ['lokasi', 'Riwayat Lokasi']],
   };
   const subAktif = {}; // halaman terakhir yang dibuka di tiap modul
   const menu = [...document.querySelectorAll('.side .menu[data-p]')], isi = document.querySelector('.isi');
   let aktif = 'beranda';
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const atas = document.getElementById('atas');
+  const atas = document.getElementById('atas'), tab = document.getElementById('tab');
   function tandai() {
     menu.forEach(b => b.classList.toggle('on', b.dataset.p === aktif));
     // halaman milik modul yang sedang dibuka tampil sebagai tab di atas konten
     const daftar = MENU[aktif];
-    atas.hidden = !daftar; isi.classList.toggle('beratas', !!daftar);
-    atas.innerHTML = daftar ? daftar.map(([k, t]) => `<button data-p="${aktif}" data-s="${k}" class="${k === subAktif[aktif] ? 'on' : ''}">${esc(t)}</button>`).join('') : '';
+    atas.hidden = aktif === 'beranda'; isi.classList.toggle('beratas', aktif !== 'beranda');
+    tab.innerHTML = daftar ? daftar.map(([k, t]) => `<button data-p="${aktif}" data-s="${k}" class="${k === subAktif[aktif] ? 'on' : ''}">${esc(t)}</button>`).join('') : '';
     const h = aktif === 'beranda' ? '' : '#' + aktif + (subAktif[aktif] ? '/' + subAktif[aktif] : '');
     if (location.hash !== h) history.replaceState(null, '', h || location.pathname);
   }
@@ -188,7 +190,7 @@
     subAktif[d.modul] = d.pg; if (aktif === d.modul) tandai();
   });
   Masuk.widget(document.getElementById('akun'));
-  Saring.bar(document.getElementById('filterBar'), 'sisi'); // filter cabang / PIC untuk semua halaman
+  Saring.bar(document.getElementById('filterBar'), 'baris'); // filter cabang / PIC untuk semua halaman
   const tulisSt = () => { document.getElementById('akunSt').textContent = Masuk.masuk() ? 'Masuk sebagai admin. Semua fitur menyimpan aktif.' : 'Belum masuk. Halaman bisa dibuka; menyimpan dan mengirim butuh login.'; };
   window.addEventListener('masuk-ubah', tulisSt); tulisSt();
   dariHash();

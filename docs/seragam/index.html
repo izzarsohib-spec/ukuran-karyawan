@@ -323,7 +323,7 @@
   @media (max-width: 560px) { .alur { grid-template-columns:1fr; } }
   /* dibuka di dalam halaman Administrator (Laporan Harian): tanpa sidebar dan kop */
   /* dibuka di dalam portal: menu ada di sidebar portal, jadi sidebar, menu HP, dan sub-tab milik modul disembunyikan */
-  body.dalam .side, body.dalam .mobnav, body.dalam #subtabs { display:none !important; }
+  body.dalam .side, body.dalam .mobnav { display:none !important; }
   body.dalam .shell { margin:0; border:0; border-radius:0; background:transparent; min-height:0; } body.dalam .shell::before { display:none; }
   body.dalam { background:transparent; }
   body.embed .side, body.embed .mobnav, body.embed #subtabs { display:none !important; }
@@ -928,7 +928,7 @@
     $('subtabs').hidden = !sub;
     if (sub) $('subtabs').innerHTML = sub.map(([k, t]) => `<button class="chip ${k === pg ? 'on' : ''}" data-pg="${k}">${t}</button>`).join('');
     if (location.hash !== '#' + pg) history.replaceState(null, '', '#' + pg);
-    if (window.parent !== window) window.parent.postMessage({ tipe: 'halaman', modul: 'seragam', pg }, location.origin); // sorotan menu portal ikut
+    if (window.parent !== window) window.parent.postMessage({ tipe: 'halaman', modul: 'seragam', pg: g }, location.origin); // sorotan menu portal ikut
     window.scrollTo({ top: 0 });
     if (pg === 'permintaan' || pg === 'ploting') muatStatus();
     if (pg === 'inventaris' || pg === 'pengiriman' || pg === 'tagihan') { muatStatus(); muatHilir(); }
