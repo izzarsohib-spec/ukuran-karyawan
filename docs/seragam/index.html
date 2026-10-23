@@ -1672,7 +1672,7 @@
   const kabarArsip = (el, teks, warna) => { if (el) { el.style.color = warna || 'var(--muted)'; el.textContent = teks; } };
   const galatArsip = e => e.belumDiatur ? ['Arsip Google Drive belum diaktifkan.', 'var(--muted)'] : ['Arsip Drive gagal: ' + e.message, 'var(--bad)'];
   // halamanSiap = gambar halaman yang sudah dilihat di preview, supaya yang terkirim sama persis dengan yang diperiksa
-  async function kirimKeAtasan(d, halamanSiap, tombol) {
+  async function kirimKeAtasan(d, halamanSiap, tombol, lanjut = {}) {
     const st = $('mStatus'), label = tombol.textContent; tombol.disabled = true; tombol.textContent = 'Mengirim…'; st.style.color = ''; st.textContent = '';
     let sukses = false;
     try {
@@ -1680,9 +1680,13 @@
       const halaman = halamanSiap || (await pdfKeHalaman(await siapkanPdf(d))).b64s;
       const r = await fetch(`${SUPABASE_URL}/functions/v1/kirim-permintaan`, {
         method: 'POST', headers: { ...H, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lokasi_form: d.l.lokasi, bagian: d.bag, items: d.isi.map(x => ({ no: x.h.no, qty: x.q })), ploting: d.rincian, memo: memoMinta(), halaman })
+        body: JSON.stringify({ lokasi_form: d.l.lokasi, bagian: d.bag, items: d.isi.map(x => ({ no: x.h.no, qty: x.q })), ploting: d.rincian, memo: memoMinta(), halaman, ...lanjut })
       });
       const j = await r.json().catch(() => ({}));
+      if (r.status === 409 && j.perlu_konfirmasi) { // melebihi target/RAB: tanya, lalu kirim ulang bila admin yakin
+        if (confirm(j.error + '\n\nTetap kirim ke pimpinan? Peringatan ini ikut tertulis di notifikasi mereka.')) { tombol.disabled = false; tombol.textContent = label; return await kirimKeAtasan(d, halaman, tombol, { ...lanjut, ['lanjut_' + j.perlu_konfirmasi]: true }); }
+        throw new Error('Dibatalkan: ' + j.error);
+      }
       const tersimpanTanpaNotif = r.status === 502 && j.id; // permintaan sudah tersimpan, hanya notifikasi ntfy yang gagal
       if (!r.ok && !tersimpanTanpaNotif) throw new Error(j.error || 'HTTP ' + r.status);
       if (tersimpanTanpaNotif) {
@@ -2327,6 +2331,14 @@ Alasan (boleh kosong):`); if (alasan === null) return;
       await muatStatus(); if (typeof muatKekurangan === 'function') muatKekurangan();
     } catch (e) { btn.disabled = false; btn.textContent = awal; alert('Gagal: ' + e.message); }
   });
+  // pengingat/penagihan memakai catatan penerimaan di Inventaris; tampilkan kapan terakhir dicatat supaya admin tahu datanya mutakhir
+  function infoTerimaTerakhir(v) {
+    if (!v || typeof gerak === 'undefined') return '';
+    const l = gerak.filter(g => g.jenis === 'masuk' && !g.sumber && String(g.supplier || '').toLowerCase().trim() === String(v.nama).toLowerCase().trim()).map(g => String(g.tanggal).slice(0, 10)).sort().pop();
+    if (!l) return 'Belum ada penerimaan dari vendor ini yang tercatat di Inventaris. ';
+    const hari = Math.round((Date.parse(hariIniWib()) - Date.parse(l)) / 86400000);
+    return `Penerimaan terakhir dicatat ${hari <= 0 ? 'hari ini' : hari + ' hari lalu'}${hari > 3 ? ' (pastikan Inventaris sudah mutakhir sebelum menagih)' : ''}. `;
+  }
   function renderKekurangan() {
     if (!$('kvIsi')) return;
     $('kvTab').innerHTML = [['kurang', 'Kekurangan & estimasi'], ['riwayat', 'Riwayat pengiriman']].map(([k, t]) => `<button class="chip ${kvTab === k ? 'on' : ''}" data-t="${k}">${t}</button>`).join('');
@@ -2346,7 +2358,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     else {
       const jenis = jenisSuratKv(brg), nomor = !!v.telepon, perlu = brg.filter(b => b.kurang > 0 && (b.status === 'tanpa' || b.status === 'terlambat' || b.baru > 0)).length;
       const ket = !kurangAda.length ? 'Tidak ada kekurangan saat ini.' : [telat ? `${telat} barang melewati estimasi` : '', tanpa ? `${tanpa} barang belum ada estimasi` : '', tambah ? `+${idn(tambah)} pcs tambahan dari pesanan baru belum diestimasi` : ''].filter(Boolean).join(' · ') || 'Semua barang punya estimasi yang masih berlaku.';
-      $('kvAksi').innerHTML = `<div class="kvstatus"><div><b>${nomor ? '' : '<span class="badge bad">Nomor WA belum diisi</span> '}${esc(ket)}</b><div class="muted">Surat dikirim sebagai PDF lewat WhatsApp. Pengingat otomatis berjalan tiap pukul 08.00: H-2 atau H-1 sebelum estimasi, dan tindak lanjut sekali setelah estimasi terlewat.</div></div>
+      $('kvAksi').innerHTML = `<div class="kvstatus"><div><b>${nomor ? '' : '<span class="badge bad">Nomor WA belum diisi</span> '}${esc(ket)}</b><div class="muted">${infoTerimaTerakhir(v)}Surat dikirim sebagai PDF lewat WhatsApp. Pengingat otomatis berjalan tiap pukul 08.00: H-2 atau H-1 sebelum estimasi, dan tindak lanjut sekali setelah estimasi terlewat.</div></div>
         <div class="bgact"><button class="cta" id="kvKirimBtn" ${kurangAda.length && nomor ? '' : 'disabled'}>${LABEL_SURAT[jenis]}</button></div></div>
         ${perlu ? `<div class="kvjanji"><label>Samakan estimasi untuk ${perlu} barang yang belum ada / terlewat / bertambah<input type="date" id="kvTglSemua" min="${hariIniWib()}"></label><button class="btn" id="kvSemuaBtn">Terapkan ke semuanya</button></div>` : ''}<div class="hint" id="kvAksiSt"></div>`;
     }
@@ -2486,7 +2498,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
   const URUT_BAJU = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL', 'L6', 'L7'];
   const rankUk = (j, u) => { if (j !== 'baju') return 0; const i = URUT_BAJU.indexOf(String(u).toUpperCase()); return i < 0 ? 99 : i; };
   const vendorKat = k => k === 'Aksesoris' ? 'Dipesan online' : 'Vendor Wahyu Ardianto';
-  const supplierKat = k => k === 'Aksesoris' ? 'Online' : 'Wahyu Ardianto';
+  const supplierSesuai = (kat, sup) => (kat === 'Aksesoris') === (sup === 'Online');
   function renderInventaris() {
     const totalPcs = stok.reduce((a, s) => a + Number(s.saldo), 0), tipis = stok.filter(s => s.saldo > 0 && s.saldo <= 2).length, habis = stok.filter(s => s.saldo <= 0).length;
     $('infoInv').textContent = hilirMuat ? `${idn(totalPcs)} pcs di gudang · ${new Set(stok.map(s => s.item_no)).size} jenis barang pernah masuk · ${tipis} ukuran menipis · ${habis} ukuran habis` : 'Memuat data…';
@@ -2537,7 +2549,13 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     }).join('');
   }
   const barisMasukBaru = () => ({ no: '', jenis: '', ukuran: '', qty: '' });
-  function bukaFormMasuk() { $('rForm').hidden = true; $('oForm').hidden = true; iBaris = [barisMasukBaru()]; $('iTgl').value = tgl0(); ['iDok', 'iKet'].forEach(id => { $(id).value = ''; }); $('iSup').value = 'Wahyu Ardianto'; $('iDokL').textContent = 'No. surat jalan / faktur Wahyu Ardianto'; $('iPesan').textContent = ''; renderBarisMasuk(); $('iForm').hidden = false; $('iForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  // pilihan supplier = vendor aktif di Administrator (ejaan baku, dipakai menghitung kekurangan) + Online untuk aksesoris
+  async function isiSupplier() {
+    let nama = ['Wahyu Ardianto'];
+    try { const v = (await rpcKode('admin_daftar_vendor', {})).filter(x => x.aktif).map(x => x.nama); if (v.length) nama = v; } catch (e) { /* pakai bawaan */ }
+    $('iSup').innerHTML = [...nama, 'Online'].map(n => `<option>${esc(n)}</option>`).join('');
+  }
+  function bukaFormMasuk() { $('rForm').hidden = true; $('oForm').hidden = true; iBaris = [barisMasukBaru()]; $('iTgl').value = tgl0(); ['iDok', 'iKet'].forEach(id => { $(id).value = ''; }); isiSupplier(); $('iDokL').textContent = 'No. surat jalan / faktur supplier'; $('iPesan').textContent = ''; renderBarisMasuk(); $('iForm').hidden = false; $('iForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   $('iSup').onchange = () => { $('iDokL').textContent = $('iSup').value === 'Online' ? 'No. pesanan / invoice online' : 'No. surat jalan / faktur Wahyu Ardianto'; };
   $('iMasukBtn').onclick = bukaFormMasuk; $('iBatal').onclick = () => { $('iForm').hidden = true; };
   $('iTambah').onclick = () => { iBaris.push(barisMasukBaru()); renderBarisMasuk(); };
@@ -2552,11 +2570,14 @@ Alasan (boleh kosong):`); if (alasan === null) return;
   $('iSimpan').onclick = async () => {
     const ps = $('iPesan'), btn = $('iSimpan'); ps.style.color = 'var(--bad)';
     const baris = iBaris.filter(b => b.no || b.qty || b.jenis);
-    const salah = baris.map(b => HARGA.find(x => String(x.no) === String(b.no))).find(h => h && supplierKat(h.kat) !== $('iSup').value);
-    if (salah) { ps.textContent = `${salah.nama} (${salah.kat}) dipesan ${salah.kat === 'Aksesoris' ? 'secara online' : 'ke Wahyu Ardianto'}. Ubah supplier atau pisahkan ke penerimaan lain.`; return; }
+    const salah = baris.map(b => HARGA.find(x => String(x.no) === String(b.no))).find(h => h && !supplierSesuai(h.kat, $('iSup').value));
+    if (salah) { ps.textContent = `${salah.nama} (${salah.kat}) dipesan ${salah.kat === 'Aksesoris' ? 'secara online' : 'ke vendor, bukan Online'}. Ubah supplier atau pisahkan ke penerimaan lain.`; return; }
     if (!baris.length || baris.some(b => !b.no || !b.jenis || (b.jenis !== '-' && !b.ukuran) || !(Number(b.qty) > 0))) { ps.textContent = 'Lengkapi barang, jenis, ukuran, dan qty di setiap baris.'; return; }
     btn.disabled = true; btn.textContent = 'Menyimpan…'; ps.textContent = '';
     try {
+      const isi = baris.map(b => ({ item_no: Number(b.no), jenis_ukuran: b.jenis, ukuran: b.ukuran, qty: Number(b.qty) }));
+      const catatan = await rpcKode('periksa_penerimaan', { p_supplier: $('iSup').value.trim(), p_baris: isi }).catch(() => []);
+      if (catatan.length && !confirm('Periksa dulu:\n\n' + catatan.slice(0, 12).map(x => '- ' + x.pesan).join('\n') + '\n\nTetap simpan?')) { btn.disabled = false; btn.textContent = 'Simpan barang masuk'; return; }
       const n = await rpcKode('catat_barang_masuk', { p_tanggal: $('iTgl').value || tgl0(), p_supplier: $('iSup').value.trim(), p_no_dokumen: $('iDok').value.trim(), p_keterangan: $('iKet').value.trim(),
         p_baris: baris.map(b => ({ item_no: Number(b.no), jenis_ukuran: b.jenis, ukuran: b.ukuran, qty: Number(b.qty) })) });
       $('iForm').hidden = true; iTab = 'riwayat'; iJenis = 'masuk'; await muatHilir();

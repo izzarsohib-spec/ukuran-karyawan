@@ -172,6 +172,7 @@ Deno.serve(async (req) => {
   if ((baruSaja ?? 0) >= 20) return balas({ error: 'Terlalu banyak permintaan dalam 10 menit terakhir, coba lagi nanti' }, 429);
 
   // orang yang sama tidak boleh dipesankan seragam yang sama dua kali selama permintaan sebelumnya masih aktif (menunggu/disetujui)
+  let penerimaAktif = new Set<string>();
   if (rincian.length) {
     const [{ data: sebelumnya }, { data: permLama }] = await Promise.all([
       db.from('ploting').select('nama,item_no,permintaan_id').eq('lokasi_form', lokasi_form).eq('bagian_kerja', bagian).limit(5000),
@@ -179,6 +180,7 @@ Deno.serve(async (req) => {
     ]);
     const mati = new Set((permLama ?? []).filter((p: any) => [p.status, p.status_yasir, p.status_ferry].includes('ditolak')).map((p: any) => p.id));
     const aktif = new Set((sebelumnya ?? []).filter((r: any) => !mati.has(r.permintaan_id)).map((r: any) => kunciNama(r.nama) + '|' + r.item_no));
+    penerimaAktif = new Set((sebelumnya ?? []).filter((r: any) => !mati.has(r.permintaan_id)).map((r: any) => kunciNama(r.nama)));
     const ganda = [...new Set(rincian.filter((r) => aktif.has(kunciNama(r.nama) + '|' + r.item_no)).map((r) => r.nama))];
     if (ganda.length) return balas({ error: `Sudah ada permintaan aktif untuk seragam yang sama atas nama: ${ganda.slice(0, 8).join(', ')}${ganda.length > 8 ? ` dan ${ganda.length - 8} lainnya` : ''}. Periksa daftar permintaan; bila permintaan lama ditolak/revisi, kirim ulang setelah itu.`, ganda }, 409);
   }
@@ -207,7 +209,20 @@ Deno.serve(async (req) => {
   const dariPeralatan = (per ?? []).filter((x: any) => x.lokasi_form === lokasi_form && x.bagian_kerja === bagian).reduce((a: number, x: any) => a + Number(x.jual || 0), 0);
   const terpakai = (lalu ?? []).reduce((a: number, x: any) => a + Number(x.total_jual || 0), 0) + dariPeralatan;
   const sisa = rab - terpakai - tJual, untung = sisa + (tJual - tBeli);
-  const catatan = String(memo ?? '').slice(0, 1000);
+  // penerima melebihi jumlah anggota, atau belanja melampaui RAB: harus dikonfirmasi eksplisit (web menanyakan lalu mengirim ulang dengan lanjut_*)
+  const peringatan: string[] = [];
+  if (rincian.length) {
+    const unik = new Set([...penerimaAktif, ...rincian.map((r) => kunciNama(r.nama))]);
+    if (unik.size > Number(prog.target)) {
+      if (body?.lanjut_target !== true) return balas({ error: `Penerima seragam (${unik.size} orang, termasuk yang sudah dipesan sebelumnya) melebihi jumlah anggota bagian ini (${prog.target}).`, perlu_konfirmasi: 'target' }, 409);
+      peringatan.push(`PERHATIAN: penerima ${unik.size} orang melebihi jumlah anggota (${prog.target})`);
+    }
+  }
+  if (sisa < 0) {
+    if (body?.lanjut_rab !== true) return balas({ error: `Belanja ini melampaui RAB sebesar ${rp(-sisa)} (untung ${rp(untung)}).`, perlu_konfirmasi: 'rab' }, 409);
+    peringatan.push(`PERHATIAN: melampaui RAB ${rp(-sisa)}`);
+  }
+  const catatan = [...peringatan, String(memo ?? '').slice(0, 1000)].filter(Boolean).join('\n').slice(0, 1200);
 
   // token sekali-pakai per permintaan DAN per pimpinan: hanya penerima notifikasi yang punya tautan keputusannya
   const token: Record<string, string> = { yasir: acak(), ferry: acak() };
