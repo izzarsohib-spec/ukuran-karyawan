@@ -1167,6 +1167,7 @@
     const no = $('mPilihItem').value, it = no && itemMinta(no); if (!it || mPool.some(x => String(x.no) === String(no))) return;
     mPool.push(it); renderPembagian();
   };
+  $('mPilihItem').onchange = () => { if ($('mPilihItem').value) $('mTambah').click(); }; // memilih di menu langsung menambahkan seragam
   $('mChipItem').onclick = e => {
     const t = e.target; if (!t.dataset) return;
     if (t.dataset.semua) return beriSemua(t.dataset.semua, false);
