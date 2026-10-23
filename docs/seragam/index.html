@@ -502,6 +502,27 @@
     <section class="card pcard" id="aksPanel" hidden></section>
    </div>
 
+   <div class="page" id="pg-opname" hidden>
+    <header><div><h1>Stock Opname</h1><div class="sub" id="infoOp">Memuat data…</div></div>
+      <div class="bgact"><button class="btn" id="opMuat">Muat ulang</button><button class="cta" id="opMulai">Mulai hitung stok</button></div></header>
+    <section class="card pcard" id="oForm" hidden>
+      <h3>Stock opname</h3>
+      <div class="hint" style="margin:0 0 10px">Isi kolom <b>Fisik</b> hanya untuk barang yang sudah Anda hitung. Baris yang dikosongkan tidak diubah. Selisih dicatat sebagai penyesuaian stok (masuk bila fisik lebih banyak, keluar bila lebih sedikit).</div>
+      <div class="fgrid" style="grid-template-columns:1fr 2fr 2fr">
+        <label>Tanggal<input type="date" id="oTgl"></label><label>Catatan<input id="oCat" maxlength="200" placeholder="opsional, mis. opname akhir bulan"></label>
+        <label class="search" style="align-self:end"><span aria-hidden="true">🔍</span><input id="oCari" type="search" placeholder="Cari barang"></label></div>
+      <div class="wrap tabelminta" style="margin-top:12px;max-height:420px;overflow:auto"><table><thead><tr><th style="min-width:230px">Barang</th><th>Ukuran</th><th class="r">Sistem</th><th style="width:110px">Fisik</th><th class="r">Selisih</th><th style="min-width:190px">Alasan (bila selisih)</th></tr></thead><tbody id="oBody"></tbody></table></div>
+      <div class="hint" id="oPesan"></div>
+      <div class="bgact" style="margin-top:12px"><button class="cta" id="oSimpan">Simpan opname</button><button class="btn" id="oBatal">Batal</button></div>
+    </section>
+    <section class="card pcard" id="opRingkas">
+      <div class="rkkpi" id="opKpi"></div>
+      <div class="row" style="flex-wrap:wrap;gap:10px;margin-bottom:12px"><div class="chips" id="opTab"></div><label class="search"><span aria-hidden="true">🔍</span><input id="opCari" type="search" placeholder="Cari barang"></label></div>
+      <div class="chips" id="opChips" style="margin-bottom:12px"></div>
+      <div id="opIsi"></div>
+    </section>
+   </div>
+
    <div class="page" id="pg-inventaris" hidden>
     <header><div><h1>Inventaris</h1><div class="sub" id="infoInv">Memuat data…</div></div>
       <div class="bgact"><button class="btn" id="iMuat">Muat ulang</button><button class="btn" id="iOpnameBtn">Stock opname</button><button class="btn" id="iReturBtn">Retur barang</button><button class="cta" id="iMasukBtn" style="padding:8px 18px">+ Barang masuk dari supplier</button></div></header>
@@ -529,16 +550,6 @@
       <div class="wrap tabelminta"><table><thead><tr><th style="min-width:250px">Barang</th><th>Jenis</th><th>Ukuran</th><th style="width:96px">Qty</th><th></th></tr></thead><tbody id="rBaris"></tbody></table></div>
       <div class="hint" id="rPesan"></div>
       <div class="bgact" style="margin-top:12px"><button class="cta" id="rSimpan">Simpan retur</button><button class="btn" id="rBatal">Batal</button></div>
-    </section>
-    <section class="card pcard" id="oForm" hidden>
-      <h3>Stock opname</h3>
-      <div class="hint" style="margin:0 0 10px">Isi kolom <b>Fisik</b> hanya untuk barang yang sudah Anda hitung. Baris yang dikosongkan tidak diubah. Selisih dicatat sebagai penyesuaian stok (masuk bila fisik lebih banyak, keluar bila lebih sedikit).</div>
-      <div class="fgrid" style="grid-template-columns:1fr 2fr 2fr">
-        <label>Tanggal<input type="date" id="oTgl"></label><label>Catatan<input id="oCat" maxlength="200" placeholder="opsional, mis. opname akhir bulan"></label>
-        <label class="search" style="align-self:end"><span aria-hidden="true">🔍</span><input id="oCari" type="search" placeholder="Cari barang"></label></div>
-      <div class="wrap tabelminta" style="margin-top:12px;max-height:420px;overflow:auto"><table><thead><tr><th style="min-width:230px">Barang</th><th>Ukuran</th><th class="r">Sistem</th><th style="width:110px">Fisik</th><th class="r">Selisih</th></tr></thead><tbody id="oBody"></tbody></table></div>
-      <div class="hint" id="oPesan"></div>
-      <div class="bgact" style="margin-top:12px"><button class="cta" id="oSimpan">Simpan opname</button><button class="btn" id="oBatal">Batal</button></div>
     </section>
     <section class="bawah card">
       <div class="bar-top"><div class="chips" id="iTab"></div><label class="search"><span aria-hidden="true">🔍</span><input id="iCari" type="search" placeholder="Cari barang, supplier, atau tujuan"></label></div>
@@ -1116,15 +1127,15 @@
   $('detail').onchange = e => { if (e.target.id === 'fb') { fBagian = e.target.value; renderDetail(); } };
 
   // ---- sub halaman ----
-  const HALAMAN = ['ringkasan', 'monitor', 'permintaan', 'rekap', 'kurang', 'ploting', 'inventaris', 'pengiriman', 'tagihan', 'laporan'];
+  const HALAMAN = ['ringkasan', 'monitor', 'permintaan', 'rekap', 'kurang', 'ploting', 'inventaris', 'opname', 'pengiriman', 'tagihan', 'laporan'];
   let dashSiap = false;
   function renderRingkasan() { if (dashSiap) { renderDash(); renderMini(); renderLaporan(); } }
   // lima halaman: Dashboard Utama; Monitoring & Permintaan; Rekap Permintaan & Inventaris; Ploting & Pengiriman (+ penerimaan); Tagihan.
   // Halaman gabungan memakai sub-tab. Laporan Harian tidak ada di sidebar: dibuka dari halaman Administrator.
   if (window.top !== window.self) document.body.classList.add('dalam');
   if (window.top !== window.self && location.hash === '#laporan') document.body.classList.add('embed');
-  const GRUP = { ringkasan: 'ringkasan', monitor: 'monitor', permintaan: 'monitor', rekap: 'rekap', kurang: 'rekap', inventaris: 'rekap', ploting: 'ploting', pengiriman: 'ploting', tagihan: 'tagihan' };
-  const SUB = { monitor: [['monitor', 'Monitoring pengisian'], ['permintaan', 'Permintaan seragam']], rekap: [['rekap', 'Rekap permintaan'], ['kurang', 'Kekurangan vendor'], ['inventaris', 'Inventaris']], ploting:[['ploting', 'Koreksi ploting'], ['pengiriman', 'Pengiriman & penerimaan']] };
+  const GRUP = { ringkasan: 'ringkasan', monitor: 'monitor', permintaan: 'monitor', rekap: 'rekap', kurang: 'rekap', inventaris: 'rekap', opname: 'rekap', ploting: 'ploting', pengiriman: 'ploting', tagihan: 'tagihan' };
+  const SUB = { monitor: [['monitor', 'Monitoring pengisian'], ['permintaan', 'Permintaan seragam']], rekap: [['rekap', 'Rekap permintaan'], ['kurang', 'Kekurangan vendor'], ['inventaris', 'Inventaris'], ['opname', 'Stock opname']], ploting:[['ploting', 'Koreksi ploting'], ['pengiriman', 'Pengiriman & penerimaan']] };
   function tampil(pg) {
     if (!HALAMAN.includes(pg)) pg = 'ringkasan';
     for (const h of HALAMAN) $('pg-' + h).hidden = h !== pg;
@@ -1138,7 +1149,7 @@
     if (pg === 'permintaan' || pg === 'ploting' || pg === 'monitor') muatStatus();
     if (pg === 'rekap') { muatStatus(); muatRekapUkuran(); }
     if (pg === 'kurang') muatKekurangan();
-    if (pg === 'inventaris' || pg === 'pengiriman' || pg === 'tagihan') { muatStatus(); muatHilir(); }
+    if (pg === 'inventaris' || pg === 'opname' || pg === 'pengiriman' || pg === 'tagihan') { muatStatus(); muatHilir(); }
     if (pg === 'laporan') { muatStatus(); muatHilir(); muatCatatan(); }
   }
   document.addEventListener('click', e => { const b = e.target.closest('[data-pg]'); if (b) tampil(b.dataset.pg); });
@@ -2456,16 +2467,16 @@ Alasan (boleh kosong):`); if (alasan === null) return;
   // ================= INVENTARIS · PENGIRIMAN · TAGIHAN =================
   // Stok disimpan sebagai buku besar gerak (masuk dari supplier, keluar karena pengiriman). Pengiriman membaca hasil ploting dan
   // otomatis memotong stok. Tagihan dibuat dari barang yang benar-benar terkirim. Membaca terbuka; menulis memakai kode akses.
-  let stok = [], gerak = [], kirimAll = [], progres = new Map(), tagihanAll = [], opnameAll = [], hilirMuat = false;
+  let stok = [], gerak = [], kirimAll = [], progres = new Map(), tagihanAll = [], opnameAll = [], opnameRinci = [], hilirMuat = false;
   const tgl0 = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
   const tglPendek = d => d ? new Date(String(d).length <= 10 ? d + 'T00:00:00' : d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
   async function muatHilir() {
     await Saring.siap;
     try {
-      const [s, g, k, p, t, o] = await Promise.all([rpc('daftar_stok', {}), rpc('daftar_stok_gerak', { p_batas: 1000 }), rpc('daftar_pengiriman', {}), rpc('daftar_progres_kirim', {}), rpc('daftar_tagihan', {}), rpc('daftar_opname', {}).catch(() => [])]);
-      stok = s; gerak = g; kirimAll = k.filter(x => Saring.boleh(x.lokasi_form)); opnameAll = o; progres = new Map(p.map(x => [x.permintaan_id, x])); tagihanAll = t.filter(x => Saring.boleh(x.lokasi_form)); hilirMuat = true;
+      const [s, g, k, p, t, o, orc] = await Promise.all([rpc('daftar_stok', {}), rpc('daftar_stok_gerak', { p_batas: 1000 }), rpc('daftar_pengiriman', {}), rpc('daftar_progres_kirim', {}), rpc('daftar_tagihan', {}), rpc('daftar_opname', {}).catch(() => []), rpc('daftar_opname_rinci', {}).catch(() => [])]);
+      stok = s; gerak = g; kirimAll = k.filter(x => Saring.boleh(x.lokasi_form)); opnameAll = o; opnameRinci = orc; progres = new Map(p.map(x => [x.permintaan_id, x])); tagihanAll = t.filter(x => Saring.boleh(x.lokasi_form)); hilirMuat = true;
     } catch (e) { hilirMuat = false; ['infoInv', 'infoKirim', 'infoTag'].forEach(id => { $(id).textContent = 'Gagal memuat: ' + e.message; }); return; }
-    renderInventaris(); renderKirimList(); renderTagihanList(); renderRingkasan();
+    renderInventaris(); renderOpnamePage(); renderKirimList(); renderTagihanList(); renderRingkasan();
   }
   // panggilan yang menulis data: kode akses diminta sekali per sesi
   async function rpcKode(nama, body) {
@@ -2515,7 +2526,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     const totalPcs = stok.reduce((a, s) => a + Number(s.saldo), 0), tipis = stok.filter(s => s.saldo > 0 && s.saldo <= 2).length, habis = stok.filter(s => s.saldo <= 0).length;
     $('infoInv').textContent = hilirMuat ? `${idn(totalPcs)} pcs di gudang · ${new Set(stok.map(s => s.item_no)).size} jenis barang pernah masuk · ${tipis} ukuran menipis · ${habis} ukuran habis` : 'Memuat data…';
     const q = $('iCari').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    $('iTab').innerHTML = [['stok', 'Stok gudang'], ['riwayat', 'Riwayat masuk & keluar'], ['opname', 'Riwayat opname']].map(([t, n]) => `<button class="chip ${iTab === t ? 'on' : ''}" data-t="${t}">${n}</button>`).join('');
+    $('iTab').innerHTML = [['stok', 'Stok gudang'], ['riwayat', 'Riwayat masuk & keluar']].map(([t, n]) => `<button class="chip ${iTab === t ? 'on' : ''}" data-t="${t}">${n}</button>`).join('');
     if (iTab === 'stok') {
       const kats = ['semua', ...new Set(HARGA.map(h => h.kat))];
       $('iChips').innerHTML = kats.map(k => `<button class="chip ${iKat === k ? 'on' : ''}" data-k="${esc(k)}">${k === 'semua' ? 'Semua kategori' : esc(k)}</button>`).join('') + `<button class="chip ${iAda ? 'on' : ''}" data-ada="1">Hanya yang ada stok</button>`;
@@ -2528,13 +2539,6 @@ Alasan (boleh kosong):`); if (alasan === null) return;
           `<div class="mxg"><div class="mxl">${j === '-' ? 'Stok' : NAMA_JENIS[j]}<span>${j === '-' ? 'jumlah barang' : idn(l.reduce((a, x) => a + Number(x.saldo), 0)) + ' pcs'}</span></div><div class="mxs">${l.map(x => `<div class="mxc ${x.saldo <= 0 ? 'nol' : x.saldo <= 2 ? 'tipis' : ''}" title="masuk ${x.masuk} · keluar ${x.keluar}">${j === '-' ? '<small>pcs</small>' : `<small>${esc(x.ukuran)}</small>`}<b>${x.saldo}</b></div>`).join('')}</div></div>`).join('') : '<span class="muted">belum ada stok</span>'}</td>
           <td class="mxt"><b>${idn(total)}</b><span class="muted">pcs</span></td></tr>`;
       }).join('') || '<tr><td colspan="3" class="kosongnya">Tidak ada barang yang cocok.</td></tr>';
-    } else if (iTab === 'opname') {
-      $('iChips').innerHTML = '';
-      $('iHead').innerHTML = '<tr><th>Tanggal</th><th>Catatan</th><th class="r">Baris dihitung</th><th class="r">Ada selisih</th><th>Rincian selisih</th></tr>';
-      const f = opnameAll.filter(o => q.every(w => [o.catatan, o.tanggal, (o.rincian || []).map(r => r.item_nama).join(' ')].join(' ').toLowerCase().includes(w)));
-      $('iBody').innerHTML = f.map(o => `<tr><td>${tglPendek(o.tanggal)}</td><td>${esc(o.catatan || '-')}</td><td class="r">${o.jumlah_baris}</td><td class="r"><b>${o.jumlah_selisih}</b></td>
-        <td>${(o.rincian || []).map(r => `<div>${esc(r.item_nama)} ${r.jenis_ukuran === '-' ? '' : esc(NAMA_JENIS[r.jenis_ukuran] + ' ' + r.ukuran)}: sistem ${r.sistem} → fisik ${r.fisik} <b>(${r.selisih > 0 ? '+' : '−'}${Math.abs(r.selisih)})</b></div>`).join('') || '<span class="muted">tidak ada selisih</span>'}</td></tr>`).join('')
-        || '<tr><td colspan="5" class="kosongnya">Belum ada stock opname.</td></tr>';
     } else {
       $('iChips').innerHTML = [['semua', 'Semua'], ['masuk', 'Masuk dari supplier'], ['keluar', 'Keluar (pengiriman)'], ['retur', 'Retur'], ['opname', 'Penyesuaian opname']].map(([k, n]) => `<button class="chip ${iJenis === k ? 'on' : ''}" data-j="${k}">${n}</button>`).join('');
       $('iHead').innerHTML = '<tr><th>Tanggal</th><th>Jenis</th><th>Barang</th><th>Ukuran</th><th class="r">Qty</th><th>Supplier / tujuan</th><th>Dokumen</th></tr>';
@@ -2644,36 +2648,102 @@ Alasan (boleh kosong):`); if (alasan === null) return;
   // --- stock opname: hanya baris yang diisi kolom Fisik yang dihitung; selisih jadi penyesuaian stok ---
   let oFisik = new Map();
   const kunciStok = s => `${s.item_no}|${s.jenis_ukuran}|${s.ukuran}`;
+  const htmlAlasan = (k, beda) => beda ? `<select class="of-al"><option value="">(pilih alasan)</option>${ALASAN_OPNAME.map(a => `<option ${oAlasan.get(k) === a ? 'selected' : ''}>${esc(a)}</option>`).join('')}</select>` : '';
   function renderOpname() {
     const q = $('oCari').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const baris = stok.filter(s => q.every(w => (s.item_nama + ' ' + s.ukuran).toLowerCase().includes(w)))
       .sort((a, b) => a.item_no - b.item_no || ['baju', 'celana', 'sepatu', '-'].indexOf(a.jenis_ukuran) - ['baju', 'celana', 'sepatu', '-'].indexOf(b.jenis_ukuran) || rankUk(a.jenis_ukuran, a.ukuran) - rankUk(b.jenis_ukuran, b.ukuran) || bandingUk(a.ukuran, b.ukuran));
     $('oBody').innerHTML = baris.map(s => { const k = kunciStok(s), v = oFisik.get(k), beda = v !== undefined && v !== '' && Number(v) !== Number(s.saldo), sel = v === undefined || v === '' ? '' : Number(v) - Number(s.saldo);
-      return `<tr data-k="${esc(k)}" class="${beda ? 'opsel' : ''}"><td>${esc(s.item_nama)}</td><td>${s.jenis_ukuran === '-' ? '-' : NAMA_JENIS[s.jenis_ukuran] + ' ' + esc(s.ukuran)}</td><td class="r">${s.saldo}</td>
-        <td><input class="of-in" type="number" min="0" inputmode="numeric" placeholder="${s.saldo}" value="${v === undefined ? '' : esc(v)}"></td><td class="r"><b>${sel === '' ? '' : sel > 0 ? '+' + sel : sel < 0 ? '−' + Math.abs(sel) : '0'}</b></td></tr>`; }).join('')
-      || '<tr><td colspan="5" class="kosongnya">Belum ada stok untuk dihitung. Catat barang masuk dulu.</td></tr>';
+      return `<tr data-k="${esc(k)}" class="${beda ? 'opsel' : ''}"><td>${esc(s.item_nama)}<div class="muted" style="font-size:.74rem">${infoTerakhirOp(s.item_no, s.jenis_ukuran, s.ukuran)}</div></td><td>${s.jenis_ukuran === '-' ? '-' : NAMA_JENIS[s.jenis_ukuran] + ' ' + esc(s.ukuran)}</td><td class="r">${s.saldo}</td>
+        <td><input class="of-in" type="number" min="0" inputmode="numeric" placeholder="${s.saldo}" value="${v === undefined ? '' : esc(v)}"></td><td class="r"><b>${sel === '' ? '' : sel > 0 ? '+' + sel : sel < 0 ? '−' + Math.abs(sel) : '0'}</b></td><td class="oal">${htmlAlasan(k, beda)}</td></tr>`; }).join('')
+      || '<tr><td colspan="6" class="kosongnya">Belum ada stok untuk dihitung. Catat barang masuk dulu.</td></tr>';
   }
   $('oBody').oninput = e => {
     if (!e.target.classList.contains('of-in')) return; const tr = e.target.closest('tr'), k = tr.dataset.k, s = stok.find(x => kunciStok(x) === k); oFisik.set(k, e.target.value);
     const v = e.target.value, sel = v === '' ? '' : Number(v) - Number(s.saldo); tr.classList.toggle('opsel', v !== '' && sel !== 0);
-    tr.lastElementChild.innerHTML = `<b>${sel === '' ? '' : sel > 0 ? '+' + sel : sel < 0 ? '−' + Math.abs(sel) : '0'}</b>`;
+    tr.querySelector('td.r:nth-child(5)').innerHTML = `<b>${sel === '' ? '' : sel > 0 ? '+' + sel : sel < 0 ? '−' + Math.abs(sel) : '0'}</b>`;
+    tr.querySelector('.oal').innerHTML = htmlAlasan(k, v !== '' && sel !== 0);
   };
+  $('oBody').onchange = e => { if (e.target.classList.contains('of-al')) oAlasan.set(e.target.closest('tr').dataset.k, e.target.value); };
   $('oCari').oninput = renderOpname;
-  $('iOpnameBtn').onclick = () => { $('rForm').hidden = true; $('iForm').hidden = true; oFisik = new Map(); $('oTgl').value = tgl0(); $('oCat').value = ''; $('oCari').value = ''; $('oPesan').textContent = ''; renderOpname(); $('oForm').hidden = false; $('oForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  $('iOpnameBtn').onclick = () => { tampil('opname'); bukaFormOpname(); };
+  function bukaFormOpname() { $('rForm').hidden = true; $('iForm').hidden = true; oFisik = new Map(); oAlasan = new Map(); $('oTgl').value = tgl0(); $('oCat').value = ''; $('oCari').value = ''; $('oPesan').textContent = ''; renderOpname(); $('oForm').hidden = false; $('oForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   $('oBatal').onclick = () => { $('oForm').hidden = true; };
   $('oSimpan').onclick = async () => {
     const ps = $('oPesan'), btn = $('oSimpan'); ps.style.color = 'var(--bad)';
-    const baris = [...oFisik].filter(([, v]) => v !== '' && Number(v) >= 0).map(([k, v]) => { const [no, j, u] = k.split('|'); return { item_no: Number(no), jenis_ukuran: j, ukuran: u, fisik: Math.floor(Number(v)) }; });
+    const baris = [...oFisik].filter(([, v]) => v !== '' && Number(v) >= 0).map(([k, v]) => { const [no, j, u] = k.split('|'); return { item_no: Number(no), jenis_ukuran: j, ukuran: u, fisik: Math.floor(Number(v)), alasan: oAlasan.get(k) || null }; });
     if (!baris.length) { ps.textContent = 'Isi kolom Fisik minimal untuk satu barang.'; return; }
     const ubah = baris.filter(b => { const s = stok.find(x => kunciStok(x) === `${b.item_no}|${b.jenis_ukuran}|${b.ukuran}`); return s && Number(s.saldo) !== b.fisik; }).length;
     if (!confirm(`Simpan opname untuk ${baris.length} baris? ${ubah} baris berselisih dan stoknya akan disesuaikan. Tindakan ini tidak bisa dibatalkan.`)) return;
     btn.disabled = true; btn.textContent = 'Menyimpan…'; ps.textContent = '';
     try {
       await rpcKode('simpan_opname', { p_tanggal: $('oTgl').value || tgl0(), p_catatan: $('oCat').value.trim(), p_baris: baris });
-      $('oForm').hidden = true; iTab = 'opname'; await muatHilir();
+      $('oForm').hidden = true; opTab = 'opname'; await muatHilir();
     } catch (e) { ps.textContent = 'Gagal: ' + e.message; }
     btn.disabled = false; btn.textContent = 'Simpan opname';
   };
+
+  // ----------------- HALAMAN STOCK OPNAME: riwayat kekurangan / kelebihan per barang -----------------
+  let opTab = 'barang', opChip = 'semua', opBuka = new Set(), oAlasan = new Map();
+  const ALASAN_OPNAME = ['Hilang', 'Rusak / reject', 'Salah hitung sebelumnya', 'Salah catat penerimaan / pengiriman', 'Retur belum dicatat', 'Lainnya'];
+  const namaJenisOp = j => j === '-' ? '' : (NAMA_JENIS[j] || j);
+  const warnaSel = s => s < 0 ? 'var(--bad)' : s > 0 ? 'var(--ok)' : 'var(--muted)';
+  const tandaSel = s => s > 0 ? '+' + s : s < 0 ? '−' + Math.abs(s) : '0';
+  // ringkasan per barang (nama + jenis) dari semua baris opname; baris rinci diurutkan terbaru dulu
+  function ringkasOpname() {
+    const peta = new Map();
+    for (const r of opnameRinci) {
+      const k = r.item_no + '|' + r.jenis_ukuran;
+      if (!peta.has(k)) peta.set(k, { k, nama: r.item_nama, jenis: r.jenis_ukuran, baris: [], opnames: new Set(), kurang: 0, lebih: 0, kKurang: 0, kLebih: 0, ukuran: new Map() });
+      const x = peta.get(k); x.baris.push(r); x.opnames.add(r.opname_id);
+      const s = Number(r.selisih);
+      if (s < 0) { x.kurang -= s; x.kKurang++; } else if (s > 0) { x.lebih += s; x.kLebih++; }
+      if (s !== 0) { const u = x.ukuran.get(r.ukuran) || { kurang: 0, lebih: 0, n: 0 }; if (s < 0) u.kurang -= s; else u.lebih += s; u.n++; x.ukuran.set(r.ukuran, u); }
+    }
+    for (const x of peta.values()) {
+      const idTerakhir = x.baris[0].opname_id, t = x.baris.filter(b => b.opname_id === idTerakhir);
+      x.terakhirTgl = x.baris[0].tanggal; x.terakhirSel = t.reduce((a, b) => a + Number(b.selisih), 0); x.terakhirAda = t.some(b => Number(b.selisih) !== 0);
+    }
+    return [...peta.values()].sort((a, b) => (b.kurang + b.lebih) - (a.kurang + a.lebih) || a.nama.localeCompare(b.nama, 'id'));
+  }
+  const infoTerakhirOp = (no, j, uk) => { const r = opnameRinci.find(x => x.item_no === no && x.jenis_ukuran === j && x.ukuran === uk); return r ? `terakhir dihitung ${tglPendek(r.tanggal)}: ${Number(r.selisih) === 0 ? 'cocok' : tandaSel(Number(r.selisih))}` : 'belum pernah dihitung'; };
+  function renderOpnamePage() {
+    if (!$('opIsi')) return;
+    const ringkas = ringkasOpname(), kurang = ringkas.reduce((a, x) => a + x.kurang, 0), lebih = ringkas.reduce((a, x) => a + x.lebih, 0), bermasalah = ringkas.filter(x => x.kurang || x.lebih).length;
+    const terakhir = opnameAll[0];
+    $('infoOp').textContent = opnameAll.length ? `${opnameAll.length} kali opname · terakhir ${tglPendek(terakhir.tanggal)}` : 'Belum pernah stock opname';
+    $('opKpi').innerHTML = [[idn(opnameAll.length), 'Opname dilakukan'], [terakhir ? tglPendek(terakhir.tanggal) : '-', 'Opname terakhir'], [idn(kurang), 'Total kekurangan (pcs)'], [idn(lebih), 'Total kelebihan (pcs)'], [idn(bermasalah), 'Barang pernah selisih']].map(([a, b]) => `<div><span>${b}</span><b>${a}</b></div>`).join('');
+    $('opTab').innerHTML = [['barang', 'Per jenis barang'], ['opname', 'Per opname']].map(([k, t]) => `<button class="chip ${opTab === k ? 'on' : ''}" data-t="${k}">${t}</button>`).join('');
+    const q = $('opCari').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (opTab === 'barang') {
+      $('opChips').style.display = '';
+      $('opChips').innerHTML = [['semua', 'Semua'], ['kurang', 'Pernah kurang'], ['lebih', 'Pernah lebih'], ['terakhir', 'Selisih di opname terakhir'], ['cocok', 'Selalu cocok']].map(([k, t]) => `<button class="chip ${opChip === k ? 'on' : ''}" data-c="${k}">${t}</button>`).join('');
+      const f = ringkas.filter(x => q.every(w => (x.nama + ' ' + namaJenisOp(x.jenis)).toLowerCase().includes(w)) && (opChip === 'semua' || (opChip === 'kurang' && x.kurang) || (opChip === 'lebih' && x.lebih) || (opChip === 'terakhir' && x.terakhirAda) || (opChip === 'cocok' && !x.kurang && !x.lebih)));
+      $('opIsi').innerHTML = f.length ? `<div class="wrap tabelminta"><table><thead><tr><th style="min-width:230px">Barang</th><th class="r">Dihitung</th><th class="r">Kurang</th><th class="r">Lebih</th><th>Ukuran bermasalah</th><th>Opname terakhir</th></tr></thead><tbody>${f.map(x => {
+        const ukBad = [...x.ukuran.entries()].map(([u, v]) => `<span class="badge ${v.kurang >= v.lebih ? 'bad' : 'ok'}" title="kurang ${v.kurang}, lebih ${v.lebih}, ${v.n}x selisih">${esc(u === '-' ? 'stok' : u)} ${v.kurang ? '−' + v.kurang : ''}${v.kurang && v.lebih ? '/' : ''}${v.lebih ? '+' + v.lebih : ''}</span>`).join(' ') || '<span class="muted">tidak ada</span>';
+        const buka = opBuka.has(x.k);
+        const tl = buka ? `<tr class="opdet"><td colspan="6"><div class="wrap"><table><thead><tr><th>Tanggal</th><th>Ukuran</th><th class="r">Sistem</th><th class="r">Fisik</th><th class="r">Selisih</th><th>Alasan</th><th>Catatan opname</th></tr></thead><tbody>${x.baris.map(b => `<tr><td>${tglPendek(b.tanggal)}</td><td>${esc(b.ukuran === '-' ? '-' : b.ukuran)}</td><td class="r">${b.sistem}</td><td class="r">${b.fisik}</td><td class="r"><b style="color:${warnaSel(Number(b.selisih))}">${tandaSel(Number(b.selisih))}</b></td><td>${esc(b.alasan || '')}</td><td class="muted">${esc(b.catatan || '')}</td></tr>`).join('')}</tbody></table></div></td></tr>` : '';
+        return `<tr class="opbaris" data-k="${esc(x.k)}" style="cursor:pointer"><td><b>${buka ? '▾' : '▸'} ${esc(x.nama)}</b>${x.jenis === '-' ? '' : ' <span class="muted">· ' + namaJenisOp(x.jenis) + '</span>'}</td><td class="r">${x.opnames.size}x</td>
+          <td class="r"><b style="color:${x.kurang ? 'var(--bad)' : 'var(--muted)'}">${x.kurang ? '−' + idn(x.kurang) : '0'}</b></td><td class="r"><b style="color:${x.lebih ? 'var(--ok)' : 'var(--muted)'}">${x.lebih ? '+' + idn(x.lebih) : '0'}</b></td><td>${ukBad}</td>
+          <td>${tglPendek(x.terakhirTgl)} <span class="badge ${x.terakhirAda ? (x.terakhirSel < 0 ? 'bad' : x.terakhirSel > 0 ? 'ok' : 'warn') : 'neu'}">${x.terakhirAda ? tandaSel(x.terakhirSel) : 'cocok'}</span></td></tr>${tl}`;
+      }).join('')}</tbody></table></div>` : `<div class="kosongnya">${opnameRinci.length ? 'Tidak ada barang yang cocok dengan filter.' : 'Belum ada riwayat opname. Klik "Mulai hitung stok" untuk membuat yang pertama.'}</div>`;
+    } else {
+      $('opChips').style.display = 'none';
+      const perOp = new Map(); for (const r of opnameRinci) { if (!perOp.has(r.opname_id)) perOp.set(r.opname_id, []); perOp.get(r.opname_id).push(r); }
+      const f = opnameAll.filter(o => q.every(w => [o.catatan, o.tanggal, (perOp.get(o.id) || []).map(r => r.item_nama).join(' ')].join(' ').toLowerCase().includes(w)));
+      $('opIsi').innerHTML = f.map(o => {
+        const baris = perOp.get(o.id) || [], sel = baris.filter(r => Number(r.selisih) !== 0), k = sel.filter(r => r.selisih < 0).reduce((a, r) => a - Number(r.selisih), 0), l = sel.filter(r => r.selisih > 0).reduce((a, r) => a + Number(r.selisih), 0);
+        return `<div class="rwi"><div class="row"><span><b>${tglPendek(o.tanggal)}</b>${o.catatan ? ' · ' + esc(o.catatan) : ''}</span><span><span class="badge neu">${o.jumlah_baris} baris dihitung</span> <span class="badge ${k ? 'bad' : 'neu'}">kurang ${idn(k)} pcs</span> <span class="badge ${l ? 'ok' : 'neu'}">lebih ${idn(l)} pcs</span></span></div>
+          ${sel.map(r => `<div class="rl"><span>${esc(r.item_nama)} ${r.jenis_ukuran === '-' ? '' : '<span class="muted">' + namaJenisOp(r.jenis_ukuran) + ' ' + esc(r.ukuran) + '</span>'}${r.alasan ? ' <span class="muted">· ' + esc(r.alasan) + '</span>' : ''}</span><span>sistem ${r.sistem} → fisik ${r.fisik} <b style="color:${warnaSel(Number(r.selisih))}">(${tandaSel(Number(r.selisih))})</b></span></div>`).join('') || '<div class="rl"><span class="muted">Semua baris yang dihitung cocok dengan sistem.</span></div>'}</div>`;
+      }).join('') || '<div class="kosongnya">Belum ada stock opname.</div>';
+    }
+  }
+  $('opTab').onclick = e => { const b = e.target.closest('[data-t]'); if (b) { opTab = b.dataset.t; renderOpnamePage(); } };
+  $('opChips').onclick = e => { const b = e.target.closest('[data-c]'); if (b) { opChip = b.dataset.c; renderOpnamePage(); } };
+  $('opCari').oninput = renderOpnamePage;
+  $('opIsi').onclick = e => { const tr = e.target.closest('.opbaris'); if (!tr) return; const k = tr.dataset.k; if (opBuka.has(k)) opBuka.delete(k); else opBuka.add(k); renderOpnamePage(); };
+  $('opMuat').onclick = () => muatHilir();
+  $('opMulai').onclick = () => bukaFormOpname();
 
   // ----------------- PENGIRIMAN -----------------
   let kSel = '', kStatusF = 'semua', kTerbuka = false, kData = null;
@@ -2743,11 +2813,19 @@ Alasan (boleh kosong):`); if (alasan === null) return;
       return { r, ok: !kurang.length, sudah: false, kurang };
     });
   }
+  // petunjuk di form pengiriman: kapan stok gudang terakhir dihitung fisik (stock opname)
+  function infoOpnameKirim() {
+    const o = opnameAll[0], hari = o ? Math.round((Date.parse(tgl0()) - Date.parse(String(o.tanggal).slice(0, 10))) / 86400000) : null;
+    const teks = o ? `Stok gudang terakhir dihitung fisik ${hari <= 0 ? 'hari ini' : hari + ' hari lalu'} (${tglPendek(o.tanggal)}).` : 'Stok gudang belum pernah dihitung fisik (stock opname).';
+    const basi = !o || hari > 7;
+    return `<div class="hint" style="margin:0 0 10px;color:${basi ? 'var(--warn)' : 'var(--muted)'}">${teks}${basi ? ' Sebaiknya hitung dulu agar yang dikirim sesuai isi gudang. <button class="btn" id="kKeOpname" type="button">Hitung stok</button>' : ''}</div>`;
+  }
   function renderKirimEditor() {
     const { p, rows } = kData, st = statusKirim(), ed = $('kEditor'), belum = st.filter(x => !x.sudah);
     ed.hidden = false;
     ed.innerHTML = `<div class="row" style="margin-bottom:6px"><h3 style="margin:0">Kirim seragam: ${esc(p.bagian_kerja)}</h3><button class="btn" id="kTutup">Tutup</button></div>
       <div class="muted" style="margin-bottom:12px">${belum.length} baris belum dikirim dari ${rows.length} · centang yang dikirim sekarang. Stok otomatis berkurang saat diproses.</div>
+      ${infoOpnameKirim()}
       <div class="bgact" style="margin-bottom:10px"><button class="btn" id="kSemua">Pilih semua yang stoknya ada</button><button class="btn" id="kKosong">Kosongkan pilihan</button></div>
       <div class="wrap pplot"><table><thead><tr><th style="width:36px"></th><th>Karyawan</th><th>Barang</th><th>Ukuran</th><th class="r">Qty</th><th>Stok</th></tr></thead><tbody id="kBaris"></tbody></table></div>
       <div class="fgrid" style="margin-top:16px;grid-template-columns:1fr 1.2fr 1.2fr 1.2fr"><label>Tanggal kirim<input type="date" id="kTgl" value="${tgl0()}"></label><label>Ekspedisi / kurir<input id="kEks" placeholder="mis. JNE, kurir sendiri"></label>
@@ -2804,6 +2882,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
   };
   $('kEditor').onclick = e => {
     const t = e.target;
+    if (t.id === 'kKeOpname') { tampil('opname'); bukaFormOpname(); return; }
     if (t.id === 'kTutup') { $('kEditor').hidden = true; kData = null; return; }
     if (t.id === 'kUnduhSj') { if (kSuratTerakhir) suratJalanPdf(kSuratTerakhir).catch(x => alert('Gagal: ' + x.message)); return; }
     if (!kData) return;
