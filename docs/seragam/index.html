@@ -225,6 +225,20 @@
   .kq .kv { display:block; font-family:var(--head); font-size:1.3rem; margin:2px 0 6px; }
   .kq.kurang { border-color:var(--warn); background:var(--warn-bg); } .kq.lebih { border-color:var(--bad); background:var(--bad-bg); } .kq.pas { border-color:var(--ok); background:var(--ok-bg); }
   .kq .kb { display:flex; gap:6px; flex-wrap:wrap; } .kq .kb .btn { padding:2px 10px; font-size:.72rem; }
+  /* mode kerja lebar: daftar lokasi disembunyikan, form memakai seluruh lebar, dan daftar nama bergulir bersama halaman (bukan di kotak kecil) */
+  #mBawah.kerja .layout { grid-template-columns:minmax(0,1fr); }
+  #mBawah.kerja .list, #mBawah.kerja .bar-top, #mBawah.kerja #mChips { display:none; }
+  .formminta .pplot { max-height:none; overflow:visible; border:0; border-radius:0; }
+  .formminta .pplot table { width:100%; }
+  .mbar { position:sticky; top:0; z-index:5; margin:0 -22px 10px; padding:10px 22px 8px; background:rgba(27,27,30,.97); border-bottom:1px solid var(--stroke); backdrop-filter:blur(6px); }
+  .mbar .mtool { margin-bottom:6px; } .mbar .maksi { margin-bottom:0; }
+  .pplot tr.dipilih td { background:rgba(245,213,71,.07); }
+  .pplot td { padding:12px 10px; }
+  .kcek input, .ac, .pk { accent-color:var(--accent); }
+  .kcek input { width:22px !important; height:22px; margin:1px 0 0 !important; flex:none; cursor:pointer; }
+  .kcek { gap:12px; font-size:.9rem; }
+  .kcards { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
+  .kcards .skartu { flex:1 1 330px; max-width:520px; margin:0; }
   .pplot { max-height:62vh; }
   .mtool { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
   .mtool input#mCariNama { width:210px !important; margin:0 !important; }
@@ -1039,7 +1053,7 @@
   const hargaDari = no => HARGA.find(h => String(h.no) === String(no));
   const opsiItem = no => '<option value="">Pilih item</option>' + [...new Set(HARGA.map(h => h.kat))].map(k =>
     `<optgroup label="${esc(k)}">` + HARGA.filter(h => h.kat === k).map(h => `<option value="${h.no}" ${String(h.no) === String(no) ? 'selected' : ''}>${esc(h.nama)}</option>`).join('') + '</optgroup>').join('');
-  let mSel = '', terbukaMinta = false, mStatusF = 'semua';
+  let mSel = '', terbukaMinta = false, mStatusF = 'semua', mKerja = false; // mKerja: form permintaan memakai seluruh lebar halaman (daftar lokasi disembunyikan)
   const mAnggota = () => { const l = lokasi.find(x => x.lokasi === mSel); return l && l.bagian.find(b => b.nama === $('mBagian').value); };
   // permintaan yang ditolak/revisi tidak dihitung, karena akan dibuat ulang
   // peralatan yang memakai anggaran seragam (halaman Peralatan) ikut mengurangi sisa RAB seragam bagian itu
@@ -1146,8 +1160,8 @@
     const kartu = ada.map(no => { const it = itemMinta(no), a = k.alloc[no];
       return `<div class="skartu" data-no="${no}"><b>${esc(it.nama)}</b><label class="jml">jml <input class="pq" type="number" min="1" value="${a.qty}"></label><span class="pus">${pilihanUkuran(it, a)}</span><button class="xk" title="Hapus seragam ini" aria-label="Hapus seragam ini">✕</button></div>`; }).join('');
     const adaLain = ada.length && mKar.some((x, j) => j !== i && x.pilih);
-    return `<tr data-i="${i}" ${cocokNama(k) ? '' : 'hidden'}><td class="kn"><label class="kcek"><input type="checkbox" class="pk" ${k.pilih ? 'checked' : ''}><span><b>${esc(k.nama)}</b><div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></span></label></td>
-      <td>${kartu}<div class="kmenu"><select class="tmb"><option value="">+ Pilih seragam…</option>${opsiItemMinta(kecuali)}</select>${adaLain ? '<button class="btn salin" title="Samakan seragam nama yang dicentang dengan orang ini">Salin ke yang dicentang</button>' : ''}</div></td></tr>`;
+    return `<tr data-i="${i}" class="${k.pilih ? 'dipilih' : ''}" ${cocokNama(k) ? '' : 'hidden'}><td class="kn"><label class="kcek"><input type="checkbox" class="pk" ${k.pilih ? 'checked' : ''}><span><b>${esc(k.nama)}</b><div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></span></label></td>
+      <td><div class="kcards">${kartu}</div><div class="kmenu"><select class="tmb"><option value="">+ Pilih seragam…</option>${opsiItemMinta(kecuali)}</select>${adaLain ? '<button class="btn salin" title="Samakan seragam nama yang dicentang dengan orang ini">Salin ke yang dicentang</button>' : ''}</div></td></tr>`;
   }
   function renderTabel() {
     const w = document.querySelector('#mPlot .pplot'), st = w ? w.scrollTop : 0;
@@ -1160,10 +1174,10 @@
     else if (!mDimuat) $('mPlot').innerHTML = `<div class="hint">Nama dan ukuran karyawan diambil dari isian Google Form${masuk ? '.' : ' dan dibuka setelah login.'} <button class="btn" id="mMuatKar">${masuk ? 'Muat karyawan' : 'Masuk dan muat karyawan'}</button></div>`;
     else {
       if (!$('mTbody')) $('mPlot').innerHTML = `<div id="mCatatanPl"></div>
-        <div class="mtool"><input id="mCariNama" placeholder="Cari nama…" autocomplete="off"><label class="kcek"><input type="checkbox" id="mPilihSemua"><span>Pilih semua nama</span></label><span class="muted" id="mDicentang"></span><button class="btn" id="mLengkapi" title="Isi ukuran yang masih kosong dari isian Google Form">Lengkapi ukuran dari Form</button></div>
+        <div class="mbar"><div class="mtool"><input id="mCariNama" placeholder="Cari nama…" autocomplete="off"><label class="kcek"><input type="checkbox" id="mPilihSemua"><span>Pilih semua nama</span></label><span class="muted" id="mDicentang"></span><button class="btn" id="mLengkapi" title="Isi ukuran yang masih kosong dari isian Google Form">Lengkapi ukuran dari Form</button></div>
         <div class="maksi" id="mAksi" hidden><button class="btn" id="mAksiBtn" aria-expanded="false">+ Beri seragam ke yang dicentang ▾</button><button class="btn" id="mKosongDicentang">Kosongkan yang dicentang</button>
           <div class="apanel" id="mAksiPanel" hidden><input id="mAksiCari" placeholder="Cari seragam…" autocomplete="off"><div class="alist" id="mAksiList">${daftarItemAksi()}</div>
-            <div class="arow"><span class="muted" id="mAksiInfo"></span><button class="cta" id="mAksiTerapkan" disabled>Terapkan</button></div></div></div>
+            <div class="arow"><span class="muted" id="mAksiInfo"></span><button class="cta" id="mAksiTerapkan" disabled>Terapkan</button></div></div></div></div>
         <div class="wrap pplot"><table><thead><tr><th style="min-width:210px">Karyawan</th><th>Seragam yang diterima (boleh berbeda tiap orang)</th></tr></thead><tbody id="mTbody"></tbody></table></div>
         <div style="display:flex;gap:8px;margin-top:10px;align-items:center"><input id="mNamaBaru" placeholder="Nama karyawan yang belum ada di Form" style="margin:0"><button class="btn" id="mTambahNama" style="flex:none">+ Tambah nama</button></div>`;
       $('mCatatanPl').innerHTML = mCatatan ? `<div class="hint" style="margin:0 0 8px;color:var(--warn)">${esc(mCatatan)}</div>` : '';
@@ -1625,7 +1639,13 @@
     const l = lokasi.find(x => x.lokasi === mSel);
     $('mDetail').classList.toggle('open', terbukaMinta && !!l);
     $('mForm').hidden = !l;
-    if (!l) { $('mDHead').innerHTML = '<div class="kosongnya">Pilih lokasi di daftar untuk melihat status dan membuat permintaan.</div>'; return; }
+    if (!l) { mKerja = false; $('mBawah').classList.remove('kerja'); $('mDHead').innerHTML = '<div class="kosongnya">Pilih lokasi di daftar untuk melihat status dan membuat permintaan.</div>'; return; }
+    $('mBawah').classList.toggle('kerja', mKerja);
+    if (mKerja) { // mode kerja: hanya judul lokasi + tombol kembali, sisanya untuk form selebar halaman
+      const m0 = l.mi || infoLok(l), [lb0, cl0] = LS[m0.s];
+      $('mDHead').innerHTML = `<div class="dhead"><div class="row"><button class="btn" id="mKeluar">‹ Kembali ke daftar lokasi</button><span class="badge ${cl0}">${lb0}</span></div><h2 style="margin-top:10px">${esc(l.client)}</h2></div>`;
+      return;
+    }
     const mi = l.mi || infoLok(l), [lbl, cls] = LS[mi.s], ang = anggaran && anggaran.peta.get(l.lokasi);
     const bagian = l.bagian.map((b, i) => {
       const p = mi.per[i], k = l.lokasi + '|' + b.nama, riw = daftarMinta.filter(x => x.lokasi_form === l.lokasi && x.bagian_kerja === b.nama);
@@ -1653,7 +1673,8 @@
   $('mDetail').onclick = e => {
     if (e.target.id === 'mBack') { terbukaMinta = false; renderDetailMinta(); return; }
     const bt = e.target.closest('[data-buat]');
-    if (bt) { $('mBagian').value = bt.dataset.buat; infoMinta(); $('mForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (e.target.id === 'mKeluar') { mKerja = false; renderDetailMinta(); $('mBawah').scrollIntoView({ block: 'start' }); return; }
+    if (bt) { $('mBagian').value = bt.dataset.buat; gantiKonteks(); infoMinta(); mKerja = true; renderDetailMinta(); $('mBawah').scrollIntoView({ block: 'start' }); return; }
     const rw = e.target.closest('[data-riw]');
     if (rw) { const k = rw.dataset.riw; riwBuka.has(k) ? riwBuka.delete(k) : riwBuka.add(k); renderDetailMinta(); }
   };
