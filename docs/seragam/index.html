@@ -854,7 +854,7 @@
       const nama = (pengisi.get(l.lokasi) || []).map(p => p.nama).filter(Boolean).sort((a, b) => a.localeCompare(b));
       const bg = l.bagian.filter(b => b.isi < b.target).map(b => `${b.nama} kurang ${b.target - b.isi}`).join(', ');
       return `${i + 1}. ${l.client}\n   ${l.status === 'kosong' ? 'BELUM ADA yang mengisi' : `Terisi ${l.isi}/${l.target}, kurang ${l.kurang} orang`} (${bg})` +
-        (nama.length ? `\n   Sudah mengisi: ${nama.join(', ')}` : '');
+        (nama.length ? `\n   Sudah mengisi:\n${nama.map((n, k) => `   ${k + 1}. ${n}`).join('\n')}` : '');
     });
     return `Halo ${g.pic ? g.pic.nama : ''}, pengingat pengisian ukuran seragam karyawan.\n\nLokasi yang masih kurang (${g.lok.length}):\n\n${baris.join('\n\n')}\n\nMohon dibantu mengingatkan anggota yang belum mengisi Google Form ukuran seragam. Terima kasih.`;
   }
