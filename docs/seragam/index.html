@@ -205,8 +205,15 @@
   .vc > .vleg { flex:none; }
   .vc > .vtab { flex:1 1 auto; min-height:0; }
   .vc > .kosongnya { margin:auto 0; }
+  .vc > .vlist { flex:1; display:flex; flex-direction:column; } .vc > .vlist .vi { flex:1; align-items:center; }
   #dash .dgrid { grid-template-columns:repeat(3,minmax(0,1fr)); }
   @media (max-width: 1280px) { #dash .dgrid { grid-template-columns:repeat(2,minmax(0,1fr)); } #dash .dgrid > .vc:last-child:nth-child(odd) { grid-column:1 / -1; } }
+  /* Pengiriman: dua grafik bertumpuk di kiri, daftar surat jalan (paling panjang) setinggi keduanya di kanan, tanpa celah */
+  @media (min-width: 761px) {
+    #dg-kirim { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+    #dg-kirim > #vc-kr-sisa { grid-column:1; grid-row:1; } #dg-kirim > #vc-kr-tren { grid-column:1; grid-row:2; }
+    #dg-kirim > #vc-kr-sj { grid-column:2; grid-row:1 / span 2; }
+  }
   @media (max-width: 760px) { #dash .dgrid { grid-template-columns:minmax(0,1fr); } }
   .vh { display:flex; justify-content:space-between; gap:10px; margin-bottom:10px; } .vh b { font-size:.9rem; }
   .vt { display:flex; gap:2px; background:rgba(255,255,255,.07); border-radius:99px; padding:2px; height:fit-content; flex:none; }
