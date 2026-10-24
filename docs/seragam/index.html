@@ -198,8 +198,16 @@
   .vk span { display:block; font-size:.75rem; color:var(--muted); }
   .vk b { display:block; font:600 1.5rem/1.15 system-ui,-apple-system,"Segoe UI",sans-serif; margin-top:4px; overflow-wrap:anywhere; }
   .vk small { display:block; color:var(--muted); font-size:.74rem; margin-top:2px; }
-  .dgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); gap:12px; align-items:start; }
-  .vc { background:rgba(14,14,16,.45); border:1px solid var(--stroke); border-radius:18px; padding:14px 16px; min-width:0; }
+  .dgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); gap:12px; align-items:stretch; grid-auto-flow:row dense; }
+  .vc { background:rgba(14,14,16,.45); border:1px solid var(--stroke); border-radius:18px; padding:14px 16px; min-width:0; display:flex; flex-direction:column; }
+  .vc > .vbars { flex:1; align-content:space-evenly; }
+  .vc > .vsvg { margin:auto 0; }
+  .vc > .vleg { flex:none; }
+  .vc > .vtab { flex:1 1 auto; min-height:0; }
+  .vc > .kosongnya { margin:auto 0; }
+  #dash .dgrid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  @media (max-width: 1280px) { #dash .dgrid { grid-template-columns:repeat(2,minmax(0,1fr)); } #dash .dgrid > .vc:last-child:nth-child(odd) { grid-column:1 / -1; } }
+  @media (max-width: 760px) { #dash .dgrid { grid-template-columns:minmax(0,1fr); } }
   .vh { display:flex; justify-content:space-between; gap:10px; margin-bottom:10px; } .vh b { font-size:.9rem; }
   .vt { display:flex; gap:2px; background:rgba(255,255,255,.07); border-radius:99px; padding:2px; height:fit-content; flex:none; }
   .vt button { border:0; background:transparent; color:var(--muted); border-radius:99px; padding:6px 12px; min-height:30px; font-size:.74rem; } .vt button.on { background:#fff; color:#111; font-weight:600; }
