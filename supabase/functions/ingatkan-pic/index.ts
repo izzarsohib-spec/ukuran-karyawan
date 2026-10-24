@@ -13,6 +13,10 @@ const balas = (obj: unknown, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 const noWa = (t: string) => { const d = String(t ?? '').replace(/\D/g, ''); return !d ? '' : d.startsWith('62') ? d : d.startsWith('0') ? '62' + d.slice(1) : d.startsWith('8') ? '62' + d : d; };
 
+// Mode uji: selama rahasia WA_NOMOR_UJI terisi, semua pesan WhatsApp dialihkan ke nomor itu (nama penerima asli ditulis di awal pesan).
+// Hapus rahasianya saat sistem dipakai sungguhan.
+const alihUji = (nomor: string, nama: string, teks: string) => { const u = noWa(Deno.env.get('WA_NOMOR_UJI') ?? ''); return u ? { nomor: u, chatId: u + '@c.us', teks: `[UJI - seharusnya untuk ${nama}]\n\n${teks}` } : { nomor, chatId: nomor + '@c.us', teks }; };
+
 async function adalahAdmin(db: any, req: Request): Promise<boolean> {
   const t = (req.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
   if (!t) return false;
@@ -44,7 +48,7 @@ Deno.serve(async (req) => {
   for (const x of daftar) {
     const p: any = peta.get(Number(x.pic_id)), nomor = p && p.aktif ? noWa(p.telepon) : '';
     if (!nomor) lewat.push({ pic_id: Number(x.pic_id), nama: p?.nama ?? null, alasan: !p ? 'PIC tidak ditemukan' : !p.aktif ? 'PIC nonaktif' : 'Nomor telepon belum diisi' });
-    else kirim.push({ pic_id: p.id, nama: p.nama, nomor, chatId: nomor + '@c.us', teks: x.teks });
+    else kirim.push({ pic_id: p.id, nama: p.nama, ...alihUji(nomor, p.nama, x.teks) });
   }
   if (!kirim.length) return balas({ ok: false, terkirim: 0, dilewati: lewat, error: 'Tidak ada PIC yang bisa dikirimi' }, 422);
 

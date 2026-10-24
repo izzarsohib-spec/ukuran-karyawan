@@ -19,6 +19,9 @@ const CORS = {
 };
 const balas = (obj: unknown, status = 200) => new Response(JSON.stringify(obj), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 const noWa = (t: string) => { const d = String(t ?? '').replace(/\D/g, ''); return !d ? '' : d.startsWith('62') ? d : d.startsWith('0') ? '62' + d.slice(1) : d.startsWith('8') ? '62' + d : d; };
+// Mode uji: selama rahasia WA_NOMOR_UJI terisi, semua pesan WhatsApp dialihkan ke nomor itu (nama penerima asli ditulis di awal pesan).
+// Hapus rahasianya saat sistem dipakai sungguhan.
+const alihUji = (nomor: string, nama: string, teks: string) => { const u = noWa(Deno.env.get('WA_NOMOR_UJI') ?? ''); return u ? { nomor: u, chatId: u + '@c.us', teks: `[UJI - seharusnya untuk ${nama}]\n\n${teks}` } : { nomor, chatId: nomor + '@c.us', teks }; };
 const acak = () => crypto.randomUUID().replaceAll('-', '') + crypto.randomUUID().replaceAll('-', '');
 const PENANDATANGAN = ['Shohib Izzar', 'PIC Seragam'];
 
@@ -281,7 +284,7 @@ Deno.serve(async (req) => {
         if (!daftar.length) continue;
         try {
           const pdf = await simpanPdf(vid, v.nama, jenis, daftar);
-          pesan.push({ jenis: 'vendor', vendor_id: vid, nama: v.nama, nomor, chatId: nomor + '@c.us', teks: susunKeterangan(v.nama, jenis, daftar), pdf_url: pdf.url, pdf_nama: pdf.nama,
+          pesan.push({ jenis: 'vendor', vendor_id: vid, nama: v.nama, ...alihUji(nomor, v.nama, susunKeterangan(v.nama, jenis, daftar)), pdf_url: pdf.url, pdf_nama: pdf.nama,
             tandai: { tipe, janji_ids: daftar.map((b) => b.janji!.id), total: totalKurang(daftar), pdf_url: pdf.url } });
         } catch (e) { lewat.push({ vendor_id: vid, alasan: String((e as Error).message) }); }
       }
@@ -314,7 +317,7 @@ Deno.serve(async (req) => {
   let pdf: { url: string; nama: string };
   try { pdf = await simpanPdf(vendorId, v.nama, jenis, barang); } catch (e) { return balas({ error: String((e as Error).message) }, 500); }
   try {
-    const r = await fetch(urlN8n, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': tokenN8n }, body: JSON.stringify({ pesan: [{ jenis: 'vendor', pic_id: null, nama: v.nama, nomor, chatId: nomor + '@c.us', teks, pdf_url: pdf.url, pdf_nama: pdf.nama }] }) });
+    const r = await fetch(urlN8n, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Token': tokenN8n }, body: JSON.stringify({ pesan: [{ jenis: 'vendor', pic_id: null, nama: v.nama, ...alihUji(nomor, v.nama, teks), pdf_url: pdf.url, pdf_nama: pdf.nama }] }) });
     if (!r.ok) return balas({ error: `n8n menolak (HTTP ${r.status})` }, 502);
   } catch (e) { return balas({ error: 'Gagal menghubungi n8n: ' + String(e).slice(0, 160) }, 502); }
   // jejak: catatan pesan dan penghitung pengingat pada estimasi yang ikut disebut
