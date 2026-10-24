@@ -29,6 +29,7 @@
   .bagian { display:flex; gap:26px; overflow-x:auto; scrollbar-width:none; border-bottom:1px solid var(--stroke); margin:22px 0 12px; }
   .bagian button { flex:none; padding:10px 2px; margin-bottom:-1px; border:0; border-bottom:2px solid transparent; background:none; cursor:pointer; color:var(--muted); font-size:.92rem; font-weight:500; white-space:nowrap; }
   .bagian button:hover { color:var(--text); } .bagian button.on { color:#fff; font-weight:700; border-bottom-color:var(--accent); }
+  .dalam .bagian { display:none; } .dalam .chips { margin-top:22px; }
   .bagian .tag { font-size:.64rem; font-weight:600; padding:1px 7px; border-radius:99px; background:rgba(255,255,255,.1); margin-left:6px; vertical-align:middle; }
   .chips { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px; min-height:36px; align-items:center; }
   .chip { border:1px solid var(--stroke); background:rgba(255,255,255,.05); border-radius:99px; padding:7px 16px; cursor:pointer; font-size:.86rem; color:var(--muted); font-weight:600; }
@@ -446,7 +447,21 @@
   // filter cabang / PIC dari portal: gambar ulang tab yang datanya per lokasi
   window.addEventListener('saring-ubah', () => { if (DATA[tab] && !cfg().frame) gambar(); });
   Saring.siap.then(() => { if (DATA[tab] && !cfg().frame) gambar(); });
-  gambarTab(); muatTab(false);
+  // Di dalam portal, bidang (Seragam, Peralatan, Chemical, Organisasi, Sistem) dipilih dari bar atas portal lewat hash (#seragam, #organisasi, ...);
+  // hash berisi nama menu (#lokasi_pic dst.) tetap diterima. Di luar portal, baris bidang tampil sendiri.
+  if (window.self !== window.top) document.documentElement.classList.add('dalam');
+  const BIDANG = ['Seragam', 'Peralatan', 'Chemical', 'Organisasi', 'Sistem'];
+  function terapkanHash() {
+    const h = decodeURIComponent(location.hash.slice(1)), g = BIDANG.find(x => x.toLowerCase() === h);
+    if (TABS[h]) { tab = h; bagianPilih = null; return true; }
+    if (!g) return false;
+    bagianPilih = g; const pertama = Object.keys(TABS).find(k => TABS[k].grup === g);
+    if (pertama && TABS[tab].grup !== g) tab = pertama;
+    return true;
+  }
+  function tampilBidangKosong() { if (Object.values(TABS).some(t => t.grup === bagianPilih)) return false; $('kpis').innerHTML = ''; $('ket').textContent = ''; $('isi').innerHTML = `<div class="kosong">Bidang ${esc(bagianPilih)} belum punya data. Segera hadir.</div>`; return true; }
+  window.addEventListener('hashchange', () => { if (!terapkanHash()) return; q = ''; saring = {}; batas = 100; edit = undefined; pesan = null; gambarTab(); if (!tampilBidangKosong()) muatTab(false); });
+  terapkanHash(); gambarTab(); if (!tampilBidangKosong()) muatTab(false);
 </script>
 </body>
 </html>
