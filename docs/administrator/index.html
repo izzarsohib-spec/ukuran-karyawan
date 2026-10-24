@@ -52,8 +52,9 @@
   /* area tabel setinggi layar: batang gulir (mendatar dan tegak) selalu terlihat, judul kolom tetap di atas */
   .wrap { overflow:auto; max-height:max(360px, calc(100vh - 150px)); border-radius:14px; }
   table { width:100%; border-collapse:collapse; font-size:.84rem; }
-  th { text-align:left; color:var(--muted); font-weight:600; padding:8px 8px; border-bottom:1px solid var(--stroke); position:sticky; top:0; background:#202024; z-index:1; line-height:1.25; }
-  td { padding:8px 8px; border-bottom:1px solid rgba(255,255,255,.06); vertical-align:top; }
+  th { text-align:left; vertical-align:middle; color:#cfcfd6; font-weight:700; font-size:.78rem; letter-spacing:.02em; padding:11px 7px; border-bottom:0; position:sticky; top:0; background:#26262b; z-index:1; white-space:nowrap; }
+  th:first-child, td:first-child { padding-left:12px; } th:last-child, td:last-child { padding-right:12px; }
+  td { padding:8px 7px; border-bottom:1px solid rgba(255,255,255,.06); vertical-align:top; }
   tr:hover td { background:rgba(255,255,255,.03); }
   th.r, td.r { text-align:right; font-variant-numeric:tabular-nums; }
   td .sub { color:var(--muted); font-size:.76rem; }
@@ -133,7 +134,7 @@
       grup: 'Seragam', nama: 'Anggaran & anggota', ket: 'RAB seragam, jumlah anggota, bagian kerja, dan masa kontrak per lokasi (dipakai di halaman Seragam). Nama lokasi harus sama dengan pilihan lokasi di Google Form supaya pengisian ukuran terhitung.',
       muat: () => rpc('admin_daftar_acuan'), cari: r => [r.client, r.lokasi_form, r.bagian_kerja].join(' '), id: r => r.id, lokasiDari: r => r.lokasi_form,
       kolom: [['Client / lokasi', r => `<b>${esc(r.client)}</b>${r.client !== r.lokasi_form ? `<div class="sub">${esc(r.lokasi_form)}</div>` : ''}`], ['Bagian kerja', r => esc(r.bagian_kerja)], ['Anggota', r => num(r.jumlah_anggota), 'r'],
-        ['Anggaran', r => rp(r.anggaran), 'r'], ['Kontrak', r => r.masa_kontrak + ' bln', 'r'], ['Per orang/bln', r => rp(r.anggaran_per_orang), 'r'], ['Karyawan aktif', r => num(r.karyawan), 'r'], ['Permintaan', r => num(r.riwayat), 'r']],
+        ['Anggaran', r => rp(r.anggaran), 'r'], ['Kontrak', r => r.masa_kontrak + ' bln', 'r'], ['Per orang/bln', r => rp(r.anggaran_per_orang), 'r'], ['Karyawan', r => num(r.karyawan), 'r'], ['Permintaan', r => num(r.riwayat), 'r']],
       kpi: d => [['Baris anggaran', num(d.length)], ['Lokasi', num(uniq(d, r => r.lokasi_form).length)], ['Total anggota', num(d.reduce((a, r) => a + r.jumlah_anggota, 0))], ['Total anggaran', rpR(d.reduce((a, r) => a + Number(r.anggaran), 0))]],
       form: r => [
         { k: 'client', l: 'Client', v: r?.client, hint: 'Kosong = sama dengan lokasi' },
