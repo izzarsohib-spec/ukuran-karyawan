@@ -2,7 +2,11 @@
 
 Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokkan per tanggal dan dibangun dari riwayat commit. Yang terbaru di atas.
 
+Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
+
 ## 26 Okt 2026
+- **v1.105** Nomor versi ditampilkan di sidebar portal (arahkan kursor untuk melihat tanggal dan catatannya).
+- **v1.104** Tambah CHANGELOG.md.
 - Tanda tangan digital pimpinan di memo, PO, dan Daftar Harga.
 
 ## 24 Okt 2026
