@@ -35,6 +35,7 @@
     <h1 id="judul">Setujui permintaan seragam</h1>
     <p class="sub" id="sub">Memuat ringkasan…</p>
     <div id="isi"></div>
+    <p class="sub" id="catatTtd" hidden style="margin:12px 0 0">Dengan menekan <b>Ya, setujui</b>, tanda tangan digital Anda otomatis ditempel pada memo dan PO beserta tanggal, jam, dan kode verifikasi.</p>
     <div class="tombol" id="tombol" hidden>
       <button class="utama" id="setuju" type="button">Ya, setujui</button>
       <a class="btn" id="tolak" href="#">Tolak / Revisi</a>
@@ -47,6 +48,7 @@
   const FN = 'https://vqcusagijiavaoljfrib.supabase.co/functions/v1/keputusan';
   const q = new URLSearchParams(location.search), id = q.get('id') || '', p = q.get('p') || '', t = q.get('t') || '';
   const $ = i => document.getElementById(i);
+  let suratUrl = '';
   const nama = { yasir: 'Pak Yasir', ferry: 'Pak Ferry' }[p];
   const rp = n => 'Rp' + Math.round(Number(n) || 0).toLocaleString('id-ID');
   const baris = (k, v, cls) => { const d = document.createElement('div'); d.className = 'rl'; const a = document.createElement('span'), b = document.createElement('span'); a.textContent = k; b.textContent = v; if (cls) b.className = cls; d.append(a, b); return d; };
@@ -61,10 +63,11 @@
       isi.append(baris('Lokasi', x.client), baris('Bagian', x.bagian_kerja), baris('Anggaran RAB', rp(x.rab)), baris('Total jual', rp(x.total_jual)), baris('Total beli', rp(x.total_beli)), baris('Untung', rp(x.untung), x.untung < 0 ? 'neg' : ''));
       for (const i of x.items || []) { const d = document.createElement('div'); d.className = 'item'; d.textContent = `${i.qty} × ${i.nama}`; isi.append(d); }
       if (x.memo) { const d = document.createElement('div'); d.className = 'item'; d.textContent = 'Catatan: ' + x.memo; isi.append(d); }
+      suratUrl = x.lampiran_url || '';
       if (x.lampiran_url) { const a = document.createElement('a'); a.href = x.lampiran_url; a.textContent = 'Buka surat lengkap'; a.style.cssText = 'display:inline-block;margin-top:8px;font-size:.9rem'; isi.append(a); }
       if (x.saya !== 'menunggu') { $('pesan').innerHTML = `<span class="sukses">${nama} sudah memutuskan: ${x.saya === 'disetujui' ? 'disetujui' : 'ditolak / revisi'}.</span>`; return; }
       $('tolak').href = `revisi.html?id=${encodeURIComponent(id)}&p=${encodeURIComponent(p)}&t=${encodeURIComponent(t)}`;
-      $('tombol').hidden = false;
+      $('tombol').hidden = false; $('catatTtd').hidden = false;
     } catch (e) { $('sub').textContent = ''; $('pesan').innerHTML = '<span class="gagal">Tidak bisa terhubung. Periksa koneksi lalu muat ulang.</span>'; }
   }
   $('setuju').onclick = async () => {
@@ -72,7 +75,10 @@
     try {
       const r = await fetch(`${FN}?id=${encodeURIComponent(id)}&p=${encodeURIComponent(p)}&t=${encodeURIComponent(t)}&a=setuju`, { method: 'POST' });
       const teks = await r.text();
-      if (r.ok) { $('tombol').hidden = true; const s = document.createElement('div'); s.className = 'sukses'; s.textContent = teks; $('pesan').append(s); }
+      if (r.ok) {
+        $('tombol').hidden = true; $('catatTtd').hidden = true; const s = document.createElement('div'); s.className = 'sukses'; s.textContent = teks; $('pesan').append(s);
+        if (suratUrl) { const a = document.createElement('a'); a.href = suratUrl; a.textContent = 'Lihat surat dengan tanda tangan Anda'; a.style.cssText = 'display:inline-block;margin-top:8px;font-size:.92rem'; $('pesan').append(a); }
+      }
       else { const s = document.createElement('span'); s.className = 'gagal'; s.textContent = teks || 'Gagal menyimpan.'; $('pesan').append(s); $('setuju').disabled = false; $('setuju').textContent = 'Ya, setujui'; }
     } catch (e) { $('pesan').innerHTML = '<span class="gagal">Tidak bisa terhubung. Periksa koneksi lalu coba lagi.</span>'; $('setuju').disabled = false; $('setuju').textContent = 'Ya, setujui'; }
   };

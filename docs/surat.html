@@ -18,15 +18,25 @@
   figure { margin:0 0 10px; }
   figcaption { color:var(--redup); font-size:.72rem; padding:6px 14px 3px; }
   /* tiap halaman selebar layar; huruf tajam karena gambar aslinya 1700 px. Cubit untuk memperbesar tetap bisa. */
-  img { display:block; width:100%; height:auto; background:var(--kartu); touch-action:pan-x pan-y pinch-zoom; cursor:zoom-in; }
+  .halaman > img { display:block; width:100%; height:auto; background:var(--kartu); touch-action:pan-x pan-y pinch-zoom; cursor:zoom-in; }
   /* ketuk gambar untuk memperbesar (berguna untuk halaman padat seperti Daftar Harga); geser ke samping untuk membaca, ketuk lagi untuk kembali */
   figure.besar { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  figure.besar img { width:260%; max-width:none; cursor:zoom-out; }
+  figure.besar .halaman { width:260%; max-width:none; }
+  figure.besar .halaman > img { cursor:zoom-out; }
   .info { padding:30px 16px; text-align:center; color:var(--redup); }
+  /* tanda tangan digital pimpinan ditempel di atas halaman (posisi = pecahan lebar/tinggi halaman, jadi ikut membesar saat dicubit) */
+  .halaman { position:relative; }
+  .ttd { position:absolute; transform:translateX(-50%); pointer-events:none; text-align:center; }
+  .ttd img { display:block; width:100%; height:100%; object-fit:contain; background:none; }
+  .ttd-ket { position:absolute; transform:translateX(-50%); white-space:nowrap; text-align:center; color:#555; font-family:Arial, sans-serif; line-height:1.15; pointer-events:none; }
+  #aksi { padding:8px 14px 0; }
+  #aksi button { padding:9px 14px; border-radius:10px; border:1px solid rgba(128,128,128,.4); background:transparent; color:inherit; font:inherit; font-size:.85rem; cursor:pointer; }
+  #aksi button:disabled { opacity:.6; cursor:default; }
 </style>
 </head>
 <body>
 <header><b id="judul">Surat permintaan</b><span id="sub">Memuat…</span></header>
+<div id="aksi" hidden><button id="unduh" type="button">Unduh PDF bertanda tangan</button> <span id="infoTtd" style="color:var(--redup);font-size:.78rem"></span></div>
 <main id="isi"></main>
 <script>
   // Alamat berkas di Supabase Storage (bucket publik, nama folder acak). Parameter: f = folder, n = jumlah halaman, j = judul.
@@ -40,15 +50,68 @@
   } else {
     if (j) { document.getElementById('judul').textContent = j; document.title = j; }
     document.getElementById('sub').textContent = `${n} halaman · ketuk halaman untuk memperbesar`;
+    const figs = [];
     for (let i = 1; i <= n; i++) {
-      const fig = document.createElement('figure'), cap = document.createElement('figcaption'), img = new Image();
-      cap.textContent = `Halaman ${i} dari ${n}`;
-      img.alt = `Halaman ${i} dari ${n}`; img.decoding = 'async'; if (i > 2) img.loading = 'lazy';
+      const fig = document.createElement('figure'), cap = document.createElement('figcaption'), bungkus = document.createElement('div'), img = new Image();
+      cap.textContent = `Halaman ${i} dari ${n}`; bungkus.className = 'halaman';
+      img.alt = `Halaman ${i} dari ${n}`; img.decoding = 'async'; img.crossOrigin = 'anonymous'; if (i > 2) img.loading = 'lazy';
       img.src = `${BASE}${f}/${String(i).padStart(2, '0')}.jpg`;
-      img.onerror = () => { fig.innerHTML = `<div class="info">Halaman ${i} tidak dapat dimuat.</div>`; };
+      // bila server tidak mengizinkan CORS, tampilkan tetap tanpa mode anonim (hanya unduh PDF bertanda tangan yang butuh CORS)
+      img.onerror = () => { if (img.crossOrigin) { img.crossOrigin = null; img.src = img.src; return; } fig.innerHTML = `<div class="info">Halaman ${i} tidak dapat dimuat.</div>`; };
       img.onclick = () => fig.classList.toggle('besar');
-      fig.append(cap, img); isi.append(fig);
+      bungkus.append(img); fig.append(cap, bungkus); isi.append(fig); figs.push({ bungkus, img });
     }
+    // tanda tangan digital pimpinan yang sudah menyetujui (gambar tanda tangan hanya diberikan server setelah ia menekan Setujui)
+    const FN = 'https://vqcusagijiavaoljfrib.supabase.co/functions/v1/ttd-surat';
+    const tgl = w => new Date(w).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).replace(/\./g, ':');
+    let data = null;
+    fetch(`${FN}?f=${f}`).then(r => r.ok ? r.json() : null).then(d => {
+      if (!d) return; data = d;
+      const sudah = Object.keys(d.ttd);
+      for (const t of d.pos) {
+        const a = d.ttd[t.p], fg = figs[t.hal - 1]; if (!a || !fg) continue;
+        const gb = document.createElement('div'), im = new Image(), ket = document.createElement('div');
+        gb.className = 'ttd'; gb.style.cssText = `left:${t.x * 100}%;top:${t.y * 100}%;width:${t.w * 100}%;height:${t.h * 100}%`;
+        im.src = a.gambar; im.alt = 'Tanda tangan ' + a.nama; gb.append(im);
+        ket.className = 'ttd-ket'; ket.style.cssText = `left:${t.x * 100}%;top:${t.cy * 100}%;font-size:${t.fs * 100}cqw`;
+        ket.innerHTML = `Disetujui digital<br>${tgl(a.waktu)} WIB · ${a.kode}`;
+        fg.bungkus.append(gb, ket);
+      }
+      // ukuran huruf keterangan mengikuti lebar halaman
+      figs.forEach(({ bungkus }) => { bungkus.style.containerType = 'inline-size'; });
+      // PDF bertanda tangan hanya tersedia setelah kedua pimpinan menyetujui
+      if (sudah.length) {
+        document.getElementById('aksi').hidden = false;
+        document.getElementById('unduh').hidden = sudah.length < 2;
+        document.getElementById('infoTtd').textContent = sudah.length === 2 ? 'Disetujui kedua pimpinan.' : 'Baru satu pimpinan yang menyetujui; PDF bertanda tangan tersedia setelah keduanya setuju.';
+      }
+    }).catch(() => {});
+    // PDF bertanda tangan: tiap halaman digambar ulang di kanvas (gambar surat + tanda tangan) lalu disusun jadi PDF A4
+    document.getElementById('unduh').onclick = async e => {
+      const tb = e.currentTarget, awal = tb.textContent; tb.disabled = true; tb.textContent = 'Menyiapkan PDF…';
+      try {
+        if (!window.jspdf) await new Promise((ok, gagal) => { const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'; sc.onload = ok; sc.onerror = () => gagal(new Error('Pustaka PDF gagal dimuat')); document.head.appendChild(sc); });
+        const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' }), PW = 595.28, PH = 841.89;
+        const muat = src => new Promise((ok, gagal) => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => ok(im); im.onerror = () => gagal(new Error('Gambar tidak termuat')); im.src = src; });
+        const ttdImg = {}; for (const p of Object.keys(data.ttd)) ttdImg[p] = await muat(data.ttd[p].gambar);
+        for (let i = 1; i <= n; i++) {
+          const im = await muat(`${BASE}${f}/${String(i).padStart(2, '0')}.jpg`), cv = document.createElement('canvas'); cv.width = im.naturalWidth; cv.height = im.naturalHeight;
+          const cx = cv.getContext('2d'); cx.drawImage(im, 0, 0); const sk = cv.width / PW;
+          for (const t of data.pos) {
+            if (t.hal !== i || !data.ttd[t.p]) continue;
+            const g = ttdImg[t.p], bw = t.w * cv.width, bh = t.h * cv.height, r = Math.min(bw / g.naturalWidth, bh / g.naturalHeight), w = g.naturalWidth * r, h = g.naturalHeight * r;
+            cx.drawImage(g, t.x * cv.width - w / 2, t.y * cv.height + (bh - h) / 2, w, h);
+            cx.fillStyle = '#555'; cx.font = `${t.fs * cv.width}px Arial`; cx.textAlign = 'center'; cx.textBaseline = 'top';
+            cx.fillText('Disetujui digital', t.x * cv.width, t.cy * cv.height);
+            cx.fillText(`${tgl(data.ttd[t.p].waktu)} WIB · ${data.ttd[t.p].kode}`, t.x * cv.width, t.cy * cv.height + t.fs * cv.width * 1.15);
+          }
+          if (i > 1) doc.addPage();
+          doc.addImage(cv.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, PW, cv.height / sk);
+        }
+        doc.save(`${(j || 'surat').replace(/[^\w\- ]+/g, '').trim() || 'surat'} - bertanda tangan.pdf`);
+      } catch (err) { alert('Gagal membuat PDF: ' + err.message); }
+      tb.disabled = false; tb.textContent = awal;
+    };
   }
 </script>
 </body>

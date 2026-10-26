@@ -261,6 +261,12 @@ Deno.serve(async (req) => {
   const WEB = Deno.env.get('WEB_URL') ?? 'https://izzarsohib-spec.github.io/ukuran-karyawan';
   const urlSurat = `${WEB}/surat.html?f=${folder}&n=${gambar.length}&j=${encodeURIComponent(`${prog.client} - ${bagian}`)}`;
   await db.from('permintaan').update({ lampiran_url: urlSurat }).eq('id', baru.id);
+  // posisi kolom tanda tangan pimpinan pada halaman surat (pecahan 0-1), untuk tanda tangan digital di surat.html
+  const pecah = (v: unknown) => { const n = Number(v); return Number.isFinite(n) && n >= 0 && n <= 1 ? n : null; };
+  const ttdPos = (Array.isArray(body?.ttd_pos) ? body.ttd_pos : []).slice(0, 12).map((t: any) => ({
+    hal: Math.floor(Number(t?.hal)), p: String(t?.p), x: pecah(t?.x), y: pecah(t?.y), w: pecah(t?.w), h: pecah(t?.h), cy: pecah(t?.cy), fs: pecah(t?.fs),
+  })).filter((t: any) => (t.p === 'yasir' || t.p === 'ferry') && t.hal >= 1 && t.hal <= gambar.length && [t.x, t.y, t.w, t.h, t.cy, t.fs].every((v) => v !== null));
+  if (ttdPos.length) await db.from('permintaan').update({ ttd_pos: ttdPos }).eq('id', baru.id);
 
   const hasil = await kirimNotif({ id: baru.id, client: prog.client, bagian, target: prog.target, rab, terpakai, tJual, sisa, tBeli, untung, catatan, baris, urlSurat, token }, PIMPINAN.map((p) => p.kunci));
   const ok = (k: string) => sukses(hasil, k);

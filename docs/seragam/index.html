@@ -231,6 +231,10 @@
   .vi .r { text-align:right; flex:none; } .vi b { font-size:.84rem; } .vtab { max-height:300px; }
   #lAkt { grid-template-columns:repeat(auto-fit,minmax(min(100%,540px),1fr)); } #lAkt .vtab { max-height:none; } #lAkt .vc table td, #lAkt .vc table th { padding:7px 10px; }
   #vTip { position:fixed; z-index:80; pointer-events:none; background:#26262b; border:1px solid var(--stroke); border-radius:12px; padding:8px 10px; font-size:.78rem; min-width:130px; max-width:280px; box-shadow:0 8px 24px rgba(0,0,0,.45); }
+  #toastBox { position:fixed; top:14px; right:14px; z-index:90; display:flex; flex-direction:column; gap:8px; width:min(360px, calc(100vw - 28px)); }
+  .toast { position:relative; cursor:pointer; background:#26262b; border:1px solid var(--stroke); border-left:4px solid var(--muted); border-radius:14px; padding:10px 34px 10px 14px; box-shadow:0 8px 24px rgba(0,0,0,.45); display:flex; flex-direction:column; gap:2px; font-size:.84rem; }
+  .toast.ok { border-left-color:#7fd957; } .toast.bad { border-left-color:#ff8a80; } .toast span { color:var(--muted); white-space:pre-line; }
+  .toast button { position:absolute; top:6px; right:8px; border:0; background:none; color:var(--muted); font-size:1.1rem; cursor:pointer; }
   #vTip[hidden] { display:none; } #vTip .tj { color:var(--muted); margin-bottom:4px; } #vTip .tr { display:flex; align-items:center; gap:6px; } #vTip .tr i { width:12px; height:3px; border-radius:2px; flex:none; }
   #vTip .tr b { font-size:.9rem; } #vTip .tr span { color:var(--muted); } #vTip .tk { color:var(--muted); margin-top:4px; }
   .stkode { display:flex; gap:8px; max-width:340px; } .stkode input { margin-top:0 !important; }
@@ -1544,10 +1548,15 @@
         headStyles: { fontStyle: 'bold', halign: 'center', fillColor: false }, ...opsi });
       y = doc.lastAutoTable.finalY;
     };
+    // posisi kolom tanda tangan Direktur (yasir) dan Direktur Utama (ferry), sebagai pecahan halaman (0-1). Dikirim bersama permintaan
+    // supaya surat.html bisa menempelkan tanda tangan digital pimpinan yang sudah menyetujui tepat di kolomnya.
+    const posTtd = {}, PH = 841.89;
     const tandaTangan = (kolom, yy) => {
       huruf('normal', 10.5);
       kolom.forEach(k => doc.text(k.label, k.x, yy, { align: 'center' }));
       kolom.forEach(k => {
+        const p = k.ttd === TTD.dir ? 'yasir' : k.ttd === TTD.dirut ? 'ferry' : null, hal = doc.internal.getCurrentPageInfo().pageNumber;
+        if (p) posTtd[hal + '|' + p] = { hal, p, x: +(k.x / PW).toFixed(4), y: +((yy + 8 * K) / PH).toFixed(4), w: +(110 / PW).toFixed(4), h: +(46 * K / PH).toFixed(4), cy: +((yy + 81 * K) / PH).toFixed(4), fs: +(6.5 * K / PW).toFixed(5) };
         huruf('bold', 10.5); doc.text(k.ttd[0], k.x, yy + 58 * K, { align: 'center' });
         const w = doc.getTextWidth(k.ttd[0]); doc.setLineWidth(0.6); doc.setDrawColor(0, 0, 0); doc.line(k.x - w / 2, yy + 60 * K, k.x + w / 2, yy + 60 * K);
         huruf('bold', 8.5); doc.setTextColor(153, 153, 153); doc.text(k.ttd[1], k.x, yy + 72 * K, { align: 'center' }); huruf();
@@ -1649,8 +1658,9 @@
           ['TOTAL BELI', rpPdf(beli)], ['UNTUNG (SISA + JUAL - BELI)', { content: min(untung), styles: { fontStyle: 'bold' } }]] });
       y = yT + 14 * K;
       const xc = M + TW * 0.68; huruf('normal', 9); doc.text(`Semarang, ${tglPanjang}`, xc, y, { align: 'center' });
-      huruf('bold', 9); doc.text(TTD.dir[0], xc, y + 34 * K, { align: 'center' }); huruf('normal', 9); doc.text('Direktur', xc, y + 44 * K, { align: 'center' }); huruf();
-      if (y + 50 * K > 832) doc.addPage(); // tanda meluber -> ulangi dengan skala lebih kecil
+      huruf('bold', 9); doc.text(TTD.dir[0], xc, y + 52 * K, { align: 'center' }); huruf('normal', 9); doc.text('Direktur', xc, y + 62 * K, { align: 'center' }); huruf();
+      { const hal = doc.internal.getCurrentPageInfo().pageNumber; posTtd[hal + '|yasir'] = { hal, p: 'yasir', x: +(xc / PW).toFixed(4), y: +((y + 6 * K) / PH).toFixed(4), w: +(110 / PW).toFixed(4), h: +(40 * K / PH).toFixed(4), cy: +((y + 70 * K) / PH).toFixed(4), fs: +(6.5 * K / PW).toFixed(5) }; }
+      if (y + 82 * K > 832) doc.addPage(); // tanda meluber -> ulangi dengan skala lebih kecil
     }, false);
 
     // ===== Halaman 4..n: LAMPIRAN DATA UKURAN SERAGAM (hasil isian Google Form untuk lokasi + bagian ini; boleh beberapa halaman) =====
@@ -1698,9 +1708,11 @@
         body: [['Anggaran (RAB) bagian ini', rpPdf(rab)], ...(lalu.t ? [['Sudah terpakai dari RAB (' + lalu.n + ' permintaan sebelumnya)', rpPdf(lalu.t)]] : []), ['Total penjualan (harga jual)', rpPdf(jual)], ['Sisa RAB', (sisa < 0 ? '-' : '') + rpPdf(Math.abs(sisa))], ['Total belanja (harga beli)', rpPdf(beli)], ['Untung (sisa RAB + jual - beli)', (sisa + jual - beli < 0 ? '-' : '') + rpPdf(Math.abs(sisa + jual - beli))]].map(r => [r[0], { content: r[1], styles: { halign: 'right' } }]),
         columnStyles: { 1: { cellWidth: 140 } } });
     }
+    ttdPosTerakhir = Object.values(posTtd);
     if (rb) return await gabungPdf(doc.output('arraybuffer'), rb.buf);
     return doc.output('datauristring').split(',')[1];
   }
+  let ttdPosTerakhir = [], ttdSiap = [];
   // ---- arsip ke Google Drive (fungsi server arsip-drive -> Apps Script milik PIC). Gagal mengarsip tidak pernah membatalkan proses utama ----
   async function arsipDrive(jenis, id, pdf) {
     const r = await fetch(`${SUPABASE_URL}/functions/v1/arsip-drive`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ jenis, id, pdf }) });
@@ -1718,9 +1730,10 @@
     try {
       await Masuk.wajib(); // mengirim permintaan ke pimpinan hanya untuk admin yang login
       const halaman = halamanSiap || (await pdfKeHalaman(await siapkanPdf(d))).b64s;
+      const ttd_pos = halamanSiap ? ttdSiap : ttdPosTerakhir;
       const r = await fetch(`${SUPABASE_URL}/functions/v1/kirim-permintaan`, {
         method: 'POST', headers: { ...H, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lokasi_form: d.l.lokasi, bagian: d.bag, items: d.isi.map(x => ({ no: x.h.no, qty: x.q })), ploting: d.rincian, memo: memoMinta(), halaman, ...lanjut })
+        body: JSON.stringify({ lokasi_form: d.l.lokasi, bagian: d.bag, items: d.isi.map(x => ({ no: x.h.no, qty: x.q })), ploting: d.rincian, memo: memoMinta(), halaman, ttd_pos, ...lanjut })
       });
       const j = await r.json().catch(() => ({}));
       if (r.status === 409 && j.perlu_konfirmasi) { // melebihi target/RAB: tanya, lalu kirim ulang bila admin yakin
@@ -1785,21 +1798,72 @@ Alasan (boleh kosong):`); if (alasan === null) return;
   const rpMin = n => (n < 0 ? '-' : '') + rp(Math.abs(n));
   const lokMinta = () => anggaran ? lokasi.filter(l => anggaran.peta.has(l.lokasi)) : lokasi;
 
-  async function muatStatus() {
+  // senyap = muat ulang otomatis di latar (realtime/berkala): bila gagal, data yang sudah tampil dibiarkan, tidak dikosongkan
+  async function muatStatus(senyap) {
     await Saring.siap;
     try {
       const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/daftar_permintaan`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: '{}' });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       daftarMinta = (await r.json()).filter(p => Saring.boleh(p.lokasi_form)); statusMuat = true;
+      cekKeputusan();
       try { peralatanDiSeragam = new Map((await rpc('peralatan_terpakai_seragam', {})).map(x => [x.lokasi_form + '' + x.bagian_kerja, Number(x.jual)])); } catch (e) { peralatanDiSeragam = new Map(); }
       try { cakupan = new Map((await rpc('cakupan_permintaan', {})).map(x => [x.lokasi_form + '|' + x.bagian_kerja, x.penerima])); } catch (e) { cakupan = new Map(); }
-    } catch (e) { daftarMinta = []; susunStatus(); renderDaftarMinta(); $('infoMinta').textContent = 'Gagal memuat status: ' + e.message; return; }
+    } catch (e) { if (senyap === true && statusMuat) return; daftarMinta = []; susunStatus(); renderDaftarMinta(); $('infoMinta').textContent = 'Gagal memuat status: ' + e.message; return; }
     susunStatus(); renderDaftarMinta(); renderPlotList(); renderKirimList(); renderTagihanList(); renderRingkasan(); renderDetail(); renderRekapPage(); renderPoVendor();
   }
   function susunStatus() { // daftar sudah urut terbaru dulu, jadi yang pertama per bagian adalah permintaan terakhir
     terbaru = new Map();
     for (const p of daftarMinta) { const k = p.lokasi_form + '|' + p.bagian_kerja; if (!terbaru.has(k)) terbaru.set(k, p); }
   }
+  // ---- REALTIME + NOTIFIKASI KEPUTUSAN PIMPINAN ----
+  // Database menyiarkan sinyal ringan ({id, aksi}) ke saluran publik "permintaan-seragam" tiap permintaan dibuat/berubah (trigger di migrasi-realtime.sql).
+  // Halaman mendengarkan lewat WebSocket Supabase Realtime, lalu memuat ulang data lewat daftar_permintaan (tanpa refresh manual).
+  // Tiap keputusan baru (disetujui/ditolak) dibandingkan dengan keadaan sebelumnya dan ditampilkan sebagai notifikasi.
+  let putusanSebelum = null; // id permintaan -> 'status_yasir|status_ferry'
+  function cekKeputusan() {
+    const kini = new Map(daftarMinta.map(p => [p.id, String(stYasir(p) || 'menunggu') + '|' + String(stFerry(p) || 'menunggu')]));
+    if (putusanSebelum) for (const p of daftarMinta) {
+      if (!putusanSebelum.has(p.id)) continue; // baru terlihat (mis. karena filter berubah): bukan keputusan baru
+      const [ya, fa] = putusanSebelum.get(p.id).split('|'), [yb, fb] = kini.get(p.id).split('|'), tujuan = `${p.client} · ${String(p.bagian_kerja).split(' (')[0]}`;
+      for (const [nama, a, b, alasan] of [['Pak Yasir', ya, yb, p.alasan_yasir], ['Pak Ferry', fa, fb, p.alasan_ferry]]) {
+        if (a === b) continue;
+        if (b === 'disetujui') beritahu(`${nama} menyetujui permintaan`, tujuan, 'ok');
+        else if (b === 'ditolak') beritahu(`${nama} menolak / meminta revisi`, tujuan + (alasan ? `\nAlasan: ${alasan}` : ''), 'bad');
+      }
+      if (ya === 'disetujui' && fa === 'disetujui') continue;
+      if (yb === 'disetujui' && fb === 'disetujui') beritahu('Permintaan disetujui kedua pimpinan', tujuan + '\nSiap diploting dan dikirim.', 'ok');
+    }
+    putusanSebelum = kini;
+  }
+  // di dalam portal: kirim ke portal supaya tampil walau yang sedang dibuka modul lain; berdiri sendiri: tampil di halaman ini
+  function beritahu(judul, teks, jenis) {
+    if (window.parent !== window) { try { parent.postMessage({ tipe: 'notifikasi', judul, teks, jenis, modul: 'seragam', pg: 'monitor' }, location.origin); return; } catch (e) { /* tampil lokal */ } }
+    tampilToast(judul, teks, jenis);
+  }
+  function tampilToast(judul, teks, jenis) {
+    let kotak = document.getElementById('toastBox');
+    if (!kotak) { kotak = document.createElement('div'); kotak.id = 'toastBox'; kotak.setAttribute('role', 'status'); kotak.setAttribute('aria-live', 'polite'); document.body.appendChild(kotak); }
+    const t = document.createElement('div'); t.className = 'toast ' + (jenis || ''); t.tabIndex = 0;
+    const h = document.createElement('b'); h.textContent = judul; const p = document.createElement('span'); p.textContent = teks;
+    const x = document.createElement('button'); x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', 'Tutup'); x.onclick = e => { e.stopPropagation(); t.remove(); };
+    t.append(h, p, x); t.onclick = () => { try { tampil('monitor'); } catch (e) { /* abaikan */ } t.remove(); };
+    kotak.prepend(t); while (kotak.children.length > 5) kotak.lastChild.remove(); setTimeout(() => t.remove(), 20000);
+  }
+  (function realtimeStatus() {
+    let ws, hb, tunda, coba = 0, ref = 0;
+    const kirim = (event, payload, topic = 'realtime:permintaan-seragam') => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ topic, event, payload, ref: String(++ref) })); };
+    const muatUlang = () => { clearTimeout(tunda); tunda = setTimeout(() => muatStatus(true), 700); };
+    function sambung() {
+      try { ws = new WebSocket(SUPABASE_URL.replace(/^http/, 'ws') + '/realtime/v1/websocket?apikey=' + SUPABASE_ANON_KEY + '&vsn=1.0.0'); } catch (e) { return; }
+      ws.onopen = () => { coba = 0; kirim('phx_join', { config: { broadcast: { self: false }, presence: { key: '' }, postgres_changes: [], private: false }, access_token: SUPABASE_ANON_KEY }); hb = setInterval(() => kirim('heartbeat', {}, 'phoenix'), 25000); };
+      ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; } if (m.event === 'broadcast' && m.payload && m.payload.event === 'berubah') muatUlang(); };
+      ws.onclose = () => { clearInterval(hb); setTimeout(sambung, Math.min(30000, 1000 * 2 ** coba++)); muatUlang(); }; // sambung ulang bertahap; muat ulang untuk mengejar yang terlewat
+    }
+    sambung();
+    // jaring pengaman bila sambungan realtime tertahan (jaringan kantor/proxy): muat ulang tiap 2 menit dan saat tab dibuka lagi
+    setInterval(() => { if (!document.hidden && statusMuat) muatStatus(true); }, 120000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && statusMuat) muatStatus(true); });
+  })();
   function infoLok(l) {
     const per = l.bagian.map(b => terbaru.get(l.lokasi + '|' + b.nama)), ada = per.filter(Boolean);
     const sr = ada.map(stReq), tunda = sr.filter(x => x !== 'disetujui');
@@ -1889,7 +1953,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     const d = ambilIsian(); if (!d) return;
     const btn = $('mPreview'), st = $('mStatus'); btn.disabled = true; btn.textContent = 'Menyiapkan preview…'; st.style.color = ''; st.textContent = '';
     try {
-      const g = await pdfKeHalaman(await siapkanPdf(d));
+      const g = await pdfKeHalaman(await siapkanPdf(d)); ttdSiap = ttdPosTerakhir;
       pvUrls.forEach(u => URL.revokeObjectURL(u)); pvUrls = g.blobs.map(b => URL.createObjectURL(b)); pvData = { d, halaman: g.b64s };
       $('pvJudul').textContent = `${d.l.client} · ${d.bag}`; $('pvInfo').textContent = `Surat yang akan dikirim · ${g.halaman} halaman · ${g.px} px per halaman · ${g.mb.toFixed(1).replace('.', ',')} MB`;
       $('pvHalaman').innerHTML = pvUrls.map((u, i) => `<img src="${u}" alt="Halaman ${i + 1} dari ${pvUrls.length}">`).join('');

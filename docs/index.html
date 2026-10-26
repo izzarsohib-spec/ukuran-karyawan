@@ -101,6 +101,10 @@
     .beranda { padding:24px 16px 36px; }
   }
   @media (prefers-reduced-motion: reduce) { .kartu { transition:none; } .kartu:hover { transform:none; } }
+  #toastBox { position:fixed; top:64px; right:16px; z-index:90; display:flex; flex-direction:column; gap:8px; width:min(360px, calc(100vw - 32px)); }
+  .toast { position:relative; cursor:pointer; background:#26262b; border:1px solid var(--stroke); border-left:4px solid var(--muted); border-radius:14px; padding:10px 34px 10px 14px; box-shadow:0 8px 24px rgba(0,0,0,.45); display:flex; flex-direction:column; gap:2px; font-size:.84rem; color:var(--text); }
+  .toast.ok { border-left-color:#7fd957; } .toast.bad { border-left-color:#ff8a80; } .toast span { color:var(--muted); white-space:pre-line; }
+  .toast button { position:absolute; top:6px; right:8px; border:0; background:none; color:var(--muted); font-size:1.1rem; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -198,7 +202,21 @@
   document.addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (b && !b.disabled) buka(b.dataset.p, b.dataset.s); });
   window.addEventListener('hashchange', dariHash);
   // modul memberi tahu portal saat halamannya berpindah dari dalam (mis. tombol "Lihat yang kurang"), supaya sorotan menu ikut
+  // notifikasi dari modul (mis. keputusan pimpinan atas permintaan): tampil di portal walau yang terbuka modul lain; diketuk -> buka halamannya
+  const judulAsli = document.title; let belumDibaca = 0;
+  function toast(d) {
+    let kotak = document.getElementById('toastBox');
+    if (!kotak) { kotak = document.createElement('div'); kotak.id = 'toastBox'; kotak.setAttribute('role', 'status'); kotak.setAttribute('aria-live', 'polite'); document.body.appendChild(kotak); }
+    const t = document.createElement('div'); t.className = 'toast ' + (d.jenis === 'ok' || d.jenis === 'bad' ? d.jenis : ''); t.tabIndex = 0;
+    const h = document.createElement('b'); h.textContent = String(d.judul || ''); const p = document.createElement('span'); p.textContent = String(d.teks || '');
+    const x = document.createElement('button'); x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', 'Tutup'); x.onclick = ev => { ev.stopPropagation(); t.remove(); };
+    t.append(h, p, x); t.onclick = () => { if (MENU[d.modul]) buka(d.modul, d.pg); t.remove(); };
+    kotak.prepend(t); while (kotak.children.length > 5) kotak.lastChild.remove(); setTimeout(() => t.remove(), 20000);
+    if (document.hidden) { belumDibaca++; document.title = '(' + belumDibaca + ') ' + judulAsli; }
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { belumDibaca = 0; document.title = judulAsli; } });
   window.addEventListener('message', e => {
+    if (e.origin === location.origin && e.data && e.data.tipe === 'notifikasi') return toast(e.data);
     const d = e.data; if (e.origin !== location.origin || !d || d.tipe !== 'halaman' || !MENU[d.modul] || !MENU[d.modul].some(x => x[0] === d.pg)) return;
     subAktif[d.modul] = d.pg; if (aktif === d.modul) tandai();
   });
