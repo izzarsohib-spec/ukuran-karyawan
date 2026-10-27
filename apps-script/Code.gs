@@ -3,7 +3,7 @@
 var SPREADSHEET_ID = '1UMLvjFVYAJrsQh_6k8WU0B1c03lJQdstkJsV4GmCVSE';
 var BATCH = 500;
 
-var REGISTRI_ID = ''; // spreadsheet "REGISTRI TANGGAPAN FORM" (dibuat oleh skrip arsip Drive saat membuat form per lokasi); kosong = dilewati
+var REGISTRI_ID = '1y1c7fUJ0gHcCNYPVqz-tHqB7y_y75SGnPBYjSCUHhNU'; // spreadsheet "REGISTRI TANGGAPAN FORM" (dibuat oleh skrip arsip Drive saat membuat form per lokasi); kosong = dilewati
 var BATAS_REGISTRI_MS = 4 * 60 * 1000;
 
 // Membaca satu tab jawaban Form dan menambahkannya ke rows. awalan = awal kunci unik; lokasiCadangan dipakai bila kolom LOKASI kosong.
@@ -12,7 +12,7 @@ function kumpul_(sh, awalan, lokasiCadangan, sumberTab, rows) {
   if (v.length < 2) return;
   var h = v[0].map(function (x) { return String(x).trim().toUpperCase(); });
   var i = {
-    waktu: h.indexOf('TIMESTAMP'),
+    waktu: Math.max(h.indexOf('TIMESTAMP'), h.indexOf('CAP WAKTU')), // form berbahasa Indonesia memakai "Cap waktu"
     bagian: h.indexOf('BAGIAN KERJA'),
     nama: h.indexOf('NAMA LENGKAP'),
     lokasi: h.indexOf('LOKASI'),
