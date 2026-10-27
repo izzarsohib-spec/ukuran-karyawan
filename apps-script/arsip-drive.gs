@@ -141,6 +141,7 @@ function aksiFolder_(d) {
     var file = DriveApp.getFolderById(tujuan).createFile(Utilities.newBlob(Utilities.base64Decode(d.isi), d.mime || 'application/octet-stream', nama));
     return jawab_({ ok: true, id: file.getId(), nama: nama, url: file.getUrl() });
   }
+  if (aksi === 'buatForm') return jawab_(buatFormLokasi_(d));
   if (aksi === 'buangForm') {
     // satu-satunya aksi yang menghapus, dan sangat dibatasi: hanya Google Form, hanya di dalam folder utama, hanya ke Sampah (bisa dipulihkan 30 hari),
     // dan hanya untuk id yang disebut satu per satu serta kata konfirmasi. Tidak ada penghapusan permanen.
@@ -157,6 +158,71 @@ function aksiFolder_(d) {
     return jawab_({ ok: true, hasil: hasil });
   }
   return jawab_({ ok: false, error: 'aksi tidak dikenal' });
+}
+
+// ---- Membuat Google Form pendataan ukuran dari form template, di dalam folder lokasinya ----
+// POST: { token, aksi: 'buatForm', lokasi, folderId, judul?, bagian?: [..], templateId? } -> membuat SATU form (dilewati bila sudah ada form bernama sama di folder itu).
+// Form: wajib login Google + email terverifikasi, batas 1 tanggapan per akun, tidak bisa diedit sendiri; LOKASI pilihan tunggal;
+// BAGIAN KERJA dibatasi pada `bagian` bila diberikan; NAMA LENGKAP wajib huruf. Tanggapan masuk ke spreadsheet data (tab baru).
+var NAMA_TEMPLATE = 'Template Form Pengisian Data Seragam Karyawan';
+var SPREADSHEET_DATA_ID = '1UMLvjFVYAJrsQh_6k8WU0B1c03lJQdstkJsV4GmCVSE';
+var DESKRIPSI_FORM = [
+  'MOHON DIBACA DAN DICERMATI DENGAN TELITI!',
+  '',
+  'Formulir ini digunakan untuk pendataan ukuran seragam dan sepatu karyawan di lokasi {LOKASI} untuk tahun 2027. Tujuan pendataan ini adalah mengumpulkan data ukuran yang pasti sejak awal, supaya saat tahun 2027 berjalan, pemesanan dan pengiriman seragam bisa dilakukan secepat mungkin. Mohon perhatikan hal berikut:',
+  '',
+  '1. Tulis nama lengkap sesuai KTP.',
+  '2. Lihat tabel ukuran terlebih dahulu, lalu pilih ukuran sesuai ukuran badan Anda yang sebenarnya.',
+  '3. Ukuran yang Anda kirim dianggap FINAL dan menjadi dasar pemesanan. Mohon isi dengan teliti dan jangan asal memilih.',
+  '4. Formulir ini hanya bisa diisi SATU KALI per akun Google. Jika terjadi kesalahan pengisian atau ada perubahan data, segera hubungi admin, jangan mengisi ulang.',
+  '5. Pengisian formulir ini bukan jaminan pemberian seragam. Jenis dan jumlah seragam (baju, celana, sepatu, dan jumlah stel) menyesuaikan ketentuan kontrak dan anggaran masing-masing lokasi, sehingga bisa berbeda antar lokasi.',
+  '',
+  'Terima kasih atas kerja samanya.'
+].join('\n');
+
+function idTemplate_(d) {
+  if (d && d.templateId) return d.templateId;
+  var tersimpan = PropertiesService.getScriptProperties().getProperty('TEMPLATE_ID');
+  if (tersimpan) return tersimpan;
+  var it = DriveApp.getFilesByName(NAMA_TEMPLATE);
+  while (it.hasNext()) { var f = it.next(); if (f.getMimeType() === 'application/vnd.google-apps.form' && !f.isTrashed()) { PropertiesService.getScriptProperties().setProperty('TEMPLATE_ID', f.getId()); return f.getId(); } }
+  throw new Error('Form template "' + NAMA_TEMPLATE + '" tidak ditemukan di Drive akun ini');
+}
+function buatFormLokasi_(d) {
+  try {
+    if (!d.lokasi || !d.folderId) return { ok: false, error: 'lokasi dan folderId wajib' };
+    if (!dalamPohon_(d.folderId)) return { ok: false, error: 'di luar folder utama' };
+    var judul = String(d.judul || ('DATA SERAGAM ' + d.lokasi)).replace(/\s+/g, ' ').trim();
+    var ada = Drive.Files.list({ q: "'" + d.folderId + "' in parents and trashed = false and mimeType = 'application/vnd.google-apps.form' and name = '" + q_(judul) + "'", fields: 'files(id)', supportsAllDrives: true, includeItemsFromAllDrives: true });
+    if (ada.files && ada.files.length) return { ok: true, dilewati: true, id: ada.files[0].id };
+    var salinan = DriveApp.getFileById(idTemplate_(d)).makeCopy(judul, DriveApp.getFolderById(d.folderId));
+    var form = FormApp.openById(salinan.getId());
+    form.setTitle('Form Pengisian Data Seragam Karyawan - ' + d.lokasi);
+    form.setDescription(DESKRIPSI_FORM.replace(/\{LOKASI\}/g, d.lokasi));
+    if (FormApp.EmailCollectionType) form.setEmailCollectionType(FormApp.EmailCollectionType.VERIFIED); else form.setCollectEmail(true);
+    form.setLimitOneResponsePerUser(true);
+    form.setAllowResponseEdits(false);
+    form.setShowLinkToRespondAgain(false);
+    form.setConfirmationMessage('Terima kasih, data ukuran Anda sudah tercatat. Jika ada kesalahan atau perubahan, hubungi admin.');
+    form.setAcceptingResponses(true);
+    var items = form.getItems(), pilihan = null;
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i], jd = String(it.getTitle()).trim().toUpperCase(), tp = it.getType();
+      if (jd === 'LOKASI' && tp === FormApp.ItemType.TEXT) {
+        var idx = it.getIndex(); form.deleteItem(idx);
+        pilihan = form.addListItem().setTitle('LOKASI').setHelpText('Lokasi sudah ditentukan untuk formulir ini.').setChoiceValues([d.lokasi]).setRequired(true);
+        form.moveItem(pilihan.getIndex(), idx);
+      } else if (jd === 'BAGIAN KERJA' && tp === FormApp.ItemType.MULTIPLE_CHOICE && d.bagian && d.bagian.length) {
+        it.asMultipleChoiceItem().setChoiceValues(d.bagian);
+      } else if (jd === 'NAMA LENGKAP' && tp === FormApp.ItemType.TEXT) {
+        var cek = FormApp.createTextValidation().setHelpText('Tulis nama lengkap sesuai KTP, hanya huruf (minimal 3 karakter).').requireTextMatchesPattern("^[A-Za-z][A-Za-z .,'-]{2,}$").build();
+        it.asTextItem().setHelpText('Sesuai KTP, tanpa singkatan atau nama panggilan.').setValidation(cek).setRequired(true);
+      }
+    }
+    form.setDestination(FormApp.DestinationType.SPREADSHEET, SPREADSHEET_DATA_ID);
+    var isi = pilihan ? form.createResponse().withItemResponse(pilihan.createResponse(d.lokasi)).toPrefilledUrl() : form.getPublishedUrl();
+    return { ok: true, id: form.getId(), isi: isi, edit: form.getEditUrl(), nama: judul };
+  } catch (err) { return { ok: false, error: String(err) }; }
 }
 
 // Jalankan SEKALI dari editor (tombol Run) untuk memberi izin akses Drive. Pastikan layanan "Drive API" sudah ditambahkan (Layanan > +).
