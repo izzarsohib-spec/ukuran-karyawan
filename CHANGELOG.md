@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 27 Okt 2026
+- **v1.137** Portal: modul (Seragam, Peralatan, Administrator) dimuat dengan parameter versi supaya browser tidak memakai salinan lama setelah pembaruan.
 - **v1.136** Monitoring: kartu "Progres pengisian per PIC" kembali terbuka secara bawaan (sebelumnya tertutup sejak v1.133); tetap bisa dilipat.
 - **v1.135** Monitoring pengisian: kartu "Belum mengisi" (angka 618 + Kekurangan terbesar) dihapus; daftar 5 lokasi dengan kekurangan terbanyak kini mengisi kolom penuh.
 - **v1.134** Sidebar portal dipersempit (hanya ikon); mengembang menampilkan nama menu, akun, dan versi saat kursor di atasnya. Di HP tetap bar atas.

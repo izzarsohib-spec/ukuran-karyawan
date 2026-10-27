@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.136', tanggal: '2026-10-27', catatan: 'Progres per PIC terbuka kembali' };
+window.VERSI = { no: '1.137', tanggal: '2026-10-27', catatan: 'Modul dimuat tanpa cache lama' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

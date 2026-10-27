@@ -216,7 +216,7 @@
     document.getElementById('p-beranda').hidden = p !== 'beranda';
     for (const k of Object.keys(SUMBER)) { const f = document.getElementById('f-' + k); if (f) f.hidden = k !== p; }
     let f = document.getElementById('f-' + p);
-    if (p !== 'beranda' && !f) { f = document.createElement('iframe'); f.id = 'f-' + p; f.src = SUMBER[p] + (sub ? '#' + sub : ''); f.title = p; isi.appendChild(f); }
+    if (p !== 'beranda' && !f) { f = document.createElement('iframe'); f.id = 'f-' + p; f.src = SUMBER[p] + '?v=' + ((window.VERSI && window.VERSI.no) || '') + (sub ? '#' + sub : ''); f.title = p; isi.appendChild(f); }
     else if (f && ganti) { try { f.contentWindow.location.hash = sub; } catch (e) { f.src = SUMBER[p] + '#' + sub; } }
     tandai();
   }
