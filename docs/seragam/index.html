@@ -685,8 +685,6 @@
           <small>Ukuran seragam karyawan</small>
           <h2>Pantau kelengkapan data tiap lokasi</h2>
           <div class="rabtotal"><small>Karyawan sudah mengisi dari total karyawan</small><b class="num" id="rabTotal">-</b></div>
-          <button class="cta" id="cta">Lihat yang kurang</button>
-          <button class="cta" id="ctaIngat" style="margin-left:8px">Ingatkan PIC</button>
         </div>
         <div class="ringhero" id="ringhero"></div>
         <div class="kpi" id="kpi"></div>
@@ -1108,7 +1106,6 @@
   $('kode').onkeydown = e => { if (e.key === 'Enter') $('btnKode').click(); };
   $('cari').oninput = () => { terbukaHP = false; renderDaftar(); };
   $('chips').onclick = e => { const s = e.target.dataset && e.target.dataset.s; if (s) { status = s; terbukaHP = false; renderDaftar(); } };
-  $('cta').onclick = () => { status = 'kurang'; terbukaHP = false; renderDaftar(); keDaftar(); };
   // ---- Ingatkan PIC: lokasi yang masih kurang/kosong dikelompokkan per PIC lapangan, lengkap dengan rekap nama yang sudah mengisi.
   // Satu panel untuk semua lokasi (tombol di atas), dan satu jendela untuk SATU lokasi atau SATU bagian kerja (tombol di rincian lokasi).
   // Pesan disusun di pesanPic() (dipecah bila panjang); dikirim lewat WA bot (fungsi server ingatkan-pic -> n8n -> WAHA), tombol WhatsApp (wa.me), atau disalin.
@@ -1215,7 +1212,6 @@
     }).join('') + (gs.some(g => g.pic && noWa(picTel.get(String(g.pic.id)))) ? '<button class="btn" id="botSemua">Kirim ke semua PIC lewat WA bot</button><div class="muted" id="botSemuaSt" style="margin-top:6px"></div>' : '');
     $('ingatDaftar')._gs = gs;
   }
-  $('ctaIngat').onclick = bukaIngat;
   $('ingatTutup').onclick = () => { $('ingat').hidden = true; };
   window.addEventListener('saring-ubah', () => { if (!$('ingat').hidden && picTel.size) renderIngat(); });
   $('ingatDaftar').onclick = async e => {
