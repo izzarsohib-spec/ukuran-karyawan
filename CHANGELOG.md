@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 27 Okt 2026
+- **v1.142** Monitoring: kembali dua kartu sejajar. Kiri "Progres pengisian per PIC", kanan "Daftar lokasi" yang berisi daftar dan kartu rincian lokasi terpilih berdampingan di dalamnya (menggantikan tiga kolom v1.140).
 - **v1.141** Permintaan seragam lebih ringkas: form dibagi bagian lipat (1 Atas nama siapa dan 2 Ringkasan pesanan terbuka; 3 Rekap barang, 4 Memo, 5 Lampiran RAB tertutup bawaan, bisa dibuka lewat judulnya); total, tombol Preview dan Kirim tetap terlihat. Ringkasan mini di atas semua halaman kini tertutup bawaan (tombol "Ringkasan halaman").
 - **v1.140** Monitoring: progres per PIC, daftar lokasi, dan kartu rincian lokasi terpilih kini tiga kolom sejajar (layar di atas 980 px); rincian ikut menempel saat daftar di-scroll.
 - **v1.139** Monitoring: progres per PIC dan daftar lokasi berdampingan mulai lebar area konten 981 px (sebelumnya 1200 px, terlalu lebar karena halaman dibuka di dalam portal).
