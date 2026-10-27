@@ -485,9 +485,10 @@
   .lipatbar:hover { color:var(--text); }
   section.mini.tutup { display:none; }
   /* Monitoring: progres per PIC dan daftar lokasi berdampingan */
-  .duo { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,3fr); gap:14px; align-items:start; margin-top:14px; }
+  .duo { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr); gap:14px; align-items:start; margin-top:14px; }
   .duo > .pantau, .duo > .bawah { margin-top:0; }
-  @media (min-width: 981px) { .duo .layout { grid-template-columns:minmax(220px,300px) minmax(0,1fr); } .duo .list .scroll { max-height:560px; } }
+  .duo .layout { display:block; }
+  @media (min-width: 981px) { .duo .list .scroll { max-height:560px; } .duo > .detail { position:sticky; top:8px; max-height:calc(100vh - 24px); overflow:auto; } }
   @media (max-width: 980px) { .duo { grid-template-columns:minmax(0,1fr); } }
 </style>
 </head>
@@ -716,9 +717,9 @@
       <div class="chips" id="chips" style="margin-bottom:14px"></div>
       <div class="layout">
         <div class="list"><div class="scroll" id="daftar"></div></div>
-        <div class="detail" id="detail"></div>
       </div>
     </section>
+    <div class="detail" id="detail"></div>
     </div>
    </div>
 

@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 27 Okt 2026
+- **v1.140** Monitoring: progres per PIC, daftar lokasi, dan kartu rincian lokasi terpilih kini tiga kolom sejajar (layar di atas 980 px); rincian ikut menempel saat daftar di-scroll.
 - **v1.139** Monitoring: progres per PIC dan daftar lokasi berdampingan mulai lebar area konten 981 px (sebelumnya 1200 px, terlalu lebar karena halaman dibuka di dalam portal).
 - **v1.138** Monitoring pengisian: kartu "Progres pengisian per PIC" dan "Daftar lokasi" ditampilkan berdampingan di layar lebar (di atas 1200 px), jadi tidak perlu scroll jauh; di layar sempit tetap bertumpuk.
 - **v1.137** Portal: modul (Seragam, Peralatan, Administrator) dimuat dengan parameter versi supaya browser tidak memakai salinan lama setelah pembaruan.
