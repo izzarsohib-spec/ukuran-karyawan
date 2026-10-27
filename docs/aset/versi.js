@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.148', tanggal: '2026-10-27', catatan: 'Apps Script: gambar ukuran dicari otomatis, fungsi editor lihat/uji/ganti gambar form' };
+window.VERSI = { no: '1.149', tanggal: '2026-10-27', catatan: 'Apps Script: pengenal gambar ukuran tanpa judul (judul section + bentuk gambar)' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
