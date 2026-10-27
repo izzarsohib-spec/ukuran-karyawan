@@ -108,7 +108,7 @@
   .picrow { display:grid; grid-template-columns:minmax(80px,22%) minmax(0,1fr) auto; gap:10px; align-items:center; padding:6px 0; font-size:.82rem; }
   .picrow .pn b { display:block; font-weight:600; } .picrow .pn small { color:var(--muted); font-size:.7rem; }
   .picrow .pb { display:flex; height:16px; border-radius:6px; overflow:hidden; background:rgba(255,255,255,.07); }
-  .picrow .pb i { display:block; height:100%; } .picrow .pb .a { background:var(--accent); } .picrow .pb .o { background:#ff8a3d; }
+  .picrow .pb i { display:block; height:100%; }
   .picrow { padding:8px 0; border-bottom:1px solid var(--stroke); } .picrow:last-child { border-bottom:0; }
   .picrow .pk { margin-top:5px; font-size:.74rem; color:var(--muted); } .picrow .pk b { color:var(--text); font-size:.84rem; } .picrow .pk .kr { color:var(--warn); } .picrow .pk .lg { color:var(--ok); }
   .picrow .pl { display:flex; flex-wrap:wrap; gap:2px 14px; margin-top:3px; font-size:.7rem; color:var(--muted); } .picrow .pl i { display:inline-block; width:8px; height:8px; border-radius:3px; margin-right:5px; }
@@ -680,8 +680,8 @@
     </section>
     <section class="pantau" id="pantau">
       <div class="card pcard">
-        <div class="ttl"><div><b>Progres pengisian per PIC</b><small>Karyawan yang sudah mengisi dari target tiap PIC lapangan</small></div></div>
-        <div class="legend" style="margin:2px 0 8px"><span><i style="background:var(--accent)"></i>Sudah mengisi</span><span><i style="background:#ff8a3d"></i>Belum mengisi</span></div>
+        <div class="ttl"><div><b>Progres pengisian per PIC</b><small>Jumlah lokasi tiap PIC lapangan menurut tahap pengisian ukuran</small></div></div>
+        <div class="legend" id="picLegenda" style="margin:2px 0 8px"></div>
         <div id="picBar"></div>
       </div>
       <div class="card pcard">
@@ -928,6 +928,7 @@
   }
   // ---- progres per PIC dan lokasi siap diproses; ikut chip area di atas ----
   function gambarPantau() {
+    $('picLegenda').innerHTML = TAHAP.map(([, nm, c, d]) => `<span title="${esc(d)}"><i style="background:${c}"></i>${nm}</span>`).join('');
     // kartu PIC membandingkan SEMUA PIC, jadi memakai data mentah tanpa filter Area/PIC di atas halaman (chip area tetap berlaku)
     const g = new Map(), sub = areaTop ? lokasi.filter(l => areaInduk(l) === areaTop) : lokasi;
     const lok = new Map(); // lokasi -> {target, isi}
@@ -939,19 +940,18 @@
     for (const [nama, v] of lok) {
       if (areaTop && areaInduk({ lokasi: nama }) !== areaTop) continue;
       const p = window.Saring && Saring.picDari(nama), k = p ? String(p.id) : '-';
-      if (!g.has(k)) g.set(k, { id: p ? String(p.id) : '', nama: p ? p.nama : 'Belum ada PIC', target: 0, isi: 0, lok: 0, lengkap: 0, kurang: 0, kosong: 0 });
-      const x = g.get(k); x.target += v.target; x.isi += v.isi; x.lok++;
-      if (v.isi >= v.target) x.lengkap++; else if (v.isi === 0) x.kosong++; else x.kurang++;
+      if (!g.has(k)) g.set(k, { id: p ? String(p.id) : '', nama: p ? p.nama : 'Belum ada PIC', target: 0, isi: 0, lok: 0, lengkap: 0, isi: 0, proses: 0, kosong: 0, ki: 0 });
+      const x = g.get(k); x.target += v.target; x.ki += v.isi; x.lok++; x[tahapDari(v.isi, v.target)]++;
     }
-    if (window.Saring) for (const p of Saring.picSemua()) if ((!areaTop || p.area === areaTop) && !g.has(String(p.id))) g.set(String(p.id), { id: String(p.id), nama: p.nama, target: 0, isi: 0, lok: 0, lengkap: 0, kurang: 0, kosong: 0 });
-    const baris = [...g.values()].sort((a, b) => (!a.lok - !b.lok) || (b.target - b.isi) - (a.target - a.isi) || a.nama.localeCompare(b.nama));
+    if (window.Saring) for (const p of Saring.picSemua()) if ((!areaTop || p.area === areaTop) && !g.has(String(p.id))) g.set(String(p.id), { id: String(p.id), nama: p.nama, target: 0, ki: 0, lok: 0, lengkap: 0, isi: 0, proses: 0, kosong: 0 });
+    const baris = [...g.values()].sort((a, b) => (!a.lok - !b.lok) || (b.lok - b.lengkap) - (a.lok - a.lengkap) || a.nama.localeCompare(b.nama));
     $('picBar').innerHTML = baris.length ? baris.map(x => {
-      const pi = x.target ? 100 * x.isi / x.target : 0, kurang = x.target - x.isi;
+      const belum = x.lok - x.lengkap;
       return `<div class="picrow"><div class="pn"><b>${esc(x.nama)}</b><small>${x.lok ? x.lok + ' lokasi' : 'belum memegang lokasi'}</small></div>
-        <div class="pm"><div class="pb" role="img" aria-label="${x.isi} dari ${x.target} sudah mengisi"><i class="a" style="width:${pi.toFixed(1)}%"></i><i class="o" style="width:${x.target ? (100 - pi).toFixed(1) : 0}%"></i></div>
-          <div class="pk">${x.target ? `<b>${idn(x.isi)}</b> dari ${idn(x.target)} karyawan sudah mengisi (${pi.toFixed(0)}%) · ${kurang ? `<span class="kr">kurang ${idn(kurang)}</span>` : '<span class="lg">semua sudah lengkap</span>'}` : 'tidak ada target'}</div>
-          ${x.lok ? `<div class="pl"><span><i style="background:var(--ok)"></i>${x.lengkap} lokasi lengkap</span><span><i style="background:var(--orange)"></i>${x.kurang} masih kurang</span><span><i style="background:var(--bad)"></i>${x.kosong} masih kosong</span></div>` : ''}</div>
-        ${x.id ? `<button class="btn mini" data-ingatpic="${esc(x.id)}" ${kurang > 0 ? '' : 'disabled'}>Ingatkan</button>` : '<span></span>'}</div>`;
+        <div class="pm"><div class="pb" role="img" aria-label="${x.lengkap} dari ${x.lok} lokasi sudah lengkap">${x.lok ? TAHAP.map(([k, , c]) => x[k] ? `<i style="width:${(100 * x[k] / x.lok).toFixed(2)}%;background:${c}"></i>` : '').join('') : ''}</div>
+          <div class="pk">${x.lok ? `<b>${x.lengkap}</b> dari ${x.lok} lokasi sudah lengkap (${(100 * x.lengkap / x.lok).toFixed(0)}%) · ${belum ? `<span class="kr">${belum} lokasi belum lengkap</span>` : '<span class="lg">semua sudah lengkap</span>'}` : 'tidak ada lokasi'}</div>
+          ${x.lok ? `<div class="pl">${TAHAP.map(([k, nm, c]) => `<span><i style="background:${c}"></i>${x[k]} ${nm.toLowerCase()}</span>`).join('')}</div>` : ''}</div>
+        ${x.id ? `<button class="btn mini" data-ingatpic="${esc(x.id)}" ${belum > 0 ? '' : 'disabled'}>Ingatkan</button>` : '<span></span>'}</div>`;
     }).join('') : '<div class="kosongnya">Belum ada data.</div>';
     if (!statusMuat) { $('siapProses').innerHTML = '<div class="kosongnya">Memuat status permintaan…</div>'; return; }
     const siap = sub.filter(l => l.status === 'lengkap' && ['belum', 'sebagian'].includes(infoLok(l).s)).sort((a, b) => b.target - a.target);
@@ -969,6 +969,10 @@
     const r = e.target.closest('#topKurang .toprow'); if (r) { status = 'semua'; $('cari').value = ''; pilih(r.dataset.k); keDaftar(); }
   });
 
+  // tahap pengisian SATU LOKASI (dipakai ringkasan dan kartu PIC): biru lengkap, kuning sudah mengisi (terisi 50% atau lebih), oranye proses (terisi di bawah 50%), merah belum ada yang mengisi
+  const TAHAP = [['lengkap', 'Sudah lengkap', '#6ea8ff', 'semua karyawannya sudah mengisi'], ['isi', 'Sudah mengisi', 'var(--accent)', 'terisi 50% atau lebih, belum lengkap'],
+                 ['proses', 'Proses', 'var(--orange)', 'terisi di bawah 50%'], ['kosong', 'Belum mengisi', 'var(--bad)', 'belum ada satu pun yang mengisi']];
+  const tahapDari = (isi, target) => isi >= target ? 'lengkap' : isi === 0 ? 'kosong' : 100 * isi / target >= 50 ? 'isi' : 'proses';
   function ringkasan() {
     const T = lokasi.reduce((a, l) => a + l.target, 0), I = lokasi.reduce((a, l) => a + l.isi, 0), p = T ? 100 * I / T : 0;
     const n = s => lokasi.filter(l => l.status === s).length, C = 2 * Math.PI * 44;
@@ -979,12 +983,10 @@
          <circle cx="55" cy="55" r="44" fill="none" stroke="url(#gr)" stroke-width="11" stroke-linecap="round"
            stroke-dasharray="${(C * p / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 55 55)"/>
        </svg><div class="t"><b>${p.toFixed(1).replace('.', ',')}%</b><span>sudah mengisi</span></div>`;
+    const tj = new Map(TAHAP.map(t => [t[0], 0])); lokasi.forEach(l => tj.set(tahapDari(l.isi, l.target), tj.get(tahapDari(l.isi, l.target)) + 1));
     $('kpi').innerHTML = [
-      [idn(T), 'orang', 'Target karyawan', `anggota di ${idn(lokasi.length)} lokasi yang harus mengisi`, '#8aa4ff'],
-      [idn(I), 'orang', 'Sudah mengisi', `ukurannya sudah masuk (${p.toFixed(1).replace('.', ',')}% dari target)`, 'var(--accent)'],
-      [n('lengkap'), 'lokasi', 'Sudah lengkap', 'semua karyawannya sudah mengisi', 'var(--ok)'],
-      [n('kurang'), 'lokasi', 'Masih kurang', 'sebagian karyawannya sudah, sebagian belum mengisi', 'var(--orange)'],
-      [n('kosong'), 'lokasi', 'Masih kosong', 'belum ada satu pun karyawan yang mengisi', 'var(--bad)'],
+      [idn(lokasi.length), 'lokasi', 'Total lokasi', 'yang dipantau pengisian ukurannya', '#a4a4ae'],
+      ...TAHAP.map(([k, nm, c, d]) => [idn(tj.get(k)), 'lokasi', nm, d, c]),
     ].map(([a, u, b, d, c]) => `<div><b>${a}<u>${u}</u></b><span><i style="background:${c}"></i>${b}</span><em>${d}</em></div>`).join('');
     $('rabTotal').innerHTML = `${idn(I)} <span style="font-size:.55em;font-weight:500;color:var(--muted)">dari ${idn(T)} karyawan</span>`;
     $('info').textContent = `${lokasi.length} lokasi dipantau`;
