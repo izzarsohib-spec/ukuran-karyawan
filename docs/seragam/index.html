@@ -1016,13 +1016,23 @@
     renderChips(); renderDetail();
   }
 
+  // Peran security: di Form ada lima pilihan, di anggaran hanya satu bagian (KEAMANAN PRIA (SECURITY)); web tetap menampilkan "security" dan memberi keterangan singkat peran
+  const PERAN = { 'CHIEF SECURITY': 'Chief', 'KOMANDAN REGU SECURITY(DANRU)': 'Danru', 'WAKIL KOMANDAN REGU (WADANRU)': 'Wadanru', 'KEAMANAN PRIA (SECURITY)': 'Anggota pria', 'KEAMANAN WANITA(SECWAN)': 'Anggota wanita' };
+  const URUT_PERAN = ['Chief', 'Danru', 'Wadanru', 'Anggota pria', 'Anggota wanita'];
+  const peranRingkas = p => PERAN[String((p && p.peran) || '').toUpperCase()] || '';
+  function ringkasPeran(lokasiKunci, bagian) { // "Chief 1 · Danru 2 · Anggota pria 20" untuk satu bagian kerja, kosong bila tidak ada data peran
+    const hit = new Map();
+    for (const p of pengisi.get(lokasiKunci) || []) { if (p.bagian_kerja !== bagian) continue; const t = peranRingkas(p); if (t) hit.set(t, (hit.get(t) || 0) + 1); }
+    return hit.size ? `<span class="rp">${URUT_PERAN.filter(t => hit.has(t)).map(t => `${t} ${hit.get(t)}`).join(' · ')}</span>` : '';
+  }
   function tabelPengisi(l) {
     let data = pengisi.get(l.lokasi) || [];
     if (fBagian) data = data.filter(p => p.bagian_kerja === fBagian);
     if (!data.length) return '<p class="muted">Belum ada yang mengisi.</p>';
-    const urut = [...data].sort((a, b) => (a.bagian_kerja || '').localeCompare(b.bagian_kerja || '') || (a.nama || '').localeCompare(b.nama || ''));
-    return `<div class="wrap"><table><thead><tr>${punyaNama ? '<th>Nama</th>' : ''}<th>Bagian kerja</th><th>Baju</th><th>Celana</th><th>Sepatu</th><th>Diisi</th></tr></thead><tbody>` +
-      urut.map(p => `<tr>${punyaNama ? `<td>${esc(p.nama)}</td>` : ''}<td>${esc(p.bagian_kerja)}</td><td>${esc(p.ukuran_baju)}</td><td>${esc(p.ukuran_celana)}</td><td>${esc(p.ukuran_sepatu)}</td><td>${p.waktu ? new Date(p.waktu).toLocaleDateString('id-ID') : ''}</td></tr>`).join('') +
+    const adaPeran = data.some(p => peranRingkas(p));
+    const urut = [...data].sort((a, b) => (a.bagian_kerja || '').localeCompare(b.bagian_kerja || '') || (URUT_PERAN.indexOf(peranRingkas(a)) - URUT_PERAN.indexOf(peranRingkas(b))) || (a.nama || '').localeCompare(b.nama || ''));
+    return `<div class="wrap"><table><thead><tr>${punyaNama ? '<th>Nama</th>' : ''}<th>Bagian kerja</th>${adaPeran ? '<th>Peran</th>' : ''}<th>Baju</th><th>Celana</th><th>Sepatu</th><th>Diisi</th></tr></thead><tbody>` +
+      urut.map(p => `<tr>${punyaNama ? `<td>${esc(p.nama)}</td>` : ''}<td>${esc(p.bagian_kerja)}</td>${adaPeran ? `<td>${esc(peranRingkas(p))}</td>` : ''}<td>${esc(p.ukuran_baju)}</td><td>${esc(p.ukuran_celana)}</td><td>${esc(p.ukuran_sepatu)}</td><td>${p.waktu ? new Date(p.waktu).toLocaleDateString('id-ID') : ''}</td></tr>`).join('') +
       '</tbody></table></div>' + (punyaNama ? '' : '<p class="muted">Nama disembunyikan. Masukkan kode akses di kanan atas untuk melihatnya.</p>');
   }
   // keterangan pesanan seragam pada satu bagian kerja (dari data permintaan): berapa orang yang sudah dipesankan, berapa yang menyusul
@@ -1050,7 +1060,7 @@
        </div>
        <div class="dbody">
          <div class="notif ${NADA[l.status]}">${awal}</div>
-         ${l.bagian.map(b => `<div class="bagian"><span>${esc(b.nama)}${ang && ang.per[b.nama] != null ? `<span class="rp">${rp(ang.per[b.nama])} · ${b.target} orang</span>` : ''}${ketPesan(l, b)}${b.isi < b.target ? `<button class="btn mini" data-ingat="${esc(l.lokasi)}" data-bag="${esc(b.nama)}">Ingatkan PIC</button>` : ''}</span>
+         ${l.bagian.map(b => `<div class="bagian"><span>${esc(b.nama)}${ang && ang.per[b.nama] != null ? `<span class="rp">${rp(ang.per[b.nama])} · ${b.target} orang</span>` : ''}${ketPesan(l, b)}${ringkasPeran(l.lokasi, b.nama)}${b.isi < b.target ? `<button class="btn mini" data-ingat="${esc(l.lokasi)}" data-bag="${esc(b.nama)}">Ingatkan PIC</button>` : ''}</span>
             <div class="bar ${b.isi >= b.target ? 'ok' : 'warn'}"><i style="width:${b.target ? 100 * b.isi / b.target : 0}%"></i></div>
             <span class="${b.isi >= b.target ? 'penuh' : 'kurang'}">${b.isi >= b.target ? '✓ ' + b.isi + '/' + b.target : 'kurang ' + (b.target - b.isi) + ' · ' + b.isi + '/' + b.target}</span></div>`).join('')}
          <div class="tt"><span>Daftar pengisi</span>
@@ -1356,7 +1366,7 @@
       const mentah = await ambilUkuran(l, bag);
       if (kunci !== mKunci) return; // lokasi/bagian sudah berganti selama memuat
       const unik = new Map(); for (const k of mentah) unik.set(String(k.nama || '').trim().toUpperCase(), k); // nama kembar (isi dua kali): dipakai yang terakhir
-      mKar = [...unik.values()].map(k => ({ nama: String(k.nama || '').trim(), ref: { baju: String(k.ukuran_baju || '').trim().toUpperCase(), celana: String(k.ukuran_celana || '').trim(), sepatu: String(k.ukuran_sepatu || '').trim() }, alloc: {}, pilih: false }));
+      mKar = [...unik.values()].map(k => ({ nama: String(k.nama || '').trim(), peran: peranRingkas(k), ref: { baju: String(k.ukuran_baju || '').trim().toUpperCase(), celana: String(k.ukuran_celana || '').trim(), sepatu: String(k.ukuran_sepatu || '').trim() }, alloc: {}, pilih: false }));
       // nama yang sudah dipesankan di permintaan sebelumnya (yang tidak ditolak) ditandai, supaya tidak dipesan dua kali
       try {
         const sb = await rpc('penerima_sebelumnya', { kode: 'sesi', p_lokasi: l.lokasi, p_bagian: bag });
@@ -1380,12 +1390,12 @@
     mCatatan = `Diisi dari permintaan no. ${p.id} yang ditolak/revisi. Ubah sesuai masukan pimpinan, lalu kirim ulang.`;
   }
   function barisKarMinta(k, i) {
-    if (k.sudah) return `<tr data-i="${i}" class="sudah" ${cocokNama(k) ? '' : 'hidden'}><td class="kn"><b>${esc(k.nama)}</b><div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></td><td><span class="badge ok">✓ Sudah dipesan · permintaan no. ${k.sudah}</span></td></tr>`;
+    if (k.sudah) return `<tr data-i="${i}" class="sudah" ${cocokNama(k) ? '' : 'hidden'}><td class="kn"><b>${esc(k.nama)}</b>${k.peran ? ` <span class="badge neu">${esc(k.peran)}</span>` : ''}<div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></td><td><span class="badge ok">✓ Sudah dipesan · permintaan no. ${k.sudah}</span></td></tr>`;
     const ada = Object.keys(k.alloc).filter(no => itemMinta(no)), kecuali = Object.fromEntries(ada.map(no => [no, 1]));
     const kartu = ada.map(no => { const it = itemMinta(no), a = k.alloc[no];
       return `<div class="skartu" data-no="${no}"><b>${esc(it.nama)}</b><label class="jml">jml <input class="pq" type="number" min="1" max="20" value="${a.qty}"></label><span class="pus">${pilihanUkuran(it, a)}</span><button class="xk" title="Hapus seragam ini" aria-label="Hapus seragam ini">✕</button></div>`; }).join('');
     const adaLain = ada.length && mKar.some((x, j) => j !== i && x.pilih);
-    return `<tr data-i="${i}" class="${k.pilih ? 'dipilih' : ''}" ${cocokNama(k) ? '' : 'hidden'}><td class="kn"><label class="kcek"><input type="checkbox" class="pk" ${k.pilih ? 'checked' : ''}><span><b>${esc(k.nama)}</b><div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></span></label></td>
+    return `<tr data-i="${i}" class="${k.pilih ? 'dipilih' : ''}" ${cocokNama(k) ? '' : 'hidden'}><td class="kn"><label class="kcek"><input type="checkbox" class="pk" ${k.pilih ? 'checked' : ''}><span><b>${esc(k.nama)}</b>${k.peran ? ` <span class="badge neu">${esc(k.peran)}</span>` : ''}<div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></span></label></td>
       <td><div class="kcards">${kartu}</div><div class="kmenu"><select class="tmb"><option value="">+ Pilih seragam…</option>${opsiItemMinta(kecuali)}</select>${adaLain ? '<button class="btn salin" title="Samakan seragam nama yang dicentang dengan orang ini">Salin ke yang dicentang</button>' : ''}</div></td></tr>`;
   }
   function renderTabel() {
@@ -2197,7 +2207,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     for (const it of p.items || []) { const k = String(it.no); if (!gabung.has(k)) gabung.set(k, { no: it.no, nama: it.nama, qty: 0, beli: it.beli, jual: it.jual }); gabung.get(k).qty += Number(it.qty) || 0; }
     const items = [...gabung.values()].map(i => ({ ...i, uk: jenisUkuran(i.no, i.nama) }));
     const unik = new Map(); for (const k of mentah) unik.set(String(k.nama || '').trim().toUpperCase(), k); // nama kembar (isi dua kali) dipakai yang terakhir
-    const kar = [...unik.values()].map(k => ({ nama: String(k.nama || '').trim(), ref: { baju: String(k.ukuran_baju || '').trim().toUpperCase(), celana: String(k.ukuran_celana || '').trim(), sepatu: String(k.ukuran_sepatu || '').trim() }, alloc: {} }));
+    const kar = [...unik.values()].map(k => ({ nama: String(k.nama || '').trim(), peran: peranRingkas(k), ref: { baju: String(k.ukuran_baju || '').trim().toUpperCase(), celana: String(k.ukuran_celana || '').trim(), sepatu: String(k.ukuran_sepatu || '').trim() }, alloc: {} }));
     for (const t of tersimpan) { // isi ulang dari ploting yang sudah tersimpan
       let kk = kar.find(x => x.nama.toUpperCase() === String(t.nama).toUpperCase());
       if (!kk) { kk = { nama: t.nama, ref: { baju: '', celana: '', sepatu: '' }, alloc: {} }; kar.push(kk); }
@@ -2212,7 +2222,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
       + (it.uk.sepatu ? `<select class="us" title="Ukuran sepatu">${opsiUk(UK_SEPATU, a.sepatu)}</select>` : '') + (!it.uk.baju && !it.uk.celana && !it.uk.sepatu ? '<span class="muted">tanpa ukuran</span>' : '');
   }
   function barisKar(k, i) {
-    return `<tr data-i="${i}"><td><b>${esc(k.nama)}</b><div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></td><td>` +
+    return `<tr data-i="${i}"><td><b>${esc(k.nama)}</b>${k.peran ? ` <span class="badge neu">${esc(k.peran)}</span>` : ''}<div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></td><td>` +
       pData.items.map(it => { const a = k.alloc[it.no];
         return `<div class="pit" data-no="${it.no}"><label class="pil"><input type="checkbox" class="pc" ${a ? 'checked' : ''}> ${esc(it.nama)}</label><input class="pq" type="number" min="1" max="20" value="${a ? a.qty : 1}" ${a ? '' : 'disabled'}><span class="pus">${a ? pilihanUkuran(it, a) : ''}</span></div>`; }).join('') + '</td></tr>';
   }

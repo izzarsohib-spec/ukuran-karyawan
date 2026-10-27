@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 27 Okt 2026
+- **v1.131** Peran security: web menampilkan keterangan singkat peran (Chief, Danru, Wadanru, Anggota pria, Anggota wanita) di daftar pengisi, rincian bagian, dan form permintaan/ploting, sementara bagian kerjanya tetap satu "Keamanan pria (security)". Butuh `supabase/migrasi-peran-security.sql` (kolom `peran` dan normalisasi bagian); web aman dipakai sebelum migrasi diterapkan.
 - **v1.130** Sinkronisasi Form: mendukung kunci Supabase format baru (`sb_secret_...`) yang dikirim lewat header `apikey` saja, selain kunci lama (JWT).
 - **v1.129** Sinkronisasi Form: kolom waktu juga dikenali bila berjudul "Cap waktu" (form berbahasa Indonesia); sebelumnya waktu pengisian dari form baru akan kosong.
 - **v1.128** Tanggapan tiap form lokasi disimpan di spreadsheet sendiri (`TANGGAPAN <lokasi>`) di folder lokasinya dan didaftar di spreadsheet registri; sinkronisasi Supabase (`Code.gs`) membaca spreadsheet data lama ditambah semua spreadsheet di registri, bergiliran dengan batas waktu.

@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.130', tanggal: '2026-10-27', catatan: 'Sinkronisasi mendukung kunci Supabase baru (sb_secret_)' };
+window.VERSI = { no: '1.131', tanggal: '2026-10-27', catatan: 'Peran security (Chief, Danru, Wadanru, Anggota pria/wanita) tampil di web' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
