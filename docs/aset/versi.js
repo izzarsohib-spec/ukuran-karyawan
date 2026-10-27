@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.116', tanggal: '2026-10-27', catatan: 'Kartu progres per PIC menampilkan semua PIC walau filter PIC aktif' };
+window.VERSI = { no: '1.117', tanggal: '2026-10-27', catatan: 'Monitoring: angka Sudah lengkap dan rincian status lokasi per PIC' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

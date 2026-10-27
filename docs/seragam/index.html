@@ -111,6 +111,7 @@
   .picrow .pb i { display:block; height:100%; } .picrow .pb .a { background:var(--accent); } .picrow .pb .o { background:#ff8a3d; }
   .picrow { padding:8px 0; border-bottom:1px solid var(--stroke); } .picrow:last-child { border-bottom:0; }
   .picrow .pk { margin-top:5px; font-size:.74rem; color:var(--muted); } .picrow .pk b { color:var(--text); font-size:.84rem; } .picrow .pk .kr { color:var(--warn); } .picrow .pk .lg { color:var(--ok); }
+  .picrow .pl { display:flex; flex-wrap:wrap; gap:2px 14px; margin-top:3px; font-size:.7rem; color:var(--muted); } .picrow .pl i { display:inline-block; width:8px; height:8px; border-radius:3px; margin-right:5px; }
   .picrow .btn.mini { margin:0; padding:5px 14px; font-size:.78rem; cursor:pointer; }
   .picrow .btn[disabled] { opacity:.4; cursor:default; }
   .siaprow { display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; padding:8px 4px; border:0; border-radius:12px; background:none; text-align:left; color:inherit; cursor:pointer; }
@@ -938,16 +939,18 @@
     for (const [nama, v] of lok) {
       if (areaTop && areaInduk({ lokasi: nama }) !== areaTop) continue;
       const p = window.Saring && Saring.picDari(nama), k = p ? String(p.id) : '-';
-      if (!g.has(k)) g.set(k, { id: p ? String(p.id) : '', nama: p ? p.nama : 'Belum ada PIC', target: 0, isi: 0, lok: 0 });
+      if (!g.has(k)) g.set(k, { id: p ? String(p.id) : '', nama: p ? p.nama : 'Belum ada PIC', target: 0, isi: 0, lok: 0, lengkap: 0, kurang: 0, kosong: 0 });
       const x = g.get(k); x.target += v.target; x.isi += v.isi; x.lok++;
+      if (v.isi >= v.target) x.lengkap++; else if (v.isi === 0) x.kosong++; else x.kurang++;
     }
-    if (window.Saring) for (const p of Saring.picSemua()) if ((!areaTop || p.area === areaTop) && !g.has(String(p.id))) g.set(String(p.id), { id: String(p.id), nama: p.nama, target: 0, isi: 0, lok: 0 });
+    if (window.Saring) for (const p of Saring.picSemua()) if ((!areaTop || p.area === areaTop) && !g.has(String(p.id))) g.set(String(p.id), { id: String(p.id), nama: p.nama, target: 0, isi: 0, lok: 0, lengkap: 0, kurang: 0, kosong: 0 });
     const baris = [...g.values()].sort((a, b) => (!a.lok - !b.lok) || (b.target - b.isi) - (a.target - a.isi) || a.nama.localeCompare(b.nama));
     $('picBar').innerHTML = baris.length ? baris.map(x => {
       const pi = x.target ? 100 * x.isi / x.target : 0, kurang = x.target - x.isi;
       return `<div class="picrow"><div class="pn"><b>${esc(x.nama)}</b><small>${x.lok ? x.lok + ' lokasi' : 'belum memegang lokasi'}</small></div>
         <div class="pm"><div class="pb" role="img" aria-label="${x.isi} dari ${x.target} sudah mengisi"><i class="a" style="width:${pi.toFixed(1)}%"></i><i class="o" style="width:${x.target ? (100 - pi).toFixed(1) : 0}%"></i></div>
-          <div class="pk">${x.target ? `<b>${idn(x.isi)}</b> dari ${idn(x.target)} karyawan sudah mengisi (${pi.toFixed(0)}%) · ${kurang ? `<span class="kr">kurang ${idn(kurang)}</span>` : '<span class="lg">lengkap</span>'}` : 'tidak ada target'}</div></div>
+          <div class="pk">${x.target ? `<b>${idn(x.isi)}</b> dari ${idn(x.target)} karyawan sudah mengisi (${pi.toFixed(0)}%) · ${kurang ? `<span class="kr">kurang ${idn(kurang)}</span>` : '<span class="lg">semua sudah lengkap</span>'}` : 'tidak ada target'}</div>
+          ${x.lok ? `<div class="pl"><span><i style="background:var(--ok)"></i>${x.lengkap} lokasi lengkap</span><span><i style="background:var(--orange)"></i>${x.kurang} masih kurang</span><span><i style="background:var(--bad)"></i>${x.kosong} masih kosong</span></div>` : ''}</div>
         ${x.id ? `<button class="btn mini" data-ingatpic="${esc(x.id)}" ${kurang > 0 ? '' : 'disabled'}>Ingatkan</button>` : '<span></span>'}</div>`;
     }).join('') : '<div class="kosongnya">Belum ada data.</div>';
     if (!statusMuat) { $('siapProses').innerHTML = '<div class="kosongnya">Memuat status permintaan…</div>'; return; }
@@ -979,6 +982,7 @@
     $('kpi').innerHTML = [
       [idn(T), 'orang', 'Target karyawan', `anggota di ${idn(lokasi.length)} lokasi yang harus mengisi`, '#8aa4ff'],
       [idn(I), 'orang', 'Sudah mengisi', `ukurannya sudah masuk (${p.toFixed(1).replace('.', ',')}% dari target)`, 'var(--accent)'],
+      [n('lengkap'), 'lokasi', 'Sudah lengkap', 'semua karyawannya sudah mengisi', 'var(--ok)'],
       [n('kurang'), 'lokasi', 'Masih kurang', 'sebagian karyawannya sudah, sebagian belum mengisi', 'var(--orange)'],
       [n('kosong'), 'lokasi', 'Masih kosong', 'belum ada satu pun karyawan yang mengisi', 'var(--bad)'],
     ].map(([a, u, b, d, c]) => `<div><b>${a}<u>${u}</u></b><span><i style="background:${c}"></i>${b}</span><em>${d}</em></div>`).join('');
