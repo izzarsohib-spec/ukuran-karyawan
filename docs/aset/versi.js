@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.119', tanggal: '2026-10-27', catatan: 'Koreksi ukuran oleh admin permanen (tidak ditimpa sinkronisasi Form)' };
+window.VERSI = { no: '1.120', tanggal: '2026-10-27', catatan: 'Skrip pembuat Google Form per lokasi (batas 1 tanggapan)' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

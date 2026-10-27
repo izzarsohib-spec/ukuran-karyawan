@@ -19,3 +19,17 @@ jadi `ATR/BPN WONOGIRI` cocok dengan folder `ATR WONOGIRI`. Jika tidak ada yang 
 File lama dengan nama sama tidak dihapus, hanya diberi tanda `(lama tanggal jam)`.
 
 Periksa daftar folder yang terbaca: `<URL /exec>?token=<TOKEN>` (GET). Uji satu lokasi: tambahkan `&aksi=cocok&lokasi=ATR/BPN WONOGIRI`.
+# Form pengisian ukuran per lokasi (`buat-form-lokasi.gs`)
+Membuat satu Google Form per lokasi dari form template "Template Form Pengisian Data Seragam Karyawan", dengan pencegahan data ganda:
+wajib login Google + email terverifikasi, **batas 1 tanggapan per akun**, tanggapan tidak bisa diedit sendiri (koreksi lewat admin di halaman Administrator),
+pertanyaan LOKASI jadi pilihan tunggal (tidak bisa salah ketik), pilihan BAGIAN KERJA dibatasi sesuai anggaran lokasi, NAMA LENGKAP wajib huruf (min. 3 karakter).
+Tanggapan masuk ke spreadsheet data sehingga sinkronisasi `Code.gs` tidak perlu diubah.
+
+1. Buka script.google.com dengan akun pemilik form template, Proyek baru, tempel isi `buat-form-lokasi.gs` (salinan siap tempel ada di folder Documents).
+2. Pilih fungsi `buatContoh`, Jalankan, setujui izin (Forms, Drive, Spreadsheet, koneksi eksternal). Satu form dibuat untuk lokasi pertama (urut abjad).
+3. Periksa form contoh lewat spreadsheet "LINK FORM SERAGAM 2027" (dibuat otomatis): buka tautan isi, coba isi dua kali dengan akun yang sama (kedua harus ditolak).
+4. Bila sudah sesuai, jalankan `buatSemua`. Bila waktu habis (batas 6 menit) jalankan lagi; lokasi yang sudah punya form dilewati.
+5. Bagikan kolom "Tautan isi" tiap lokasi ke PIC/karyawan. Tautan itu sudah memilih lokasinya.
+
+Catatan: tiap form menambah satu tab di spreadsheet data; Google Sheets membatasi jumlah tab, jadi bila terlalu banyak, ubah `SPREADSHEET_DATA_ID` ke spreadsheet lain
+(dan tambahkan ID-nya ke `Code.gs` agar ikut disinkronkan). Menghapus tanggapan di Form (oleh admin) membuat akun itu bisa mengisi sekali lagi.
