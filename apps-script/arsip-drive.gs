@@ -292,6 +292,25 @@ function jalankanGambar_(mode) {
   Logger.log('BELUM SELESAI (' + mode + '), jalankan lagi untuk lanjut dari form ke-' + mulai + '. Sejauh ini: ' + JSON.stringify(jml, null, 1));
 }
 
+// Membuat SATU form contoh (terpisah dari form lokasi, disimpan di folder utama) berisi 4 gambar baru dengan lebar tampil yang sama, untuk dilihat dulu.
+// Jalankan dari editor; tautan form muncul di Log eksekusi. Form contoh boleh dihapus kapan saja.
+function buatContohFormGambar() {
+  var g = cariGambarUkuran_();
+  if (g.error) { Logger.log('GAGAL: ' + g.error); return; }
+  var form = FormApp.create('CONTOH - Gambar petunjuk ukuran (boleh dihapus)');
+  form.setDescription('Contoh tampilan gambar petunjuk ukuran. Form ini hanya untuk dilihat dan boleh dihapus.');
+  [['UKURAN BAJU', 'caraBaju', 'tabelBaju', 'baju'], ['UKURAN CELANA', 'caraCelana', 'tabelCelana', 'celana']].forEach(function (b) {
+    form.addSectionHeaderItem().setTitle(b[0]);
+    [b[1], b[2]].forEach(function (k) {
+      form.addImageItem().setImage(DriveApp.getFileById(g[k]).getBlob()).setWidth(640).setAltText(ALT_GAMBAR[k]);
+    });
+    form.addTextItem().setTitle('Contoh isian ukuran ' + b[3]);
+  });
+  DriveApp.getFileById(form.getId()).moveTo(DriveApp.getFolderById(FOLDER_UTAMA));
+  Logger.log('Tautan isi (untuk dilihat): ' + form.getPublishedUrl());
+  Logger.log('Tautan edit: ' + form.getEditUrl());
+}
+
 // ---- Membuat Google Form pendataan ukuran dari form template, di dalam folder lokasinya ----
 // POST: { token, aksi: 'buatForm', lokasi, folderId, judul?, bagian?: [..], templateId? } -> membuat SATU form (dilewati bila sudah ada form bernama sama di folder itu).
 // Form: wajib login Google + email terverifikasi, batas 1 tanggapan per akun, tidak bisa diedit sendiri; LOKASI pilihan tunggal;
