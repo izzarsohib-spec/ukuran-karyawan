@@ -173,10 +173,9 @@ function aksiFolder_(d) {
 //         gambar?: { caraBaju, tabelBaju, caraCelana, tabelCelana } (ID berkas PNG di dalam folder utama; bila kosong dicari otomatis berdasarkan NAMA_GAMBAR) }
 //  lihat : daftar item bergambar tiap form (judul + jenis yang terbaca), untuk memeriksa sebelum mengganti. Tanpa ids = form pertama di registri.
 //  uji   : sama seperti ganti tetapi TIDAK mengubah apa pun, hanya melaporkan gambar mana yang akan diganti.
-//  ganti : setImage() pada ImageItem yang terbaca jenisnya (cara/tabel x baju/celana; lihat jenisGambar_), lebar 640, teks alternatif diisi. Urutan, jawaban, dan pengaturan form tidak berubah.
+//  ganti : setImage() pada ImageItem yang terbaca jenisnya (cara/tabel x baju/celana; lihat jenisGambar_), lebar 640; item yang sudah diganti ditandai dan dilewati bila diulang. Urutan, jawaban, dan pengaturan form tidak berubah.
 // Tanpa ids dipakai semua form di registri, bertahap lewat mulai/jumlah; respons memuat "berikut" (nilai mulai berikutnya, null bila selesai).
 // Hanya ImageItem yang terbaca jenisnya yang disentuh (gambar sepatu dan lainnya dilewati). Tidak ada penghapusan.
-var ALT_GAMBAR = { caraBaju: 'Cara mengukur baju', tabelBaju: 'Tabel ukuran baju', caraCelana: 'Cara mengukur celana', tabelCelana: 'Tabel ukuran celana' };
 function kainDari_(teks) {
   var t = String(teks || '').toLowerCase(), b = /baju/.test(t), c = /celana/.test(t);
   return b === c ? null : (b ? 'Baju' : 'Celana');
@@ -188,8 +187,8 @@ function ukuranPng_(blob) {  // lebar x tinggi dari kepala berkas PNG; null bila
   return { w: u32(16), h: u32(20) };
 }
 // Menentukan gambar mana ini. Urutan: (1) judul atau teks alternatif ("cara"/"tabel" + "baju"/"celana"), (2) kain dari judul section di atasnya,
-// (3) bila tak ada petunjuk jenis, bentuk gambar lama: tegak = cara mengukur, mendatar = tabel. Gambar yang sudah diganti diberi teks alternatif (ALT_GAMBAR),
-// sehingga dikenali lewat langkah (1) dan aman bila dijalankan ulang.
+// (3) bila tak ada petunjuk jenis, bentuk gambar lama: tegak = cara mengukur, mendatar = tabel. Gambar yang sudah diganti ditandai di properti skrip (kunci gbr_<id item>),
+// sehingga dilewati bila dijalankan ulang (item gambar di Form tidak bisa diberi teks alternatif lewat skrip, jadi penanda tidak ada di form).
 function jenisGambar_(ii, header, terakhir) {
   var alt = ''; try { alt = ii.getAltText() || ''; } catch (e) { alt = ''; }
   var teks = ii.getTitle() + ' ' + alt, t = teks.toLowerCase();
@@ -224,7 +223,7 @@ function gambarForm_(d) {
       blob[kunci[k]] = fl.getBlob();
     }
   }
-  var hasil = [];
+  var tandai = PropertiesService.getScriptProperties(), sudah = tandai.getProperties(), hasil = [];
   for (var i = 0; i < ids.length; i++) {
     if (Date.now() - t0 > 5 * 60 * 1000) { berikut = berikut === null ? null : mulai + i; hasil.push({ id: ids[i], ok: false, error: 'waktu habis, ulangi dari mulai=' + (mulai + i) }); break; }
     var id = ids[i];
@@ -236,9 +235,11 @@ function gambarForm_(d) {
       form.getItems().forEach(function (it) {
         var tp = it.getType();
         if (tp === FormApp.ItemType.IMAGE) {
-          var ii = it.asImageItem(), j = jenisGambar_(ii, header, terakhir);
+          var ii = it.asImageItem(), pen = 'gbr_' + it.getId(), j;
+          if (sudah[pen]) j = { kunci: sudah[pen], dasar: 'sudah diganti' }; else j = jenisGambar_(ii, header, terakhir);
           var ada = { posisi: it.getIndex(), judul: it.getTitle(), konteks: header + ' | ' + terakhir, jenis: j.kunci, dasar: j.dasar };
-          if (j.kunci && mode === 'ganti') { ii.setImage(blob[j.kunci]).setWidth(640).setAltText(ALT_GAMBAR[j.kunci]); ada.diganti = true; }
+          if (sudah[pen]) ada.dilewati = true;
+          else if (j.kunci && mode === 'ganti') { ii.setImage(blob[j.kunci]).setWidth(640); tandai.setProperty(pen, j.kunci); sudah[pen] = j.kunci; ada.diganti = true; }
           r.gambar.push(ada);
         } else {
           terakhir = it.getTitle();
@@ -274,17 +275,18 @@ function cariGambarUkuran_() {
 function lihatGambarForm() { Logger.log(JSON.stringify(gambarForm_({ mode: 'lihat' }), null, 1)); }
 function ujiGambarForm() { jalankanGambar_('uji'); }
 function gantiGambarForm() { jalankanGambar_('ganti'); }
+function hapusPenandaGambar() { var p = PropertiesService.getScriptProperties(), k = p.getKeys().filter(function (x) { return x.indexOf('gbr_') === 0; }); k.forEach(function (x) { p.deleteProperty(x); }); Logger.log('Penanda dihapus: ' + k.length); }
 function ulangiDariAwalGambar() { var p = PropertiesService.getScriptProperties(); p.deleteProperty('GAMBAR_MULAI_uji'); p.deleteProperty('GAMBAR_MULAI_ganti'); }
 function jalankanGambar_(mode) {
   var props = PropertiesService.getScriptProperties(), kunci = 'GAMBAR_MULAI_' + mode, t0 = Date.now();
-  var mulai = Number(props.getProperty(kunci)) || 0, jml = { form: 0, gambar: 0, diganti: 0, perJenis: {}, gagal: [], tanpaJenis: {} };
+  var mulai = Number(props.getProperty(kunci)) || 0, jml = { form: 0, gambar: 0, diganti: 0, sudahDiganti: 0, perJenis: {}, gagal: [], tanpaJenis: {} };
   while (Date.now() - t0 < 4 * 60 * 1000) {
     var h = gambarForm_({ mode: mode, mulai: mulai, jumlah: 10 });
     if (!h.ok) { Logger.log('GAGAL: ' + JSON.stringify(h)); return; }
     h.hasil.forEach(function (r) {
       jml.form++;
       if (!r.ok) { jml.gagal.push(r.id + ': ' + r.error); return; }
-      r.gambar.forEach(function (g) { jml.gambar++; if (g.diganti) jml.diganti++; if (g.jenis) jml.perJenis[g.jenis] = (jml.perJenis[g.jenis] || 0) + 1; else { var kk = (g.judul || '(tanpa judul)') + ' @ ' + g.konteks + ' [' + g.dasar + ']'; jml.tanpaJenis[kk] = (jml.tanpaJenis[kk] || 0) + 1; } });
+      r.gambar.forEach(function (g) { jml.gambar++; if (g.diganti) jml.diganti++; if (g.dilewati) jml.sudahDiganti++; if (g.jenis) jml.perJenis[g.jenis] = (jml.perJenis[g.jenis] || 0) + 1; else { var kk = (g.judul || '(tanpa judul)') + ' @ ' + g.konteks + ' [' + g.dasar + ']'; jml.tanpaJenis[kk] = (jml.tanpaJenis[kk] || 0) + 1; } });
     });
     if (h.berikut === null) { props.deleteProperty(kunci); Logger.log('SELESAI (' + mode + '): ' + JSON.stringify(jml, null, 1)); return; }
     mulai = h.berikut; props.setProperty(kunci, String(mulai));
@@ -302,7 +304,7 @@ function buatContohFormGambar() {
   [['UKURAN BAJU', 'caraBaju', 'tabelBaju', 'baju'], ['UKURAN CELANA', 'caraCelana', 'tabelCelana', 'celana']].forEach(function (b) {
     form.addSectionHeaderItem().setTitle(b[0]);
     [b[1], b[2]].forEach(function (k) {
-      form.addImageItem().setImage(DriveApp.getFileById(g[k]).getBlob()).setWidth(640).setAltText(ALT_GAMBAR[k]);
+      form.addImageItem().setImage(DriveApp.getFileById(g[k]).getBlob()).setWidth(640);
     });
     form.addTextItem().setTitle('Contoh isian ukuran ' + b[3]);
   });
