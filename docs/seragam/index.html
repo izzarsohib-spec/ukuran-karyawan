@@ -622,7 +622,7 @@
         <div>
           <small>Ukuran seragam karyawan</small>
           <h2>Pantau kelengkapan data tiap lokasi</h2>
-          <div class="rabtotal"><small>Total anggaran RAB seluruh lokasi</small><b class="num" id="rabTotal">-</b></div>
+          <div class="rabtotal"><small>Karyawan sudah mengisi dari total karyawan</small><b class="num" id="rabTotal">-</b></div>
           <button class="cta" id="cta">Lihat yang kurang</button>
           <button class="cta" id="ctaIngat" style="margin-left:8px">Ingatkan PIC</button>
         </div>
@@ -906,7 +906,7 @@
       [idn(T), 'Target anggota', '#8aa4ff'], [idn(I), 'Sudah mengisi', 'var(--accent)'],
       [n('kurang'), 'Lokasi masih kurang', 'var(--orange)'], [n('kosong'), 'Belum ada yang isi', 'var(--bad)'],
     ].map(([a, b, c]) => `<div><b>${a}</b><span><i style="background:${c}"></i>${b}</span></div>`).join('');
-    $('rabTotal').textContent = anggaran ? rp(anggaran.total) : '-';
+    $('rabTotal').innerHTML = `${idn(I)} <span style="font-size:.55em;font-weight:500;color:var(--muted)">dari ${idn(T)} karyawan</span>`;
     $('totalKurang').textContent = idn(T - I);
     $('pctKurang').textContent = `${(100 - p).toFixed(1).replace('.', ',')}% dari target`;
     const w = [...lokasi].sort((a, b) => b.kurang - a.kurang)[0];

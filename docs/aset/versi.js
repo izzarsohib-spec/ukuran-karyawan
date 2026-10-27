@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.108', tanggal: '2026-10-27', catatan: 'Sidebar portal ringkas (128 px)' };
+window.VERSI = { no: '1.109', tanggal: '2026-10-27', catatan: 'Monitoring: total RAB diganti karyawan mengisi dari total karyawan' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
