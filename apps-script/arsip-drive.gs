@@ -170,7 +170,7 @@ function aksiFolder_(d) {
 
 // ---- Mengganti gambar yang SUDAH terpasang di form-form lokasi (tanpa membuat ulang form) ----
 // POST: { token, aksi: 'gambarForm', mode: 'lihat' | 'uji' | 'ganti', ids?: [formId], mulai?: 0, jumlah?: 25,
-//         gambar: { caraBaju, tabelBaju, caraCelana, tabelCelana } (ID berkas PNG di dalam folder utama; wajib untuk uji/ganti) }
+//         gambar?: { caraBaju, tabelBaju, caraCelana, tabelCelana } (ID berkas PNG di dalam folder utama; bila kosong dicari otomatis berdasarkan NAMA_GAMBAR) }
 //  lihat : daftar item bergambar tiap form (judul + jenis yang terbaca), untuk memeriksa sebelum mengganti. Tanpa ids = form pertama di registri.
 //  uji   : sama seperti ganti tetapi TIDAK mengubah apa pun, hanya melaporkan gambar mana yang akan diganti.
 //  ganti : setImage() pada ImageItem yang judulnya cocok (cara/tabel x baju/celana), lebar 640. Urutan, jawaban, dan pengaturan form tidak berubah.
@@ -196,8 +196,10 @@ function gambarForm_(d) {
   var blob = {};
   if (mode !== 'lihat') {
     var kunci = ['caraBaju', 'tabelBaju', 'caraCelana', 'tabelCelana'];
+    var sumber = d.gambar || cariGambarUkuran_();
+    if (sumber.error) return { ok: false, error: sumber.error };
     for (var k = 0; k < kunci.length; k++) {
-      var fid = d.gambar && d.gambar[kunci[k]];
+      var fid = sumber[kunci[k]];
       if (!fid || !dalamPohon_(fid)) return { ok: false, error: 'gambar.' + kunci[k] + ' kosong atau di luar folder utama' };
       var fl = DriveApp.getFileById(fid);
       if (String(fl.getMimeType()).indexOf('image/') !== 0) return { ok: false, error: 'gambar.' + kunci[k] + ' bukan gambar' };
@@ -222,6 +224,47 @@ function gambarForm_(d) {
     } catch (err) { hasil.push({ id: id, ok: false, error: String(err) }); }
   }
   return { ok: true, mode: mode, jumlah: hasil.length, berikut: berikut, hasil: hasil };
+}
+
+// Gambar dicari berdasarkan nama berkas (yang terbaru, di dalam folder utama) bila ID tidak diberikan.
+var NAMA_GAMBAR = {
+  caraBaju: 'Form - Cara Mengukur Baju (besar).png', tabelBaju: 'Form - Tabel Ukuran Baju (besar).png',
+  caraCelana: 'Form - Cara Mengukur Celana (besar).png', tabelCelana: 'Form - Tabel Ukuran Celana (besar).png'
+};
+function cariGambarUkuran_() {
+  var out = {};
+  for (var k in NAMA_GAMBAR) {
+    var r = Drive.Files.list({ q: "name = '" + q_(NAMA_GAMBAR[k]) + "' and trashed = false", orderBy: 'modifiedTime desc', fields: 'files(id)', supportsAllDrives: true, includeItemsFromAllDrives: true });
+    var f = (r.files || []).filter(function (x) { return dalamPohon_(x.id); })[0];
+    if (!f) return { error: 'gambar "' + NAMA_GAMBAR[k] + '" tidak ditemukan di dalam folder utama' };
+    out[k] = f.id;
+  }
+  return out;
+}
+
+// Dijalankan dari editor (tombol Run), hasilnya di Log eksekusi. Tidak butuh token.
+//  lihatGambarForm : tampilkan item bergambar di SATU form (untuk memeriksa judul)
+//  ujiGambarForm   : laporan semua form tanpa mengubah apa pun
+//  gantiGambarForm : ganti gambar di semua form; bila waktu habis, jalankan lagi (lanjut dari form terakhir)
+function lihatGambarForm() { Logger.log(JSON.stringify(gambarForm_({ mode: 'lihat' }), null, 1)); }
+function ujiGambarForm() { jalankanGambar_('uji'); }
+function gantiGambarForm() { jalankanGambar_('ganti'); }
+function ulangiDariAwalGambar() { var p = PropertiesService.getScriptProperties(); p.deleteProperty('GAMBAR_MULAI_uji'); p.deleteProperty('GAMBAR_MULAI_ganti'); }
+function jalankanGambar_(mode) {
+  var props = PropertiesService.getScriptProperties(), kunci = 'GAMBAR_MULAI_' + mode, t0 = Date.now();
+  var mulai = Number(props.getProperty(kunci)) || 0, jml = { form: 0, gambar: 0, diganti: 0, gagal: [], tanpaJenis: {} };
+  while (Date.now() - t0 < 4 * 60 * 1000) {
+    var h = gambarForm_({ mode: mode, mulai: mulai, jumlah: 10 });
+    if (!h.ok) { Logger.log('GAGAL: ' + JSON.stringify(h)); return; }
+    h.hasil.forEach(function (r) {
+      jml.form++;
+      if (!r.ok) { jml.gagal.push(r.id + ': ' + r.error); return; }
+      r.gambar.forEach(function (g) { jml.gambar++; if (g.diganti) jml.diganti++; if (!g.jenis) jml.tanpaJenis[g.judul] = (jml.tanpaJenis[g.judul] || 0) + 1; });
+    });
+    if (h.berikut === null) { props.deleteProperty(kunci); Logger.log('SELESAI (' + mode + '): ' + JSON.stringify(jml, null, 1)); return; }
+    mulai = h.berikut; props.setProperty(kunci, String(mulai));
+  }
+  Logger.log('BELUM SELESAI (' + mode + '), jalankan lagi untuk lanjut dari form ke-' + mulai + '. Sejauh ini: ' + JSON.stringify(jml, null, 1));
 }
 
 // ---- Membuat Google Form pendataan ukuran dari form template, di dalam folder lokasinya ----

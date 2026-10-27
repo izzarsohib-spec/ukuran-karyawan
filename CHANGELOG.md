@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 27 Okt 2026
+- **v1.148** Apps Script arsip-drive: gambar ukuran (4 berkas PNG "(besar)") dicari otomatis berdasarkan nama di folder utama, dan ada tiga fungsi yang bisa dijalankan dari editor tanpa token: lihatGambarForm (satu form), ujiGambarForm (laporan semua form, tidak mengubah apa pun), gantiGambarForm (ganti gambar di semua form, bisa dilanjutkan bila waktu habis).
 - **v1.147** Apps Script arsip-drive: aksi baru `gambarForm` (mode lihat, uji, ganti) untuk mengganti gambar Cara Mengukur dan Tabel Ukuran (baju dan celana) yang sudah terpasang di form-form lokasi dengan versi besar (landscape), bertahap lewat registri, tanpa membuat ulang form. Gambar sepatu dan item lain tidak disentuh.
 - **v1.146** Monitoring: tombol "Lihat yang kurang" dan "Ingatkan PIC" di kartu utama dihapus beserta fungsinya. Tombol Ingatkan per PIC dan per lokasi tetap ada.
 - **v1.145** Monitoring: tinggi kartu PIC dan Daftar lokasi diambil di tengah (minimal 600 px, sekitar 84% tinggi layar, maksimal 780 px); v1.144 terlalu panjang.
