@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.123', tanggal: '2026-10-27', catatan: 'Arsip Drive: aksi buatForm membuat form per lokasi di foldernya' };
+window.VERSI = { no: '1.124', tanggal: '2026-10-27', catatan: 'buatForm: terbitkan form salinan dan bersihkan salinan yang gagal' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

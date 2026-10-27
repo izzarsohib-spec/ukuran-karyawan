@@ -189,14 +189,16 @@ function idTemplate_(d) {
   throw new Error('Form template "' + NAMA_TEMPLATE + '" tidak ditemukan di Drive akun ini');
 }
 function buatFormLokasi_(d) {
+  var salinan = null;
   try {
     if (!d.lokasi || !d.folderId) return { ok: false, error: 'lokasi dan folderId wajib' };
     if (!dalamPohon_(d.folderId)) return { ok: false, error: 'di luar folder utama' };
     var judul = String(d.judul || ('DATA SERAGAM ' + d.lokasi)).replace(/\s+/g, ' ').trim();
     var ada = Drive.Files.list({ q: "'" + d.folderId + "' in parents and trashed = false and mimeType = 'application/vnd.google-apps.form' and name = '" + q_(judul) + "'", fields: 'files(id)', supportsAllDrives: true, includeItemsFromAllDrives: true });
     if (ada.files && ada.files.length) return { ok: true, dilewati: true, id: ada.files[0].id };
-    var salinan = DriveApp.getFileById(idTemplate_(d)).makeCopy(judul, DriveApp.getFolderById(d.folderId));
+    salinan = DriveApp.getFileById(idTemplate_(d)).makeCopy(judul, DriveApp.getFolderById(d.folderId));
     var form = FormApp.openById(salinan.getId());
+    try { form.setPublished(true); } catch (e0) { /* versi lama tanpa status terbit */ }
     form.setTitle('Form Pengisian Data Seragam Karyawan - ' + d.lokasi);
     form.setDescription(DESKRIPSI_FORM.replace(/\{LOKASI\}/g, d.lokasi));
     if (FormApp.EmailCollectionType) form.setEmailCollectionType(FormApp.EmailCollectionType.VERIFIED); else form.setCollectEmail(true);
@@ -222,7 +224,10 @@ function buatFormLokasi_(d) {
     form.setDestination(FormApp.DestinationType.SPREADSHEET, SPREADSHEET_DATA_ID);
     var isi = pilihan ? form.createResponse().withItemResponse(pilihan.createResponse(d.lokasi)).toPrefilledUrl() : form.getPublishedUrl();
     return { ok: true, id: form.getId(), isi: isi, edit: form.getEditUrl(), nama: judul };
-  } catch (err) { return { ok: false, error: String(err) }; }
+  } catch (err) {
+    try { if (salinan) salinan.setTrashed(true); } catch (e1) { /* biarkan */ }  // salinan setengah jadi dibuang supaya bisa diulang
+    return { ok: false, error: String(err) };
+  }
 }
 
 // Jalankan SEKALI dari editor (tombol Run) untuk memberi izin akses Drive. Pastikan layanan "Drive API" sudah ditambahkan (Layanan > +).
