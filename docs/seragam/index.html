@@ -100,7 +100,7 @@
   .legend { display:flex; flex-wrap:wrap; gap:2px 12px; font-size:.72rem; color:var(--muted); } .legend > span { white-space:nowrap; }
   .legend i { display:inline-block; width:14px; height:3px; border-radius:2px; margin-right:5px; vertical-align:middle; }
   .chartcard svg { width:100%; height:auto; display:block; }
-  .pantau { display:grid; grid-template-columns:minmax(0,3fr) minmax(0,2fr); gap:14px; margin-top:14px; align-items:start; }
+  .pantau { display:grid; grid-template-columns:minmax(0,1fr); gap:14px; margin-top:14px; align-items:start; }
   @media (max-width: 980px) { .pantau { grid-template-columns:minmax(0,1fr); } }
   .pcard { padding:16px 18px; }
   .pcard .ttl { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; font-size:.9rem; margin-bottom:8px; }
@@ -684,10 +684,6 @@
         <div class="legend" id="picLegenda" style="margin:2px 0 8px"></div>
         <div id="picBar"></div>
       </div>
-      <div class="card pcard">
-        <div class="ttl"><div><b>Lokasi siap diproses</b><small>Semua karyawannya sudah mengisi, tetapi permintaan seragamnya belum dibuat</small></div></div>
-        <div id="siapProses"></div>
-      </div>
     </section>
 
     <section class="bawah card" id="ingat" hidden>
@@ -953,19 +949,10 @@
           ${x.lok ? `<div class="pl">${TAHAP.map(([k, nm, c]) => `<span><i style="background:${c}"></i>${x[k]} ${nm.toLowerCase()}</span>`).join('')}</div>` : ''}</div>
         ${x.id ? `<button class="btn mini" data-ingatpic="${esc(x.id)}" ${belum > 0 ? '' : 'disabled'}>Ingatkan</button>` : '<span></span>'}</div>`;
     }).join('') : '<div class="kosongnya">Belum ada data.</div>';
-    if (!statusMuat) { $('siapProses').innerHTML = '<div class="kosongnya">Memuat status permintaan…</div>'; return; }
-    const siap = sub.filter(l => l.status === 'lengkap' && ['belum', 'sebagian'].includes(infoLok(l).s)).sort((a, b) => b.target - a.target);
-    const orang = siap.reduce((a, l) => a + l.target, 0);
-    $('siapProses').innerHTML = siap.length
-      ? `<div class="siapbesar"><b>${idn(siap.length)}</b><span>lokasi · ${idn(orang)} karyawan siap dipesankan seragam</span></div>` + siap.slice(0, 5).map(l =>
-        `<button class="siaprow" data-siap="${esc(l.lokasi)}"><span><b>${esc(l.client)}</b><small>${l.target} karyawan · ${esc(l.bagian.map(b => b.nama).join(', '))}</small></span><span class="go">Buat permintaan ›</span></button>`).join('')
-        + (siap.length > 5 ? `<div class="muted" style="font-size:.74rem;margin-top:6px">dan ${siap.length - 5} lokasi lainnya · lihat di halaman Permintaan seragam</div>` : '')
-      : '<div class="kosongnya">Belum ada lokasi yang lengkap dan menunggu permintaan.</div>';
   }
   $('picBar').onclick = e => { const t = e.target.closest('[data-ingatpic]'); if (t && !t.disabled) ingatLokasi('', '', t.dataset.ingatpic); };
   document.addEventListener('click', e => {
     const c = e.target.closest('#areaChips .chip'); if (c) { areaTop = c.dataset.a; gambarTop(); return; }
-    const sp = e.target.closest('#siapProses .siaprow'); if (sp) { mStatusF = 'semua'; $('mCari').value = ''; terbukaMinta = true; tampil('permintaan'); setLokasiMinta(sp.dataset.siap); renderDaftarMinta(); return; }
     const r = e.target.closest('#topKurang .toprow'); if (r) { status = 'semua'; $('cari').value = ''; pilih(r.dataset.k); keDaftar(); }
   });
 
