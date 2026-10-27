@@ -89,6 +89,9 @@
   .kpi div { min-width:0; }
   .kpi b { display:block; font-family:var(--head); font-size:1.6rem; line-height:1.1; white-space:nowrap; }
   .kpi span { display:flex; align-items:center; gap:6px; font-size:.74rem; color:var(--muted); margin-top:4px; }
+  #kpi u { text-decoration:none; font-family:system-ui,sans-serif; font-size:.72rem; font-weight:500; color:var(--muted); margin-left:5px; }
+  #kpi span { font-size:.82rem; color:var(--text); font-weight:600; }
+  #kpi em { display:block; font-style:normal; font-size:.7rem; line-height:1.3; color:var(--muted); margin-top:3px; white-space:normal; }
   .kpi i { width:9px; height:9px; border-radius:3px; flex:none; }
 
   .rcol { display:grid; gap:14px; grid-template-rows:auto 1fr; }
@@ -903,9 +906,11 @@
            stroke-dasharray="${(C * p / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 55 55)"/>
        </svg><div class="t"><b>${p.toFixed(1).replace('.', ',')}%</b><span>sudah mengisi</span></div>`;
     $('kpi').innerHTML = [
-      [idn(T), 'Target anggota', '#8aa4ff'], [idn(I), 'Sudah mengisi', 'var(--accent)'],
-      [n('kurang'), 'Lokasi masih kurang', 'var(--orange)'], [n('kosong'), 'Belum ada yang isi', 'var(--bad)'],
-    ].map(([a, b, c]) => `<div><b>${a}</b><span><i style="background:${c}"></i>${b}</span></div>`).join('');
+      [idn(T), 'orang', 'Target karyawan', `anggota di ${idn(lokasi.length)} lokasi yang harus mengisi`, '#8aa4ff'],
+      [idn(I), 'orang', 'Sudah mengisi', `ukurannya sudah masuk (${p.toFixed(1).replace('.', ',')}% dari target)`, 'var(--accent)'],
+      [n('kurang'), 'lokasi', 'Masih kurang', 'sebagian karyawannya sudah, sebagian belum mengisi', 'var(--orange)'],
+      [n('kosong'), 'lokasi', 'Masih kosong', 'belum ada satu pun karyawan yang mengisi', 'var(--bad)'],
+    ].map(([a, u, b, d, c]) => `<div><b>${a}<u>${u}</u></b><span><i style="background:${c}"></i>${b}</span><em>${d}</em></div>`).join('');
     $('rabTotal').innerHTML = `${idn(I)} <span style="font-size:.55em;font-weight:500;color:var(--muted)">dari ${idn(T)} karyawan</span>`;
     $('totalKurang').textContent = idn(T - I);
     $('pctKurang').textContent = `${(100 - p).toFixed(1).replace('.', ',')}% dari target`;
