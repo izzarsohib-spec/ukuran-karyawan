@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 27 Okt 2026
+- **v1.134** Sidebar portal dipersempit (hanya ikon); mengembang menampilkan nama menu, akun, dan versi saat kursor di atasnya. Di HP tetap bar atas.
 - **v1.133** Seragam lebih ringkas (kurang scroll): Dashboard Utama menampilkan satu bagian per tab, kartu progres per PIC dan bagian Laporan Harian bisa dilipat, ringkasan mini tiap halaman bisa disembunyikan (tertutup awalnya di HP), logo/kartu utama/daftar lebih rapat. Peralatan menyusul.
 - **v1.132** Monitoring pengisian: kartu "Lokasi siap diproses" dihapus; kartu progres per PIC kini selebar halaman.
 - **v1.131** Peran security: web menampilkan keterangan singkat peran (Chief, Danru, Wadanru, Anggota pria, Anggota wanita) di daftar pengisi, rincian bagian, dan form permintaan/ploting, sementara bagian kerjanya tetap satu "Keamanan pria (security)". Butuh `supabase/migrasi-peran-security.sql` (kolom `peran` dan normalisasi bagian); web aman dipakai sebelum migrasi diterapkan.
