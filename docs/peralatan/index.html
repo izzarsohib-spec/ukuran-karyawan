@@ -1088,6 +1088,23 @@
   dariHash();
   window.addEventListener('saring-ubah', () => { mSel = ''; mTerbuka = false; muat(); }); // filter cabang / PIC berubah
   muat();
+  // segarkan otomatis tiap 30 detik tanpa memuat ulang halaman; digambar ulang hanya bila data berubah, dan dilewati saat tab tersembunyi atau kursor di kolom isian
+  let segarJalan = false, sidikData = '';
+  async function segarkan(paksa) {
+    if (segarJalan || !dimuat || document.hidden) return;
+    const f = document.activeElement;
+    if (!paksa && f && /^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName)) return;
+    segarJalan = true;
+    try {
+      const [lok, item, req] = await Promise.all([rpc('peralatan_daftar_lokasi'), rpc('peralatan_daftar_item'), rpc('peralatan_daftar_permintaan')]);
+      const sidik = JSON.stringify([lok, item, req]);
+      if (sidikData && sidik !== sidikData) await muat();
+      sidikData = sidik;
+    } catch (e) { /* coba lagi pada putaran berikutnya */ }
+    segarJalan = false;
+  }
+  setInterval(segarkan, 30000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) segarkan(true); });
 </script>
 </body>
 </html>

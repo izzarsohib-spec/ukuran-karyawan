@@ -3924,6 +3924,8 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
         ringkasan(); renderDaftar(); renderDaftarMinta();
       }
       muatStatus(true);
+      const pg = location.hash.slice(1), formTerbuka = ['iForm', 'oForm', 'rForm'].some(id => $(id) && !$(id).hidden) || kTerbuka || tTerbuka || terbukaPlot;
+      if (['inventaris', 'opname', 'pengiriman', 'penerimaan', 'tagihan', 'ploting', 'laporan'].includes(pg) && !formTerbuka) muatHilir(); // halaman stok/pengiriman/tagihan; tidak disentuh saat form atau editor terbuka
       $('segar').textContent = `Diperbarui otomatis tiap ${SEGAR_DETIK} detik · terakhir ${new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
     } catch (e) { $('segar').textContent = 'Pembaruan otomatis tertunda (jaringan), mencoba lagi…'; }
     segarJalan = false;

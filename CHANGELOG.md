@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 27 Okt 2026
+- **v1.115** Penyegaran otomatis tiap 30 detik diperluas ke semua halaman: Seragam (termasuk stok, pengiriman, tagihan bila tidak ada form terbuka), Peralatan, dan Administrator (tabel yang tampil, dilewati saat ada baris diedit). Digambar ulang hanya bila data berubah.
 - **v1.114** Seragam: data pengisian dan status permintaan disegarkan otomatis tiap 30 detik tanpa memuat ulang halaman (dilewati saat tab tersembunyi, kursor di kolom isian, atau jendela terbuka); keterangan waktu pembaruan terakhir di halaman Monitoring.
 - **v1.113** Kartu "Progres pengisian per PIC": semua PIC lapangan tampil (termasuk yang belum memegang lokasi), tombol Ingatkan per PIC di kanan bar (membuka jendela pesan khusus PIC itu), keterangan angka dipindah ke bawah bar.
 - **v1.112** Monitoring Pengisian: kartu "Progres pengisian per PIC" (batang sudah/belum mengisi, tombol Ingatkan PIC) dan "Lokasi siap diproses" (lokasi lengkap yang permintaan seragamnya belum dibuat, klik untuk membuat permintaan); keduanya ikut chip area.
