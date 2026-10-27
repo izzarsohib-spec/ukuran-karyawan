@@ -15,7 +15,8 @@
 var NAMA_TEMPLATE = 'Template Form Pengisian Data Seragam Karyawan';
 var TEMPLATE_ID = '';                                   // kosongkan untuk mencari berdasarkan nama di Drive; atau isi ID dari tautan edit (.../forms/d/ID/edit)
 var SPREADSHEET_DATA_ID = '1UMLvjFVYAJrsQh_6k8WU0B1c03lJQdstkJsV4GmCVSE'; // tujuan tanggapan (sama dengan Code.gs)
-var FOLDER_ID = '';                                     // opsional: folder Drive tempat form hasil salinan disimpan
+var FOLDER_UTAMA_ID = '1eM52zz_v9LA8DBt27vk6km-dieWKfDvn'; // folder utama arsip; form baru ditaruh di subfolder yang namanya sama dengan lokasi (bila ada)
+var FOLDER_ID = '';                                     // cadangan bila subfolder lokasi tidak ditemukan (kosong = tetap di Drive Saya)
 var SUPABASE_URL = 'https://vqcusagijiavaoljfrib.supabase.co';
 var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxY3VzYWdpamlhdmFvbGpmcmliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0OTIzOTksImV4cCI6MjEwODA2ODM5OX0.VeslVR4UHv26LCMbkO7KP0k96r8lg7-NNLjY30iMyFk';
 var BATAS_MS = 5 * 60 * 1000;
@@ -61,7 +62,8 @@ function prosesLokasi_(maks) {
 
 function buatFormLokasi_(template, lokasi, info) {
   var salinan = template.makeCopy('Form Ukuran Seragam - ' + lokasi);
-  if (FOLDER_ID) { DriveApp.getFolderById(FOLDER_ID).addFile(salinan); DriveApp.getRootFolder().removeFile(salinan); }
+  var tujuanFolder = folderLokasi_(lokasi) || (FOLDER_ID ? DriveApp.getFolderById(FOLDER_ID) : null);
+  if (tujuanFolder) { tujuanFolder.addFile(salinan); DriveApp.getRootFolder().removeFile(salinan); } else Logger.log('Tanpa folder lokasi: ' + lokasi + ' (form dibiarkan di Drive Saya)');
   var form = FormApp.openById(salinan.getId());
 
   form.setTitle('Form Pengisian Data Seragam Karyawan - ' + lokasi);
@@ -101,6 +103,14 @@ function buatFormLokasi_(template, lokasi, info) {
 }
 
 // ---------- bantuan ----------
+var PETA_FOLDER_ = null;
+function normNama_(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
+function folderLokasi_(lokasi) { // subfolder langsung dari folder utama dengan nama sama (huruf besar-kecil dan tanda baca diabaikan)
+  if (!FOLDER_UTAMA_ID) return null;
+  if (!PETA_FOLDER_) { PETA_FOLDER_ = {}; var it = DriveApp.getFolderById(FOLDER_UTAMA_ID).getFolders(); while (it.hasNext()) { var f = it.next(); PETA_FOLDER_[normNama_(f.getName())] = f; } }
+  return PETA_FOLDER_[normNama_(lokasi)] || null;
+}
+
 function idTemplate_() {
   if (TEMPLATE_ID) return TEMPLATE_ID;
   var it = DriveApp.getFilesByName(NAMA_TEMPLATE);

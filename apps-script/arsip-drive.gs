@@ -83,7 +83,7 @@ function doPost(e) {
 }
 
 // ---- Akses terbatas ke isi folder utama (untuk Claude Code / admin): daftar isi, baca berkas, unggah berkas ----
-// Semua aksi hanya berlaku DI DALAM folder utama dan turunannya. Tidak ada aksi menghapus, memindah, atau menimpa berkas.
+// Semua aksi hanya berlaku DI DALAM folder utama dan turunannya. Tidak ada aksi memindah atau menimpa berkas; satu-satunya penghapusan adalah buangForm (hanya Google Form, ke Sampah).
 // POST JSON: { token, aksi: 'pohon' | 'baca' | 'unggah', ... }
 //   pohon : { id? (folder, default folder utama), kedalaman? (1-4, default 1) } -> isi folder (folder dan berkas)
 //   baca  : { id (berkas) } -> teks (Doc/Sheet/teks biasa) atau base64 (berkas lain, maksimal 8 MB)
@@ -140,6 +140,21 @@ function aksiFolder_(d) {
     (lama.files || []).forEach(function (f) { Drive.Files.update({ name: nama.replace(/(\.[^.]+)?$/, ' (lama ' + stempel + ')$1') }, f.id, null, { supportsAllDrives: true }); });
     var file = DriveApp.getFolderById(tujuan).createFile(Utilities.newBlob(Utilities.base64Decode(d.isi), d.mime || 'application/octet-stream', nama));
     return jawab_({ ok: true, id: file.getId(), nama: nama, url: file.getUrl() });
+  }
+  if (aksi === 'buangForm') {
+    // satu-satunya aksi yang menghapus, dan sangat dibatasi: hanya Google Form, hanya di dalam folder utama, hanya ke Sampah (bisa dipulihkan 30 hari),
+    // dan hanya untuk id yang disebut satu per satu serta kata konfirmasi. Tidak ada penghapusan permanen.
+    if (d.konfirmasi !== 'HAPUS FORM' || !(d.ids && d.ids.length)) return jawab_({ ok: false, error: 'butuh konfirmasi "HAPUS FORM" dan daftar ids' });
+    var hasil = d.ids.slice(0, 100).map(function (id) {
+      try {
+        if (!dalamPohon_(id)) return { id: id, ok: false, error: 'di luar folder utama' };
+        var m = Drive.Files.get(id, { fields: 'id, name, mimeType', supportsAllDrives: true });
+        if (m.mimeType !== 'application/vnd.google-apps.form') return { id: id, ok: false, error: 'bukan Google Form' };
+        Drive.Files.update({ trashed: true }, id, null, { supportsAllDrives: true });
+        return { id: id, ok: true, nama: m.name };
+      } catch (err) { return { id: id, ok: false, error: String(err) }; }
+    });
+    return jawab_({ ok: true, hasil: hasil });
   }
   return jawab_({ ok: false, error: 'aksi tidak dikenal' });
 }

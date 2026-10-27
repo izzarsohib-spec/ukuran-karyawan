@@ -41,3 +41,4 @@ Web App yang sama menerima tiga aksi tambahan lewat POST JSON (dengan token yang
 - `{"token":"...","aksi":"unggah","id":"<folderId, opsional>","nama":"x.pdf","isi":"<base64>","mime":"application/pdf"}` membuat berkas baru; nama yang sama tidak ditimpa (yang lama diberi tanda "lama").
 Tidak ada aksi menghapus atau memindah. Setelah menempel versi baru, buka Terapkan > Kelola deployment > ikon pensil > Versi baru > Terapkan (URL /exec tetap sama),
 dan setujui izin tambahan (koneksi eksternal) bila diminta. Layanan "Drive API" (v3) harus sudah ditambahkan.
+- `{"token":"...","aksi":"buangForm","ids":["<formId>",...],"konfirmasi":"HAPUS FORM"}` memindahkan Google Form yang disebut ke Sampah (bisa dipulihkan 30 hari). Hanya Google Form, hanya di dalam folder utama, maksimal 100 id per panggilan, tidak ada penghapusan permanen.

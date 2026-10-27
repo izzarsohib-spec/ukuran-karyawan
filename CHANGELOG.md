@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 27 Okt 2026
+- **v1.122** Apps Script: aksi `buangForm` (Google Form saja, ke Sampah, butuh konfirmasi) untuk mengganti form lama; skrip pembuat form menaruh form baru di subfolder lokasinya.
 - **v1.121** Apps Script arsip Drive: tambah aksi daftar isi, baca berkas, dan unggah berkas, terbatas di dalam folder utama (tanpa hapus/pindah/timpa). Petunjuk di `apps-script/PETUNJUK.md`.
 - **v1.120** Skrip Apps Script `apps-script/buat-form-lokasi.gs`: membuat Google Form pengisian ukuran per lokasi dari form template, wajib login Google dengan batas 1 tanggapan per akun, lokasi dan bagian kerja berupa pilihan, nama wajib huruf; tautan dicatat di spreadsheet. Petunjuk di `apps-script/PETUNJUK.md`.
 - **v1.119** Koreksi admin atas data karyawan permanen: baris yang diedit di Administrator dikunci sehingga sinkronisasi Google Form tiap jam tidak menimpanya; baris asal Form yang dihapus admin ditandai dibatalkan (tidak muncul lagi saat sinkronisasi). SQL: `supabase/migrasi-kunci-sinkron.sql` (sudah diterapkan).
