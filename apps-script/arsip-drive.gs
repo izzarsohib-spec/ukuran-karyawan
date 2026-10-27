@@ -164,7 +164,64 @@ function aksiFolder_(d) {
     });
     return jawab_({ ok: true, hasil: hasil });
   }
+  if (aksi === 'gambarForm') return jawab_(gambarForm_(d));
   return jawab_({ ok: false, error: 'aksi tidak dikenal' });
+}
+
+// ---- Mengganti gambar yang SUDAH terpasang di form-form lokasi (tanpa membuat ulang form) ----
+// POST: { token, aksi: 'gambarForm', mode: 'lihat' | 'uji' | 'ganti', ids?: [formId], mulai?: 0, jumlah?: 25,
+//         gambar: { caraBaju, tabelBaju, caraCelana, tabelCelana } (ID berkas PNG di dalam folder utama; wajib untuk uji/ganti) }
+//  lihat : daftar item bergambar tiap form (judul + jenis yang terbaca), untuk memeriksa sebelum mengganti. Tanpa ids = form pertama di registri.
+//  uji   : sama seperti ganti tetapi TIDAK mengubah apa pun, hanya melaporkan gambar mana yang akan diganti.
+//  ganti : setImage() pada ImageItem yang judulnya cocok (cara/tabel x baju/celana), lebar 640. Urutan, jawaban, dan pengaturan form tidak berubah.
+// Tanpa ids dipakai semua form di registri, bertahap lewat mulai/jumlah; respons memuat "berikut" (nilai mulai berikutnya, null bila selesai).
+// Hanya ImageItem yang judulnya cocok yang disentuh (gambar sepatu dan lainnya dilewati). Tidak ada penghapusan.
+function jenisGambar_(judul) {
+  var t = String(judul).toLowerCase(), kain = /baju/.test(t) ? 'Baju' : (/celana/.test(t) ? 'Celana' : null);
+  if (!kain) return null;
+  if (/cara|ukur(?!an)/.test(t)) return 'cara' + kain;
+  if (/tabel|ukuran/.test(t)) return 'tabel' + kain;
+  return null;
+}
+function gambarForm_(d) {
+  var mode = String(d.mode || 'lihat'), mulai = Number(d.mulai) || 0, jumlah = Math.min(Number(d.jumlah) || 25, 50), t0 = Date.now();
+  var ids = d.ids && d.ids.length ? d.ids : null, berikut = null;
+  if (!ids) {
+    var baris = registri_().getDataRange().getValues().slice(1).filter(function (r) { return r[1]; });
+    var semua = baris.map(function (r) { return String(r[1]); });
+    if (mode === 'lihat' && !d.mulai) semua = semua.slice(0, 1);
+    ids = semua.slice(mulai, mulai + jumlah);
+    berikut = mulai + jumlah < semua.length && mode !== 'lihat' ? mulai + jumlah : null;
+  } else ids = ids.slice(0, jumlah);
+  var blob = {};
+  if (mode !== 'lihat') {
+    var kunci = ['caraBaju', 'tabelBaju', 'caraCelana', 'tabelCelana'];
+    for (var k = 0; k < kunci.length; k++) {
+      var fid = d.gambar && d.gambar[kunci[k]];
+      if (!fid || !dalamPohon_(fid)) return { ok: false, error: 'gambar.' + kunci[k] + ' kosong atau di luar folder utama' };
+      var fl = DriveApp.getFileById(fid);
+      if (String(fl.getMimeType()).indexOf('image/') !== 0) return { ok: false, error: 'gambar.' + kunci[k] + ' bukan gambar' };
+      blob[kunci[k]] = fl.getBlob();
+    }
+  }
+  var hasil = [];
+  for (var i = 0; i < ids.length; i++) {
+    if (Date.now() - t0 > 5 * 60 * 1000) { berikut = berikut === null ? null : mulai + i; hasil.push({ id: ids[i], ok: false, error: 'waktu habis, ulangi dari mulai=' + (mulai + i) }); break; }
+    var id = ids[i];
+    try {
+      if (!dalamPohon_(id)) { hasil.push({ id: id, ok: false, error: 'di luar folder utama' }); continue; }
+      var m = Drive.Files.get(id, { fields: 'mimeType', supportsAllDrives: true });
+      if (m.mimeType !== 'application/vnd.google-apps.form') { hasil.push({ id: id, ok: false, error: 'bukan Google Form' }); continue; }
+      var form = FormApp.openById(id), items = form.getItems(FormApp.ItemType.IMAGE), r = { id: id, nama: form.getTitle(), ok: true, gambar: [] };
+      items.forEach(function (it) {
+        var jenis = jenisGambar_(it.getTitle()), ada = { posisi: it.getIndex(), judul: it.getTitle(), jenis: jenis };
+        if (jenis && mode === 'ganti') { it.asImageItem().setImage(blob[jenis]).setWidth(640); ada.diganti = true; }
+        r.gambar.push(ada);
+      });
+      hasil.push(r);
+    } catch (err) { hasil.push({ id: id, ok: false, error: String(err) }); }
+  }
+  return { ok: true, mode: mode, jumlah: hasil.length, berikut: berikut, hasil: hasil };
 }
 
 // ---- Membuat Google Form pendataan ukuran dari form template, di dalam folder lokasinya ----

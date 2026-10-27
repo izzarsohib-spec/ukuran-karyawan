@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.146', tanggal: '2026-10-27', catatan: 'Tombol Lihat yang kurang dan Ingatkan PIC dihapus' };
+window.VERSI = { no: '1.147', tanggal: '2026-10-27', catatan: 'Apps Script: aksi gambarForm untuk mengganti gambar di form lokasi' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
