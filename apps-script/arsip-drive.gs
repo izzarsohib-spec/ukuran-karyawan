@@ -65,6 +65,7 @@ function doPost(e) {
   try {
     var d = JSON.parse(e.postData.contents);
     if (d.token !== TOKEN) return jawab_({ ok: false, error: 'token salah' });
+    if (d.aksi) return aksiFolder_(d);
     if (!d.lokasi || !d.nama || !d.pdf) return jawab_({ ok: false, error: 'data kurang' });
     var tujuan = cariFolder_(d.lokasi);
     if (!tujuan) {
@@ -79,6 +80,68 @@ function doPost(e) {
     var file = DriveApp.getFolderById(tujuan.id).createFile(Utilities.newBlob(Utilities.base64Decode(d.pdf), 'application/pdf', nama));
     return jawab_({ ok: true, folder: tujuan.jalur, folderBaru: tujuan.baru, nama: nama, url: file.getUrl() });
   } catch (err) { return jawab_({ ok: false, error: String(err) }); }
+}
+
+// ---- Akses terbatas ke isi folder utama (untuk Claude Code / admin): daftar isi, baca berkas, unggah berkas ----
+// Semua aksi hanya berlaku DI DALAM folder utama dan turunannya. Tidak ada aksi menghapus, memindah, atau menimpa berkas.
+// POST JSON: { token, aksi: 'pohon' | 'baca' | 'unggah', ... }
+//   pohon : { id? (folder, default folder utama), kedalaman? (1-4, default 1) } -> isi folder (folder dan berkas)
+//   baca  : { id (berkas) } -> teks (Doc/Sheet/teks biasa) atau base64 (berkas lain, maksimal 8 MB)
+//   unggah: { id? (folder tujuan, default folder utama), nama, isi (base64), mime? } -> membuat berkas baru; nama sama tidak ditimpa (yang lama diberi tanda lama)
+var BATAS_BACA = 8 * 1024 * 1024;
+
+function dalamPohon_(id) {
+  var cur = id;
+  for (var i = 0; i < 12 && cur; i++) {
+    if (cur === FOLDER_UTAMA) return true;
+    var f = Drive.Files.get(cur, { fields: 'parents', supportsAllDrives: true });
+    cur = f.parents && f.parents[0];
+  }
+  return false;
+}
+function isiFolder_(id, kedalaman, jalur) {
+  var hasil = [], halaman = null;
+  do {
+    var r = Drive.Files.list({ q: "'" + id + "' in parents and trashed = false", orderBy: 'folder,name',
+      fields: 'nextPageToken, files(id, name, mimeType, size, modifiedTime)', pageSize: 1000, pageToken: halaman, supportsAllDrives: true, includeItemsFromAllDrives: true });
+    (r.files || []).forEach(function (f) {
+      var folder = f.mimeType === 'application/vnd.google-apps.folder', o = { id: f.id, nama: f.name, jenis: folder ? 'folder' : f.mimeType, ukuran: f.size ? Number(f.size) : null, diubah: f.modifiedTime };
+      if (folder && kedalaman > 1) o.isi = isiFolder_(f.id, kedalaman - 1);
+      hasil.push(o);
+    });
+    halaman = r.nextPageToken;
+  } while (halaman);
+  return hasil;
+}
+function aksiFolder_(d) {
+  var aksi = String(d.aksi);
+  if (aksi === 'pohon') {
+    var id = d.id || FOLDER_UTAMA;
+    if (!dalamPohon_(id)) return jawab_({ ok: false, error: 'di luar folder utama' });
+    return jawab_({ ok: true, id: id, isi: isiFolder_(id, Math.min(4, Math.max(1, Number(d.kedalaman) || 1))) });
+  }
+  if (aksi === 'baca') {
+    if (!d.id || !dalamPohon_(d.id)) return jawab_({ ok: false, error: 'di luar folder utama' });
+    var m = Drive.Files.get(d.id, { fields: 'id, name, mimeType, size', supportsAllDrives: true }), blob;
+    if (m.mimeType === 'application/vnd.google-apps.spreadsheet') blob = Utilities.newBlob(UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/files/' + d.id + '/export?mimeType=text/csv', { headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() } }).getContent(), 'text/csv', m.name + '.csv');
+    else if (m.mimeType === 'application/vnd.google-apps.document') blob = Utilities.newBlob(UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/files/' + d.id + '/export?mimeType=text/plain', { headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() } }).getContent(), 'text/plain', m.name + '.txt');
+    else { if (Number(m.size) > BATAS_BACA) return jawab_({ ok: false, error: 'berkas lebih dari 8 MB' }); blob = DriveApp.getFileById(d.id).getBlob(); }
+    var bytes = blob.getBytes(); if (bytes.length > BATAS_BACA) return jawab_({ ok: false, error: 'hasil lebih dari 8 MB' });
+    var tipe = blob.getContentType() || '', teks = /^text\/|json|csv|xml/.test(tipe);
+    return jawab_({ ok: true, nama: m.name, mime: m.mimeType, teks: teks ? blob.getDataAsString('UTF-8') : null, base64: teks ? null : Utilities.base64Encode(bytes) });
+  }
+  if (aksi === 'unggah') {
+    var tujuan = d.id || FOLDER_UTAMA;
+    if (!dalamPohon_(tujuan)) return jawab_({ ok: false, error: 'di luar folder utama' });
+    if (!d.nama || !d.isi) return jawab_({ ok: false, error: 'data kurang' });
+    var nama = String(d.nama).replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
+    var stempel = Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM-dd HHmm');
+    var lama = Drive.Files.list({ q: "'" + tujuan + "' in parents and trashed = false and name = '" + q_(nama) + "'", fields: 'files(id)', supportsAllDrives: true, includeItemsFromAllDrives: true });
+    (lama.files || []).forEach(function (f) { Drive.Files.update({ name: nama.replace(/(\.[^.]+)?$/, ' (lama ' + stempel + ')$1') }, f.id, null, { supportsAllDrives: true }); });
+    var file = DriveApp.getFolderById(tujuan).createFile(Utilities.newBlob(Utilities.base64Decode(d.isi), d.mime || 'application/octet-stream', nama));
+    return jawab_({ ok: true, id: file.getId(), nama: nama, url: file.getUrl() });
+  }
+  return jawab_({ ok: false, error: 'aksi tidak dikenal' });
 }
 
 // Jalankan SEKALI dari editor (tombol Run) untuk memberi izin akses Drive. Pastikan layanan "Drive API" sudah ditambahkan (Layanan > +).

@@ -33,3 +33,11 @@ Tanggapan masuk ke spreadsheet data sehingga sinkronisasi `Code.gs` tidak perlu 
 
 Catatan: tiap form menambah satu tab di spreadsheet data; Google Sheets membatasi jumlah tab, jadi bila terlalu banyak, ubah `SPREADSHEET_DATA_ID` ke spreadsheet lain
 (dan tambahkan ID-nya ke `Code.gs` agar ikut disinkronkan). Menghapus tanggapan di Form (oleh admin) membuat akun itu bisa mengisi sekali lagi.
+
+## Akses admin ke isi folder (daftar isi, baca, unggah)
+Web App yang sama menerima tiga aksi tambahan lewat POST JSON (dengan token yang sama), semuanya TERBATAS di dalam folder utama dan turunannya:
+- `{"token":"...","aksi":"pohon","id":"<folderId, opsional>","kedalaman":1-4}` mendaftar folder dan berkas.
+- `{"token":"...","aksi":"baca","id":"<berkasId>"}` mengambil isi: teks untuk Doc, Sheet (CSV), dan teks biasa; base64 untuk berkas lain (maks. 8 MB).
+- `{"token":"...","aksi":"unggah","id":"<folderId, opsional>","nama":"x.pdf","isi":"<base64>","mime":"application/pdf"}` membuat berkas baru; nama yang sama tidak ditimpa (yang lama diberi tanda "lama").
+Tidak ada aksi menghapus atau memindah. Setelah menempel versi baru, buka Terapkan > Kelola deployment > ikon pensil > Versi baru > Terapkan (URL /exec tetap sama),
+dan setujui izin tambahan (koneksi eksternal) bila diminta. Layanan "Drive API" (v3) harus sudah ditambahkan.

@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.120', tanggal: '2026-10-27', catatan: 'Skrip pembuat Google Form per lokasi (batas 1 tanggapan)' };
+window.VERSI = { no: '1.121', tanggal: '2026-10-27', catatan: 'Arsip Drive: aksi daftar isi, baca, dan unggah terbatas di folder utama' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
