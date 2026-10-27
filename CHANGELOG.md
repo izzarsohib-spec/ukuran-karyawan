@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 27 Okt 2026
+- **v1.130** Sinkronisasi Form: mendukung kunci Supabase format baru (`sb_secret_...`) yang dikirim lewat header `apikey` saja, selain kunci lama (JWT).
 - **v1.129** Sinkronisasi Form: kolom waktu juga dikenali bila berjudul "Cap waktu" (form berbahasa Indonesia); sebelumnya waktu pengisian dari form baru akan kosong.
 - **v1.128** Tanggapan tiap form lokasi disimpan di spreadsheet sendiri (`TANGGAPAN <lokasi>`) di folder lokasinya dan didaftar di spreadsheet registri; sinkronisasi Supabase (`Code.gs`) membaca spreadsheet data lama ditambah semua spreadsheet di registri, bergiliran dengan batas waktu.
 - **v1.127** `buatForm`: template yang sudah berisi pilihan LOKASI tunggal (hasil salinan form lokasi) didukung; pilihannya diganti nama lokasi tujuan.

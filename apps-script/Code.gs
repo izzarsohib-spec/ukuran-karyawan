@@ -75,7 +75,8 @@ function sinkronSemua() {
     var res = UrlFetchApp.fetch(url + '/rest/v1/ukuran_pekerja?on_conflict=kunci', {
       method: 'post',
       contentType: 'application/json',
-      headers: { apikey: key, Authorization: 'Bearer ' + key, Prefer: 'resolution=merge-duplicates,return=minimal' },
+      // kunci lama (JWT, berawalan eyJ) dikirim juga sebagai Bearer; kunci baru (sb_secret_...) bukan JWT, cukup lewat header apikey
+      headers: Object.assign({ apikey: key, Prefer: 'resolution=merge-duplicates,return=minimal' }, key.indexOf('sb_') === 0 ? {} : { Authorization: 'Bearer ' + key }),
       payload: JSON.stringify(rows.slice(s, s + BATCH)),
       muteHttpExceptions: true
     });

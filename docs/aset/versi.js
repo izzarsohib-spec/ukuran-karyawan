@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.129', tanggal: '2026-10-27', catatan: 'Sinkronisasi membaca kolom Cap waktu pada form berbahasa Indonesia' };
+window.VERSI = { no: '1.130', tanggal: '2026-10-27', catatan: 'Sinkronisasi mendukung kunci Supabase baru (sb_secret_)' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
