@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 27 Okt 2026
+- **v1.126** `buatForm`: parameter `deskripsi` kosong berarti memakai deskripsi template apa adanya (format tebal dari editor Forms tidak bisa dibuat lewat kode).
 - **v1.125** Aksi `buatForm`: menambah gambar tabel ukuran sepatu pada halaman ukuran sepatu, deskripsi dan daftar bagian kerja bisa dikirim sebagai parameter; aksi `setDeskripsi` untuk menguji format deskripsi.
 - **v1.124** Aksi `buatForm`: form salinan diterbitkan (Google meminta form diterbitkan sebelum diatur) dan salinan setengah jadi dibuang bila gagal, supaya bisa diulang.
 - **v1.123** Form lama di folder arsip (311) dipindah ke Sampah Drive; Apps Script arsip Drive menambah aksi `buatForm` untuk membuat Google Form pendataan per lokasi (batas 1 tanggapan, login Google) langsung di folder lokasinya.

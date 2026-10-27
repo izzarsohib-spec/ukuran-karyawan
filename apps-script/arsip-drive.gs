@@ -207,7 +207,9 @@ function buatFormLokasi_(d) {
     var form = FormApp.openById(salinan.getId());
     try { form.setPublished(true); } catch (e0) { /* versi lama tanpa status terbit */ }
     form.setTitle('Form Pengisian Data Seragam Karyawan - ' + d.lokasi);
-    form.setDescription(String(d.deskripsi || DESKRIPSI_FORM).split('{LOKASI}').join(d.lokasi));
+    if (d.deskripsi === '') { // pakai deskripsi bawaan template apa adanya (mempertahankan format tebal/miring buatan editor Forms)
+      if (form.getDescription().indexOf('{LOKASI}') >= 0) throw new Error('deskripsi template masih berisi {LOKASI}; hapus dari template atau kirim parameter deskripsi');
+    } else form.setDescription(String(d.deskripsi || DESKRIPSI_FORM).split('{LOKASI}').join(d.lokasi));
     if (FormApp.EmailCollectionType) form.setEmailCollectionType(FormApp.EmailCollectionType.VERIFIED); else form.setCollectEmail(true);
     form.setLimitOneResponsePerUser(true);
     form.setAllowResponseEdits(false);
