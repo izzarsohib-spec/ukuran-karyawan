@@ -755,21 +755,31 @@
               <label>Total anggaran (RAB)<input id="mRab" readonly class="hi"></label>
             </div>
 
-            <div class="row" style="margin:18px 0 10px"><b>1. Atas nama siapa</b><span class="muted" id="mKarInfo"></span></div>
+            <div class="lipat" style="margin-top:12px">
+            <div class="row lipat-h" role="button" tabindex="0" aria-expanded="true" style="margin:0 0 8px"><b>1. Atas nama siapa</b><span class="muted" id="mKarInfo"></span></div>
             <div id="mPlot"></div>
             <div class="hint" id="mPlotPesan"></div>
+            </div>
 
-            <div class="row" style="margin:18px 0 10px"><b>2. Ringkasan pesanan</b><span class="muted">dihitung otomatis dari pembagian di atas</span></div>
+            <div class="lipat" style="margin-top:12px">
+            <div class="row lipat-h" role="button" tabindex="0" aria-expanded="true" style="margin:0 0 8px"><b>2. Ringkasan pesanan</b><span class="muted">dihitung otomatis dari pembagian di atas</span></div>
             <div class="wrap tabelminta"><table>
               <thead><tr><th style="min-width:240px">Jenis item</th><th class="r">Harga beli</th><th class="r">Harga jual</th><th style="width:96px">Qty</th><th class="r">Total beli</th><th class="r">Total jual</th><th></th></tr></thead>
               <tbody id="mBody"></tbody>
             </table></div>
+            </div>
 
-            <div class="row" style="margin:18px 0 10px"><b>3. Rekap barang</b><span class="muted">dipecah per jenis, karena barang datang terpisah</span></div>
+            <div class="lipat tutup" style="margin-top:12px">
+            <div class="row lipat-h" role="button" tabindex="0" aria-expanded="false" style="margin:0 0 8px"><b>3. Rekap barang</b><span class="muted">dipecah per jenis, karena barang datang terpisah</span></div>
             <div class="rekap" id="mRekap"></div>
+            </div>
 
-            <label style="display:block;margin-top:18px;font-size:.76rem;color:var(--muted)">Memo / catatan khusus
+            <div class="lipat tutup" style="margin-top:12px">
+            <div class="row lipat-h" role="button" tabindex="0" aria-expanded="false" style="margin:0 0 8px"><b>4. Memo / catatan khusus</b><span class="muted">opsional</span></div>
+            <label style="display:block;margin-top:6px;font-size:.76rem;color:var(--muted)">Memo / catatan khusus
               <textarea id="mMemo" rows="3" placeholder="Pesan untuk gudang, vendor, atau catatan tentang RAB…" style="margin-top:5px"></textarea></label>
+            </div>
+
 
             <div class="sums" style="margin-top:18px">
               <div><span>Total beli</span><b class="num" id="sBeli">Rp0</b></div>
@@ -779,12 +789,15 @@
               <div><span>Total untung</span><b class="num" id="sUntung">Rp0</b></div>
             </div>
             <div class="hint" id="mPeringatan"></div>
+            <div class="lipat tutup" style="margin-top:12px">
+            <div class="row lipat-h" role="button" tabindex="0" aria-expanded="false" style="margin:0 0 8px"><b>5. Lampiran RAB</b><span class="muted">opsional</span></div>
             <div class="rabbox">
               <div class="row"><b>Lampiran RAB</b><span class="muted">opsional · PDF, halaman 1</span></div>
               <input type="file" id="mRabFile" accept=".pdf,application/pdf">
               <div class="hint" id="mRabInfo">Tanpa file, halaman RAB dibuat otomatis dari data anggaran.</div>
             </div>
             <div class="hint" style="margin-top:10px">PDF berisi 6 halaman: Memo, PO, Daftar Harga, Data Ukuran, Rekap Barang (dipecah per jenis), RAB. Pimpinan membuka surat lewat tautan di notifikasi ntfy. Periksa dulu lewat Preview.</div>
+            </div>
             <button class="btn" id="mPreview" style="width:100%;margin-top:14px;border-radius:14px;padding:11px">Preview surat</button>
             <button class="cta" id="mKirim" style="width:100%;margin-top:10px">Kirim ke Pak Yasir &amp; Pak Ferry</button>
             <div class="hint" id="mStatus" role="status"></div>
@@ -3973,7 +3986,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const b = e.target.closest('.lipatbar'); if (b) { const s = document.getElementById(b.dataset.mini); const t = !s.classList.contains('tutup'); s.classList.toggle('tutup', t); b.textContent = (t ? '▸ ' : '▾ ') + 'Ringkasan halaman'; }
   });
   document.addEventListener('keydown', e => { const h = e.target.closest && e.target.closest('.lipat-h'); if (h && (e.key === 'Enter' || e.key === ' ') && e.target === h) { e.preventDefault(); h.click(); } });
-  const hp = matchMedia('(max-width: 720px)').matches;
+  const hp = true; // ringkasan mini tertutup bawaan; dibuka lewat tombolnya
   document.querySelectorAll('section.mini[id]').forEach(s => {
     const b = document.createElement('button'); b.className = 'lipatbar'; b.dataset.mini = s.id; s.before(b);
     s.classList.toggle('tutup', hp); b.textContent = (hp ? '▸ ' : '▾ ') + 'Ringkasan halaman';
