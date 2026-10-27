@@ -484,6 +484,11 @@
   .lipatbar { display:flex; align-items:center; gap:6px; margin:0 0 8px; padding:6px 14px; border:1px solid var(--stroke); border-radius:99px; background:var(--panel); color:var(--muted); font:inherit; font-size:.8rem; cursor:pointer; }
   .lipatbar:hover { color:var(--text); }
   section.mini.tutup { display:none; }
+  /* Monitoring: progres per PIC dan daftar lokasi berdampingan */
+  .duo { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,3fr); gap:14px; align-items:start; margin-top:14px; }
+  .duo > .pantau, .duo > .bawah { margin-top:0; }
+  @media (min-width: 1201px) { .duo .layout { grid-template-columns:minmax(220px,300px) minmax(0,1fr); } .duo .list .scroll { max-height:560px; } }
+  @media (max-width: 1200px) { .duo { grid-template-columns:minmax(0,1fr); } }
 </style>
 </head>
 <body>
@@ -686,18 +691,19 @@
         </div>
       </div>
     </section>
+    <section class="bawah card" id="ingat" hidden>
+      <div class="bar-top"><h3>Ingatkan PIC lapangan</h3><button class="btn" id="ingatTutup">Tutup</button></div>
+      <div class="muted" style="margin-bottom:12px" id="ingatInfo"></div>
+      <div id="ingatDaftar"></div>
+    </section>
+
+    <div class="duo">
     <section class="pantau" id="pantau">
       <div class="card pcard lipat">
         <div class="ttl lipat-h" role="button" tabindex="0" aria-expanded="true"><div><b>Progres pengisian per PIC</b><small>Jumlah lokasi tiap PIC lapangan menurut tahap pengisian ukuran</small></div></div>
         <div class="legend" id="picLegenda" style="margin:2px 0 8px"></div>
         <div id="picBar"></div>
       </div>
-    </section>
-
-    <section class="bawah card" id="ingat" hidden>
-      <div class="bar-top"><h3>Ingatkan PIC lapangan</h3><button class="btn" id="ingatTutup">Tutup</button></div>
-      <div class="muted" style="margin-bottom:12px" id="ingatInfo"></div>
-      <div id="ingatDaftar"></div>
     </section>
 
     <section class="bawah card" id="bawah">
@@ -713,6 +719,7 @@
         <div class="detail" id="detail"></div>
       </div>
     </section>
+    </div>
    </div>
 
    <div class="page" id="pg-permintaan" hidden>
