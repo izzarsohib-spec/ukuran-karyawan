@@ -100,6 +100,21 @@
   .legend { display:flex; flex-wrap:wrap; gap:2px 12px; font-size:.72rem; color:var(--muted); } .legend > span { white-space:nowrap; }
   .legend i { display:inline-block; width:14px; height:3px; border-radius:2px; margin-right:5px; vertical-align:middle; }
   .chartcard svg { width:100%; height:auto; display:block; }
+  .pantau { display:grid; grid-template-columns:minmax(0,3fr) minmax(0,2fr); gap:14px; margin-top:14px; }
+  @media (max-width: 980px) { .pantau { grid-template-columns:minmax(0,1fr); } }
+  .pcard { padding:16px 18px; }
+  .pcard .ttl { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; font-size:.9rem; margin-bottom:8px; }
+  .pcard .ttl small { display:block; color:var(--muted); font-size:.74rem; font-weight:400; margin-top:2px; }
+  .picrow { display:grid; grid-template-columns:minmax(80px,22%) minmax(0,1fr) 128px; gap:10px; align-items:center; padding:6px 0; font-size:.82rem; }
+  .picrow .pn b { display:block; font-weight:600; } .picrow .pn small { color:var(--muted); font-size:.7rem; }
+  .picrow .pb { display:flex; height:16px; border-radius:6px; overflow:hidden; background:rgba(255,255,255,.07); }
+  .picrow .pb i { display:block; height:100%; } .picrow .pb .a { background:var(--accent); } .picrow .pb .o { background:#ff8a3d; }
+  .picrow .pv { text-align:right; white-space:nowrap; font-size:.76rem; color:var(--muted); } .picrow .pv b { color:var(--text); font-size:.88rem; }
+  .siaprow { display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; padding:8px 4px; border:0; border-radius:12px; background:none; text-align:left; color:inherit; cursor:pointer; }
+  .siaprow:hover, .siaprow:focus-visible { background:var(--panel2); outline:none; }
+  .siaprow b { display:block; font-size:.84rem; font-weight:600; } .siaprow small { color:var(--muted); font-size:.72rem; }
+  .siaprow .go { flex:none; color:var(--accent); font-size:.76rem; }
+  .siapbesar { display:flex; align-items:baseline; gap:8px; margin:4px 0 8px; } .siapbesar b { font-family:var(--head); font-size:2.2rem; color:var(--green); line-height:1.1; } .siapbesar span { color:var(--muted); font-size:.8rem; }
   .areachips { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 10px; }
   .areachips .chip small { opacity:.7; margin-left:3px; }
   .topbar-head { display:flex; justify-content:space-between; font-size:.68rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); padding:0 4px 4px; }
@@ -658,6 +673,17 @@
         </div>
       </div>
     </section>
+    <section class="pantau" id="pantau">
+      <div class="card pcard">
+        <div class="ttl"><div><b>Progres pengisian per PIC</b><small>Karyawan yang sudah mengisi dari target tiap PIC lapangan</small></div><button class="btn" id="pantauIngat">Ingatkan PIC</button></div>
+        <div class="legend" style="margin:2px 0 8px"><span><i style="background:var(--accent)"></i>Sudah mengisi</span><span><i style="background:#ff8a3d"></i>Belum mengisi</span></div>
+        <div id="picBar"></div>
+      </div>
+      <div class="card pcard">
+        <div class="ttl"><div><b>Lokasi siap diproses</b><small>Semua karyawannya sudah mengisi, tetapi permintaan seragamnya belum dibuat</small></div></div>
+        <div id="siapProses"></div>
+      </div>
+    </section>
 
     <section class="bawah card" id="ingat" hidden>
       <div class="bar-top"><h3>Ingatkan PIC lapangan</h3><button class="btn" id="ingatTutup">Tutup</button></div>
@@ -886,6 +912,7 @@
     const w = top[0];
     $('worst').dataset.k = w ? w.lokasi : '';
     $('worst').innerHTML = w ? `<small>Kekurangan terbesar</small><b>${esc(w.client)}</b><small>kurang ${w.kurang} orang · ${w.isi}/${w.target}</small>` : '<small>Tidak ada data</small>';
+    gambarPantau();
     if (!top.length) { $('topKurang').innerHTML = '<div class="kosongnya">Semua karyawan di area ini sudah mengisi.</div>'; return; }
     const mx = top[0].kurang;
     $('topKurang').innerHTML = `<div class="topbar-head"><span>Lokasi</span><span>Belum mengisi (orang)</span></div>` + top.map((l, i) =>
@@ -894,8 +921,34 @@
          <span class="tb"><i style="width:${Math.max(4, 100 * l.kurang / mx).toFixed(1)}%"></i><em>${l.kurang}</em></span>
        </button>`).join('');
   }
+  // ---- progres per PIC dan lokasi siap diproses; ikut chip area di atas ----
+  function gambarPantau() {
+    const sub = areaTop ? lokasi.filter(l => areaInduk(l) === areaTop) : lokasi, g = new Map();
+    for (const l of sub) {
+      const p = window.Saring && Saring.picDari(l.lokasi), k = p ? String(p.id) : '-';
+      if (!g.has(k)) g.set(k, { nama: p ? p.nama : 'Belum ada PIC', target: 0, isi: 0, lok: 0 });
+      const x = g.get(k); x.target += l.target; x.isi += l.isi; x.lok++;
+    }
+    const baris = [...g.values()].sort((a, b) => (b.target - b.isi) - (a.target - a.isi));
+    $('picBar').innerHTML = baris.length ? baris.map(x => {
+      const pi = x.target ? 100 * x.isi / x.target : 0;
+      return `<div class="picrow"><div class="pn"><b>${esc(x.nama)}</b><small>${x.lok} lokasi</small></div>
+        <div class="pb" role="img" aria-label="${x.isi} dari ${x.target} sudah mengisi"><i class="a" style="width:${pi.toFixed(1)}%"></i><i class="o" style="width:${(100 - pi).toFixed(1)}%"></i></div>
+        <div class="pv"><b>${idn(x.isi)}</b> / ${idn(x.target)} · ${pi.toFixed(0)}%<br>kurang ${idn(x.target - x.isi)}</div></div>`;
+    }).join('') : '<div class="kosongnya">Belum ada data.</div>';
+    if (!statusMuat) { $('siapProses').innerHTML = '<div class="kosongnya">Memuat status permintaan…</div>'; return; }
+    const siap = sub.filter(l => l.status === 'lengkap' && ['belum', 'sebagian'].includes(infoLok(l).s)).sort((a, b) => b.target - a.target);
+    const orang = siap.reduce((a, l) => a + l.target, 0);
+    $('siapProses').innerHTML = siap.length
+      ? `<div class="siapbesar"><b>${idn(siap.length)}</b><span>lokasi · ${idn(orang)} karyawan siap dipesankan seragam</span></div>` + siap.slice(0, 5).map(l =>
+        `<button class="siaprow" data-siap="${esc(l.lokasi)}"><span><b>${esc(l.client)}</b><small>${l.target} karyawan · ${esc(l.bagian.map(b => b.nama).join(', '))}</small></span><span class="go">Buat permintaan ›</span></button>`).join('')
+        + (siap.length > 5 ? `<div class="muted" style="font-size:.74rem;margin-top:6px">dan ${siap.length - 5} lokasi lainnya · lihat di halaman Permintaan seragam</div>` : '')
+      : '<div class="kosongnya">Belum ada lokasi yang lengkap dan menunggu permintaan.</div>';
+  }
+  $('pantauIngat').onclick = () => bukaIngat();
   document.addEventListener('click', e => {
     const c = e.target.closest('#areaChips .chip'); if (c) { areaTop = c.dataset.a; gambarTop(); return; }
+    const sp = e.target.closest('#siapProses .siaprow'); if (sp) { mStatusF = 'semua'; $('mCari').value = ''; terbukaMinta = true; tampil('permintaan'); setLokasiMinta(sp.dataset.siap); renderDaftarMinta(); return; }
     const r = e.target.closest('#topKurang .toprow'); if (r) { status = 'semua'; $('cari').value = ''; pilih(r.dataset.k); keDaftar(); }
   });
 
@@ -1813,7 +1866,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
       try { peralatanDiSeragam = new Map((await rpc('peralatan_terpakai_seragam', {})).map(x => [x.lokasi_form + '' + x.bagian_kerja, Number(x.jual)])); } catch (e) { peralatanDiSeragam = new Map(); }
       try { cakupan = new Map((await rpc('cakupan_permintaan', {})).map(x => [x.lokasi_form + '|' + x.bagian_kerja, x.penerima])); } catch (e) { cakupan = new Map(); }
     } catch (e) { if (senyap === true && statusMuat) return; daftarMinta = []; susunStatus(); renderDaftarMinta(); $('infoMinta').textContent = 'Gagal memuat status: ' + e.message; return; }
-    susunStatus(); renderDaftarMinta(); renderPlotList(); renderKirimList(); renderTagihanList(); renderRingkasan(); renderDetail(); renderRekapPage(); renderPoVendor();
+    susunStatus(); renderDaftarMinta(); renderPlotList(); renderKirimList(); renderTagihanList(); renderRingkasan(); gambarPantau(); renderDetail(); renderRekapPage(); renderPoVendor();
   }
   function susunStatus() { // daftar sudah urut terbaru dulu, jadi yang pertama per bagian adalah permintaan terakhir
     terbaru = new Map();

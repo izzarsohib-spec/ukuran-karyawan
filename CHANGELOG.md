@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 27 Okt 2026
+- **v1.112** Monitoring Pengisian: kartu "Progres pengisian per PIC" (batang sudah/belum mengisi, tombol Ingatkan PIC) dan "Lokasi siap diproses" (lokasi lengkap yang permintaan seragamnya belum dibuat, klik untuk membuat permintaan); keduanya ikut chip area.
 - **v1.111** Monitoring Pengisian: grafik "Pengisian 30 hari terakhir" diganti grafik batang 5 lokasi dengan karyawan terbanyak yang belum mengisi; chip area (Semarang, Magelang, Kalimantan) menyaring grafik dan kartu "Belum mengisi", klik batang membuka lokasinya di daftar.
 - **v1.110** Monitoring Pengisian: empat angka ringkasan (target, sudah mengisi, lokasi kurang, lokasi kosong) diberi satuan dan penjelasan singkat agar jelas dibaca sekilas.
 - **v1.109** Monitoring Pengisian: kartu "Total anggaran RAB" diganti jumlah karyawan yang sudah mengisi dibandingkan total karyawan.
