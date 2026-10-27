@@ -223,6 +223,8 @@ function buatFormLokasi_(d) {
         var idx = it.getIndex(); form.deleteItem(idx);
         pilihan = form.addListItem().setTitle('LOKASI').setHelpText('Lokasi sudah ditentukan untuk formulir ini.').setChoiceValues([d.lokasi]).setRequired(true);
         form.moveItem(pilihan.getIndex(), idx);
+      } else if (jd === 'LOKASI' && tp === FormApp.ItemType.LIST) { // template sudah berupa pilihan tunggal: cukup ganti pilihannya
+        pilihan = it.asListItem().setChoiceValues([d.lokasi]).setRequired(true);
       } else if (jd === 'BAGIAN KERJA' && tp === FormApp.ItemType.MULTIPLE_CHOICE && d.bagian && d.bagian.length) {
         it.asMultipleChoiceItem().setChoiceValues(d.bagian);
       } else if (jd === 'UKURAN SEPATU' && (tp === FormApp.ItemType.PAGE_BREAK || tp === FormApp.ItemType.SECTION_HEADER) && d.gambarSepatuId) {

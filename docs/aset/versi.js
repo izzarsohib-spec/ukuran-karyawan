@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.126', tanggal: '2026-10-27', catatan: 'buatForm: opsi memakai deskripsi template apa adanya' };
+window.VERSI = { no: '1.127', tanggal: '2026-10-27', catatan: 'buatForm: template boleh berisi pilihan LOKASI tunggal' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
