@@ -80,7 +80,7 @@
   // area (cabang / sub-area) tempat suatu lokasi, atau null
   const areaDari = nama => { const x = peta.get(String(nama == null ? '' : nama).toUpperCase()); return x && x.c ? cab.find(c => String(c.id) === String(x.c)) || null : null; };
 
-  window.Saring = { siap, boleh, aktif, set, get: baca, label, jumlah, bar, picDari, areaDari, TANPA };
+  window.Saring = { siap, boleh, aktif, set, get: baca, label, jumlah, bar, picDari, areaDari, areaUtama: () => cab.filter(c => !c.induk), TANPA };
 
   // dibuka sendiri (bukan di dalam portal): pasang bar di bagian atas elemen yang ditunjuk atribut data-otomatis pada tag script
   const sc = document.currentScript;
