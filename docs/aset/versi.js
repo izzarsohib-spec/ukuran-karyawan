@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.105', tanggal: '2026-10-26', catatan: 'Menampilkan nomor versi di sidebar portal' };
+window.VERSI = { no: '1.106', tanggal: '2026-10-27', catatan: 'Sidebar portal dibuat lebih kecil dan ramping' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
