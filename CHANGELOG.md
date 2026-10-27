@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 27 Okt 2026
+- **v1.107** Sidebar portal diperkecil lagi (184 px -> 156 px).
 - **v1.106** Sidebar portal dibuat lebih kecil (lebar 252 px -> 184 px, menu dan logo lebih ramping).
 
 ## 26 Okt 2026

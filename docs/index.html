@@ -19,20 +19,20 @@
   h1, h2, h3 { font-family:var(--head); margin:0; letter-spacing:-.01em; }
   button { font:inherit; color:inherit; }
 
-  .shell { position:relative; margin:16px; height:calc(100vh - 32px); background:var(--shell); border:1px solid var(--stroke); border-radius:34px; overflow:clip; display:grid; grid-template-columns:184px minmax(0,1fr); }
+  .shell { position:relative; margin:16px; height:calc(100vh - 32px); background:var(--shell); border:1px solid var(--stroke); border-radius:34px; overflow:clip; display:grid; grid-template-columns:156px minmax(0,1fr); }
   .shell::before { content:""; position:absolute; inset:0; pointer-events:none;
     background:radial-gradient(52% 38% at 52% 14%, rgba(255,122,47,.5), transparent 72%),
                radial-gradient(34% 30% at 100% 2%, rgba(255,196,96,.24), transparent 72%),
                radial-gradient(40% 36% at 0% 100%, rgba(255,110,60,.14), transparent 72%); }
 
   /* ---- sidebar portal ---- */
-  .side { position:relative; z-index:2; display:flex; flex-direction:column; gap:4px; padding:16px 8px 12px; border-right:1px solid var(--stroke); background:rgba(0,0,0,.18); min-height:0; overflow-y:auto; }
-  .merek { display:flex; align-items:center; gap:8px; padding:0 4px 12px; border-bottom:1px solid var(--stroke); margin-bottom:8px; }
-  .merek img { height:34px; width:auto; flex:none; }
-  .merek b { display:block; font-family:var(--head); font-size:.72rem; line-height:1.2; letter-spacing:.02em; }
-  .merek span { display:block; color:var(--accent); font-size:.62rem; letter-spacing:.08em; margin-top:3px; font-weight:600; }
-  .menu { display:flex; align-items:center; gap:9px; width:100%; text-align:left; padding:8px 10px; border-radius:12px; font-size:.88rem; border:1px solid transparent; background:none; cursor:pointer; color:var(--muted); font-weight:600; }
-  .menu svg { width:18px; height:18px; flex:none; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .side { position:relative; z-index:2; display:flex; flex-direction:column; gap:3px; padding:12px 6px 10px; border-right:1px solid var(--stroke); background:rgba(0,0,0,.18); min-height:0; overflow-y:auto; }
+  .merek { display:flex; align-items:center; gap:6px; padding:0 3px 10px; border-bottom:1px solid var(--stroke); margin-bottom:8px; }
+  .merek img { height:28px; width:auto; flex:none; }
+  .merek b { display:block; font-family:var(--head); font-size:.66rem; line-height:1.2; letter-spacing:.01em; }
+  .merek span { display:block; color:var(--accent); font-size:.56rem; letter-spacing:.06em; margin-top:2px; font-weight:600; }
+  .menu { display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:7px 8px; border-radius:10px; font-size:.82rem; border:1px solid transparent; background:none; cursor:pointer; color:var(--muted); font-weight:600; }
+  .menu svg { width:16px; height:16px; flex:none; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
   .menu:hover { background:var(--panel); color:var(--text); }
   .menu.on { background:var(--panel2); color:var(--text); border-color:var(--stroke); }
   .menu.on svg { color:var(--accent); }
