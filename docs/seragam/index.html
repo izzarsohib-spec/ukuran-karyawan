@@ -487,7 +487,15 @@
   /* Monitoring: progres per PIC dan daftar lokasi berdampingan */
   .duo { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.7fr); gap:14px; align-items:start; margin-top:14px; }
   .duo > .pantau, .duo > .bawah { margin-top:0; }
-  @media (min-width: 981px) { .duo .layout { display:grid; grid-template-columns:minmax(200px,250px) minmax(0,1fr); } .duo .list .scroll { max-height:560px; } .duo .detail { position:sticky; top:8px; max-height:calc(100vh - 24px); overflow:auto; } }
+  @media (min-width: 981px) {
+    .duo { align-items:stretch; grid-template-rows:minmax(0,1fr); height:clamp(520px, 78vh, 680px); }
+    .duo > .pantau { display:flex; align-items:stretch; min-height:0; } .duo > .pantau > .pcard { flex:1; display:flex; flex-direction:column; min-height:0; margin-bottom:0; }
+    .duo #picBar { flex:1; min-height:0; overflow-y:auto; scrollbar-width:thin; padding-right:4px; }
+    .duo > .bawah { display:flex; flex-direction:column; min-height:0; }
+    .duo .layout { display:grid; align-items:stretch; flex:1; min-height:0; grid-template-columns:minmax(200px,250px) minmax(0,1fr); grid-template-rows:minmax(0,1fr); }
+    .duo .list { min-height:0; position:relative; } .duo .list .scroll { position:absolute; inset:0; max-height:none; }
+    .duo .detail { min-height:0; overflow:auto; }
+  }
   @media (max-width: 980px) { .duo { grid-template-columns:minmax(0,1fr); } }
 </style>
 </head>
