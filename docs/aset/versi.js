@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.132', tanggal: '2026-10-27', catatan: 'Kartu Lokasi siap diproses dihapus dari Monitoring' };
+window.VERSI = { no: '1.133', tanggal: '2026-10-27', catatan: 'Tampilan Seragam lebih ringkas, sedikit scroll' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

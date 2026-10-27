@@ -467,6 +467,23 @@
   body.embed .shell { margin:0; border:0; border-radius:0; background:transparent; min-height:0; } body.embed .shell::before { display:none; }
   body.embed .content { padding:0; }
   body.embed { background:transparent; }
+
+  /* ---- tampilan ringkas: lebih sedikit scroll ---- */
+  .content { padding-top:16px; }
+  .kop img { height:72px; } .kop { gap:18px; }
+  .hero { min-height:0; padding:20px 22px; gap:12px; } .hero h2 { font-size:1.7rem; margin:6px 0 10px; }
+  .mini .hero { min-height:0; } .mini .hero h2 { font-size:1.4rem; }
+  .list .scroll { max-height:440px; }
+  .dsec { padding:14px 18px; margin-bottom:12px; } .dkpi { margin-bottom:10px; }
+  .pcard { margin-bottom:10px; } .bawah { margin-top:10px; padding:14px; }
+  .lipat-h { cursor:pointer; position:relative; padding-right:26px; user-select:none; }
+  .lipat-h::after { content:'▾'; position:absolute; right:2px; top:2px; color:var(--muted); transition:transform .15s; }
+  .lipat.tutup > .lipat-h::after { transform:rotate(-90deg); }
+  .lipat.tutup > :not(.lipat-h) { display:none !important; }
+  .lipat.tutup > .lipat-h { margin-bottom:0; }
+  .lipatbar { display:flex; align-items:center; gap:6px; margin:0 0 8px; padding:6px 14px; border:1px solid var(--stroke); border-radius:99px; background:var(--panel); color:var(--muted); font:inherit; font-size:.8rem; cursor:pointer; }
+  .lipatbar:hover { color:var(--text); }
+  section.mini.tutup { display:none; }
 </style>
 </head>
 <body>
@@ -679,8 +696,8 @@
       </div>
     </section>
     <section class="pantau" id="pantau">
-      <div class="card pcard">
-        <div class="ttl"><div><b>Progres pengisian per PIC</b><small>Jumlah lokasi tiap PIC lapangan menurut tahap pengisian ukuran</small></div></div>
+      <div class="card pcard lipat tutup">
+        <div class="ttl lipat-h" role="button" tabindex="0" aria-expanded="false"><div><b>Progres pengisian per PIC</b><small>Jumlah lokasi tiap PIC lapangan menurut tahap pengisian ukuran</small></div></div>
         <div class="legend" id="picLegenda" style="margin:2px 0 8px"></div>
         <div id="picBar"></div>
       </div>
@@ -786,10 +803,10 @@
       <div class="fgrid" style="grid-template-columns:1fr 1fr 2fr"><label>Tanggal laporan<input type="date" id="lTgl"></label><label>Rekap mulai tanggal<input type="date" id="lDari"></label><div class="muted" id="lPeriode" style="align-self:end;padding-bottom:10px"></div></div>
       <div class="hint">Untuk laporan satu hari, biarkan kedua tanggal sama. Untuk rekap beberapa hari, isi "Rekap mulai tanggal" dengan tanggal awal.</div>
     </section>
-    <section class="card dsec"><div class="dh"><div><h3>Progres saat ini</h3><span class="muted">posisi data sistem pada saat laporan dibuat</span></div></div><div class="dkpi" id="lRingkas"></div></section>
-    <section class="card dsec"><div class="dh"><div><h3>Kegiatan pada periode</h3><span class="muted">dikumpulkan otomatis dari catatan sistem</span></div></div><div class="dgrid" id="lAkt"></div></section>
-    <section class="card pcard">
-      <h3>Catatan untuk laporan</h3>
+    <section class="card dsec lipat"><div class="dh lipat-h" role="button" tabindex="0" aria-expanded="true"><div><h3>Progres saat ini</h3><span class="muted">posisi data sistem pada saat laporan dibuat</span></div></div><div class="dkpi" id="lRingkas"></div></section>
+    <section class="card dsec lipat tutup"><div class="dh lipat-h" role="button" tabindex="0" aria-expanded="false"><div><h3>Kegiatan pada periode</h3><span class="muted">dikumpulkan otomatis dari catatan sistem</span></div></div><div class="dgrid" id="lAkt"></div></section>
+    <section class="card pcard lipat">
+      <h3 class="lipat-h" role="button" tabindex="0" aria-expanded="true">Catatan untuk laporan</h3>
       <div id="lKodeBox"></div>
       <div class="fgrid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
         <label>Kegiatan lain yang dikerjakan<textarea id="lKeg" rows="5" placeholder="Pekerjaan lain hari ini yang tidak tercatat di sistem…"></textarea></label>
@@ -3603,10 +3620,12 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     el.innerHTML = t1 + t2 + t3 + t4;
   }
   function isiSek(s) { const r = s.isi(); $('dk-' + s.k).innerHTML = r.kpi; $('dg-' + s.k).innerHTML = r.grid; }
+  let dAktif = ''; // satu bagian dashboard tampil sekali; sisanya dipilih lewat tab
   function renderDash() {
     renderAlur();
-    $('dNav').innerHTML = SEK.map(s => `<button class="chip" data-d="${s.k}">${s.judul}</button>`).join('');
-    $('dash').innerHTML = SEK.map(s => `<section class="card dsec" id="ds-${s.k}"><div class="dh"><div><div class="tahap">${s.tahap}</div><h3>${s.judul}</h3><span class="muted">${s.sumber}</span></div><button class="btn" data-pg="${s.pg}">Buka halaman ›</button></div>
+    if (!SEK.some(s => s.k === dAktif)) dAktif = SEK[0].k;
+    $('dNav').innerHTML = SEK.map(s => `<button class="chip ${s.k === dAktif ? 'on' : ''}" data-d="${s.k}">${s.judul}</button>`).join('');
+    $('dash').innerHTML = SEK.map(s => `<section class="card dsec" id="ds-${s.k}" ${s.k === dAktif ? '' : 'hidden'}><div class="dh"><div><div class="tahap">${s.tahap}</div><h3>${s.judul}</h3><span class="muted">${s.sumber}</span></div><button class="btn" data-pg="${s.pg}">Buka halaman ›</button></div>
       <div class="dfil">${s.filter().map(([p, label, opsi]) => `<label class="df"><span>${label}</span><select data-s="${s.k}" data-p="${p}">${opsi.map(([v, t]) => `<option value="${esc(v)}" ${String(D[s.k][p]) === String(v) ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`).join('')}</div>
       <div class="dkpi" id="dk-${s.k}"></div><div class="dgrid" id="dg-${s.k}"></div></section>`).join('');
     SEK.forEach(isiSek);
@@ -3620,7 +3639,11 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const b = e.target.closest('[data-vm]'); if (!b) return; const [id, m] = b.dataset.vm.split('|'); modeGrafik.set(id, m);
     const kunci = { pg: 'pengisian', pm: 'permintaan', st: 'stok', kr: 'kirim', tg: 'tagihan' }[id.slice(0, 2)]; isiSek(SEK.find(x => x.k === kunci));
   };
-  $('dNav').onclick = e => { const k = e.target.dataset && e.target.dataset.d; if (k) $('ds-' + k).scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  $('dNav').onclick = e => {
+    const k = e.target.dataset && e.target.dataset.d; if (!k) return; dAktif = k;
+    SEK.forEach(x => { $('ds-' + x.k).hidden = x.k !== k; });
+    $('dNav').querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c.dataset.d === k));
+  };
 
   // ---- tooltip (satu elemen bersama; teks selalu lewat textContent) ----
   const tip = document.createElement('div'); tip.id = 'vTip'; tip.hidden = true; document.body.appendChild(tip);
@@ -3950,6 +3973,22 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     if (punyaNama) await bukaNama('sesi', true); else kelompokkanPengisi(RAW.publik);
     ringkasan(); renderDaftar(); renderDaftarMinta(); muatStatus(); muatHilir();
   });
+</script>
+<script>
+// lipatan (collapse) dan bilah ringkasan mini dashboard: murni tampilan, tidak menyentuh data
+(function () {
+  const ubah = (el, tutup) => { el.classList.toggle('tutup', tutup); const h = el.querySelector(':scope > .lipat-h'); if (h) h.setAttribute('aria-expanded', String(!tutup)); };
+  document.addEventListener('click', e => {
+    const h = e.target.closest('.lipat-h'); if (h && !e.target.closest('button,a,input,select')) { const el = h.parentElement; ubah(el, !el.classList.contains('tutup')); return; }
+    const b = e.target.closest('.lipatbar'); if (b) { const s = document.getElementById(b.dataset.mini); const t = !s.classList.contains('tutup'); s.classList.toggle('tutup', t); b.textContent = (t ? '▸ ' : '▾ ') + 'Ringkasan halaman'; }
+  });
+  document.addEventListener('keydown', e => { const h = e.target.closest && e.target.closest('.lipat-h'); if (h && (e.key === 'Enter' || e.key === ' ') && e.target === h) { e.preventDefault(); h.click(); } });
+  const hp = matchMedia('(max-width: 720px)').matches;
+  document.querySelectorAll('section.mini[id]').forEach(s => {
+    const b = document.createElement('button'); b.className = 'lipatbar'; b.dataset.mini = s.id; s.before(b);
+    s.classList.toggle('tutup', hp); b.textContent = (hp ? '▸ ' : '▾ ') + 'Ringkasan halaman';
+  });
+})();
 </script>
 </body>
 </html>
