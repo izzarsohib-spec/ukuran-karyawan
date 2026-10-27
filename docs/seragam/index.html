@@ -100,7 +100,7 @@
   .legend { display:flex; flex-wrap:wrap; gap:2px 12px; font-size:.72rem; color:var(--muted); } .legend > span { white-space:nowrap; }
   .legend i { display:inline-block; width:14px; height:3px; border-radius:2px; margin-right:5px; vertical-align:middle; }
   .chartcard svg { width:100%; height:auto; display:block; }
-  .pantau { display:grid; grid-template-columns:minmax(0,3fr) minmax(0,2fr); gap:14px; margin-top:14px; }
+  .pantau { display:grid; grid-template-columns:minmax(0,3fr) minmax(0,2fr); gap:14px; margin-top:14px; align-items:start; }
   @media (max-width: 980px) { .pantau { grid-template-columns:minmax(0,1fr); } }
   .pcard { padding:16px 18px; }
   .pcard .ttl { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; font-size:.9rem; margin-bottom:8px; }
@@ -927,14 +927,21 @@
   }
   // ---- progres per PIC dan lokasi siap diproses; ikut chip area di atas ----
   function gambarPantau() {
-    const sub = areaTop ? lokasi.filter(l => areaInduk(l) === areaTop) : lokasi, g = new Map();
-    for (const l of sub) {
-      const p = window.Saring && Saring.picDari(l.lokasi), k = p ? String(p.id) : '-';
-      if (!g.has(k)) g.set(k, { id: p ? String(p.id) : '', nama: p ? p.nama : 'Belum ada PIC', target: 0, isi: 0, lok: 0 });
-      const x = g.get(k); x.target += l.target; x.isi += l.isi; x.lok++;
+    // kartu PIC membandingkan SEMUA PIC, jadi memakai data mentah tanpa filter Area/PIC di atas halaman (chip area tetap berlaku)
+    const g = new Map(), sub = areaTop ? lokasi.filter(l => areaInduk(l) === areaTop) : lokasi;
+    const lok = new Map(); // lokasi -> {target, isi}
+    for (const r of (RAW ? RAW.prog : [])) {
+      if (r.target <= 0) continue;
+      const o = lok.get(r.lokasi_form) || { target: 0, isi: 0 }; o.target += r.target; o.isi += Math.min(r.sudah_isi, r.target); lok.set(r.lokasi_form, o);
     }
-    // semua PIC lapangan ikut tampil, juga yang belum memegang lokasi; bila filter Area/PIC di atas halaman aktif, hanya PIC yang punya lokasi tersaring
-    if (window.Saring && !Saring.aktif()) for (const p of Saring.picSemua()) if ((!areaTop || p.area === areaTop) && !g.has(String(p.id))) g.set(String(p.id), { id: String(p.id), nama: p.nama, target: 0, isi: 0, lok: 0 });
+    if (!RAW) for (const l of lokasi) lok.set(l.lokasi, { target: l.target, isi: l.isi });
+    for (const [nama, v] of lok) {
+      if (areaTop && areaInduk({ lokasi: nama }) !== areaTop) continue;
+      const p = window.Saring && Saring.picDari(nama), k = p ? String(p.id) : '-';
+      if (!g.has(k)) g.set(k, { id: p ? String(p.id) : '', nama: p ? p.nama : 'Belum ada PIC', target: 0, isi: 0, lok: 0 });
+      const x = g.get(k); x.target += v.target; x.isi += v.isi; x.lok++;
+    }
+    if (window.Saring) for (const p of Saring.picSemua()) if ((!areaTop || p.area === areaTop) && !g.has(String(p.id))) g.set(String(p.id), { id: String(p.id), nama: p.nama, target: 0, isi: 0, lok: 0 });
     const baris = [...g.values()].sort((a, b) => (!a.lok - !b.lok) || (b.target - b.isi) - (a.target - a.isi) || a.nama.localeCompare(b.nama));
     $('picBar').innerHTML = baris.length ? baris.map(x => {
       const pi = x.target ? 100 * x.isi / x.target : 0, kurang = x.target - x.isi;
@@ -1203,7 +1210,7 @@
     try { await siapkanIngat(); } catch (e) { return isiModal(`<h3>Ingatkan PIC</h3><div class="muted" style="margin:10px 0">Gagal: ${esc(e.message)}</div><button class="btn" data-tutup>Tutup</button>`); }
     const l = picId ? null : lokasi.find(x => x.lokasi === kunci); if (!picId && !l) return tutupModal();
     const g = picId ? kelompokPic().find(x => x.pic && String(x.pic.id) === String(picId)) : { pic: Saring.picDari(l.lokasi), lok: [l] };
-    if (!g) return isiModal('<h3>Ingatkan PIC</h3><div class="muted" style="margin:10px 0">Semua lokasi PIC ini sudah lengkap. Tidak ada yang perlu diingatkan.</div><button class="btn" data-tutup>Tutup</button>');
+    if (!g) return isiModal(`<h3>Ingatkan PIC</h3><div class="muted" style="margin:10px 0">${Saring.aktif() ? 'Tidak ada lokasi belum lengkap untuk PIC ini dalam filter Area/PIC yang aktif (atau semua sudah lengkap). Hapus filter di atas halaman untuk melihat semuanya.' : 'Semua lokasi PIC ini sudah lengkap. Tidak ada yang perlu diingatkan.'}</div><button class="btn" data-tutup>Tutup</button>`);
     const p = g.pic, tel = p ? noWa(picTel.get(String(p.id))) : '', ps = pesanPic(g, namaBagian);
     modalIngat._ps = ps; modalIngat._g = g;
     isiModal(`<h3>Ingatkan PIC</h3>

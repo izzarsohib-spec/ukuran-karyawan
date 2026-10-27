@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.115', tanggal: '2026-10-27', catatan: 'Penyegaran otomatis 30 detik di semua halaman (Seragam, Peralatan, Administrator)' };
+window.VERSI = { no: '1.116', tanggal: '2026-10-27', catatan: 'Kartu progres per PIC menampilkan semua PIC walau filter PIC aktif' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
