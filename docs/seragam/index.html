@@ -636,6 +636,7 @@
       <div>
         <h1>Monitoring Pengisian</h1>
         <div class="sub" id="info">Memuat data…</div>
+        <div class="sub" id="segar" style="font-size:.74rem;opacity:.8"></div>
       </div>
       <div>
         <div class="kode card" style="border-radius:99px">
@@ -3892,10 +3893,43 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
         const hs = await ambilSemua('harga_seragam?select=*&order=no');
         if (hs.length) { HARGA = hs.map(h => ({ no: h.no, kat: h.kategori, nama: h.nama, beli: h.harga_beli, jual: h.harga_jual, komp: h.komponen })); mPool = mPool.map(x => itemMinta(x.no) || x); renderPembagian(); renderRingkasan(); }
       } catch (e) { /* pakai harga.js */ }
+      sidikData = sidik(prog, publik);
       susunLokasi(prog); kelompokkanPengisi(publik); ringkasan(); renderDaftar(); renderDaftarMinta(); muatStatus(); muatHilir();
       if (Masuk.masuk()) bukaNama('sesi', true);
     } catch (e) { $('info').textContent = 'Gagal memuat data: ' + e.message; }
   })();
+  // ---- segarkan otomatis (tanpa memuat ulang halaman, jadi isian form dan pilihan lokasi tidak hilang) ----
+  // Tiap SEGAR_DETIK: data pengisian Form dimuat ulang (hanya digambar ulang bila ada yang berubah) dan status permintaan dimuat senyap.
+  // Dilewati saat tab tersembunyi, saat kursor sedang di kolom isian, atau saat jendela terbuka; saat tab dibuka lagi langsung disegarkan.
+  const SEGAR_DETIK = 30;
+  let segarJalan = false, sidikData = '';
+  const sidik = (prog, publik) => prog.map(x => x.lokasi_form + '|' + x.bagian_kerja + '|' + x.target + '|' + x.sudah_isi).join(';') + '#' + publik.length;
+  async function segarkan(paksa) {
+    if (segarJalan || !RAW || document.hidden) return;
+    const f = document.activeElement;
+    if (!paksa && f && /^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName)) return;
+    if (document.querySelector('#ingatModal:not([hidden]), .pvm:not([hidden])')) return;
+    segarJalan = true;
+    try {
+      const [prog, publik, rab] = await Promise.all([
+        ambilSemua('progres_pengisian?select=*&order=lokasi_form,bagian_kerja'),
+        ambilSemua('ukuran_publik?select=*&order=id'),
+        ambilSemua('anggaran_publik?select=*&order=lokasi_form,bagian_kerja').catch(() => RAW.rab)
+      ]);
+      const baru = sidik(prog, publik);
+      if (baru !== sidikData) {
+        sidikData = baru; RAW = { prog, publik, rab };
+        anggaran = susunAnggaran(rab); susunLokasi(prog);
+        if (punyaNama) await bukaNama('sesi', true); else kelompokkanPengisi(publik);
+        ringkasan(); renderDaftar(); renderDaftarMinta();
+      }
+      muatStatus(true);
+      $('segar').textContent = `Diperbarui otomatis tiap ${SEGAR_DETIK} detik · terakhir ${new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+    } catch (e) { $('segar').textContent = 'Pembaruan otomatis tertunda (jaringan), mencoba lagi…'; }
+    segarJalan = false;
+  }
+  setInterval(segarkan, SEGAR_DETIK * 1000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) segarkan(true); });
   // filter cabang / PIC berubah: susun ulang semua data dari salinan mentah, lalu muat ulang status dan data hilir
   window.addEventListener('saring-ubah', async () => {
     if (!RAW) return;
