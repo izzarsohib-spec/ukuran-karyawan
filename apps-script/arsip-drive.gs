@@ -187,6 +187,20 @@ var DESKRIPSI_FORM = [
   'Terima kasih atas kerja samanya.'
 ].join('\n');
 
+// Registri spreadsheet tanggapan (satu baris per form): dibaca sinkronisasi Supabase untuk mengambil jawaban dari folder masing-masing.
+function registri_() {
+  var props = PropertiesService.getScriptProperties(), id = props.getProperty('REGISTRI_ID'), ss = null;
+  if (id) { try { ss = SpreadsheetApp.openById(id); } catch (e) { ss = null; } }
+  if (!ss) {
+    ss = SpreadsheetApp.create('REGISTRI TANGGAPAN FORM');
+    DriveApp.getFileById(ss.getId()).moveTo(DriveApp.getFolderById(FOLDER_UTAMA));
+    props.setProperty('REGISTRI_ID', ss.getId());
+    var s0 = ss.getSheets()[0]; s0.setName('Registri');
+    s0.appendRow(['Lokasi', 'ID form', 'ID spreadsheet tanggapan', 'ID folder', 'Dibuat']); s0.setFrozenRows(1);
+  }
+  return ss.getSheets()[0];
+}
+
 function idTemplate_(d) {
   if (d && d.templateId) return d.templateId;
   var tersimpan = PropertiesService.getScriptProperties().getProperty('TEMPLATE_ID');
@@ -196,7 +210,7 @@ function idTemplate_(d) {
   throw new Error('Form template "' + NAMA_TEMPLATE + '" tidak ditemukan di Drive akun ini');
 }
 function buatFormLokasi_(d) {
-  var salinan = null;
+  var salinan = null, ssTanggapan = null;
   try {
     if (!d.lokasi || !d.folderId) return { ok: false, error: 'lokasi dan folderId wajib' };
     if (!dalamPohon_(d.folderId)) return { ok: false, error: 'di luar folder utama' };
@@ -235,11 +249,17 @@ function buatFormLokasi_(d) {
         it.asTextItem().setHelpText('Sesuai KTP, tanpa singkatan atau nama panggilan.').setValidation(cek).setRequired(true);
       }
     }
-    form.setDestination(FormApp.DestinationType.SPREADSHEET, SPREADSHEET_DATA_ID);
+    // spreadsheet tanggapan khusus form ini, disimpan di folder lokasinya, lalu didaftarkan di registri untuk sinkronisasi
+    ssTanggapan = SpreadsheetApp.create('TANGGAPAN ' + d.lokasi);
+    DriveApp.getFileById(ssTanggapan.getId()).moveTo(DriveApp.getFolderById(d.folderId));
+    form.setDestination(FormApp.DestinationType.SPREADSHEET, ssTanggapan.getId());
+    var reg = registri_();
+    reg.appendRow([d.lokasi, form.getId(), ssTanggapan.getId(), d.folderId, new Date()]);
     var isi = pilihan ? form.createResponse().withItemResponse(pilihan.createResponse(d.lokasi)).toPrefilledUrl() : form.getPublishedUrl();
-    return { ok: true, id: form.getId(), isi: isi, edit: form.getEditUrl(), nama: judul };
+    return { ok: true, id: form.getId(), isi: isi, edit: form.getEditUrl(), nama: judul, tanggapanId: ssTanggapan.getId(), registriId: reg.getParent().getId() };
   } catch (err) {
-    try { if (salinan) salinan.setTrashed(true); } catch (e1) { /* biarkan */ }  // salinan setengah jadi dibuang supaya bisa diulang
+    try { if (salinan) salinan.setTrashed(true); } catch (e1) { /* biarkan */ }
+    try { if (ssTanggapan) DriveApp.getFileById(ssTanggapan.getId()).setTrashed(true); } catch (e2) { /* biarkan */ }  // salinan setengah jadi dibuang supaya bisa diulang
     return { ok: false, error: String(err) };
   }
 }

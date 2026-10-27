@@ -3,6 +3,62 @@
 var SPREADSHEET_ID = '1UMLvjFVYAJrsQh_6k8WU0B1c03lJQdstkJsV4GmCVSE';
 var BATCH = 500;
 
+var REGISTRI_ID = ''; // spreadsheet "REGISTRI TANGGAPAN FORM" (dibuat oleh skrip arsip Drive saat membuat form per lokasi); kosong = dilewati
+var BATAS_REGISTRI_MS = 4 * 60 * 1000;
+
+// Membaca satu tab jawaban Form dan menambahkannya ke rows. awalan = awal kunci unik; lokasiCadangan dipakai bila kolom LOKASI kosong.
+function kumpul_(sh, awalan, lokasiCadangan, sumberTab, rows) {
+  var v = sh.getDataRange().getValues();
+  if (v.length < 2) return;
+  var h = v[0].map(function (x) { return String(x).trim().toUpperCase(); });
+  var i = {
+    waktu: h.indexOf('TIMESTAMP'),
+    bagian: h.indexOf('BAGIAN KERJA'),
+    nama: h.indexOf('NAMA LENGKAP'),
+    lokasi: h.indexOf('LOKASI'),
+    baju: h.indexOf('UKURAN BAJU'),
+    celana: h.findIndex(function (x) { return x.indexOf('UKURAN CELANA') === 0; }),
+    sepatu: h.findIndex(function (x) { return x.indexOf('UKURAN SEPATU') === 0; })
+  };
+  for (var r = 1; r < v.length; r++) {
+    var row = v[r];
+    if (!row.join('').trim()) continue;
+    var w = row[i.waktu];
+    var iso = w instanceof Date ? w.toISOString() : null;
+    var nama = String(row[i.nama] || '').trim();
+    rows.push({
+      kunci: awalan + '|' + (iso || r) + '|' + nama,
+      waktu: iso,
+      lokasi: String(row[i.lokasi] || lokasiCadangan).trim(),
+      bagian_kerja: String(row[i.bagian] || '').trim(),
+      nama: nama,
+      ukuran_baju: String(row[i.baju] || '').trim(),
+      ukuran_celana: String(row[i.celana] || '').trim(),
+      ukuran_sepatu: String(row[i.sepatu] || '').trim(),
+      sumber_tab: sumberTab
+    });
+  }
+}
+
+// Spreadsheet tanggapan dibaca bergiliran dengan batas waktu; putaran berikutnya melanjutkan dari yang belum terbaca (REG_OFFSET).
+function tanggapanRegistri_(rows) {
+  if (!REGISTRI_ID) return;
+  var daftar = SpreadsheetApp.openById(REGISTRI_ID).getSheets()[0].getDataRange().getValues().slice(1).filter(function (r) { return r[2]; });
+  var n = daftar.length; if (!n) return;
+  var props = PropertiesService.getScriptProperties(), off = Number(props.getProperty('REG_OFFSET')) || 0;
+  var mulai = Date.now(), terbaca = 0, gagal = 0;
+  for (var k = 0; k < n; k++) {
+    if (Date.now() - mulai > BATAS_REGISTRI_MS) break;
+    var r = daftar[(off + k) % n];
+    try {
+      SpreadsheetApp.openById(String(r[2])).getSheets().forEach(function (sh) { kumpul_(sh, String(r[2]), String(r[0]), String(r[0]) + ' (form)', rows); });
+      terbaca++;
+    } catch (e) { gagal++; Logger.log('Gagal membaca tanggapan ' + r[0] + ': ' + e); }
+  }
+  props.setProperty('REG_OFFSET', String((off + terbaca + gagal) % n));
+  Logger.log('Tanggapan form: ' + terbaca + ' dari ' + n + ' spreadsheet terbaca' + (gagal ? ', ' + gagal + ' gagal' : '') + (terbaca + gagal < n ? ' (sisanya putaran berikutnya)' : ''));
+}
+
 function sinkronSemua() {
   var props = PropertiesService.getScriptProperties();
   var url = props.getProperty('SUPABASE_URL');
@@ -10,38 +66,10 @@ function sinkronSemua() {
   if (!url || !key) throw new Error('Isi SUPABASE_URL dan SUPABASE_SERVICE_KEY di Script Properties.');
 
   var rows = [];
-  SpreadsheetApp.openById(SPREADSHEET_ID).getSheets().forEach(function (sh) {
-    var v = sh.getDataRange().getValues();
-    if (v.length < 2) return;
-    var h = v[0].map(function (x) { return String(x).trim().toUpperCase(); });
-    var i = {
-      waktu: h.indexOf('TIMESTAMP'),
-      bagian: h.indexOf('BAGIAN KERJA'),
-      nama: h.indexOf('NAMA LENGKAP'),
-      lokasi: h.indexOf('LOKASI'),
-      baju: h.indexOf('UKURAN BAJU'),
-      celana: h.findIndex(function (x) { return x.indexOf('UKURAN CELANA') === 0; }),
-      sepatu: h.findIndex(function (x) { return x.indexOf('UKURAN SEPATU') === 0; })
-    };
-    for (var r = 1; r < v.length; r++) {
-      var row = v[r];
-      if (!row.join('').trim()) continue;
-      var w = row[i.waktu];
-      var iso = w instanceof Date ? w.toISOString() : null;
-      var nama = String(row[i.nama] || '').trim();
-      rows.push({
-        kunci: sh.getName() + '|' + (iso || r) + '|' + nama,
-        waktu: iso,
-        lokasi: String(row[i.lokasi] || sh.getName()).trim(),
-        bagian_kerja: String(row[i.bagian] || '').trim(),
-        nama: nama,
-        ukuran_baju: String(row[i.baju] || '').trim(),
-        ukuran_celana: String(row[i.celana] || '').trim(),
-        ukuran_sepatu: String(row[i.sepatu] || '').trim(),
-        sumber_tab: sh.getName()
-      });
-    }
-  });
+  // 1) spreadsheet data lama: semua tab (tanggapan form lama dan data uji)
+  SpreadsheetApp.openById(SPREADSHEET_ID).getSheets().forEach(function (sh) { kumpul_(sh, sh.getName(), sh.getName(), sh.getName(), rows); });
+  // 2) tanggapan form per lokasi: tiap form punya spreadsheet sendiri di folder lokasinya, didaftar di registri
+  tanggapanRegistri_(rows);
 
   for (var s = 0; s < rows.length; s += BATCH) {
     var res = UrlFetchApp.fetch(url + '/rest/v1/ukuran_pekerja?on_conflict=kunci', {
