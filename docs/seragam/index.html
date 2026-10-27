@@ -105,11 +105,14 @@
   .pcard { padding:16px 18px; }
   .pcard .ttl { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; font-size:.9rem; margin-bottom:8px; }
   .pcard .ttl small { display:block; color:var(--muted); font-size:.74rem; font-weight:400; margin-top:2px; }
-  .picrow { display:grid; grid-template-columns:minmax(80px,22%) minmax(0,1fr) 128px; gap:10px; align-items:center; padding:6px 0; font-size:.82rem; }
+  .picrow { display:grid; grid-template-columns:minmax(80px,22%) minmax(0,1fr) auto; gap:10px; align-items:center; padding:6px 0; font-size:.82rem; }
   .picrow .pn b { display:block; font-weight:600; } .picrow .pn small { color:var(--muted); font-size:.7rem; }
   .picrow .pb { display:flex; height:16px; border-radius:6px; overflow:hidden; background:rgba(255,255,255,.07); }
   .picrow .pb i { display:block; height:100%; } .picrow .pb .a { background:var(--accent); } .picrow .pb .o { background:#ff8a3d; }
-  .picrow .pv { text-align:right; white-space:nowrap; font-size:.76rem; color:var(--muted); } .picrow .pv b { color:var(--text); font-size:.88rem; }
+  .picrow { padding:8px 0; border-bottom:1px solid var(--stroke); } .picrow:last-child { border-bottom:0; }
+  .picrow .pk { margin-top:5px; font-size:.74rem; color:var(--muted); } .picrow .pk b { color:var(--text); font-size:.84rem; } .picrow .pk .kr { color:var(--warn); } .picrow .pk .lg { color:var(--ok); }
+  .picrow .btn.mini { margin:0; padding:5px 14px; font-size:.78rem; cursor:pointer; }
+  .picrow .btn[disabled] { opacity:.4; cursor:default; }
   .siaprow { display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; padding:8px 4px; border:0; border-radius:12px; background:none; text-align:left; color:inherit; cursor:pointer; }
   .siaprow:hover, .siaprow:focus-visible { background:var(--panel2); outline:none; }
   .siaprow b { display:block; font-size:.84rem; font-weight:600; } .siaprow small { color:var(--muted); font-size:.72rem; }
@@ -675,7 +678,7 @@
     </section>
     <section class="pantau" id="pantau">
       <div class="card pcard">
-        <div class="ttl"><div><b>Progres pengisian per PIC</b><small>Karyawan yang sudah mengisi dari target tiap PIC lapangan</small></div><button class="btn" id="pantauIngat">Ingatkan PIC</button></div>
+        <div class="ttl"><div><b>Progres pengisian per PIC</b><small>Karyawan yang sudah mengisi dari target tiap PIC lapangan</small></div></div>
         <div class="legend" style="margin:2px 0 8px"><span><i style="background:var(--accent)"></i>Sudah mengisi</span><span><i style="background:#ff8a3d"></i>Belum mengisi</span></div>
         <div id="picBar"></div>
       </div>
@@ -926,15 +929,18 @@
     const sub = areaTop ? lokasi.filter(l => areaInduk(l) === areaTop) : lokasi, g = new Map();
     for (const l of sub) {
       const p = window.Saring && Saring.picDari(l.lokasi), k = p ? String(p.id) : '-';
-      if (!g.has(k)) g.set(k, { nama: p ? p.nama : 'Belum ada PIC', target: 0, isi: 0, lok: 0 });
+      if (!g.has(k)) g.set(k, { id: p ? String(p.id) : '', nama: p ? p.nama : 'Belum ada PIC', target: 0, isi: 0, lok: 0 });
       const x = g.get(k); x.target += l.target; x.isi += l.isi; x.lok++;
     }
-    const baris = [...g.values()].sort((a, b) => (b.target - b.isi) - (a.target - a.isi));
+    // semua PIC lapangan ikut tampil, juga yang belum memegang lokasi; bila filter Area/PIC di atas halaman aktif, hanya PIC yang punya lokasi tersaring
+    if (window.Saring && !Saring.aktif()) for (const p of Saring.picSemua()) if ((!areaTop || p.area === areaTop) && !g.has(String(p.id))) g.set(String(p.id), { id: String(p.id), nama: p.nama, target: 0, isi: 0, lok: 0 });
+    const baris = [...g.values()].sort((a, b) => (!a.lok - !b.lok) || (b.target - b.isi) - (a.target - a.isi) || a.nama.localeCompare(b.nama));
     $('picBar').innerHTML = baris.length ? baris.map(x => {
-      const pi = x.target ? 100 * x.isi / x.target : 0;
-      return `<div class="picrow"><div class="pn"><b>${esc(x.nama)}</b><small>${x.lok} lokasi</small></div>
-        <div class="pb" role="img" aria-label="${x.isi} dari ${x.target} sudah mengisi"><i class="a" style="width:${pi.toFixed(1)}%"></i><i class="o" style="width:${(100 - pi).toFixed(1)}%"></i></div>
-        <div class="pv"><b>${idn(x.isi)}</b> / ${idn(x.target)} · ${pi.toFixed(0)}%<br>kurang ${idn(x.target - x.isi)}</div></div>`;
+      const pi = x.target ? 100 * x.isi / x.target : 0, kurang = x.target - x.isi;
+      return `<div class="picrow"><div class="pn"><b>${esc(x.nama)}</b><small>${x.lok ? x.lok + ' lokasi' : 'belum memegang lokasi'}</small></div>
+        <div class="pm"><div class="pb" role="img" aria-label="${x.isi} dari ${x.target} sudah mengisi"><i class="a" style="width:${pi.toFixed(1)}%"></i><i class="o" style="width:${x.target ? (100 - pi).toFixed(1) : 0}%"></i></div>
+          <div class="pk">${x.target ? `<b>${idn(x.isi)}</b> dari ${idn(x.target)} karyawan sudah mengisi (${pi.toFixed(0)}%) · ${kurang ? `<span class="kr">kurang ${idn(kurang)}</span>` : '<span class="lg">lengkap</span>'}` : 'tidak ada target'}</div></div>
+        ${x.id ? `<button class="btn mini" data-ingatpic="${esc(x.id)}" ${kurang > 0 ? '' : 'disabled'}>Ingatkan</button>` : '<span></span>'}</div>`;
     }).join('') : '<div class="kosongnya">Belum ada data.</div>';
     if (!statusMuat) { $('siapProses').innerHTML = '<div class="kosongnya">Memuat status permintaan…</div>'; return; }
     const siap = sub.filter(l => l.status === 'lengkap' && ['belum', 'sebagian'].includes(infoLok(l).s)).sort((a, b) => b.target - a.target);
@@ -945,7 +951,7 @@
         + (siap.length > 5 ? `<div class="muted" style="font-size:.74rem;margin-top:6px">dan ${siap.length - 5} lokasi lainnya · lihat di halaman Permintaan seragam</div>` : '')
       : '<div class="kosongnya">Belum ada lokasi yang lengkap dan menunggu permintaan.</div>';
   }
-  $('pantauIngat').onclick = () => bukaIngat();
+  $('picBar').onclick = e => { const t = e.target.closest('[data-ingatpic]'); if (t && !t.disabled) ingatLokasi('', '', t.dataset.ingatpic); };
   document.addEventListener('click', e => {
     const c = e.target.closest('#areaChips .chip'); if (c) { areaTop = c.dataset.a; gambarTop(); return; }
     const sp = e.target.closest('#siapProses .siaprow'); if (sp) { mStatusF = 'semua'; $('mCari').value = ''; terbukaMinta = true; tampil('permintaan'); setLokasiMinta(sp.dataset.siap); renderDaftarMinta(); return; }
@@ -1191,14 +1197,16 @@
   modalIngat.onclick = e => { if (e.target === modalIngat || (e.target.dataset && e.target.dataset.tutup != null)) tutupModal(); };
   document.addEventListener('keydown', e => { if (e.key === 'Escape') tutupModal(); });
   const isiModal = h => { modalIngat.firstChild.innerHTML = h; modalIngat.hidden = false; };
-  async function ingatLokasi(kunci, namaBagian) {
+  async function ingatLokasi(kunci, namaBagian, picId) {
     isiModal('<div class="muted">Memuat…</div>');
     try { await siapkanIngat(); } catch (e) { return isiModal(`<h3>Ingatkan PIC</h3><div class="muted" style="margin:10px 0">Gagal: ${esc(e.message)}</div><button class="btn" data-tutup>Tutup</button>`); }
-    const l = lokasi.find(x => x.lokasi === kunci); if (!l) return tutupModal();
-    const p = Saring.picDari(l.lokasi), g = { pic: p, lok: [l] }, tel = p ? noWa(picTel.get(String(p.id))) : '', ps = pesanPic(g, namaBagian);
+    const l = picId ? null : lokasi.find(x => x.lokasi === kunci); if (!picId && !l) return tutupModal();
+    const g = picId ? kelompokPic().find(x => x.pic && String(x.pic.id) === String(picId)) : { pic: Saring.picDari(l.lokasi), lok: [l] };
+    if (!g) return isiModal('<h3>Ingatkan PIC</h3><div class="muted" style="margin:10px 0">Semua lokasi PIC ini sudah lengkap. Tidak ada yang perlu diingatkan.</div><button class="btn" data-tutup>Tutup</button>');
+    const p = g.pic, tel = p ? noWa(picTel.get(String(p.id))) : '', ps = pesanPic(g, namaBagian);
     modalIngat._ps = ps; modalIngat._g = g;
     isiModal(`<h3>Ingatkan PIC</h3>
-      <div class="muted" style="margin:4px 0 10px">${esc(l.client)}${namaBagian ? ' · ' + esc(namaBagian) : ''}<br>${!p ? 'Lokasi ini belum punya PIC. Atur di Administrator › Lokasi & PIC.' : 'PIC: <b style="color:var(--text)">' + esc(p.nama) + '</b>' + (tel ? ' · WA ' + esc(tel) : ' · nomor telepon belum diisi (Administrator › PIC lapangan)')}</div>
+      <div class="muted" style="margin:4px 0 10px">${l ? esc(l.client) + (namaBagian ? ' · ' + esc(namaBagian) : '') : g.lok.length + ' lokasi belum lengkap'}<br>${!p ? 'Lokasi ini belum punya PIC. Atur di Administrator › Lokasi & PIC.' : 'PIC: <b style="color:var(--text)">' + esc(p.nama) + '</b>' + (tel ? ' · WA ' + esc(tel) : ' · nomor telepon belum diisi (Administrator › PIC lapangan)')}</div>
       ${kotakPesan(ps)}
       <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
         ${p && tel ? '<button class="btn" id="mBot">Kirim lewat WA bot</button>' : ''}
