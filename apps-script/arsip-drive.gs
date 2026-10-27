@@ -142,6 +142,13 @@ function aksiFolder_(d) {
     return jawab_({ ok: true, id: file.getId(), nama: nama, url: file.getUrl() });
   }
   if (aksi === 'buatForm') return jawab_(buatFormLokasi_(d));
+  if (aksi === 'setDeskripsi') { // uji format deskripsi pada form di dalam folder utama
+    if (!d.id || !dalamPohon_(d.id)) return jawab_({ ok: false, error: 'di luar folder utama' });
+    var fm = Drive.Files.get(d.id, { fields: 'mimeType', supportsAllDrives: true });
+    if (fm.mimeType !== 'application/vnd.google-apps.form') return jawab_({ ok: false, error: 'bukan Google Form' });
+    FormApp.openById(d.id).setDescription(String(d.teks));
+    return jawab_({ ok: true });
+  }
   if (aksi === 'buangForm') {
     // satu-satunya aksi yang menghapus, dan sangat dibatasi: hanya Google Form, hanya di dalam folder utama, hanya ke Sampah (bisa dipulihkan 30 hari),
     // dan hanya untuk id yang disebut satu per satu serta kata konfirmasi. Tidak ada penghapusan permanen.
@@ -200,7 +207,7 @@ function buatFormLokasi_(d) {
     var form = FormApp.openById(salinan.getId());
     try { form.setPublished(true); } catch (e0) { /* versi lama tanpa status terbit */ }
     form.setTitle('Form Pengisian Data Seragam Karyawan - ' + d.lokasi);
-    form.setDescription(DESKRIPSI_FORM.replace(/\{LOKASI\}/g, d.lokasi));
+    form.setDescription(String(d.deskripsi || DESKRIPSI_FORM).split('{LOKASI}').join(d.lokasi));
     if (FormApp.EmailCollectionType) form.setEmailCollectionType(FormApp.EmailCollectionType.VERIFIED); else form.setCollectEmail(true);
     form.setLimitOneResponsePerUser(true);
     form.setAllowResponseEdits(false);
@@ -216,6 +223,9 @@ function buatFormLokasi_(d) {
         form.moveItem(pilihan.getIndex(), idx);
       } else if (jd === 'BAGIAN KERJA' && tp === FormApp.ItemType.MULTIPLE_CHOICE && d.bagian && d.bagian.length) {
         it.asMultipleChoiceItem().setChoiceValues(d.bagian);
+      } else if (jd === 'UKURAN SEPATU' && (tp === FormApp.ItemType.PAGE_BREAK || tp === FormApp.ItemType.SECTION_HEADER) && d.gambarSepatuId) {
+        var gbr = form.addImageItem().setImage(DriveApp.getFileById(d.gambarSepatuId).getBlob()).setTitle('Tabel ukuran sepatu').setWidth(640);
+        form.moveItem(gbr.getIndex(), it.getIndex() + 1);
       } else if (jd === 'NAMA LENGKAP' && tp === FormApp.ItemType.TEXT) {
         var cek = FormApp.createTextValidation().setHelpText('Tulis nama lengkap sesuai KTP, hanya huruf (minimal 3 karakter).').requireTextMatchesPattern("^[A-Za-z][A-Za-z .,'-]{2,}$").build();
         it.asTextItem().setHelpText('Sesuai KTP, tanpa singkatan atau nama panggilan.').setValidation(cek).setRequired(true);
