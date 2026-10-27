@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 27 Okt 2026
+- **v1.119** Koreksi admin atas data karyawan permanen: baris yang diedit di Administrator dikunci sehingga sinkronisasi Google Form tiap jam tidak menimpanya; baris asal Form yang dihapus admin ditandai dibatalkan (tidak muncul lagi saat sinkronisasi). SQL: `supabase/migrasi-kunci-sinkron.sql` (sudah diterapkan).
 - **v1.118** Monitoring Pengisian: ringkasan dan kartu progres PIC dihitung per LOKASI (bukan karyawan) dengan empat tahap berwarna: biru sudah lengkap, kuning sudah mengisi (terisi 50% atau lebih), oranye proses (di bawah 50%), merah belum mengisi sama sekali. Batang per PIC berupa susunan keempat warna itu.
 - **v1.117** Monitoring Pengisian: ringkasan menambah angka "Sudah lengkap" (lokasi yang semua karyawannya sudah mengisi); tiap PIC di kartu progres menampilkan rincian lokasi lengkap / masih kurang / masih kosong dengan warna yang sama dengan ringkasan.
 - **v1.116** Kartu "Progres pengisian per PIC" selalu menampilkan semua PIC (tidak lagi menyusut jadi satu PIC saat filter Area/PIC di atas halaman aktif); kartu "Lokasi siap diproses" rata atas.
