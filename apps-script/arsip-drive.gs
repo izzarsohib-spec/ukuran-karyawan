@@ -294,21 +294,28 @@ function jalankanGambar_(mode) {
   Logger.log('BELUM SELESAI (' + mode + '), jalankan lagi untuk lanjut dari form ke-' + mulai + '. Sejauh ini: ' + JSON.stringify(jml, null, 1));
 }
 
-// Membuat SATU form contoh (terpisah dari form lokasi, disimpan di folder utama) berisi 4 gambar baru dengan lebar tampil yang sama, untuk dilihat dulu.
-// Jalankan dari editor; tautan form muncul di Log eksekusi. Form contoh boleh dihapus kapan saja.
+// Membuat SATU form contoh: SALINAN utuh sebuah form lokasi (halaman, pertanyaan, deskripsi sama persis) dengan gambar ukurannya diganti 4 gambar baru,
+// supaya bisa dilihat sebelum form lokasi yang asli diubah. Salinan disimpan di folder utama, boleh dihapus, dan tidak terhubung ke spreadsheet tanggapan.
+// Lokasi yang disalin: yang namanya memuat CONTOH_LOKASI di registri (bila tidak ada, baris pertama registri). Hasilnya (tautan + gambar yang dikenali) di Log eksekusi.
+var CONTOH_LOKASI = 'SUKAMARA';
 function buatContohFormGambar() {
-  var g = cariGambarUkuran_();
-  if (g.error) { Logger.log('GAGAL: ' + g.error); return; }
-  var form = FormApp.create('CONTOH - Gambar petunjuk ukuran (boleh dihapus)');
-  form.setDescription('Contoh tampilan gambar petunjuk ukuran. Form ini hanya untuk dilihat dan boleh dihapus.');
-  [['UKURAN BAJU', 'caraBaju', 'tabelBaju', 'baju'], ['UKURAN CELANA', 'caraCelana', 'tabelCelana', 'celana']].forEach(function (b) {
-    form.addSectionHeaderItem().setTitle(b[0]);
-    [b[1], b[2]].forEach(function (k) {
-      form.addImageItem().setImage(DriveApp.getFileById(g[k]).getBlob()).setWidth(640);
-    });
-    form.addTextItem().setTitle('Contoh isian ukuran ' + b[3]);
-  });
-  DriveApp.getFileById(form.getId()).moveTo(DriveApp.getFolderById(FOLDER_UTAMA));
+  var baris = registri_().getDataRange().getValues().slice(1).filter(function (r) { return r[1]; });
+  if (!baris.length) { Logger.log('GAGAL: registri kosong'); return; }
+  var pilih = baris.filter(function (r) { return String(r[0]).toUpperCase().indexOf(CONTOH_LOKASI) >= 0; })[0] || baris[0];
+  var asal = DriveApp.getFileById(String(pilih[1]));
+  var salinan = asal.makeCopy('CONTOH - ' + asal.getName() + ' (gambar baru)', DriveApp.getFolderById(FOLDER_UTAMA));
+  var form = FormApp.openById(salinan.getId());
+  try { form.removeDestination(); } catch (e0) { /* salinan memang tidak terhubung */ }
+  try { form.setPublished(true); } catch (e1) { /* versi lama tanpa status terbit */ }
+  form.setTitle('CONTOH - ' + form.getTitle());
+  var h = gambarForm_({ mode: 'ganti', ids: [salinan.getId()] });
+  if (!h.ok) { Logger.log('GAGAL: ' + JSON.stringify(h)); return; }
+  var r = h.hasil[0];
+  if (!r.ok) { Logger.log('GAGAL: ' + r.error); return; }
+  var diganti = r.gambar.filter(function (g) { return g.diganti; }).length;
+  Logger.log('Disalin dari lokasi: ' + pilih[0]);
+  Logger.log('Gambar ditemukan: ' + r.gambar.length + ', diganti: ' + diganti + (diganti < 4 ? '  <-- KURANG DARI 4, lihat rincian di bawah' : ''));
+  Logger.log('Rincian gambar: ' + JSON.stringify(r.gambar));
   Logger.log('Tautan isi (untuk dilihat): ' + form.getPublishedUrl());
   Logger.log('Tautan edit: ' + form.getEditUrl());
 }
