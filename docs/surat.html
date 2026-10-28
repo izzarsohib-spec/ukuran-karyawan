@@ -10,26 +10,29 @@
   :root { --bg:#e9e9ec; --kartu:#fff; --teks:#1b1b1f; --redup:#6b6b73; }
   @media (prefers-color-scheme: dark) { :root { --bg:#121214; --teks:#ececf0; --redup:#9a9aa4; } }
   * { box-sizing:border-box; }
-  html, body { margin:0; background:var(--bg); color:var(--teks); font:15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  header { position:sticky; top:0; z-index:5; padding:10px 14px; background:var(--bg); border-bottom:1px solid rgba(128,128,128,.25); }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--teks); font:15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  body { display:flex; flex-direction:column; height:100dvh; overflow:hidden; }
+  header { flex:none; padding:8px 14px; background:var(--bg); border-bottom:1px solid rgba(128,128,128,.25); }
   header b { display:block; font-size:.98rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  header span { color:var(--redup); font-size:.78rem; }
-  main { max-width:960px; margin:0 auto; padding:8px 0 40px; }
-  figure { margin:0 0 10px; }
-  figcaption { color:var(--redup); font-size:.72rem; padding:6px 14px 3px; }
-  /* tiap halaman selebar layar; huruf tajam karena gambar aslinya 1700 px. Cubit untuk memperbesar tetap bisa. */
-  .halaman > img { display:block; width:100%; height:auto; background:var(--kartu); touch-action:pan-x pan-y pinch-zoom; cursor:zoom-in; }
-  /* ketuk gambar untuk memperbesar (berguna untuk halaman padat seperti Daftar Harga); geser ke samping untuk membaca, ketuk lagi untuk kembali */
-  figure.besar { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  figure.besar .halaman { width:260%; max-width:none; }
-  figure.besar .halaman > img { cursor:zoom-out; }
+  header span { color:var(--redup); font-size:.76rem; }
+  /* satu halaman per layar: geser ke samping untuk pindah halaman, cubit atau ketuk dua kali untuk memperbesar (gambar aslinya 2000 px, jadi huruf tetap tajam) */
+  #pager { position:relative; flex:1 1 auto; min-height:0; overflow:hidden; touch-action:none; user-select:none; -webkit-user-select:none; }
+  #isi { display:flex; height:100%; will-change:transform; }
+  #isi.anim { transition:transform .25s ease; }
+  .slide { flex:0 0 100%; height:100%; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .halaman { position:relative; flex:none; background:var(--kartu); transform-origin:50% 50%; will-change:transform; box-shadow:0 2px 14px rgba(0,0,0,.25); }
+  .halaman > img { display:block; width:100%; height:100%; background:var(--kartu); -webkit-user-drag:none; pointer-events:none; }
+  .nav { position:absolute; top:50%; transform:translateY(-50%); z-index:4; width:38px; height:64px; border:0; border-radius:12px; background:rgba(0,0,0,.38); color:#fff; font-size:1.6rem; line-height:1; cursor:pointer; opacity:.85; }
+  .nav[disabled] { opacity:.2; cursor:default; } #sebelum { left:6px; } #sesudah { right:6px; }
+  @media (pointer:coarse) { .nav { display:none; } }
+  #penanda { position:absolute; left:50%; bottom:10px; transform:translateX(-50%); z-index:4; padding:4px 12px; border-radius:99px; background:rgba(0,0,0,.55); color:#fff; font-size:.78rem; pointer-events:none; white-space:nowrap; }
   .info { padding:30px 16px; text-align:center; color:var(--redup); }
   /* tanda tangan digital pimpinan ditempel di atas halaman (posisi = pecahan lebar/tinggi halaman, jadi ikut membesar saat dicubit) */
   .halaman { position:relative; }
   .ttd { position:absolute; transform:translateX(-50%); pointer-events:none; text-align:center; }
   .ttd img { display:block; width:100%; height:100%; object-fit:contain; background:none; }
   .ttd-ket { position:absolute; transform:translateX(-50%); white-space:nowrap; text-align:center; color:#555; font-family:Arial, sans-serif; line-height:1.15; pointer-events:none; }
-  #aksi { padding:8px 14px 0; }
+  #aksi { flex:none; padding:6px 14px; }
   #aksi button { padding:9px 14px; border-radius:10px; border:1px solid rgba(128,128,128,.4); background:transparent; color:inherit; font:inherit; font-size:.85rem; cursor:pointer; }
   #aksi button:disabled { opacity:.6; cursor:default; }
 </style>
@@ -37,7 +40,7 @@
 <body>
 <header><b id="judul">Surat permintaan</b><span id="sub">Memuat…</span></header>
 <div id="aksi" hidden><button id="unduh" type="button">Unduh PDF bertanda tangan</button> <span id="infoTtd" style="color:var(--redup);font-size:.78rem"></span></div>
-<main id="isi"></main>
+<div id="pager"><div id="isi"></div><button class="nav" id="sebelum" type="button" aria-label="Halaman sebelumnya">‹</button><button class="nav" id="sesudah" type="button" aria-label="Halaman berikutnya">›</button><div id="penanda"></div></div>
 <script>
   // Alamat berkas di Supabase Storage (bucket publik, nama folder acak). Parameter: f = folder, n = jumlah halaman, j = judul.
   const BASE = 'https://vqcusagijiavaoljfrib.supabase.co/storage/v1/object/public/lampiran-surat/';
@@ -49,18 +52,75 @@
     isi.innerHTML = '<div class="info">Tautan surat tidak valid.</div>';
   } else {
     if (j) { document.getElementById('judul').textContent = j; document.title = j; }
-    document.getElementById('sub').textContent = `${n} halaman · ketuk halaman untuk memperbesar`;
+    document.getElementById('sub').textContent = `${n} halaman · geser untuk pindah halaman · cubit atau ketuk dua kali untuk memperbesar`;
     const figs = [];
     for (let i = 1; i <= n; i++) {
-      const fig = document.createElement('figure'), cap = document.createElement('figcaption'), bungkus = document.createElement('div'), img = new Image();
-      cap.textContent = `Halaman ${i} dari ${n}`; bungkus.className = 'halaman';
-      img.alt = `Halaman ${i} dari ${n}`; img.decoding = 'async'; img.crossOrigin = 'anonymous'; if (i > 2) img.loading = 'lazy';
+      const fig = document.createElement('div'), bungkus = document.createElement('div'), img = new Image(); fig.className = 'slide';
+      bungkus.className = 'halaman';
+      img.alt = `Halaman ${i} dari ${n}`; img.decoding = 'async'; img.crossOrigin = 'anonymous'; if (i > 6) img.loading = 'lazy';
       img.src = `${BASE}${f}/${String(i).padStart(2, '0')}.jpg`;
       // bila server tidak mengizinkan CORS, tampilkan tetap tanpa mode anonim (hanya unduh PDF bertanda tangan yang butuh CORS)
       img.onerror = () => { if (img.crossOrigin) { img.crossOrigin = null; img.src = img.src; return; } fig.innerHTML = `<div class="info">Halaman ${i} tidak dapat dimuat.</div>`; };
-      img.onclick = () => fig.classList.toggle('besar');
-      bungkus.append(img); fig.append(cap, bungkus); isi.append(fig); figs.push({ bungkus, img });
+      img.onload = () => ukurHalaman(figs[i - 1]);
+      bungkus.append(img); fig.append(bungkus); isi.append(fig); figs.push({ bungkus, img, fig });
     }
+    // ---- penampil: ukuran halaman menyesuaikan layar, geser antar halaman, cubit / ketuk dua kali untuk zoom ----
+    const pager = document.getElementById('pager'), penanda = document.getElementById('penanda'), btnS = document.getElementById('sebelum'), btnN = document.getElementById('sesudah');
+    let hal = 0, skala = 1, tx = 0, ty = 0, dragX = 0;
+    function ukurHalaman(fg) {
+      if (!fg || !fg.img.naturalWidth) return;
+      const W = pager.clientWidth - 12, H = pager.clientHeight - 12, r = Math.min(W / fg.img.naturalWidth, H / fg.img.naturalHeight);
+      fg.bungkus.style.width = Math.floor(fg.img.naturalWidth * r) + 'px'; fg.bungkus.style.height = Math.floor(fg.img.naturalHeight * r) + 'px';
+    }
+    const ukurSemua = () => figs.forEach(ukurHalaman);
+    new ResizeObserver(() => { ukurSemua(); pasang(false); }).observe(pager);
+    const batas = () => { const fg = figs[hal]; if (!fg) return { x: 0, y: 0 }; const w = fg.bungkus.offsetWidth * skala, h = fg.bungkus.offsetHeight * skala; return { x: Math.max(0, (w - pager.clientWidth) / 2), y: Math.max(0, (h - pager.clientHeight) / 2) }; };
+    function pasang(anim) {
+      const W = pager.clientWidth; isi.classList.toggle('anim', !!anim); isi.style.transform = `translateX(${-hal * W + dragX}px)`;
+      const b = batas(); tx = Math.max(-b.x, Math.min(b.x, tx)); ty = Math.max(-b.y, Math.min(b.y, ty));
+      figs.forEach((fg, k) => { fg.bungkus.style.transform = k === hal ? `translate(${tx}px, ${ty}px) scale(${skala})` : ''; });
+      penanda.textContent = `Halaman ${hal + 1} dari ${n}` + (skala > 1.05 ? ` · ${skala.toFixed(1).replace('.', ',')}×` : '');
+      btnS.disabled = hal === 0; btnN.disabled = hal === n - 1;
+    }
+    function ke(k, anim = true) { hal = Math.max(0, Math.min(n - 1, k)); skala = 1; tx = ty = 0; dragX = 0; pasang(anim); }
+    btnS.onclick = () => ke(hal - 1); btnN.onclick = () => ke(hal + 1);
+    document.addEventListener('keydown', e => { if (e.key === 'ArrowLeft') ke(hal - 1); else if (e.key === 'ArrowRight') ke(hal + 1); else if (e.key === '+' || e.key === '=') { skala = Math.min(6, skala * 1.3); pasang(false); } else if (e.key === '-') { skala = Math.max(1, skala / 1.3); if (skala < 1.05) { skala = 1; tx = ty = 0; } pasang(false); } else if (e.key === '0') ke(hal, false); });
+    pager.addEventListener('wheel', e => { e.preventDefault(); if (e.ctrlKey || e.metaKey || Math.abs(e.deltaY) > Math.abs(e.deltaX)) { const a = skala; skala = Math.max(1, Math.min(6, skala * Math.exp(-e.deltaY * 0.0025))); const r = pager.getBoundingClientRect(), cx = e.clientX - r.left - r.width / 2, cy = e.clientY - r.top - r.height / 2; tx = cx - (cx - tx) * skala / a; ty = cy - (cy - ty) * skala / a; if (skala < 1.02) { skala = 1; tx = ty = 0; } pasang(false); } }, { passive: false });
+    const titik = new Map(); let awal = null, tapTerakhir = { t: 0, x: 0, y: 0 };
+    const jarak = () => { const [a, b] = [...titik.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+    const tengah = () => { const [a, b] = [...titik.values()], r = pager.getBoundingClientRect(); return { x: (a.x + b.x) / 2 - r.left - r.width / 2, y: (a.y + b.y) / 2 - r.top - r.height / 2 }; };
+    pager.addEventListener('pointerdown', e => {
+      pager.setPointerCapture(e.pointerId); titik.set(e.pointerId, { x: e.clientX, y: e.clientY }); isi.classList.remove('anim');
+      awal = titik.size === 2 ? { mode: 'cubit', d: jarak(), skala, tx, ty, m: tengah() } : { mode: 'satu', x: e.clientX, y: e.clientY, tx, ty, t: Date.now(), geser: false, jauh: false };
+    });
+    pager.addEventListener('pointermove', e => {
+      if (!titik.has(e.pointerId) || !awal) return; titik.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (titik.size >= 2 && awal.mode === 'cubit') {
+        const a = skala; skala = Math.max(1, Math.min(6, awal.skala * jarak() / awal.d)); const m = tengah();
+        tx = m.x - (awal.m.x - awal.tx) * skala / awal.skala; ty = m.y - (awal.m.y - awal.ty) * skala / awal.skala; pasang(false);
+      } else if (awal.mode === 'satu') {
+        const dx = e.clientX - awal.x, dy = e.clientY - awal.y; if (Math.hypot(dx, dy) > 8) awal.jauh = true;
+        if (skala > 1.02) { tx = awal.tx + dx; ty = awal.ty + dy; pasang(false); }
+        else if (awal.geser || Math.abs(dx) > Math.abs(dy) + 4) { awal.geser = true; dragX = dx; pasang(false); }
+      }
+    });
+    const lepas = e => {
+      if (!titik.has(e.pointerId)) return; titik.delete(e.pointerId);
+      if (awal && awal.mode === 'cubit') { if (skala < 1.05) { skala = 1; tx = ty = 0; } awal = titik.size ? { mode: 'satu', x: [...titik.values()][0].x, y: [...titik.values()][0].y, tx, ty, t: Date.now(), geser: false, jauh: true } : null; pasang(true); return; }
+      if (!awal) return; const a = awal; awal = null;
+      if (a.geser) { const dx = dragX, W = pager.clientWidth, cepat = Math.abs(dx) / Math.max(1, Date.now() - a.t) > 0.45; dragX = 0; ke(Math.abs(dx) > W * 0.2 || (cepat && Math.abs(dx) > 30) ? hal + (dx < 0 ? 1 : -1) : hal); return; }
+      if (!a.jauh && Date.now() - a.t < 350) { // ketukan: dua kali berturut-turut = zoom masuk / keluar
+        const r = pager.getBoundingClientRect(), cx = e.clientX - r.left - r.width / 2, cy = e.clientY - r.top - r.height / 2;
+        if (Date.now() - tapTerakhir.t < 320 && Math.hypot(e.clientX - tapTerakhir.x, e.clientY - tapTerakhir.y) < 30) {
+          tapTerakhir.t = 0;
+          if (skala > 1.05) { skala = 1; tx = ty = 0; } else { const s2 = 2.6; tx = cx - (cx - tx) * s2; ty = cy - (cy - ty) * s2; skala = s2; }
+          pasang(true);
+        } else tapTerakhir = { t: Date.now(), x: e.clientX, y: e.clientY };
+      }
+    };
+    pager.addEventListener('pointerup', lepas); pager.addEventListener('pointercancel', lepas);
+    pasang(false);
+
     // tanda tangan digital pimpinan yang sudah menyetujui (gambar tanda tangan hanya diberikan server setelah ia menekan Setujui)
     const FN = 'https://vqcusagijiavaoljfrib.supabase.co/functions/v1/ttd-surat';
     const tgl = w => new Date(w).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).replace(/\./g, ':');

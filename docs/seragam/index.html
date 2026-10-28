@@ -1722,7 +1722,7 @@
       window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
     const dok = await window.pdfjsLib.getDocument({ data: Uint8Array.from(atob(pdfB64), c => c.charCodeAt(0)) }).promise;
-    const LEBAR = 1700, kanvas = [];
+    const LEBAR = 2000, kanvas = []; // gambar halaman surat yang dikirim ke pimpinan: 2000 px agar tetap tajam saat diperbesar di HP
     for (let i = 1; i <= dok.numPages; i++) {
       const pg = await dok.getPage(i), v0 = pg.getViewport({ scale: 1 }), v = pg.getViewport({ scale: LEBAR / v0.width });
       const cv = document.createElement('canvas'); cv.width = Math.ceil(v.width); cv.height = Math.ceil(v.height);

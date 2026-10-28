@@ -51,7 +51,7 @@ function teksNotif(n: Notif): string {
     `Total beli: ${rp(n.tBeli)}`,
     `Untung: ${rp(n.untung)}`,
   ];
-  const ekor = ['', 'Perlu persetujuan: Pak Yasir dan Pak Ferry', 'Ketuk notifikasi ini untuk membuka surat lengkap.', ...(catatanTampil ? ['', `Catatan: ${catatanTampil}`] : [])];
+  const ekor = ['', 'Perlu persetujuan: Pak Yasir dan Pak Ferry', ...(catatanTampil ? ['', `Catatan: ${catatanTampil}`] : [])];
   const daftar = n.baris.map((b) => `- ${b.qty} x ${b.nama} | beli ${rp(b.beli)} | jual ${rp(b.jual)}`);
   const susun = (k: number) => [...kepala, '', 'Belanja:', ...daftar.slice(0, k), ...(k < daftar.length ? [`... dan ${daftar.length - k} item lainnya (lihat surat)`] : []), ...ekor].join('\n');
   let teks = susun(daftar.length);
@@ -73,10 +73,11 @@ async function kirimNotif(n: Notif, daftar: string[]): Promise<Record<string, nu
         method: 'POST',
         headers: {
           Title: kodekan(`${n.pengingat ? 'PENGINGAT ' + n.pengingat + ': ' : ''}${n.tambahan ? 'PENAMBAHAN ITEM - ' : ''}Permintaan seragam: ${n.client} (untuk ${p.nama})`.slice(0, 120)),
-          Click: n.urlSurat, // mengetuk notifikasi langsung membuka surat lengkap
+          Click: n.urlSurat, // mengetuk notifikasi membuka penampil surat (geser antar halaman, cubit untuk memperbesar)
+          ...(halaman1(n.urlSurat) ? { Attach: halaman1(n.urlSurat), Filename: 'surat-halaman-1.jpg' } : {}), // halaman 1 surat tampil sebagai gambar di notifikasi (tautan ke Storage, bukan unggahan, jadi tanpa batas 2 MB ntfy)
           Priority: '4',
           Tags: n.tambahan ? 'heavy_plus_sign' : 'package',
-          Actions: `view, Setujui ${p.nama}, ${urlSetuju}; view, Tolak/Revisi ${p.nama}, ${urlRevisi}; view, Buka surat, ${n.urlSurat}`,
+          Actions: `view, Setujui ${p.nama}, ${urlSetuju}; view, Tolak/Revisi ${p.nama}, ${urlRevisi}`,
         },
         body: teks,
       });
@@ -89,6 +90,10 @@ const sukses = (h: Record<string, number>, k: string) => h[k] >= 200 && h[k] < 3
 // penambahan item (pesanan susulan untuk lokasi yang sudah memesan): alasannya disimpan sebagai baris pertama kolom memo dengan awalan ini
 const MARKER = 'PENAMBAHAN ITEM: ';
 const ambilTambahan = (memo: unknown) => { const r = String(memo ?? '').split('\n').find((l) => l.startsWith(MARKER)); return r ? r.slice(MARKER.length).trim() : ''; };
+// alamat gambar halaman 1 surat di Supabase Storage (bucket publik, folder acak) dari tautan penampil surat
+const halaman1 = (urlSurat: string) => {
+  try { const f = new URL(urlSurat).searchParams.get('f'); return f && /^\d+-[a-f0-9]{24}$/.test(f) ? `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/lampiran-surat/${f}/01.jpg` : ''; } catch { return ''; }
+};
 const kunciNama = (n: string) => String(n).toUpperCase().replace(/\s+/g, ' ').trim();
 
 Deno.serve(async (req) => {
