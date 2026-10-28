@@ -1,4 +1,4 @@
-﻿// Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
+// Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
 window.VERSI = { no: '1.178', tanggal: '2026-10-28', catatan: 'Monitoring: nama PIC per lokasi di daftar, rincian, dan tombol Ingatkan' };
 (function () {
   function pasang() {
