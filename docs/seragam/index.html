@@ -277,6 +277,7 @@
   .kq .kb { display:flex; gap:6px; flex-wrap:wrap; } .kq .kb .btn { padding:2px 10px; font-size:.72rem; }
   /* mode kerja lebar: daftar lokasi disembunyikan, form memakai seluruh lebar, dan daftar nama bergulir bersama halaman (bukan di kotak kecil) */
   #pg-permintaan .layout { grid-template-columns:minmax(0,1fr); }
+  .aksibar { display:flex; gap:8px; align-items:center; } .btn.baru { background:#fff; color:#111; border-color:#fff; font-weight:600; } .btn.baru:hover { background:var(--accent); border-color:var(--accent); }
   .formminta .pplot { max-height:none; overflow:visible; border:0; border-radius:0; }
   .formminta .pplot table { width:100%; }
   .mbar { position:sticky; top:0; z-index:5; margin:0 -22px 10px; padding:10px 22px 8px; background:rgba(27,27,30,.97); border-bottom:1px solid var(--stroke); backdrop-filter:blur(6px); }
@@ -800,7 +801,7 @@
     <section class="bawah card" id="mBawah">
       <div class="bar-top">
         <h3>Pemesanan per lokasi</h3>
-        <button class="btn" id="stMuat">Muat ulang</button>
+        <div class="aksibar"><button class="btn baru" id="mBaru" type="button">+ Buat baru</button><button class="btn" id="stMuat">Muat ulang</button></div>
       </div>
       <div class="layout">
         <div class="detail tiga" id="mDetail">
@@ -2091,6 +2092,12 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     if (rw) { const k = rw.dataset.riw; riwTutup.has(k) ? riwTutup.delete(k) : riwTutup.add(k); renderDetailMinta(); }
   };
   $('stMuat').onclick = muatStatus;
+  // Buat baru: lepas lokasi terpilih (form dikosongkan, isian lokasi sebelumnya tetap tersimpan sebagai draf selama halaman terbuka), lalu arahkan ke kolom cari di kartu Pak Yasir
+  $('mBaru').onclick = () => {
+    terbukaMinta = false; MP.yasir.q = MP.ferry.q = ''; setLokasiMinta(''); renderDaftarMinta(); renderMini();
+    const mini = $('md-permintaan'), bar = document.querySelector('.lipatbar[data-mini="md-permintaan"]'); if (mini.classList.contains('tutup') && bar) bar.click();
+    const i = document.querySelector('#md-permintaan [data-pq="yasir"]'); if (i) { i.scrollIntoView({ behavior: 'smooth', block: 'center' }); i.focus(); }
+  };
 
   // ---- preview surat sebelum dikirim ----
   let pvUrls = [], pvData = null;
