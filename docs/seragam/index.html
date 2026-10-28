@@ -3727,7 +3727,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   const statusPimpinan = (who, p) => { const s = PIMP[who].st(p); return s === 'disetujui' ? 'disetujui' : s === 'ditolak' ? 'ditolak' : stReq(p) === 'ditolak' ? 'gugur' : 'menunggu'; };
   // isi daftar kartu pimpinan: tanpa kata cari = permintaan menurut status pimpinan itu; dengan kata cari = lokasi yang cocok (termasuk yang belum pernah memesan)
   // singkatan bagian kerja agar daftar enak dibaca: KEAMANAN PRIA (SECURITY) -> Security, KEBERSIHAN (CLEANING SERVICE) -> CS, PENGEMUDI (DRIVER) -> Driver
-  const SINGKAT_BAGIAN = [[/cleaning|kebersihan/i, 'CS'], [/security|keamanan/i, 'Security'], [/driver|pengemudi|sopir/i, 'Driver'], [/leader|pengawas/i, 'Leader'], [/pramubakti|administrasi/i, 'Pramubakti']];
+  const SINGKAT_BAGIAN = [[/cleaning|kebersihan/i, 'CS'], [/security|keamanan/i, 'Security'], [/driver|pengemudi|sopir/i, 'Driver'], [/leader|pengawas/i, 'Pengawas'], [/pramubakti|administrasi/i, 'Pramubakti']];
   const judulKata = t => t.toLowerCase().replace(/(^|[\s/])(\S)/g, (m, a, b) => a + b.toUpperCase());
   function singkatBagian(nama) {
     const t = String(nama || '').trim(); for (const [re, v] of SINGKAT_BAGIAN) if (re.test(t)) return v;
