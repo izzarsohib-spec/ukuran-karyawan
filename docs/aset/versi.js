@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.160', tanggal: '2026-10-28', catatan: 'Permintaan: daftar lokasi diganti kartu riwayat pemesanan; pilih lokasi lewat kolom cari di kartu pimpinan' };
+window.VERSI = { no: '1.161', tanggal: '2026-10-28', catatan: 'Permintaan: tiga kartu (riwayat pemesanan, form pengisian, rekap dan kirim)' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

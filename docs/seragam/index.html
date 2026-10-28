@@ -276,8 +276,6 @@
   .kq.kurang { border-color:var(--warn); background:var(--warn-bg); } .kq.lebih { border-color:var(--bad); background:var(--bad-bg); } .kq.pas { border-color:var(--ok); background:var(--ok-bg); }
   .kq .kb { display:flex; gap:6px; flex-wrap:wrap; } .kq .kb .btn { padding:2px 10px; font-size:.72rem; }
   /* mode kerja lebar: daftar lokasi disembunyikan, form memakai seluruh lebar, dan daftar nama bergulir bersama halaman (bukan di kotak kecil) */
-  #mBawah.kerja .layout { grid-template-columns:minmax(0,1fr); }
-  #mBawah.kerja .bar-top { display:none; }
   #pg-permintaan .layout { grid-template-columns:minmax(0,1fr); }
   .formminta .pplot { max-height:none; overflow:visible; border:0; border-radius:0; }
   .formminta .pplot table { width:100%; }
@@ -399,7 +397,19 @@
   .badge.neu { background:var(--panel2); color:var(--muted); }
   .bar.neu i { background:var(--muted); }
   .formminta { margin:0; padding:20px; border-top:1px solid var(--stroke); }
+  /* halaman Permintaan: tiga kartu berdampingan (riwayat, form pengisian, rekap & kirim) */
+  .detail.tiga { display:grid; grid-template-columns:minmax(250px,.85fr) minmax(0,1.75fr) minmax(270px,1fr); gap:14px; align-items:start; background:none; border:0; border-radius:0; }
+  .tiga .k3 { min-width:0; margin:0; background:rgba(14,14,16,.5); border:1px solid var(--stroke); border-radius:22px; padding:0; }
+  .tiga .pcard.k3 { padding:18px 20px; }
+  .tiga .k3h { padding:16px 20px 0; font-size:1.05rem; }
+  .tiga .kriw .dhead { border-bottom:1px solid var(--stroke); }
+  .tiga .k3kosong { padding:22px 6px; text-align:center; color:var(--muted); font-size:.84rem; }
+  .tiga [hidden] { display:none !important; }
+  .tiga .sums { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; } .tiga .sums div { padding:10px 12px; border-radius:14px; } .tiga .sums b { font-size:1rem; }
+  .tiga .formminta .fgrid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  @media (max-width: 1180px) { .detail.tiga { grid-template-columns:minmax(0,1fr); } }
   .formminta .fgrid { grid-template-columns:2.2fr .9fr .9fr 1.4fr 1.5fr; align-items:end; }
+  .tiga .formminta .fgrid, .tiga .pcard .fgrid { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .bgr { padding:12px 0; border-bottom:1px solid var(--stroke); }
   .bgr:last-child { border-bottom:0; }
   .bgact { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -775,14 +785,16 @@
 
     <section class="bawah card" id="mBawah">
       <div class="bar-top">
-        <h3>Riwayat pemesanan</h3>
+        <h3>Pemesanan per lokasi</h3>
         <button class="btn" id="stMuat">Muat ulang</button>
       </div>
       <div class="layout">
-        <div class="detail" id="mDetail">
-          <div id="mDHead"></div>
-          <div class="pcard formminta" id="mForm" hidden>
-            <div class="row" style="margin-bottom:14px"><h3 style="margin:0">Buat permintaan</h3><button class="btn" id="mReset">Kosongkan form</button></div>
+        <div class="detail tiga" id="mDetail">
+          <div class="k3 kriw"><div class="k3h"><b>Riwayat pemesanan</b></div><div id="mDHead"></div></div>
+          <div class="pcard k3 formminta" id="mForm">
+            <div class="k3kosong" id="mKosongB">Pilih lokasi lebih dulu (kolom cari di kartu Pak Yasir atau Pak Ferry), lalu isi form di sini.</div>
+            <div id="mIsiB" hidden>
+            <div class="row" style="margin-bottom:14px"><h3 style="margin:0">Form pengisian</h3><button class="btn" id="mReset">Kosongkan form</button></div>
             <div class="fgrid">
               <label>Bagian kerja<select id="mBagian"><option value="">Pilih lokasi</option></select></label>
               <label>Jumlah anggota<input id="mJml" readonly></label>
@@ -792,13 +804,13 @@
             </div>
 
             <div class="lipat" style="margin-top:12px">
-            <div class="row lipat-h" role="button" tabindex="0" aria-expanded="true" style="margin:0 0 8px"><b>1. Atas nama siapa</b><span class="muted" id="mKarInfo"></span></div>
+            <div class="row lipat-h" role="button" tabindex="0" aria-expanded="true" style="margin:0 0 8px"><b>Atas nama siapa</b><span class="muted" id="mKarInfo"></span></div>
             <div id="mPlot"></div>
             <div class="hint" id="mPlotPesan"></div>
             </div>
 
             <div class="lipat" style="margin-top:12px">
-            <div class="row lipat-h" role="button" tabindex="0" aria-expanded="true" style="margin:0 0 8px"><b>2. Ringkasan pesanan</b><span class="muted">dihitung otomatis dari pembagian di atas</span></div>
+            <div class="row lipat-h" role="button" tabindex="0" aria-expanded="true" style="margin:0 0 8px"><b>Ringkasan pesanan</b><span class="muted">dihitung otomatis dari pembagian di atas</span></div>
             <div class="wrap tabelminta"><table>
               <thead><tr><th style="min-width:240px">Jenis item</th><th class="r">Harga beli</th><th class="r">Harga jual</th><th style="width:96px">Qty</th><th class="r">Total beli</th><th class="r">Total jual</th><th></th></tr></thead>
               <tbody id="mBody"></tbody>
@@ -806,17 +818,20 @@
             </div>
 
             <div class="lipat tutup" style="margin-top:12px">
-            <div class="row lipat-h" role="button" tabindex="0" aria-expanded="false" style="margin:0 0 8px"><b>3. Rekap barang</b><span class="muted">dipecah per jenis, karena barang datang terpisah</span></div>
-            <div class="rekap" id="mRekap"></div>
-            </div>
-
-            <div class="lipat tutup" style="margin-top:12px">
-            <div class="row lipat-h" role="button" tabindex="0" aria-expanded="false" style="margin:0 0 8px"><b>4. Memo / catatan khusus</b><span class="muted">opsional</span></div>
+            <div class="row lipat-h" role="button" tabindex="0" aria-expanded="false" style="margin:0 0 8px"><b>Memo / catatan khusus</b><span class="muted">opsional</span></div>
             <label style="display:block;margin-top:6px;font-size:.76rem;color:var(--muted)">Memo / catatan khusus
               <textarea id="mMemo" rows="3" placeholder="Pesan untuk gudang, vendor, atau catatan tentang RAB…" style="margin-top:5px"></textarea></label>
             </div>
-
-
+            </div>
+          </div>
+          <div class="pcard k3" id="mKartuC">
+            <div class="row" style="margin-bottom:12px"><h3 style="margin:0">Rekap &amp; kirim</h3></div>
+            <div class="k3kosong" id="mKosongC">Rekap barang, lampiran RAB, preview surat, dan tombol kirim muncul setelah lokasi dipilih.</div>
+            <div id="mIsiC" hidden>
+            <div class="lipat" style="margin-top:12px">
+            <div class="row lipat-h" role="button" tabindex="0" aria-expanded="true" style="margin:0 0 8px"><b>Rekap barang</b><span class="muted">dipecah per jenis, karena barang datang terpisah</span></div>
+            <div class="rekap" id="mRekap"></div>
+            </div>
             <div class="sums" style="margin-top:18px">
               <div><span>Total beli</span><b class="num" id="sBeli">Rp0</b></div>
               <div><span>Total jual</span><b class="num" id="sJual">Rp0</b></div>
@@ -825,8 +840,8 @@
               <div><span>Total untung</span><b class="num" id="sUntung">Rp0</b></div>
             </div>
             <div class="hint" id="mPeringatan"></div>
-            <div class="lipat tutup" style="margin-top:12px">
-            <div class="row lipat-h" role="button" tabindex="0" aria-expanded="false" style="margin:0 0 8px"><b>5. Lampiran RAB</b><span class="muted">opsional</span></div>
+            <div class="lipat" style="margin-top:12px">
+            <div class="row lipat-h" role="button" tabindex="0" aria-expanded="true" style="margin:0 0 8px"><b>Lampiran RAB</b><span class="muted">opsional</span></div>
             <div class="rabbox">
               <div class="row"><b>Lampiran RAB</b><span class="muted">opsional · PDF, halaman 1</span></div>
               <input type="file" id="mRabFile" accept=".pdf,application/pdf">
@@ -838,6 +853,7 @@
             <button class="cta" id="mKirim" style="width:100%;margin-top:10px">Kirim ke Pak Yasir &amp; Pak Ferry</button>
             <div class="hint" id="mStatus" role="status"></div>
             <div class="msticky" id="mSticky" aria-live="polite"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -2014,14 +2030,8 @@ Alasan (boleh kosong):`); if (alasan === null) return;
   function renderDetailMinta() {
     const l = lokasi.find(x => x.lokasi === mSel);
     $('mDetail').classList.toggle('open', terbukaMinta && !!l);
-    $('mForm').hidden = !l;
-    if (!l) { mKerja = false; $('mBawah').classList.remove('kerja'); $('mDHead').innerHTML = '<div class="kosongnya">Cari lokasi di kartu Pak Yasir atau Pak Ferry di atas untuk melihat riwayat pemesanan dan membuat permintaan.</div>'; return; }
-    $('mBawah').classList.toggle('kerja', mKerja);
-    if (mKerja) { // mode kerja: hanya judul lokasi + tombol kembali, sisanya untuk form selebar halaman
-      const m0 = l.mi || infoLok(l), [lb0, cl0] = LS[m0.s];
-      $('mDHead').innerHTML = `<div class="dhead"><div class="row"><button class="btn" id="mKeluar">‹ Kembali ke riwayat</button><span class="badge ${cl0}">${lb0}</span></div><h2 style="margin-top:10px">${esc(l.client)}</h2></div>`;
-      return;
-    }
+    for (const x of ['B', 'C']) { $('mIsi' + x).hidden = !l; $('mKosong' + x).hidden = !!l; }
+    if (!l) { $('mDHead').innerHTML = '<div class="kosongnya">Cari lokasi di kartu Pak Yasir atau Pak Ferry di atas untuk melihat riwayat pemesanan dan membuat permintaan.</div>'; return; }
     const mi = l.mi || infoLok(l), [lbl, cls] = LS[mi.s], ang = anggaran && anggaran.peta.get(l.lokasi);
     const bagian = l.bagian.map((b, i) => {
       const p = mi.per[i], k = l.lokasi + '|' + b.nama, riw = daftarMinta.filter(x => x.lokasi_form === l.lokasi && x.bagian_kerja === b.nama);
@@ -2050,8 +2060,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
   $('mDetail').onclick = e => {
     if (e.target.id === 'mBack') { terbukaMinta = false; renderDetailMinta(); return; }
     const bt = e.target.closest('[data-buat]');
-    if (e.target.id === 'mKeluar') { mKerja = false; renderDetailMinta(); $('mBawah').scrollIntoView({ block: 'start' }); return; }
-    if (bt) { $('mBagian').value = bt.dataset.buat; gantiKonteks(); infoMinta(); mKerja = true; renderDetailMinta(); $('mBawah').scrollIntoView({ block: 'start' }); return; }
+    if (bt) { $('mBagian').value = bt.dataset.buat; gantiKonteks(); infoMinta(); $('mForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     const rw = e.target.closest('[data-riw]');
     if (rw) { const k = rw.dataset.riw; riwTutup.has(k) ? riwTutup.delete(k) : riwTutup.add(k); renderDetailMinta(); }
   };
