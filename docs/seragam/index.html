@@ -424,7 +424,7 @@
   .tiga .kriw .dhead { border-bottom:1px solid var(--stroke); }
   .tiga .k3kosong { padding:22px 6px; text-align:center; color:var(--muted); font-size:.84rem; }
   .lokhead { margin-bottom:12px; } .lokbox { position:relative; margin-bottom:12px; z-index:6; }
-  .pilihlok { display:block; font-size:.76rem; color:var(--muted); } .cb { display:flex; gap:6px; margin-top:5px; } .cb input { margin-top:0 !important; flex:1; min-width:0; } .cb .btn { padding:0 14px; }
+  .pilihlok { display:block; font-size:.76rem; color:var(--muted); } .cb { display:flex; gap:6px; margin-top:5px; } .cb input { margin-top:0 !important; flex:1; min-width:0; }
   .pilihhasil { position:absolute; left:0; right:0; top:100%; margin-top:6px; max-height:340px; overflow:auto; scrollbar-width:thin; background:#202024; border:1px solid var(--stroke); border-radius:16px; box-shadow:0 18px 48px rgba(0,0,0,.55); padding:0 8px 4px; }
   .pilihhasil[hidden] { display:none; }
   .pilihhasil .plh { position:sticky; top:0; display:flex; justify-content:space-between; padding:8px 2px 4px; font-size:.66rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); background:#202024; }
@@ -849,7 +849,7 @@
           <div class="pcard k3 formminta" id="mForm">
             <div class="row lokhead"><h3 style="margin:0">Form pengisian</h3><button class="btn back" id="mBack" type="button">‹ Kembali</button></div>
             <div class="lokbox">
-              <label class="pilihlok">Lokasi<div class="cb"><input id="mPilihLok" type="search" role="combobox" aria-expanded="false" aria-controls="mPilihHasil" placeholder="Cari lokasi, mis. pengadilan negeri kudus" autocomplete="off"><button class="btn" id="mPilihTog" type="button" aria-label="Buka daftar lokasi">▾</button></div></label>
+              <label class="pilihlok">Lokasi<div class="cb"><input id="mPilihLok" type="search" role="combobox" aria-expanded="false" aria-controls="mPilihHasil" placeholder="Cari lokasi, mis. pengadilan negeri kudus" autocomplete="off"></div></label>
               <div class="pilihhasil" id="mPilihHasil" role="listbox" hidden></div>
             </div>
             <div class="k3kosong" id="mKosongB">Pilih lokasi lebih dulu di kolom Lokasi di atas, lalu isi form di sini.</div>
@@ -2160,12 +2160,11 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     if (rw) { const k = rw.dataset.riw; riwTutup.has(k) ? riwTutup.delete(k) : riwTutup.add(k); renderDetailMinta(); }
   };
   $('stMuat').onclick = muatStatus;
-  // kotak Lokasi di kartu form: kolom cari + daftar turun (mengikuti filter Semua / Sudah dibuat / Belum pernah dibuat)
+  // kotak Lokasi di kartu form: kolom cari; daftar terbuka saat kolom diklik atau diketik (mengikuti filter Semua / Sudah dibuat / Belum pernah dibuat)
   const cbBuka = () => { renderPilihLok(); $('mPilihHasil').hidden = false; $('mPilihLok').setAttribute('aria-expanded', 'true'); };
   const cbTutup = () => { $('mPilihHasil').hidden = true; $('mPilihLok').setAttribute('aria-expanded', 'false'); const l = lokasi.find(x => x.lokasi === mSel); $('mPilihLok').value = l ? l.client : ''; };
   $('mPilihLok').onfocus = () => { $('mPilihLok').select(); cbBuka(); };
   $('mPilihLok').oninput = cbBuka;
-  $('mPilihTog').onclick = () => { if ($('mPilihHasil').hidden) $('mPilihLok').focus(); else cbTutup(); };
   $('mPilihHasil').onclick = e => { const b = e.target.closest('[data-pilih]'); if (!b) return; mPilih = false; terbukaMinta = true; setLokasiMinta(b.dataset.pilih); renderDaftarMinta(); renderMini(); cbTutup(); };
   document.addEventListener('click', e => { if (!$('mPilihHasil').hidden && !e.target.closest('.lokbox, #mBaru, #mFilterBar')) cbTutup(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('mPilihHasil').hidden) { cbTutup(); $('mPilihLok').blur(); } });
