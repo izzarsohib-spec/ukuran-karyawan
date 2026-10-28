@@ -307,16 +307,17 @@
   .rkcat { margin:0 0 14px; color:var(--muted); font-size:.88rem; line-height:1.5; }
   .rkper { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:flex-end; margin:0 0 16px; } .rkper label { font-size:.76rem; color:var(--muted); display:block; } .rkper input[type=date] { display:block; margin-top:4px; border:1px solid var(--stroke); background:var(--solid); color:var(--text); border-radius:12px; padding:7px 10px; font:inherit; font-size:.86rem; color-scheme:dark; }
   .rksub { margin:24px 0 10px; font-size:1rem; }
-  /* matriks rekap vendor (meniru lembar rekap: item x ukuran) */
+  /* matriks stok / rekap (item x ukuran) */
   .rkm { max-height:70vh; overflow:auto; border:1px solid var(--stroke); border-radius:14px; }
   .mtx { border-collapse:collapse; font-size:.72rem; min-width:100%; }
   .mtx th, .mtx td { border:1px solid rgba(255,255,255,.14); padding:3px 5px; text-align:center; white-space:nowrap; font-variant-numeric:tabular-nums; }
   .mtx thead th { position:sticky; top:0; z-index:2; background:#9ccc65; color:#17210f; font-weight:700; }
   .mtx thead tr:nth-child(2) th { top:23px; background:#b5db8c; }
-  .mtx .mnm { text-align:left; min-width:210px; max-width:260px; overflow:hidden; text-overflow:ellipsis; } .mtx .mno { width:34px; }
-  .mtx tbody tr:nth-child(even) td { background:rgba(156,204,101,.07); } .mtx tbody tr.isi td { font-weight:600; } .mtx tbody tr.isi td:not(.mnm):not(.mno):not(:empty) { background:rgba(156,204,101,.18); }
-  .mtx .mlain { background:rgba(255,255,255,.04); min-width:70px; }
   .mtx thead th.mlain { background:#9ccc65; min-width:70px; }
+  .mtx .mnm { text-align:left; min-width:210px; max-width:260px; overflow:hidden; text-overflow:ellipsis; } .mtx .mno { width:34px; }
+  .mtx tbody tr:nth-child(even) td { background:rgba(156,204,101,.07); }
+  .mtx td:not(.mnm):not(.mno):not(:empty) { font-weight:600; background:rgba(156,204,101,.18) !important; } .mtx td.tipis { color:var(--orange); } .mtx td.neg { color:var(--bad); }
+  .mtx .mlain { background:rgba(255,255,255,.04); min-width:70px; }
   .mtx tfoot td { position:sticky; bottom:0; background:#2d3b22; font-weight:700; }
   .mtx tbody td.mnm, .mtx tbody td.mno { position:sticky; left:0; background:#1d2118; z-index:1; } .mtx tbody td.mnm { left:34px; }
   .rkkpi { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px; margin:0 0 18px; }
@@ -2809,79 +2810,29 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     return ['Baju', 'Celana', 'Sepatu'].map(j => ({ jenis: j, baris: [...per.entries()].filter(([k]) => k.startsWith(j + '|')).map(([k, m]) => [k.slice(j.length + 1), [...m.entries()].sort((a, b) => urutUkuran(a[0], b[0])), Math.max(0, (jum.get(k) || 0) - [...m.values()].reduce((a, b) => a + b, 0))]).sort((a, b) => a[0].localeCompare(b[0], 'id')) })).filter(x => x.baris.length);
   }
   const barisUkuranRk = g => g.flatMap(x => x.baris.flatMap(([n, m, sisa]) => [...m.map(([u, q]) => [x.jenis, namaRapi(n), u, q]), ...(sisa ? [[x.jenis, namaRapi(n), '(belum ada data ukuran)', sisa]] : [])]));
-  // ---- Matriks rekap (format lembar rekap vendor): baris = jenis item, kolom = ukuran Baju / Celana / Sepatu + QTY LAINNYA (aksesoris, tanpa ukuran) ----
-  // Setelan terisi di kolom baju DAN celana; baju hanya baju; celana hanya celana; sepatu hanya sepatu.
-  const MX_GRUP = [['baju', 'BAJU', ['S', 'M', 'L', 'XL', 'XXL', 'L4', 'L5', 'L6', 'L7']], ['celana', 'CELANA', ['28', '30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50']], ['sepatu', 'SEPATU', ['37', '38', '39', '40', '41', '42', '43', '44', '45', '46']]];
-  const normUk = (g, u) => { u = String(u == null ? '' : u).trim().toUpperCase(); return g === 'baju' ? ({ XXXL: 'L4', XXXXL: 'L5' }[u] || u) : u.replace(/\.0+$/, ''); };
-  let rkHanyaIsi = false;
-  function matriksVendor(ps, ukuranRows) {
-    const peta = new Map(), qtyItem = new Map(), cari = x => rkCocok(x.lokasi_form, x.bagian_kerja);
-    for (const p of ps) for (const i of (p.items || [])) qtyItem.set(Number(i.no), (qtyItem.get(Number(i.no)) || 0) + (Number(i.qty) || 0));
-    for (const r of ukuranRows.filter(cari)) { const g = r.jenis, k = Number(r.item_no) + '|' + g + '|' + normUk(g, r.ukuran); peta.set(k, (peta.get(k) || 0) + Number(r.qty)); }
-    const daftar = [...HARGA].sort((a, b) => Number(a.no) - Number(b.no)), kolom = MX_GRUP.flatMap(([g, , uks]) => uks.map(u => g + '|' + u)), total = Object.fromEntries([...kolom, 'lain', 'luar'].map(k => [k, 0]));
-    const baris = daftar.map(h => {
-      const no = Number(h.no), uk = jenisUkuran(h.no, h.nama), q = qtyItem.get(no) || 0, sel = {}, ada = { baju: uk.baju, celana: uk.celana, sepatu: uk.sepatu }; let lain = 0, luar = 0;
-      for (const [g, , uks] of MX_GRUP) {
-        if (!ada[g]) continue; let terisi = 0;
-        for (const u of uks) { const v = peta.get(no + '|' + g + '|' + u) || 0; if (v) { sel[g + '|' + u] = v; total[g + '|' + u] += v; terisi += v; } }
-        for (const [k, v] of peta) if (k.startsWith(no + '|' + g + '|') && !uks.includes(k.split('|')[2])) { luar += v; terisi += v; } // ukuran di luar kolom (mis. 29, 31)
-        luar += Math.max(0, q - terisi); // pcs yang belum punya data ukuran
-      }
-      if (!ada.baju && !ada.celana && !ada.sepatu) lain = q; // aksesoris: hanya jumlah
-      total.lain += lain; total.luar += luar;
-      return { no, nama: h.nama, sel, lain, luar, q };
-    });
-    return { baris, total, kolom, adaLuar: total.luar > 0 };
-  }
   function dataVendor() {
-    const ps = rkVendorPs(), jenis = rekapBarang(ps.flatMap(p => (p.items || []).map(i => ({ no: i.no, nama: i.nama, qty: i.qty })))), m = new Map(), mx = matriksVendor(ps, rkUkV);
+    const ps = rkVendorPs(), jenis = rekapBarang(ps.flatMap(p => (p.items || []).map(i => ({ no: i.no, nama: i.nama, qty: i.qty })))), ukuran = hitungUkuranRk(ps, rkUkV), m = new Map();
     for (const p of ps) { const k = p.lokasi_form + '|' + p.bagian_kerja; if (!m.has(k)) m.set(k, { client: p.client, bagian: p.bagian_kerja, n: 0, pcs: 0, beli: 0 }); const x = m.get(k); x.n++; x.pcs += pcsPermintaan(p); x.beli += Number(p.total_beli || 0); }
     const lokasi = [...m.values()].sort((a, b) => a.client.localeCompare(b.client)), daftar = [...ps].sort((a, b) => tglPo(a).localeCompare(tglPo(b)) || a.id - b.id);
-    const tampil = mx.baris.filter(b => !rkHanyaIsi || b.q > 0);
-    const kepala = ['No', 'Jenis item', ...MX_GRUP.flatMap(([g, t, uks]) => uks.map(u => `${t} ${u}`)), 'Qty lainnya', 'Ukuran lain / belum ada data'];
-    return { ps, jenis, mx, tampil, lokasi, daftar, kepala, baris: tampil.map(b => [b.no, b.nama, ...mx.kolom.map(k => b.sel[k] || ''), b.lain || '', b.luar || '']) };
+    return { ps, jenis, ukuran, lokasi, daftar, kepala: ['Jenis', 'Barang', 'Ukuran', 'Jumlah'], baris: barisUkuranRk(ukuran) };
   }
   const tglPanjangIso = iso => new Date(iso + 'T00:00:00Z').toLocaleDateString('id-ID', { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' });
-  // tabel matriks untuk layar
-  function htmlMatriks(d) {
-    const mx = d.mx, th = (t, a = '') => `<th ${a}>${t}</th>`;
-    const kepala = `<tr>${th('No', 'rowspan="2" class="mno"')}${th('JENIS ITEM', 'rowspan="2" class="mnm"')}${MX_GRUP.map(([g, t, uks]) => th(t, `colspan="${uks.length}" class="mg ${g}"`)).join('')}${th('QTY LAINNYA', 'rowspan="2" class="mlain"')}${mx.adaLuar ? th('UKURAN LAIN / BELUM ADA DATA', 'rowspan="2" class="mlain" title="Pcs dengan ukuran di luar kolom, atau yang belum punya data ukuran"') : ''}</tr><tr>${MX_GRUP.flatMap(([g, , uks]) => uks.map(u => th(u, `class="mu ${g}"`))).join('')}</tr>`;
-    const isi = b => `<tr class="${b.q > 0 ? 'isi' : ''}"><td class="mno">${b.no}</td><td class="mnm">${esc(b.nama)}</td>${mx.kolom.map(k => `<td>${b.sel[k] ? idn(b.sel[k]) : ''}</td>`).join('')}<td class="mlain">${b.lain ? idn(b.lain) : ''}</td>${mx.adaLuar ? `<td class="mlain">${b.luar ? idn(b.luar) : ''}</td>` : ''}</tr>`;
-    const tot = `<tr class="mtot"><td colspan="2">TOTAL</td>${mx.kolom.map(k => `<td>${mx.total[k] ? idn(mx.total[k]) : ''}</td>`).join('')}<td class="mlain">${mx.total.lain ? idn(mx.total.lain) : ''}</td>${mx.adaLuar ? `<td class="mlain">${idn(mx.total.luar)}</td>` : ''}</tr>`;
-    return `<div class="wrap rkm"><table class="mtx"><thead>${kepala}</thead><tbody>${d.tampil.map(isi).join('')}</tbody><tfoot>${tot}</tfoot></table></div>`;
-  }
-  // PDF "Rekapitulasi permintaan ke vendor" (landscape): matriks seperti lembar rekap + daftar PO, dengan tanda tangan PIC dan kolom penyedia
+  // PDF "Rekapitulasi permintaan ke vendor" untuk rentang yang sedang dipilih (kop surat + tanda tangan PIC dan vendor)
   async function pdfRekapVendor() {
     const d = dataVendor(); if (!d.ps.length) { alert('Tidak ada permintaan pada rentang ini.'); return; }
-    if (!window.jspdf) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-    if (!(window.jspdf && window.jspdf.jsPDF.API.autoTable)) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
-    const [kop, ttdPic] = await Promise.all([muatGambar('../aset/kop-surat.png'), ambilTtdPic()]);
-    const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4', orientation: 'landscape' }), PW = 841.89, PH = 595.28, L = 28, R = PW - 28, W = R - L, mx = d.mx, HIJAU = [139, 195, 74];
-    const kepalaHal = () => { if (kop) doc.addImage(kop, 'PNG', L, 10, 470, 470 * 112 / 1030); doc.setDrawColor(0, 112, 192); doc.setLineWidth(1.6); doc.line(L, 66, R, 66); };
-    kepalaHal();
-    doc.setFont('times', 'bold'); doc.setFontSize(12.5); doc.text('REKAPITULASI PERMINTAAN KE VENDOR', PW / 2, 84, { align: 'center' });
-    doc.setFont('times', 'normal'); doc.setFontSize(9.5);
-    [['Vendor', VENDOR.nama], ['Periode', `${tglPanjangIso(rkDari)} s.d. ${tglPanjangIso(rkSampai)} (tanggal PO dikirim)`], ['Jumlah PO', `${d.ps.length} permintaan · ${idn(d.ps.reduce((a, p) => a + pcsPermintaan(p), 0))} pcs · ${idn(d.lokasi.length)} lokasi/bagian`]].forEach(([a, b], i) => { doc.text(a, L, 100 + i * 12); doc.text(': ' + b, L + 52, 100 + i * 12); });
-    const ke = [[{ content: 'No', rowSpan: 2 }, { content: 'JENIS ITEM', rowSpan: 2 }, ...MX_GRUP.map(([, t, uks]) => ({ content: t, colSpan: uks.length })), { content: 'QTY LAINNYA', rowSpan: 2 }, ...(mx.adaLuar ? [{ content: 'LAIN / BELUM ADA DATA', rowSpan: 2 }] : [])], MX_GRUP.flatMap(([, , uks]) => uks.map(u => u))];
-    const cs = { 0: { cellWidth: 17, halign: 'center' }, 1: { cellWidth: 150, halign: 'left' } };
-    const body = d.tampil.map(b => [b.no, b.nama, ...mx.kolom.map(k => b.sel[k] ? b.sel[k] : ''), b.lain || '', ...(mx.adaLuar ? [b.luar || ''] : [])]);
-    const foot = [[{ content: 'TOTAL', colSpan: 2, styles: { halign: 'center' } }, ...mx.kolom.map(k => mx.total[k] || ''), mx.total.lain || '', ...(mx.adaLuar ? [mx.total.luar] : [])]];
-    doc.autoTable({ theme: 'grid', startY: 140, margin: { top: 74, left: L, right: PW - R, bottom: 30 }, head: ke, body, foot, showFoot: 'lastPage', didDrawPage: () => { if (doc.internal.getCurrentPageInfo().pageNumber > 1) kepalaHal(); },
-      styles: { font: 'helvetica', fontSize: 5.6, cellPadding: { top: 1.1, bottom: 1.1, left: 1.4, right: 1.4 }, lineColor: [0, 0, 0], lineWidth: 0.25, textColor: 0, halign: 'center', valign: 'middle' },
-      headStyles: { fillColor: HIJAU, textColor: 0, fontStyle: 'bold', halign: 'center' }, footStyles: { fillColor: [238, 247, 227], textColor: 0, fontStyle: 'bold' }, alternateRowStyles: { fillColor: [238, 247, 227] }, columnStyles: cs });
-    let y = doc.lastAutoTable.finalY + 16;
-    if (y > PH - 120) { doc.addPage(); kepalaHal(); y = 88; }
-    doc.setFont('times', 'bold'); doc.setFontSize(10.5); doc.text('Daftar PO yang dikirim', L, y); y += 6;
-    doc.autoTable({ theme: 'grid', startY: y, margin: { top: 74, left: L, right: PW - R, bottom: 30 }, head: [['NO', 'TGL PO', 'NO. PERMINTAAN', 'LOKASI', 'BAGIAN KERJA', 'PCS', 'NILAI BELI']],
-      body: d.daftar.map((p, i) => [i + 1, tglPanjangIso(tglPo(p)), p.id, p.client, namaRapi(p.bagian_kerja), pcsPermintaan(p), rp(Number(p.total_beli || 0))]), didDrawPage: () => { if (doc.internal.getCurrentPageInfo().pageNumber > 1) kepalaHal(); },
-      styles: { font: 'times', fontSize: 8.5, cellPadding: 2.2, lineColor: [0, 0, 0], lineWidth: 0.3, textColor: 0 }, headStyles: { fillColor: HIJAU, textColor: 0, fontStyle: 'bold', halign: 'center' }, columnStyles: { 0: { halign: 'center', cellWidth: 26 }, 2: { halign: 'center', cellWidth: 70 }, 5: { halign: 'right', cellWidth: 40 }, 6: { halign: 'right', cellWidth: 80 } } });
-    y = doc.lastAutoTable.finalY + 22; if (y > PH - 110) { doc.addPage(); kepalaHal(); y = 100; }
-    const ttd = (x, label, t, gambar) => { doc.setFont('times', 'normal'); doc.setFontSize(10); doc.text(label, x, y, { align: 'center' });
-      if (gambar) { const r = Math.min(120 / gambar.w, 46 / gambar.h), w = gambar.w * r, h = gambar.h * r; doc.addImage(gambar.data, 'PNG', x - w / 2, y + 6 + (46 - h) / 2, w, h); }
-      doc.setFont('times', 'bold'); doc.text(t[0], x, y + 58, { align: 'center' }); const w = doc.getTextWidth(t[0]); doc.setLineWidth(0.6); doc.setDrawColor(0, 0, 0); doc.line(x - w / 2, y + 60, x + w / 2, y + 60);
-      doc.setFontSize(8.5); doc.setTextColor(153, 153, 153); doc.text(t[1], x, y + 72, { align: 'center' }); doc.setTextColor(0, 0, 0); };
-    ttd(L + W * 0.2, 'Pemesan,', TTD.pic, ttdPic); ttd(L + W * 0.8, 'Penyedia,', TTD.vendor, null);
-    const a = document.createElement('a'); a.href = 'data:application/pdf;base64,' + doc.output('datauristring').split(',')[1]; a.download = `Rekap permintaan ke vendor ${rkDari} sampai ${rkSampai}.pdf`; document.body.appendChild(a); a.click(); a.remove();
+    const k = await kertasKop(), { doc, PW, L, W } = k; k.pasang();
+    k.huruf('bold', 13); doc.text('REKAPITULASI PERMINTAAN KE VENDOR', PW / 2, 104, { align: 'center' });
+    k.huruf(); [['Vendor', VENDOR.nama], ['Periode', `${tglPanjangIso(rkDari)} s.d. ${tglPanjangIso(rkSampai)} (tanggal PO dikirim)`], ['Jumlah PO', `${d.ps.length} permintaan · ${idn(d.ps.reduce((a, p) => a + pcsPermintaan(p), 0))} pcs · ${idn(d.lokasi.length)} lokasi/bagian`]].forEach(([a, b], i) => { doc.text(a, L, 130 + i * 14); doc.text(': ' + b, L + 62, 130 + i * 14); });
+    k.y = 178;
+    const judul = t => { k.cek(60); k.huruf('bold', 11); doc.text(t, L, k.y + 12); k.y += 16; };
+    judul('A. Rekap per jenis barang (setelan dipecah menjadi baju + celana)');
+    k.tabel({ startY: k.y, head: [['NO', 'JENIS', 'NAMA BARANG', 'JUMLAH (PCS)']], body: d.jenis.flatMap((x, i) => x.baris.map(([n, q], j) => [{ content: j === 0 ? i + 1 : '', styles: { halign: 'center' } }, j === 0 ? x.jenis : '', namaRapi(n), { content: q, styles: { halign: 'right' } }])), columnStyles: { 0: { cellWidth: 30 }, 1: { cellWidth: 80 }, 3: { cellWidth: 80 } } });
+    k.y += 10; judul('B. Rekap per ukuran');
+    k.tabel({ startY: k.y, head: [['JENIS', 'NAMA BARANG', 'UKURAN', 'JUMLAH']], body: d.baris.length ? d.baris.map(([j, n, u, q]) => [j, n, { content: u, styles: { halign: 'center' } }, { content: q, styles: { halign: 'right' } }]) : [[{ content: 'Belum ada data ukuran.', colSpan: 4, styles: { halign: 'center', fontStyle: 'italic' } }]], columnStyles: { 0: { cellWidth: 60 }, 2: { cellWidth: 110 }, 3: { cellWidth: 60 } } });
+    k.y += 10; judul('C. Daftar PO yang dikirim');
+    k.tabel({ startY: k.y, head: [['NO', 'TGL PO', 'LOKASI', 'BAGIAN KERJA', 'PCS', 'NILAI BELI']], body: d.daftar.map((p, i) => [{ content: i + 1, styles: { halign: 'center' } }, tglPanjangIso(tglPo(p)), p.client, namaRapi(p.bagian_kerja), { content: pcsPermintaan(p), styles: { halign: 'right' } }, { content: rp(Number(p.total_beli || 0)), styles: { halign: 'right' } }]), columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 82 }, 4: { cellWidth: 36 }, 5: { cellWidth: 70 } } });
+    k.y += 26; k.cek(100); k.ttd([{ x: L + W * 0.25, label: 'Pemesan,', t: TTD.pic }, { x: L + W * 0.75, label: 'Penyedia,', t: TTD.vendor }], k.y);
+    k.simpan(`Rekap permintaan ke vendor ${rkDari} sampai ${rkSampai}.pdf`);
   }
   function renderRekapPage() {
     if (!$('rkIsi')) return;
@@ -2895,14 +2846,15 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     if (!d.ps.length) { $('rkIsi').innerHTML = rkTab === 'vendor' ? '<div class="kosongnya">Tidak ada permintaan yang PO-nya dikirim ke vendor pada rentang ini. Ubah tanggal di atas, atau tandai PO terkirim di halaman Kekurangan Vendor.</div>' : '<div class="kosongnya">Tidak ada permintaan yang disetujui untuk filter ini.</div>'; return; }
     const kartu = (judul, total, isi) => `<div class="rk"><div class="rkh"><h4>${judul}</h4><b>${idn(total)} pcs</b></div>${isi}</div>`;
     if (rkTab === 'vendor') {
+      const kartuUkuran = !rkUkVMuat ? '<div class="kosongnya">Memuat rekap ukuran… (bila tidak muncul, fungsi database <code>rekap_ukuran_vendor</code> belum dipasang)</div>' : d.ukuran.length
+        ? `<div class="rekap">${d.ukuran.map(x => kartu(x.jenis, x.baris.reduce((a, [, m, s]) => a + m.reduce((b, [, q]) => b + q, 0) + s, 0), x.baris.map(([n, m, sisa]) => `<div class="rb"><div class="rl"><span>${esc(namaRapi(n))}</span><b>${idn(m.reduce((a, [, q]) => a + q, 0) + sisa)}</b></div><div class="szgrid">${m.map(([u, q]) => `<div class="sz"><span>${esc(u)}</span><b>${idn(q)}</b></div>`).join('')}${sisa ? `<div class="sz"><span>tanpa ukuran</span><b>${idn(sisa)}</b></div>` : ''}</div></div>`).join(''))).join('')}</div>`
+        : '<div class="kosongnya">Belum ada data ukuran dari pembagian per karyawan.</div>';
       const belumPo = disetujuiSemua().filter(p => !tglPo(p)).length;
       $('rkIsi').innerHTML = `<p class="rkcat">Permintaan yang sudah disetujui kedua pimpinan dan PO-nya dikirim ke vendor (${esc(VENDOR.nama)}) pada <b>${esc(tglPanjangIso(rkDari))}</b> sampai <b>${esc(tglPanjangIso(rkSampai))}</b>.${belumPo ? ` ${idn(belumPo)} permintaan disetujui yang PO-nya belum ditandai terkirim tidak ikut dihitung (tandai di halaman Kekurangan Vendor).` : ''}</p>
-        <div class="row" style="margin:0 0 10px;gap:14px;flex-wrap:wrap"><h3 class="rksub" style="margin:0">Rekap per jenis item dan ukuran</h3><label class="kcek"><input type="checkbox" id="rkHanyaIsi" ${rkHanyaIsi ? 'checked' : ''}><span>Hanya item yang terisi</span></label></div>
-        <p class="rkcat" style="margin:0 0 10px">Setelan terisi di kolom baju dan celana; baju hanya baju; celana hanya celana; sepatu hanya sepatu; aksesoris di kolom QTY LAINNYA.${rkUkVMuat ? '' : ' <span class="kurang">Data ukuran belum termuat (fungsi database <code>rekap_ukuran_vendor</code> belum dipasang), jadi jumlah ukuran belum terisi.</span>'}</p>
-        ${htmlMatriks(d)}
+        <h3 class="rksub">Per jenis barang</h3><div class="rekap">${d.jenis.map(x => kartu(x.jenis, x.total, x.baris.map(([n, q]) => `<div class="rl"><span>${esc(namaRapi(n))}</span><b>${idn(q)}</b></div>`).join(''))).join('')}</div>
+        <h3 class="rksub">Per ukuran</h3>${kartuUkuran}
         <h3 class="rksub">Per lokasi</h3><div class="wrap rkt"><table><thead><tr><th>Lokasi</th><th class="r">PO</th><th class="r">Pcs</th><th class="r">Nilai beli</th></tr></thead><tbody>${d.lokasi.map(x => `<tr><td><b>${esc(x.client)}</b><small>${esc(namaRapi(x.bagian))}</small></td><td class="r">${x.n}</td><td class="r">${idn(x.pcs)}</td><td class="r">${rp(x.beli)}</td></tr>`).join('')}</tbody></table></div>
         <h3 class="rksub">Daftar PO yang dikirim</h3><div class="wrap rkt"><table><thead><tr><th>Tgl PO</th><th class="r">No</th><th>Lokasi</th><th class="r">Pcs</th><th class="r">Nilai beli</th></tr></thead><tbody>${d.daftar.map(p => `<tr><td>${esc(tglPanjangIso(tglPo(p)))}</td><td class="r muted">${p.id}</td><td><b>${esc(p.client)}</b><small>${esc(namaRapi(p.bagian_kerja))}</small></td><td class="r">${idn(pcsPermintaan(p))}</td><td class="r">${rp(Number(p.total_beli || 0))}</td></tr>`).join('')}</tbody></table></div>`;
-      const cb = $('rkHanyaIsi'); if (cb) cb.onchange = () => { rkHanyaIsi = cb.checked; renderRekapPage(); };
     } else if (rkTab === 'jenis') {
       $('rkIsi').innerHTML = `<p class="rkcat">Seragam setelan dipecah jadi baju dan celana, karena barang dikirim terpisah.</p><div class="rekap">${d.jenis.map(x => kartu(x.jenis, x.total, x.baris.map(([n, q]) => `<div class="rl"><span>${esc(namaRapi(n))}</span><b>${idn(q)}</b></div>`).join(''))).join('')}</div>`;
     } else if (rkTab === 'ukuran') {
@@ -3176,13 +3128,39 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   }
 
   // ----------------- INVENTARIS -----------------
-  let iTab = 'stok', iKat = 'semua', iAda = true, iJenis = 'semua', iBaris = [];
+  let iTab = 'stok', iKat = 'semua', iAda = true, iJenis = 'semua', iBaris = [], iView = 'daftar';
   const saldoItem = no => stok.filter(s => s.item_no === no);
   // urutan ukuran yang wajar: S M L XL ... untuk baju, angka naik untuk celana dan sepatu
   const URUT_BAJU = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL', 'L6', 'L7'];
   const rankUk = (j, u) => { if (j !== 'baju') return 0; const i = URUT_BAJU.indexOf(String(u).toUpperCase()); return i < 0 ? 99 : i; };
   const vendorKat = k => k === 'Aksesoris' ? 'Dipesan online' : 'Vendor Wahyu Ardianto';
   const supplierSesuai = (kat, sup) => (kat === 'Aksesoris') === (sup === 'Online');
+  // ---- Tampilan matriks stok (format lembar rekap): baris = jenis item, kolom = ukuran BAJU / CELANA / SEPATU + QTY LAINNYA (aksesoris, tanpa ukuran) ----
+  // Setelan terisi di kolom baju dan celana; baju hanya baju; celana hanya celana; sepatu hanya sepatu. Isi sel = saldo stok di gudang.
+  const MX_GRUP = [['baju', 'BAJU', ['S', 'M', 'L', 'XL', 'XXL', 'L4', 'L5', 'L6', 'L7']], ['celana', 'CELANA', ['28', '30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50']], ['sepatu', 'SEPATU', ['37', '38', '39', '40', '41', '42', '43', '44', '45', '46']]];
+  const normUk = (g, u) => { u = String(u == null ? '' : u).trim().toUpperCase(); return g === 'baju' ? ({ XXXL: 'L4', XXXXL: 'L5' }[u] || u) : u.replace(/\.0+$/, ''); };
+  function matriksStok(baris) {
+    const kolom = MX_GRUP.flatMap(([g, , uks]) => uks.map(u => g + '|' + u)), total = Object.fromEntries([...kolom, 'lain', 'luar'].map(k => [k, 0]));
+    const hasil = baris.sort((a, b) => Number(a.h.no) - Number(b.h.no)).map(({ h, s }) => {
+      const sel = {}; let lain = 0, luar = 0;
+      for (const x of s) {
+        const v = Number(x.saldo) || 0, g = x.jenis_ukuran; if (!v) continue;
+        if (g === '-') { lain += v; continue; }
+        const grup = MX_GRUP.find(m => m[0] === g), u = normUk(g, x.ukuran);
+        if (grup && grup[2].includes(u)) { sel[g + '|' + u] = (sel[g + '|' + u] || 0) + v; total[g + '|' + u] += v; } else luar += v; // ukuran di luar kolom
+      }
+      total.lain += lain; total.luar += luar;
+      return { no: Number(h.no), nama: h.nama, sel, lain, luar };
+    });
+    return { baris: hasil, total, kolom, adaLuar: total.luar !== 0 };
+  }
+  function htmlMatriksStok(mx) {
+    const th = (t, a = '') => `<th ${a}>${t}</th>`, sel = v => v ? `<td class="${v < 0 ? 'neg' : v <= 2 ? 'tipis' : ''}">${idn(v)}</td>` : '<td></td>';
+    const kepala = `<tr>${th('No', 'rowspan="2" class="mno"')}${th('JENIS ITEM', 'rowspan="2" class="mnm"')}${MX_GRUP.map(([g, t, uks]) => th(t, `colspan="${uks.length}" class="mg ${g}"`)).join('')}${th('QTY LAINNYA', 'rowspan="2" class="mlain"')}${mx.adaLuar ? th('UKURAN LAIN', 'rowspan="2" class="mlain" title="Stok dengan ukuran di luar kolom"') : ''}</tr><tr>${MX_GRUP.flatMap(([g, , uks]) => uks.map(u => th(u, `class="mu ${g}"`))).join('')}</tr>`;
+    const isi = b => `<tr><td class="mno">${b.no}</td><td class="mnm">${esc(b.nama)}</td>${mx.kolom.map(k => sel(b.sel[k])).join('')}<td class="mlain">${b.lain ? idn(b.lain) : ''}</td>${mx.adaLuar ? `<td class="mlain">${b.luar ? idn(b.luar) : ''}</td>` : ''}</tr>`;
+    const tot = `<tr class="mtot"><td colspan="2">TOTAL STOK</td>${mx.kolom.map(k => `<td>${mx.total[k] ? idn(mx.total[k]) : ''}</td>`).join('')}<td class="mlain">${mx.total.lain ? idn(mx.total.lain) : ''}</td>${mx.adaLuar ? `<td class="mlain">${idn(mx.total.luar)}</td>` : ''}</tr>`;
+    return `<div class="wrap rkm"><table class="mtx"><thead>${kepala}</thead><tbody>${mx.baris.map(isi).join('') || `<tr><td colspan="${mx.kolom.length + 3}" class="kosongnya">Tidak ada barang yang cocok.</td></tr>`}</tbody><tfoot>${tot}</tfoot></table></div>`;
+  }
   function renderInventaris() {
     const totalPcs = stok.reduce((a, s) => a + Number(s.saldo), 0), tipis = stok.filter(s => s.saldo > 0 && s.saldo <= 2).length, habis = stok.filter(s => s.saldo <= 0).length;
     $('infoInv').textContent = hilirMuat ? `${idn(totalPcs)} pcs di gudang · ${new Set(stok.map(s => s.item_no)).size} jenis barang pernah masuk · ${tipis} ukuran menipis · ${habis} ukuran habis` : 'Memuat data…';
@@ -3190,9 +3168,10 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     $('iTab').innerHTML = [['stok', 'Stok gudang'], ['riwayat', 'Riwayat masuk & keluar']].map(([t, n]) => `<button class="chip ${iTab === t ? 'on' : ''}" data-t="${t}">${n}</button>`).join('');
     if (iTab === 'stok') {
       const kats = ['semua', ...new Set(HARGA.map(h => h.kat))];
-      $('iChips').innerHTML = kats.map(k => `<button class="chip ${iKat === k ? 'on' : ''}" data-k="${esc(k)}">${k === 'semua' ? 'Semua kategori' : esc(k)}</button>`).join('') + `<button class="chip ${iAda ? 'on' : ''}" data-ada="1">Hanya yang ada stok</button>`;
+      $('iChips').innerHTML = kats.map(k => `<button class="chip ${iKat === k ? 'on' : ''}" data-k="${esc(k)}">${k === 'semua' ? 'Semua kategori' : esc(k)}</button>`).join('') + `<button class="chip ${iAda ? 'on' : ''}" data-ada="1">Hanya yang ada stok</button>` + `<button class="chip ${iView === 'matriks' ? 'on' : ''}" data-v="matriks" title="Stok per jenis item dan ukuran, seperti lembar rekap">Tampilan matriks ukuran</button>`;
       $('iHead').innerHTML = '<tr><th style="min-width:230px">Barang</th><th>Stok per ukuran</th><th class="r">Total</th></tr>';
       const baris = HARGA.filter(h => (iKat === 'semua' || h.kat === iKat) && q.every(w => h.nama.toLowerCase().includes(w))).map(h => ({ h, s: saldoItem(h.no) })).filter(x => !iAda || x.s.some(s => s.saldo > 0));
+      if (iView === 'matriks') { $('iHead').innerHTML = ''; $('iBody').innerHTML = `<tr><td colspan="3" style="padding:0">${htmlMatriksStok(matriksStok(baris))}</td></tr>`; return; }
       $('iBody').innerHTML = baris.map(({ h, s }) => {
         const per = ['baju', 'celana', 'sepatu', '-'].map(j => ({ j, l: s.filter(x => x.jenis_ukuran === j).sort((a, b) => rankUk(j, a.ukuran) - rankUk(j, b.ukuran) || bandingUk(a.ukuran, b.ukuran)) })).filter(x => x.l.length);
         const total = s.reduce((a, x) => a + Number(x.saldo), 0);
@@ -3212,7 +3191,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     }
   }
   $('iTab').onclick = e => { const t = e.target.dataset && e.target.dataset.t; if (t) { iTab = t; renderInventaris(); } };
-  $('iChips').onclick = e => { const d = e.target.dataset; if (!d) return; if (d.k) iKat = d.k; else if (d.ada) iAda = !iAda; else if (d.j) iJenis = d.j; else return; renderInventaris(); };
+  $('iChips').onclick = e => { const d = e.target.dataset; if (!d) return; if (d.k) iKat = d.k; else if (d.v) iView = iView === d.v ? 'daftar' : d.v; else if (d.ada) iAda = !iAda; else if (d.j) iJenis = d.j; else return; renderInventaris(); };
   $('iCari').oninput = renderInventaris; $('iMuat').onclick = muatHilir;
   // --- form barang masuk ---
   const opsiItemMasuk = no => '<option value="">Pilih barang</option>' + [...new Set(HARGA.map(h => h.kat))].map(k => `<optgroup label="${esc(k)}">` + HARGA.filter(h => h.kat === k).map(h => `<option value="${h.no}" ${String(h.no) === String(no) ? 'selected' : ''}>${esc(h.nama)}</option>`).join('') + '</optgroup>').join('');
