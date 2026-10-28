@@ -34,13 +34,15 @@ async function adalahAdmin(db: any, req: Request): Promise<boolean> {
   return !!a;
 }
 
-type Notif = { id: number; client: string; bagian: string; target: number; rab: number; terpakai: number; tJual: number; sisa: number; tBeli: number; untung: number; pengingat?: string; catatan: string; baris: { nama: string; qty: number; beli: number; jual: number }[]; urlSurat: string; token: Record<string, string> };
+type Notif = { id: number; client: string; bagian: string; target: number; rab: number; terpakai: number; tJual: number; sisa: number; tBeli: number; untung: number; pengingat?: string; tambahan?: string; catatan: string; baris: { nama: string; qty: number; beli: number; jual: number }[]; urlSurat: string; token: Record<string, string> };
 
 // Angka-angka penting ditaruh PALING ATAS supaya tetap terbaca walau notifikasi dipersingkat; daftar item di bawahnya.
 function teksNotif(n: Notif): string {
+  const catatanTampil = n.catatan.split('\n').filter((l) => !l.startsWith(MARKER)).join('\n').trim();
   const kepala = [
     `${n.client}`,
     `Bagian: ${n.bagian} (${n.target} anggota)`,
+    ...(n.tambahan ? ['', 'PENAMBAHAN ITEM (pesanan susulan)', `Keterangan: ${n.tambahan}`] : []),
     '',
     `Anggaran RAB: ${rp(n.rab)}`,
     ...(n.terpakai > 0 ? [`Sudah terpakai dari RAB sebelumnya: ${rp(n.terpakai)}`] : []),
@@ -49,7 +51,7 @@ function teksNotif(n: Notif): string {
     `Total beli: ${rp(n.tBeli)}`,
     `Untung: ${rp(n.untung)}`,
   ];
-  const ekor = ['', 'Perlu persetujuan: Pak Yasir dan Pak Ferry', 'Ketuk notifikasi ini untuk membuka surat lengkap.', ...(n.catatan ? ['', `Catatan: ${n.catatan}`] : [])];
+  const ekor = ['', 'Perlu persetujuan: Pak Yasir dan Pak Ferry', 'Ketuk notifikasi ini untuk membuka surat lengkap.', ...(catatanTampil ? ['', `Catatan: ${catatanTampil}`] : [])];
   const daftar = n.baris.map((b) => `- ${b.qty} x ${b.nama} | beli ${rp(b.beli)} | jual ${rp(b.jual)}`);
   const susun = (k: number) => [...kepala, '', 'Belanja:', ...daftar.slice(0, k), ...(k < daftar.length ? [`... dan ${daftar.length - k} item lainnya (lihat surat)`] : []), ...ekor].join('\n');
   let teks = susun(daftar.length);
@@ -70,10 +72,10 @@ async function kirimNotif(n: Notif, daftar: string[]): Promise<Record<string, nu
       const r = await fetch(`https://ntfy.sh/${p.topik()}`, {
         method: 'POST',
         headers: {
-          Title: kodekan(`${n.pengingat ? 'PENGINGAT ' + n.pengingat + ': ' : ''}Permintaan seragam: ${n.client} (untuk ${p.nama})`.slice(0, 120)),
+          Title: kodekan(`${n.pengingat ? 'PENGINGAT ' + n.pengingat + ': ' : ''}${n.tambahan ? 'PENAMBAHAN ITEM - ' : ''}Permintaan seragam: ${n.client} (untuk ${p.nama})`.slice(0, 120)),
           Click: n.urlSurat, // mengetuk notifikasi langsung membuka surat lengkap
           Priority: '4',
-          Tags: 'package',
+          Tags: n.tambahan ? 'heavy_plus_sign' : 'package',
           Actions: `view, Setujui ${p.nama}, ${urlSetuju}; view, Tolak/Revisi ${p.nama}, ${urlRevisi}; view, Buka surat, ${n.urlSurat}`,
         },
         body: teks,
@@ -84,6 +86,9 @@ async function kirimNotif(n: Notif, daftar: string[]): Promise<Record<string, nu
   return hasil;
 }
 const sukses = (h: Record<string, number>, k: string) => h[k] >= 200 && h[k] < 300;
+// penambahan item (pesanan susulan untuk lokasi yang sudah memesan): alasannya disimpan sebagai baris pertama kolom memo dengan awalan ini
+const MARKER = 'PENAMBAHAN ITEM: ';
+const ambilTambahan = (memo: unknown) => { const r = String(memo ?? '').split('\n').find((l) => l.startsWith(MARKER)); return r ? r.slice(MARKER.length).trim() : ''; };
 const kunciNama = (n: string) => String(n).toUpperCase().replace(/\s+/g, ' ').trim();
 
 Deno.serve(async (req) => {
@@ -93,6 +98,7 @@ Deno.serve(async (req) => {
   let body: any;
   try { body = await req.json(); } catch { return balas({ error: 'Data tidak terbaca' }, 400); }
   const { lokasi_form, bagian, memo, halaman, jpg, ploting } = body ?? {};
+  const penambahan = body?.penambahan === true, alasan = String(body?.alasan ?? '').replace(/\s+/g, ' ').trim();
   // pengingat harian ke pimpinan yang belum memutuskan; dipanggil terjadwal (pg_cron) dengan header X-Token = N8N_TOKEN
   if (body?.pengingat_pimpinan) {
     const tokenSah = Deno.env.get('N8N_TOKEN') ?? '';
@@ -108,7 +114,7 @@ Deno.serve(async (req) => {
         const tJ = Number(p.total_jual) || 0, tB = Number(p.total_beli) || 0, rabU = Number(p.rab) || 0, sisaU = Number(p.untung) - (tJ - tB);
         const hari = Math.max(1, Math.floor((Date.now() - Date.parse(p.dibuat)) / 86400_000));
         await kirimNotif({ id: p.id, client: p.client, bagian: p.bagian_kerja, target: p.jumlah_anggota, rab: rabU, terpakai: rabU - sisaU - tJ, tJual: tJ, sisa: sisaU, tBeli: tB, untung: Number(p.untung) || 0,
-          pengingat: `hari ke-${hari}`, catatan: p.memo ?? '', baris: (p.items ?? []).map((b: any) => ({ nama: b.nama, qty: b.qty, beli: b.beli, jual: b.jual })),
+          pengingat: `hari ke-${hari}`, tambahan: ambilTambahan(p.memo), catatan: p.memo ?? '', baris: (p.items ?? []).map((b: any) => ({ nama: b.nama, qty: b.qty, beli: b.beli, jual: b.jual })),
           urlSurat: p.lampiran_url, token: { yasir: p.token_yasir, ferry: p.token_ferry } }, [k.kunci]);
       }
       if (mereka.length > 5) {
@@ -131,7 +137,7 @@ Deno.serve(async (req) => {
     if (!tunggu.length) return balas({ error: 'Semua notifikasi sudah terkirim atau permintaan sudah diputuskan' }, 409);
     const tJ = Number(p.total_jual) || 0, tB = Number(p.total_beli) || 0, rabU = Number(p.rab) || 0, sisaU = Number(p.untung) - (tJ - tB);
     const hasilU = await kirimNotif({ id: p.id, client: p.client, bagian: p.bagian_kerja, target: p.jumlah_anggota, rab: rabU, terpakai: rabU - sisaU - tJ,
-      tJual: tJ, sisa: sisaU, tBeli: tB, untung: Number(p.untung) || 0, catatan: p.memo ?? '',
+      tJual: tJ, sisa: sisaU, tBeli: tB, untung: Number(p.untung) || 0, tambahan: ambilTambahan(p.memo), catatan: p.memo ?? '',
       baris: (p.items ?? []).map((b: any) => ({ nama: b.nama, qty: b.qty, beli: b.beli, jual: b.jual })),
       urlSurat: p.lampiran_url, token: { yasir: p.token_yasir, ferry: p.token_ferry } }, tunggu);
     const upd: Record<string, boolean> = {};
@@ -167,6 +173,12 @@ Deno.serve(async (req) => {
 
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   if (!(await adalahAdmin(db, req))) return balas({ error: 'Perlu login admin untuk mengirim permintaan. Masuk dulu di halaman web.' }, 401);
+  // penambahan item: wajib beralasan, dan bagian itu harus sudah punya permintaan yang tidak ditolak (kalau belum, pakai permintaan biasa)
+  if (penambahan) {
+    if (alasan.length < 5 || alasan.length > 500) return balas({ error: 'Keterangan penambahan (alasan) wajib diisi, 5 sampai 500 huruf' }, 400);
+    const { data: pl } = await db.from('permintaan').select('id,status,status_yasir,status_ferry').eq('lokasi_form', lokasi_form).eq('bagian_kerja', bagian);
+    if (!(pl ?? []).some((p: any) => ![p.status, p.status_yasir, p.status_ferry].includes('ditolak'))) return balas({ error: 'Bagian ini belum punya permintaan aktif, jadi bukan penambahan. Buat permintaan baru biasa.' }, 409);
+  }
   // batasi jumlah kiriman supaya pimpinan tidak kebanjiran notifikasi
   const { count: baruSaja } = await db.from('permintaan').select('id', { count: 'exact', head: true }).gte('dibuat', new Date(Date.now() - 10 * 60_000).toISOString());
   if ((baruSaja ?? 0) >= 20) return balas({ error: 'Terlalu banyak permintaan dalam 10 menit terakhir, coba lagi nanti' }, 429);
@@ -229,7 +241,7 @@ Deno.serve(async (req) => {
     if (body?.lanjut_rab !== true) return balas({ error: `Belanja ini melampaui RAB sebesar ${rp(-sisa)} (untung ${rp(untung)}).`, perlu_konfirmasi: 'rab' }, 409);
     peringatan.push(`PERHATIAN: melampaui RAB ${rp(-sisa)}`);
   }
-  const catatan = [...peringatan, String(memo ?? '').slice(0, 1000)].filter(Boolean).join('\n').slice(0, 1200);
+  const catatan = [penambahan ? MARKER + alasan : '', ...peringatan, penambahan ? '' : String(memo ?? '').slice(0, 1000)].filter(Boolean).join('\n').slice(0, 1200);
 
   // token sekali-pakai per permintaan DAN per pimpinan: hanya penerima notifikasi yang punya tautan keputusannya
   const token: Record<string, string> = { yasir: acak(), ferry: acak() };
@@ -268,7 +280,7 @@ Deno.serve(async (req) => {
   })).filter((t: any) => (t.p === 'yasir' || t.p === 'ferry') && t.hal >= 1 && t.hal <= gambar.length && [t.x, t.y, t.w, t.h, t.cy, t.fs].every((v) => v !== null));
   if (ttdPos.length) await db.from('permintaan').update({ ttd_pos: ttdPos }).eq('id', baru.id);
 
-  const hasil = await kirimNotif({ id: baru.id, client: prog.client, bagian, target: prog.target, rab, terpakai, tJual, sisa, tBeli, untung, catatan, baris, urlSurat, token }, PIMPINAN.map((p) => p.kunci));
+  const hasil = await kirimNotif({ id: baru.id, client: prog.client, bagian, target: prog.target, rab, terpakai, tJual, sisa, tBeli, untung, catatan, tambahan: penambahan ? alasan : '', baris, urlSurat, token }, PIMPINAN.map((p) => p.kunci));
   const ok = (k: string) => sukses(hasil, k);
   await db.from('permintaan').update({ terkirim_yasir: ok('yasir'), terkirim_ferry: ok('ferry'), terkirim: ok('yasir') && ok('ferry') }).eq('id', baru.id);
   if (!(ok('yasir') && ok('ferry'))) {

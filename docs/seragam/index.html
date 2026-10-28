@@ -279,6 +279,8 @@
   #pg-permintaan .layout { grid-template-columns:minmax(0,1fr); }
   .aksibar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
   .aksibar .fchips { display:flex; flex-wrap:wrap; gap:6px; align-items:center; } .aksibar .fchips .chip { cursor:pointer; font-size:.8rem; padding:6px 13px; } .aksibar select.aktif { border-color:var(--accent); } .aksibar .chip.on { background:var(--accent); border-color:var(--accent); color:#111; }
+  .btn.tambah { border-color:var(--orange); color:var(--orange); } .btn.tambah:hover, .btn.tambah.on { background:var(--orange); color:#111; }
+  .banner-tambah { margin:0 0 12px; padding:10px 12px; border:1px solid var(--orange); border-radius:14px; background:rgba(255,138,61,.1); font-size:.8rem; line-height:1.45; } .banner-tambah[hidden] { display:none; }
   .aksibar select { border:1px solid var(--stroke); background:var(--solid); color:var(--text); border-radius:99px; padding:7px 12px; font:inherit; font-size:.82rem; max-width:100%; } .btn.baru { background:#fff; color:#111; border-color:#fff; font-weight:600; } .btn.baru:hover { background:var(--accent); border-color:var(--accent); }
   .formminta .pplot { max-height:none; overflow:visible; border:0; border-radius:0; }
   .formminta .pplot table { width:100%; }
@@ -830,7 +832,7 @@
     <section class="bawah card" id="mBawah">
       <div class="bar-top">
         <h3>Pemesanan per lokasi</h3>
-        <div class="aksibar"><div class="fchips" id="mFilterBar" role="group" aria-label="Filter lokasi"><button class="chip on" type="button" data-fl="semua">Semua lokasi</button><button class="chip" type="button" data-fl="sudah">Sudah dipesan</button><button class="chip" type="button" data-fl="belum">Belum dipesan</button><select id="mFilterBagian" aria-label="Filter bagian kerja"><option value="">Bagian kerja</option></select></div><button class="btn baru" id="mBaru" type="button">+ Buat baru</button><button class="btn" id="stMuat">Muat ulang</button></div>
+        <div class="aksibar"><div class="fchips" id="mFilterBar" role="group" aria-label="Filter lokasi"><button class="chip on" type="button" data-fl="semua">Semua lokasi</button><button class="chip" type="button" data-fl="sudah">Sudah dipesan</button><button class="chip" type="button" data-fl="belum">Belum dipesan</button><select id="mFilterBagian" aria-label="Filter bagian kerja"><option value="">Bagian kerja</option></select></div><button class="btn baru" id="mBaru" type="button">+ Buat baru</button><button class="btn tambah" id="mTambah" type="button" title="Tambah item untuk lokasi yang sudah memesan, dengan alasan untuk pimpinan">+ Penambahan</button><button class="btn" id="stMuat">Muat ulang</button></div>
       </div>
       <div class="layout">
         <div class="detail tiga" id="mDetail">
@@ -847,6 +849,7 @@
             <div id="mDHead"></div>
           </div>
           <div class="pcard k3 formminta" id="mForm">
+            <div class="banner-tambah" id="mBannerTambah" hidden><b>PENAMBAHAN ITEM</b> · pilih lokasi yang sudah memesan, tentukan item tambahan, lalu isi <b>Keterangan penambahan</b> (alasan untuk pimpinan). Alasan tercetak di surat memo dan ikut ke notifikasi pimpinan.</div>
             <div class="row lokhead"><h3 style="margin:0">Form pengisian</h3><button class="btn back" id="mBack" type="button">‹ Kembali</button></div>
             <div class="lokbox">
               <label class="pilihlok">Lokasi<div class="cb"><input id="mPilihLok" type="search" role="combobox" aria-expanded="false" aria-controls="mPilihHasil" placeholder="Cari lokasi, mis. pengadilan negeri kudus" autocomplete="off"></div></label>
@@ -877,9 +880,9 @@
             </table></div>
             </div>
 
-            <div class="lipat tutup" style="margin-top:12px">
-            <div class="row lipat-h" role="button" tabindex="0" aria-expanded="false" style="margin:0 0 8px"><b>Memo / catatan khusus</b><span class="muted">opsional</span></div>
-            <label style="display:block;margin-top:6px;font-size:.76rem;color:var(--muted)">Memo / catatan khusus
+            <div class="lipat tutup" id="mMemoLipat" style="margin-top:12px">
+            <div class="row lipat-h" role="button" tabindex="0" aria-expanded="false" style="margin:0 0 8px"><b id="mMemoJudul">Memo / catatan khusus</b><span class="muted" id="mMemoSub">opsional</span></div>
+            <label style="display:block;margin-top:6px;font-size:.76rem;color:var(--muted)"><span id="mMemoLabel">Memo / catatan khusus</span>
               <textarea id="mMemo" rows="3" placeholder="Pesan untuk gudang, vendor, atau catatan tentang RAB…" style="margin-top:5px"></textarea></label>
             </div>
             </div>
@@ -1405,7 +1408,7 @@
     const t = String(nama || '').trim(); for (const [re, v] of SINGKAT_BAGIAN) if (re.test(t)) return v;
     const m = t.match(/\(([^)]+)\)/); return judulKata(m ? m[1] : t);
   }
-  let mPilih = false, mFilterDibuat = 'semua', mFilterBagian = '', mSel = '', terbukaMinta = false, mStatusF = 'semua', mKerja = false; // mKerja: form permintaan memakai seluruh lebar halaman (daftar lokasi disembunyikan)
+  let mTambahan = false, mPilih = false, mFilterDibuat = 'semua', mFilterBagian = '', mSel = '', terbukaMinta = false, mStatusF = 'semua', mKerja = false; // mKerja: form permintaan memakai seluruh lebar halaman (daftar lokasi disembunyikan)
   const mAnggota = () => { const l = lokasi.find(x => x.lokasi === mSel); return l && l.bagian.find(b => b.nama === $('mBagian').value); };
   // permintaan yang ditolak/revisi tidak dihitung, karena akan dibuat ulang
   // peralatan yang memakai anggaran seragam (halaman Peralatan) ikut mengurangi sisa RAB seragam bagian itu
@@ -1419,7 +1422,8 @@
     if (k === mSel) return;
     mSel = k; $('mMemo').value = ''; $('mStatus').textContent = ''; kosongkanRab();
     const l = lokasi.find(x => x.lokasi === k);
-    $('mBagian').innerHTML = l ? (l.bagian.length > 1 ? '<option value="">Pilih bagian</option>' : '') + l.bagian.map(b => `<option value="${esc(b.nama)}">${esc(b.nama)}</option>`).join('') : '<option value="">Pilih lokasi</option>';
+    const bagL = !l ? [] : mTambahan ? l.bagian.filter(b => daftarMinta.some(p => p.lokasi_form === l.lokasi && p.bagian_kerja === b.nama && stReq(p) !== 'ditolak')) : l.bagian;
+    $('mBagian').innerHTML = l ? (!bagL.length ? '<option value="">Belum ada pesanan aktif di lokasi ini</option>' : (bagL.length > 1 ? '<option value="">Pilih bagian</option>' : '') + bagL.map(b => `<option value="${esc(b.nama)}">${esc(b.nama)}</option>`).join('')) : '<option value="">Pilih lokasi</option>';
     gantiKonteks(); infoMinta();
   }
   function infoMinta() {
@@ -1514,12 +1518,12 @@
     mCatatan = `Diisi dari permintaan no. ${p.id} yang ditolak/revisi. Ubah sesuai masukan pimpinan, lalu kirim ulang.`;
   }
   function barisKarMinta(k, i) {
-    if (k.sudah) return `<tr data-i="${i}" class="sudah" ${cocokNama(k) ? '' : 'hidden'}><td class="kn"><b>${esc(k.nama)}</b>${k.peran ? ` <span class="badge neu">${esc(k.peran)}</span>` : ''}<div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></td><td><span class="badge ok">✓ Sudah dipesan · permintaan no. ${k.sudah}</span></td></tr>`;
+    if (k.sudah && !mTambahan) return `<tr data-i="${i}" class="sudah" ${cocokNama(k) ? '' : 'hidden'}><td class="kn"><b>${esc(k.nama)}</b>${k.peran ? ` <span class="badge neu">${esc(k.peran)}</span>` : ''}<div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></td><td><span class="badge ok">✓ Sudah dipesan · permintaan no. ${k.sudah}</span></td></tr>`;
     const ada = Object.keys(k.alloc).filter(no => itemMinta(no)), kecuali = Object.fromEntries(ada.map(no => [no, 1]));
     const kartu = ada.map(no => { const it = itemMinta(no), a = k.alloc[no];
       return `<div class="skartu" data-no="${no}"><b>${esc(it.nama)}</b><label class="jml">jml <input class="pq" type="number" min="1" max="20" value="${a.qty}"></label><span class="pus">${pilihanUkuran(it, a)}</span><button class="xk" title="Hapus seragam ini" aria-label="Hapus seragam ini">✕</button></div>`; }).join('');
     const adaLain = ada.length && mKar.some((x, j) => j !== i && x.pilih);
-    return `<tr data-i="${i}" class="${k.pilih ? 'dipilih' : ''}" ${cocokNama(k) ? '' : 'hidden'}><td class="kn"><label class="kcek"><input type="checkbox" class="pk" ${k.pilih ? 'checked' : ''}><span><b>${esc(k.nama)}</b>${k.peran ? ` <span class="badge neu">${esc(k.peran)}</span>` : ''}<div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></span></label></td>
+    return `<tr data-i="${i}" class="${k.pilih ? 'dipilih' : ''}" ${cocokNama(k) ? '' : 'hidden'}><td class="kn"><label class="kcek"><input type="checkbox" class="pk" ${k.pilih ? 'checked' : ''}><span><b>${esc(k.nama)}</b>${k.peran ? ` <span class="badge neu">${esc(k.peran)}</span>` : ''}${k.sudah ? ` <span class="badge warn">sudah punya pesanan no. ${k.sudah}</span>` : ''}<div class="muted">Isian Form: baju ${esc(k.ref.baju || '-')} · celana ${esc(k.ref.celana || '-')} · sepatu ${esc(k.ref.sepatu || '-')}</div></span></label></td>
       <td><div class="kcards">${kartu}</div><div class="kmenu"><select class="tmb"><option value="">+ Pilih seragam…</option>${opsiItemMinta(kecuali)}</select>${adaLain ? '<button class="btn salin" title="Samakan seragam nama yang dicentang dengan orang ini">Salin ke yang dicentang</button>' : ''}</div></td></tr>`;
   }
   function renderTabel() {
@@ -1560,7 +1564,7 @@
     const n = mKar.filter(k => k.pilih).length, sm = sisaMenyusul();
     $('mKarInfo').textContent = mDimuat ? `${sm.baru} orang diberi seragam di permintaan ini${sm.sudah ? ` · ${sm.sudah} sudah dipesan sebelumnya` : ''}${sm.belum ? ` · ${sm.belum} belum (menyusul)` : ''} · target ${sm.target} anggota` : '';
     $('mPlotPesan').textContent = kosongUk ? `${kosongUk} pilihan ukuran belum diisi (kotak merah).` : '';
-    if ($('mDicentang')) { $('mDicentang').textContent = n ? `${n} nama dicentang` : ''; $('mAksi').hidden = !n; if (!n) $('mAksiPanel').hidden = true; infoAksi(); const tampak = mKar.filter(k => cocokNama(k) && !k.sudah); $('mPilihSemua').checked = tampak.length > 0 && tampak.every(k => k.pilih); }
+    if ($('mDicentang')) { $('mDicentang').textContent = n ? `${n} nama dicentang` : ''; $('mAksi').hidden = !n; if (!n) $('mAksiPanel').hidden = true; infoAksi(); const tampak = mKar.filter(k => cocokNama(k) && (mTambahan || !k.sudah)); $('mPilihSemua').checked = tampak.length > 0 && tampak.every(k => k.pilih); }
     renderBaris();
     return { kosongUk, penerima };
   }
@@ -1571,6 +1575,7 @@
     return { target, sudah, baru, belum: Math.max(0, target - sudah - baru) };
   }
   function memoMinta() { // catatan pengguna + keterangan otomatis bila baru sebagian anggota yang dipesankan (ikut ke surat dan notifikasi pimpinan)
+    if (mTambahan) return $('mMemo').value.trim(); // penambahan item: isinya alasan untuk pimpinan; tidak ada keterangan "menyusul"
     const m = $('mMemo').value.trim(), s = sisaMenyusul();
     return [m, s.belum > 0 ? `Menyusul: ${s.belum} dari ${s.target} anggota belum diberi seragam pada permintaan ini.` : ''].filter(Boolean).join('\n');
   }
@@ -1595,7 +1600,7 @@
   }
   $('mPlot').onchange = e => {
     const t = e.target, tr = t.closest('tr'), k = tr && mKar[tr.dataset.i];
-    if (t.id === 'mPilihSemua') { mKar.forEach(x => { if (cocokNama(x) && !x.sudah) x.pilih = t.checked; }); return perbarui(); }
+    if (t.id === 'mPilihSemua') { mKar.forEach(x => { if (cocokNama(x) && (mTambahan || !x.sudah)) x.pilih = t.checked; }); return perbarui(); }
     if (t.classList.contains('ac')) return infoAksi();
     if (!k) return;
     if (t.classList.contains('pk')) { k.pilih = t.checked; return perbarui(); }
@@ -1639,6 +1644,8 @@
   function ambilIsian() {
     const l = lokasi.find(x => x.lokasi === mSel), bag = $('mBagian').value;
     if (!l || !bag) { alert('Pilih lokasi di daftar dan bagian kerja dulu.'); return null; }
+    const alasanTambah = mTambahan ? $('mMemo').value.trim().replace(/\s+/g, ' ') : '';
+    if (mTambahan && alasanTambah.length < 5) { alert('Isi Keterangan penambahan (alasan menambah item) dulu, minimal 5 huruf. Pimpinan akan membacanya di surat dan notifikasi.'); $('mMemo').focus(); return null; }
     const { kosongUk } = hitungAlokasi();
     if (!mDimuat) { alert('Muat daftar karyawan dulu (perlu login).'); return null; }
     const isi = baris.map(b => ({ h: hargaDari(b.no), q: Number(b.qty) || 0 })).filter(x => x.h && x.q > 0);
@@ -1647,7 +1654,7 @@
     const rincian = [];
     for (const k of mKar) for (const it of mPool) { const a = k.alloc[it.no]; if (a) rincian.push({ nama: k.nama, item_no: it.no, item_nama: it.nama, qty: Number(a.qty), baju: a.baju, celana: a.celana, sepatu: a.sepatu }); }
     const beli = isi.reduce((a, x) => a + x.h.beli * x.q, 0), jual = isi.reduce((a, x) => a + x.h.jual * x.q, 0);
-    return { l, bag, isi, beli, jual, rab: mRab(), kar: mKar, pool: mPool, rincian };
+    return { l, bag, isi, beli, jual, rab: mRab(), kar: mKar, pool: mPool, rincian, tambahan: alasanTambah };
   }
   // Penandatangan tetap, sama seperti template memo lama
   const TTD = { pic: ['Shohib Izzar', '(PIC Seragam)'], dir: ['Yasir Arafat', '(Direktur)'], dirut: ['Feri Atmadi', '(Direktur Utama)'], vendor: ['Wahyu Ardianto', '(Vendor)'] };
@@ -1723,7 +1730,7 @@
     return { blobs, b64s, halaman: dok.numPages, mb: blobs.reduce((a, b) => a + b.size, 0) / 1048576, px: `${kanvas[0].width} × ${kanvas[0].height}` };
   }
 
-  async function buatPdf({ l, bag, isi, beli, jual, rab }, ekstra = {}) {
+  async function buatPdf({ l, bag, isi, beli, jual, rab, tambahan }, ekstra = {}) {
     if (!window.jspdf) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
     if (!(window.jspdf && window.jspdf.jsPDF.API.autoTable)) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
     const [kop, kaki] = await Promise.all([muatGambar('../aset/kop-surat.png'), muatGambar('../aset/kaki-surat.png')]);
@@ -1793,7 +1800,7 @@
     satuHalaman(() => {
       huruf('bold', 16); doc.text('SURAT MEMO INTERNAL', PW / 2, 104, { align: 'center' });
       huruf(); y = 134; const g = 14 * K;
-      [['Nomor', ':' + noSurat], ['Tanggal', ':' + tgl], ['Perihal', ': Permohonan Persetujuan Pengadaan Seragam Karyawan']].forEach(([k, v], i) => { doc.text(k, L, y + i * g); doc.text(v, L + 52, y + i * g); });
+      [['Nomor', ':' + noSurat], ['Tanggal', ':' + tgl], ['Perihal', ': Permohonan Persetujuan Pengadaan Seragam Karyawan' + (tambahan ? ' (Penambahan Item)' : '')]].forEach(([k, v], i) => { doc.text(k, L, y + i * g); doc.text(v, L + 52, y + i * g); });
       y += 3 * g + 8 * K;
       huruf('bold'); doc.text('Dengan hormat,', L + 14, y); huruf(); y += 14 * K;
       const par = doc.splitTextToSize('Sehubungan dengan kebutuhan operasional dan identitas karyawan, kami mengajukan permohonan persetujuan pengadaan seragam dengan rincian sebagai berikut:', W - 14);
@@ -1805,7 +1812,7 @@
         body: [...isi.map((x, i) => [{ content: i + 1, styles: { halign: 'center' } }, x.h.nama, { content: x.q, styles: { halign: 'center' } }, { content: rpPdf(x.h.jual), styles: { halign: 'center', fillColor: [255, 255, 0] } }, { content: rpPdf(x.h.jual * x.q), styles: { halign: 'right' } }]),
           [{ content: 'SUBTOTAL', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(jual), styles: { halign: 'right', fontStyle: 'bold' } }]],
         columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 38 }, 3: { cellWidth: 80 }, 4: { cellWidth: 82 } } });
-      const cat = memoMinta();
+      const cat = tambahan ? '' : memoMinta(); // pada penambahan item, alasannya tercetak sebagai "Keterangan" di bawah tanda tangan
       if (cat) { y += 10 * K; const c = doc.splitTextToSize('Catatan: ' + cat, W - 28); huruf('italic', 10); doc.text(c, L + 28, y); y += c.length * 12 * K - 4 * K; huruf(); }
       y += 16 * K;
       huruf('bold'); doc.text('B. Estimasi Anggaran (RAB)', L, y); y += 8 * K;
@@ -1814,8 +1821,9 @@
         body: [...Array.from({ length: kontrak }, (_, m) => [{ content: m + 1, styles: { halign: 'center' } }, NAMA_BULAN[m % 12], { content: anggota, styles: { halign: 'center' } }, { content: rpPdf(perOrang), styles: { halign: 'right' } }, { content: rpPdf(anggota * perOrang), styles: { halign: 'right' } }]),
           [{ content: 'TOTAL', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(rab), styles: { halign: 'right', fontStyle: 'bold' } }]],
         columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 78 }, 3: { cellWidth: 92 }, 4: { cellWidth: 92 } } });
-      y += 20 * K; cek(84 * K);
+      y += 20 * K; cek((tambahan ? 84 + 42 : 84) * K);
       tandaTangan([{ x: L + 80, label: 'Diajukan Oleh,', ttd: TTD.pic }, { x: PW / 2, label: 'Disetujui Oleh,', ttd: TTD.dir }, { x: R - 80, label: 'Disetujui Oleh,', ttd: TTD.dirut }], y);
+      if (tambahan) { huruf('italic', 9.5); const ket = doc.splitTextToSize('Keterangan : ' + tambahan, W); doc.text(ket, L, y + 96 * K); huruf(); } // alasan penambahan item, di bawah tanda tangan
     });
 
     // ===== Halaman 2: PURCHASE ORDER (PO) =====
@@ -1946,7 +1954,7 @@
       const ttd_pos = halamanSiap ? ttdSiap : ttdPosTerakhir;
       const r = await fetch(`${SUPABASE_URL}/functions/v1/kirim-permintaan`, {
         method: 'POST', headers: { ...H, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lokasi_form: d.l.lokasi, bagian: d.bag, items: d.isi.map(x => ({ no: x.h.no, qty: x.q })), ploting: d.rincian, memo: memoMinta(), halaman, ttd_pos, ...lanjut })
+        body: JSON.stringify({ lokasi_form: d.l.lokasi, bagian: d.bag, items: d.isi.map(x => ({ no: x.h.no, qty: x.q })), ploting: d.rincian, memo: memoMinta(), ...(d.tambahan ? { penambahan: true, alasan: d.tambahan } : {}), halaman, ttd_pos, ...lanjut })
       });
       const j = await r.json().catch(() => ({}));
       if (r.status === 409 && j.perlu_konfirmasi) { // melebihi target/RAB: tanya, lalu kirim ulang bila admin yakin
@@ -1960,7 +1968,7 @@
         const bt = document.createElement('button'); bt.className = 'btn ghost'; bt.type = 'button'; bt.textContent = 'Kirim ulang notifikasi'; bt.dataset.ulang = j.id; st.appendChild(bt);
       } else { st.style.color = 'var(--ok)'; st.textContent = `✓ Terkirim ke Pak Yasir dan Pak Ferry (permintaan no. ${j.id}). Perlu persetujuan keduanya.`; }
       const pdfArsip = await siapkanPdf(d).catch(() => null); // dibuat sebelum isian dikosongkan (RAB masih terpakai)
-      mDraf.delete(mKunci); mPool = []; mKar = []; mDimuat = false; mCatatan = ''; $('mMemo').value = ''; kosongkanRab(); renderPembagian(); muatStatus(); sukses = true;
+      mDraf.delete(mKunci); mPool = []; mKar = []; mDimuat = false; mCatatan = ''; $('mMemo').value = ''; mTambahan = false; terapkanModeTambah(); kosongkanRab(); renderPembagian(); muatStatus(); sukses = true;
       if (Masuk.masuk()) muatKaryawanMinta();
       if (pdfArsip) {
         const ar = document.createElement('div'); ar.style.cssText = 'margin-top:4px;color:var(--muted)'; ar.textContent = 'Mengarsipkan memo ke Google Drive…'; st.appendChild(ar);
@@ -1993,7 +2001,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
   $('mKirim').onclick = () => {
     const d = ambilIsian(); if (!d) return;
     const s = sisaMenyusul();
-    if (s.belum > 0 && !confirm(`${s.belum} dari ${s.target} anggota belum diberi seragam${s.sudah ? ` (${s.sudah} sudah dipesan sebelumnya)` : ''} dan akan menyusul di permintaan berikutnya. Tetap kirim ke pimpinan?`)) return;
+    if (!d.tambahan && s.belum > 0 && !confirm(`${s.belum} dari ${s.target} anggota belum diberi seragam${s.sudah ? ` (${s.sudah} sudah dipesan sebelumnya)` : ''} dan akan menyusul di permintaan berikutnya. Tetap kirim ke pimpinan?`)) return;
     kirimKeAtasan(d, null, $('mKirim'));
   };
   // ---- status permintaan per lokasi (belum dibuat / menunggu / disetujui / ditolak-revisi) ----
@@ -2111,13 +2119,22 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     if (sel.dataset.h !== html) { sel.innerHTML = html; sel.dataset.h = html; }
     sel.value = mFilterBagian; sel.classList.toggle('aktif', !!mFilterBagian);
   }
+  // mode "Penambahan": pesanan susulan untuk lokasi yang sudah memesan; kolom memo menjadi Keterangan (alasan) wajib untuk pimpinan
+  function terapkanModeTambah() {
+    $('mBannerTambah').hidden = !mTambahan; $('mTambah').classList.toggle('on', mTambahan);
+    const j = mTambahan ? 'Keterangan penambahan (alasan, wajib)' : 'Memo / catatan khusus';
+    $('mMemoJudul').textContent = j; $('mMemoLabel').textContent = j; $('mMemoSub').textContent = mTambahan ? 'ditujukan ke pimpinan' : 'opsional';
+    $('mMemo').placeholder = mTambahan ? 'Alasan menambah item, mis. ada karyawan baru, seragam rusak/hilang, atau permintaan pengguna jasa. Tertulis di surat memo dan dibaca pimpinan.' : 'Pesan untuk gudang, vendor, atau catatan tentang RAB…';
+    if (mTambahan) { const lp = $('mMemoLipat'); lp.classList.remove('tutup'); const h = lp.querySelector('.lipat-h'); if (h) h.setAttribute('aria-expanded', 'true'); }
+    $('mKirim').textContent = mTambahan ? 'Kirim penambahan ke Pak Yasir & Pak Ferry' : 'Kirim ke Pak Yasir & Pak Ferry';
+  }
   // pemilih lokasi di dalam kartu form (muncul selama belum ada lokasi terpilih); mengikuti filter Sudah dibuat / Belum pernah dibuat
   function renderPilihLok() {
     const el = $('mPilihHasil'); if (!el) return;
     const q = $('mPilihLok').value.trim().toLowerCase().split(/\s+/).filter(Boolean), warna = { ok: 'var(--ok)', warn: 'var(--orange)', bad: 'var(--bad)', neu: 'var(--muted)' };
-    const hasil = lokMinta().filter(l => q.every(w => l.kunci.includes(w)) && cocokFilter(l))
+    const hasil = lokMinta().filter(l => q.every(w => l.kunci.includes(w)) && cocokFilter(l) && (!mTambahan || infoLok(l).ada > 0))
       .sort((a, b) => q.length ? a.client.localeCompare(b.client) : (URUT_LS[infoLok(a).s] - URUT_LS[infoLok(b).s]) || a.client.localeCompare(b.client));
-    el.innerHTML = `<div class="plh"><span>${(mFilterDibuat === 'belum' ? 'Belum dipesan' : mFilterDibuat === 'sudah' ? 'Sudah dipesan' : 'Semua lokasi') + (mFilterBagian ? ' · ' + mFilterBagian : '')}</span><span>${idn(hasil.length)}</span></div>`
+    el.innerHTML = `<div class="plh"><span>${(mTambahan ? 'Penambahan · ' : '') + (mFilterDibuat === 'belum' ? 'Belum dipesan' : mFilterDibuat === 'sudah' ? 'Sudah dipesan' : 'Semua lokasi') + (mFilterBagian ? ' · ' + mFilterBagian : '')}</span><span>${idn(hasil.length)}</span></div>`
       + (hasil.slice(0, 300).map(l => { const mi = infoLok(l), [lb, cl] = LS[mi.s]; return `<button class="pk ${l.lokasi === mSel ? 'sel' : ''}" type="button" role="option" data-pilih="${esc(l.lokasi)}"><i style="background:${warna[cl] || warna.neu}"></i><span><b>${esc(l.client)}</b><small>${esc(lb)} · ${mi.ada}/${mi.total} bagian kerja</small></span></button>`; }).join('') || '<div class="kosongnya">Lokasi tidak ditemukan.</div>');
   }
   function renderDetailMinta() {
@@ -2138,7 +2155,8 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     const riw = daftarMinta.filter(x => x.lokasi_form === l.lokasi).sort((a, b) => new Date(b.dibuat) - new Date(a.dibuat));
     const totalPesan = riw.filter(x => stReq(x) !== 'ditolak').reduce((a, x) => a + Number(x.total_jual || 0), 0);
     const aktif = x => ['menunggu', 'setuju_yasir', 'setuju_ferry'].includes(stReq(x));
-    const riwHtml = riw.map(x => { const [t, c] = labelReq(x); return `<div class="rwi"><div class="row"><span>${tglP(x.dibuat)} · <b>${esc(singkatBagian(x.bagian_kerja))}</b></span><span class="badge ${c}">${t}</span></div>
+    const riwHtml = riw.map(x => { const [t, c] = labelReq(x), ket = String(x.memo || '').split('\n').find(r => r.startsWith('PENAMBAHAN ITEM: ')); return `<div class="rwi"><div class="row"><span>${tglP(x.dibuat)} · <b>${esc(singkatBagian(x.bagian_kerja))}</b>${ket ? ' <span class="badge warn">Penambahan</span>' : ''}</span><span class="badge ${c}">${t}</span></div>
+        ${ket ? `<div class="rl"><i>Keterangan: ${esc(ket.slice(17))}</i></div>` : ''}
         ${(x.items || []).map(i => `<div class="rl"><span>${i.qty} × ${esc(i.nama)} <small class="muted">@ ${rp(i.jual)}</small></span><span>${rp(i.jual * i.qty)}</span></div>`).join('')}
         <div class="rl"><b>Total ${rp(x.total_jual)}</b>${aktif(x) ? `<button class="btn ghost" data-tarik="${x.id}" type="button">Tarik</button>` : ''}</div></div>`; }).join('');
     $('mDHead').innerHTML =
@@ -2171,8 +2189,11 @@ Alasan (boleh kosong):`); if (alasan === null) return;
   const bukaDaftarFilter = () => { renderFilterLok(); $('mForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('mPilihLok').value = ''; $('mPilihLok').focus({ preventScroll: true }); cbBuka(); };
   $('mFilterBar').onclick = e => { const b = e.target.closest('[data-fl]'); if (!b) return; mFilterDibuat = b.dataset.fl; bukaDaftarFilter(); };
   $('mFilterBagian').onchange = e => { mFilterBagian = e.target.value; bukaDaftarFilter(); };
+  // Penambahan: pesanan susulan untuk lokasi yang sudah memesan (daftar lokasi dibatasi yang sudah memesan; karyawan yang sudah dipesan boleh ditambah item lain)
+  $('mTambah').onclick = () => { mTambahan = true; mPilih = true; terbukaMinta = true; mFilterDibuat = 'sudah'; setLokasiMinta(''); terapkanModeTambah(); renderDaftarMinta(); renderMini(); bukaDaftarFilter(); };
   // Buat baru: lepas lokasi terpilih (form dikosongkan, isian lokasi sebelumnya tetap tersimpan sebagai draf selama halaman terbuka), lalu tampilkan form dengan pemilih lokasi di dalamnya
   $('mBaru').onclick = () => {
+    mTambahan = false; terapkanModeTambah();
     mPilih = true; terbukaMinta = true; setLokasiMinta(''); renderDaftarMinta(); renderMini();
     $('mForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('mPilihLok').value = ''; $('mPilihLok').focus({ preventScroll: true }); cbBuka();
   };
