@@ -1199,7 +1199,7 @@
        </div>
        <div class="dbody">
          <div class="notif ${NADA[l.status]}">${awal}</div>
-         ${l.bagian.map(b => `<div class="bagian"><span>${esc(b.nama)}${ang && ang.per[b.nama] != null ? `<span class="rp">${rp(ang.per[b.nama])} · ${b.target} orang</span>` : ''}${ketPesan(l, b)}${ringkasPeran(l.lokasi, b.nama)}${b.isi < b.target ? `<button class="btn mini" data-ingat="${esc(l.lokasi)}" data-bag="${esc(b.nama)}">Ingatkan PIC</button>` : ''}</span>
+         ${l.bagian.map(b => `<div class="bagian"><span>${esc(b.nama)}${ang && ang.per[b.nama] != null ? `<span class="rp">${rp(ang.per[b.nama])} · ${b.target} orang</span>` : ''}${ketPesan(l, b)}${ringkasPeran(l.lokasi, b.nama)}${b.isi < b.target ? `<button class="btn mini" data-ingat="${esc(l.lokasi)}" data-bag="${esc(b.nama)}">Ingatkan PIC${picNama(l) ? ' ' + esc(picNama(l)) : ''}</button>` : ''}</span>
             <div class="bar ${b.isi >= b.target ? 'ok' : 'warn'}"><i style="width:${b.target ? 100 * b.isi / b.target : 0}%"></i></div>
             <span class="${b.isi >= b.target ? 'penuh' : 'kurang'}">${b.isi >= b.target ? '✓ ' + b.isi + '/' + b.target : 'kurang ' + (b.target - b.isi) + ' · ' + b.isi + '/' + b.target}</span></div>`).join('')}
          <div class="tt"><span>Daftar pengisi</span>
