@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.168', tanggal: '2026-10-28', catatan: 'Buat baru langsung membuka form dengan pemilih lokasi di dalamnya' };
+window.VERSI = { no: '1.169', tanggal: '2026-10-28', catatan: 'Filter Sudah/Belum dibuat memunculkan daftar lokasi (cari + dropdown) di kartu form' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

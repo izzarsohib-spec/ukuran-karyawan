@@ -421,13 +421,14 @@
   @media (max-width: 1180px) { .tiga .kriw .riwlist { flex:none; max-height:340px; } }
   .tiga .kriw .dhead { border-bottom:1px solid var(--stroke); }
   .tiga .k3kosong { padding:22px 6px; text-align:center; color:var(--muted); font-size:.84rem; }
-  .tiga #mKosongB { text-align:left; padding:2px 0 0; }
-  .pilihlok { display:block; font-size:.76rem; color:var(--muted); } .pilihhasil { margin-top:10px; max-height:420px; overflow:auto; scrollbar-width:thin; border-top:1px solid var(--stroke); }
-  .pilihhasil .plh { position:sticky; top:0; display:flex; justify-content:space-between; padding:5px 2px 3px; font-size:.66rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); background:var(--shell); }
-  .pk { display:flex; align-items:center; gap:10px; width:100%; padding:7px 4px; border:0; border-bottom:1px solid var(--stroke); background:none; color:inherit; text-align:left; cursor:pointer; font:inherit; }
-  .pk:hover, .pk:focus-visible { background:var(--panel2); outline:none; } .pk i { width:8px; height:8px; border-radius:3px; flex:none; } .pk span { min-width:0; }
+  .lokhead { margin-bottom:12px; } .lokbox { position:relative; margin-bottom:12px; z-index:6; }
+  .pilihlok { display:block; font-size:.76rem; color:var(--muted); } .cb { display:flex; gap:6px; margin-top:5px; } .cb input { margin-top:0 !important; flex:1; min-width:0; } .cb .btn { padding:0 14px; }
+  .pilihhasil { position:absolute; left:0; right:0; top:100%; margin-top:6px; max-height:340px; overflow:auto; scrollbar-width:thin; background:#202024; border:1px solid var(--stroke); border-radius:16px; box-shadow:0 18px 48px rgba(0,0,0,.55); padding:0 8px 4px; }
+  .pilihhasil[hidden] { display:none; }
+  .pilihhasil .plh { position:sticky; top:0; display:flex; justify-content:space-between; padding:8px 2px 4px; font-size:.66rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); background:#202024; }
+  .pk { display:flex; align-items:center; gap:10px; width:100%; padding:7px 6px; border:0; border-bottom:1px solid var(--stroke); background:none; color:inherit; text-align:left; cursor:pointer; font:inherit; }
+  .pk:hover, .pk:focus-visible, .pk.sel { background:var(--panel2); outline:none; border-radius:8px; } .pk i { width:8px; height:8px; border-radius:3px; flex:none; } .pk span { min-width:0; }
   .pk b { display:block; font-size:.84rem; font-weight:600; } .pk small { display:block; font-size:.72rem; color:var(--muted); }
-  @media (min-width: 1181px) { .tiga #mKosongB .back { display:none; } }
   .tiga [hidden] { display:none !important; }
   .tiga .sums { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; } .tiga .sums div { padding:10px 12px; border-radius:14px; } .tiga .sums b { font-size:1rem; }
   .tiga .formminta .fgrid { grid-template-columns:repeat(3,minmax(0,1fr)); }
@@ -829,13 +830,14 @@
             <div id="mDHead"></div>
           </div>
           <div class="pcard k3 formminta" id="mForm">
-            <div class="k3kosong" id="mKosongB">
-              <div class="row" style="margin-bottom:12px"><h3 style="margin:0">Form pengisian</h3><button class="btn back" id="mBack" type="button">‹ Kembali</button></div>
-              <label class="pilihlok">Pilih lokasi<input id="mPilihLok" type="search" placeholder="Cari lokasi, mis. pengadilan negeri kudus" autocomplete="off"></label>
-              <div class="pilihhasil" id="mPilihHasil"></div>
+            <div class="row lokhead"><h3 style="margin:0">Form pengisian</h3><button class="btn back" id="mBack" type="button">‹ Kembali</button></div>
+            <div class="lokbox">
+              <label class="pilihlok">Lokasi<div class="cb"><input id="mPilihLok" type="search" role="combobox" aria-expanded="false" aria-controls="mPilihHasil" placeholder="Cari lokasi, mis. pengadilan negeri kudus" autocomplete="off"><button class="btn" id="mPilihTog" type="button" aria-label="Buka daftar lokasi">▾</button></div></label>
+              <div class="pilihhasil" id="mPilihHasil" role="listbox" hidden></div>
             </div>
+            <div class="k3kosong" id="mKosongB">Pilih lokasi lebih dulu di kolom Lokasi di atas, lalu isi form di sini.</div>
             <div id="mIsiB" hidden>
-            <div class="row" style="margin-bottom:14px"><h3 style="margin:0">Form pengisian</h3><button class="btn" id="mReset">Kosongkan form</button></div>
+            <div class="row" style="margin-bottom:14px;justify-content:flex-end"><button class="btn" id="mReset">Kosongkan form</button></div>
             <div class="fgrid">
               <label>Bagian kerja<select id="mBagian"><option value="">Pilih lokasi</option></select></label>
               <label>Jumlah anggota<input id="mJml" readonly></label>
@@ -2076,12 +2078,12 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     const hasil = lokMinta().filter(l => q.every(w => l.kunci.includes(w)) && (mFilterDibuat === 'semua' || (mFilterDibuat === 'sudah') === (infoLok(l).ada > 0)))
       .sort((a, b) => q.length ? a.client.localeCompare(b.client) : (URUT_LS[infoLok(a).s] - URUT_LS[infoLok(b).s]) || a.client.localeCompare(b.client));
     el.innerHTML = `<div class="plh"><span>${mFilterDibuat === 'belum' ? 'Lokasi belum pernah dibuat' : mFilterDibuat === 'sudah' ? 'Lokasi yang sudah dibuat' : 'Semua lokasi'}</span><span>${idn(hasil.length)}</span></div>`
-      + (hasil.slice(0, 300).map(l => { const mi = infoLok(l), [lb, cl] = LS[mi.s]; return `<button class="pk" type="button" data-pilih="${esc(l.lokasi)}"><i style="background:${warna[cl] || warna.neu}"></i><span><b>${esc(l.client)}</b><small>${esc(lb)} · ${mi.ada}/${mi.total} bagian kerja</small></span></button>`; }).join('') || '<div class="kosongnya">Lokasi tidak ditemukan.</div>');
+      + (hasil.slice(0, 300).map(l => { const mi = infoLok(l), [lb, cl] = LS[mi.s]; return `<button class="pk ${l.lokasi === mSel ? 'sel' : ''}" type="button" role="option" data-pilih="${esc(l.lokasi)}"><i style="background:${warna[cl] || warna.neu}"></i><span><b>${esc(l.client)}</b><small>${esc(lb)} · ${mi.ada}/${mi.total} bagian kerja</small></span></button>`; }).join('') || '<div class="kosongnya">Lokasi tidak ditemukan.</div>');
   }
   function renderDetailMinta() {
     const l = lokasi.find(x => x.lokasi === mSel);
     $('mDetail').classList.toggle('open', terbukaMinta && (!!l || mPilih));
-    renderPilihLok();
+    if (document.activeElement !== $('mPilihLok')) $('mPilihLok').value = l ? l.client : '';
     for (const x of ['B', 'C']) { $('mIsi' + x).hidden = !l; $('mKosong' + x).hidden = !!l; }
     if (!l) { $('mDHead').innerHTML = '<div class="kosongnya">Tekan + Buat baru, atau klik lokasi di kartu Pak Yasir atau Pak Ferry di atas, untuk melihat riwayat pemesanan dan membuat permintaan.</div>'; return; }
     const mi = l.mi || infoLok(l), [lbl, cls] = LS[mi.s], ang = anggaran && anggaran.peta.get(l.lokasi);
@@ -2118,13 +2120,20 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     if (rw) { const k = rw.dataset.riw; riwTutup.has(k) ? riwTutup.delete(k) : riwTutup.add(k); renderDetailMinta(); }
   };
   $('stMuat').onclick = muatStatus;
-  $('mPilihLok').oninput = renderPilihLok;
-  $('mPilihHasil').onclick = e => { const b = e.target.closest('[data-pilih]'); if (!b) return; mPilih = false; terbukaMinta = true; setLokasiMinta(b.dataset.pilih); renderDaftarMinta(); renderMini(); $('mForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
-  $('mFilterDibuat').onchange = e => { mFilterDibuat = e.target.value; renderMini(); renderPilihLok(); };
+  // kotak Lokasi di kartu form: kolom cari + daftar turun (mengikuti filter Semua / Sudah dibuat / Belum pernah dibuat)
+  const cbBuka = () => { renderPilihLok(); $('mPilihHasil').hidden = false; $('mPilihLok').setAttribute('aria-expanded', 'true'); };
+  const cbTutup = () => { $('mPilihHasil').hidden = true; $('mPilihLok').setAttribute('aria-expanded', 'false'); const l = lokasi.find(x => x.lokasi === mSel); $('mPilihLok').value = l ? l.client : ''; };
+  $('mPilihLok').onfocus = () => { $('mPilihLok').select(); cbBuka(); };
+  $('mPilihLok').oninput = cbBuka;
+  $('mPilihTog').onclick = () => { if ($('mPilihHasil').hidden) $('mPilihLok').focus(); else cbTutup(); };
+  $('mPilihHasil').onclick = e => { const b = e.target.closest('[data-pilih]'); if (!b) return; mPilih = false; terbukaMinta = true; setLokasiMinta(b.dataset.pilih); renderDaftarMinta(); renderMini(); cbTutup(); };
+  document.addEventListener('click', e => { if (!$('mPilihHasil').hidden && !e.target.closest('.lokbox, #mBaru, #mFilterDibuat')) cbTutup(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('mPilihHasil').hidden) { cbTutup(); $('mPilihLok').blur(); } });
+  $('mFilterDibuat').onchange = e => { mFilterDibuat = e.target.value; $('mForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('mPilihLok').value = ''; $('mPilihLok').focus({ preventScroll: true }); cbBuka(); };
   // Buat baru: lepas lokasi terpilih (form dikosongkan, isian lokasi sebelumnya tetap tersimpan sebagai draf selama halaman terbuka), lalu tampilkan form dengan pemilih lokasi di dalamnya
   $('mBaru').onclick = () => {
-    mPilih = true; terbukaMinta = true; $('mPilihLok').value = ''; setLokasiMinta(''); renderDaftarMinta(); renderMini();
-    $('mForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('mPilihLok').focus({ preventScroll: true });
+    mPilih = true; terbukaMinta = true; setLokasiMinta(''); renderDaftarMinta(); renderMini();
+    $('mForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('mPilihLok').value = ''; $('mPilihLok').focus({ preventScroll: true }); cbBuka();
   };
 
   // ---- preview surat sebelum dikirim ----
@@ -3795,10 +3804,10 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   const TITIK = { ok: BULAT.ok, warn: BULAT.jingga, bad: BULAT.bahaya, neu: 'var(--muted)' };
   function daftarPimp(who, dasar, nm, warna) {
     const f = MP[who], S = window.Saring, q = (f.q || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
-    if (q.length || mFilterDibuat === 'belum') {
-      const hasil = lokMinta().filter(l => q.every(w => l.kunci.includes(w)) && (mFilterDibuat === 'semua' || (mFilterDibuat === 'sudah') === (infoLok(l).ada > 0)) && (!f.area || areaLokasi(l.lokasi) === f.area) && (!f.pic || (S && S.picDari(l.lokasi) && String(S.picDari(l.lokasi).id) === f.pic))).sort((a, b) => a.client.localeCompare(b.client));
+    if (q.length) {
+      const hasil = lokMinta().filter(l => q.every(w => l.kunci.includes(w)) && (!f.area || areaLokasi(l.lokasi) === f.area) && (!f.pic || (S && S.picDari(l.lokasi) && String(S.picDari(l.lokasi).id) === f.pic))).sort((a, b) => a.client.localeCompare(b.client));
       const baris = hasil.slice(0, 300).map(l => { const mi = infoLok(l), [lb, cl] = LS[mi.s]; return `<button class="pl ${l.lokasi === mSel ? 'sel' : ''}" ${aksiAttr('permintaan', 'lokasi', l.lokasi)}><i style="background:${TITIK[cl] || TITIK.neu}"></i><span><b>${esc(l.client)}</b><small>${esc(lb)} · ${mi.ada}/${mi.total} bagian kerja</small></span></button>`; }).join('');
-      return `<div class="plh"><span>${q.length ? 'Hasil cari lokasi' : 'Lokasi belum pernah dibuat'}</span><span>${idn(hasil.length)}</span></div>${baris || '<div class="kosongnya">Lokasi tidak ditemukan.</div>'}`;
+      return `<div class="plh"><span>Hasil cari lokasi</span><span>${idn(hasil.length)}</span></div>${baris || '<div class="kosongnya">Lokasi tidak ditemukan.</div>'}`;
     }
     const sub = dasar.filter(p => { const k = statusPimpinan(who, p); return k !== 'gugur' && (f.st === 'semua' || k === f.st); }).sort((a, b) => new Date(b.dibuat) - new Date(a.dibuat));
     // satu baris per lokasi: bagian kerjanya digabung (nama disingkat), titik warna = status bagian itu menurut pimpinan ini
