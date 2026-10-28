@@ -521,6 +521,14 @@
   .lipatbar { display:flex; align-items:center; gap:6px; margin:0 0 8px; padding:6px 14px; border:1px solid var(--stroke); border-radius:99px; background:var(--panel); color:var(--muted); font:inherit; font-size:.8rem; cursor:pointer; }
   .lipatbar:hover { color:var(--text); }
   section.mini.tutup { display:none; }
+  /* Monitoring: kartu "5 lokasi terbanyak" dipadatkan agar tingginya sama dengan kartu hero (tanpa ruang kosong di hero) */
+  #pg-monitor .top .chartcard { padding:12px 16px 8px; }
+  #pg-monitor .top .areachips { gap:5px; margin:4px 0 6px; } #pg-monitor .top .areachips .chip { padding:3px 10px; font-size:.72rem; }
+  #pg-monitor .top .topbar-head { padding-bottom:0; }
+  #pg-monitor .top .ringhero { width:min(34%,168px); top:18px; } #pg-monitor .top .hero { min-height:0; }
+  #pg-monitor .top .rcol { grid-template-rows:1fr; } #pg-monitor .top .chartcard { display:flex; flex-direction:column; }
+  #pg-monitor .top #topKurang { flex:1 1 auto; display:flex; flex-direction:column; justify-content:space-between; }
+  #pg-monitor .top .toprow { padding:3px 4px; gap:10px; } #pg-monitor .top .toprow .tn b { font-size:.8rem; line-height:1.25; } #pg-monitor .top .toprow .tn small { display:block; line-height:1.2; } #pg-monitor .top .toprow .tb { height:20px; }
   /* mini dashboard ringkas: cincin ikut alur kartu (bukan melayang), KPI menempel di bawah teks, grafik + kartu terbesar berdampingan */
   .top.mini { grid-template-columns:minmax(0,1.2fr) minmax(0,1.8fr); align-items:stretch; }
   .mini .hero { display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"txt ring" "kpi kpi"; align-content:space-between; gap:10px 14px; padding:16px 20px; min-height:0; }
