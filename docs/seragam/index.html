@@ -1537,7 +1537,7 @@
     else if (!mDimuat) $('mPlot').innerHTML = `<div class="hint">Nama dan ukuran karyawan diambil dari isian Google Form${masuk ? '.' : ' dan dibuka setelah login.'} <button class="btn" id="mMuatKar">${masuk ? 'Muat karyawan' : 'Masuk dan muat karyawan'}</button></div>`;
     else {
       if (!$('mTbody')) $('mPlot').innerHTML = `<div id="mCatatanPl"></div>
-        <div class="mbar"><div class="mtool"><input id="mCariNama" placeholder="Cari nama…" autocomplete="off"><label class="kcek"><input type="checkbox" id="mPilihSemua"><span>Pilih semua nama</span></label><span class="muted" id="mDicentang"></span><button class="btn" id="mLengkapi" title="Isi ukuran yang masih kosong dari isian Google Form">Lengkapi ukuran dari Form</button></div>
+        <div class="mbar"><div class="mtool"><input id="mCariNama" placeholder="Cari nama…" autocomplete="off"><label class="kcek"><input type="checkbox" id="mPilihSemua"><span>Pilih semua nama</span></label><span class="muted" id="mDicentang"></span></div>
         <div class="maksi" id="mAksi" hidden><button class="btn" id="mAksiBtn" aria-expanded="false">+ Beri seragam ke yang dicentang ▾</button><button class="btn" id="mKosongDicentang">Kosongkan yang dicentang</button>
           <div class="apanel" id="mAksiPanel" hidden><input id="mAksiCari" placeholder="Cari seragam…" autocomplete="off"><div class="alist" id="mAksiList">${daftarItemAksi()}</div>
             <div class="arow"><span class="muted" id="mAksiInfo"></span><button class="cta" id="mAksiTerapkan" disabled>Terapkan</button></div></div></div></div>
@@ -1627,10 +1627,6 @@
     if (t.id === 'mAksiBtn') { const p = $('mAksiPanel'); p.hidden = !p.hidden; t.setAttribute('aria-expanded', String(!p.hidden)); infoAksi(); return; }
     if (t.id === 'mAksiTerapkan') return terapkanAksi();
     if (t.id === 'mKosongDicentang') { mKar.filter(x => x.pilih).forEach(x => { x.alloc = {}; }); return perbarui(); }
-    if (t.id === 'mLengkapi') { // isi ukuran yang kosong dari isian Form (hanya kalau cocok dengan pilihan ukuran)
-      for (const k of mKar) for (const no of Object.keys(k.alloc)) { const it = itemMinta(no), a = k.alloc[no], awal = it && alokasiAwal(k, it); if (!it) continue; for (const j of ['baju', 'celana', 'sepatu']) if (!a[j] && awal[j]) a[j] = awal[j]; }
-      return perbarui();
-    }
     const xk = t.closest('.xk'); if (xk) { const k = mKar[xk.closest('tr').dataset.i]; delete k.alloc[xk.closest('.skartu').dataset.no]; return perbarui(); }
     const sl = t.closest('.salin');
     if (sl) { // samakan seragam (jenis dan jumlah) nama yang dicentang dengan orang ini; ukuran tiap orang tetap diambil dari Form-nya
