@@ -3,8 +3,8 @@
 :root {
   --bg:#EDF1F6; --shell:#EDF1F6; --panel:#FFFFFF; --panel2:#EEF2F7; --stroke:#DCE3EC; --solid:#FFFFFF; --track:#E2E8F0;
   --text:#0F172A; --muted:#5B6577;
-  --accent:#0F766E; --green:#15803D; --orange:#B45309; --info:#1D4ED8;
-  --ok:#15803D; --ok-bg:#DCFCE7; --warn:#B45309; --warn-bg:#FEF3C7; --bad:#B91C1C; --bad-bg:#FEE2E2;
+  --accent:#2F7F79; --green:#3F7F6B; --orange:#A8743A; --info:#4B8F9E;
+  --ok:#3F7F6B; --ok-bg:#E5F1EC; --warn:#9A7432; --warn-bg:#F7EFDC; --bad:#B0584F; --bad-bg:#F8E7E4;
   --head:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --navy:#0B1F3A; --navy2:#16345C; --lembut:#F4F7FB; --lembut2:#F8FAFC; --garis:#E5EAF1; --teal-lembut:#E1F3F0;
 }
@@ -39,13 +39,13 @@ h1, h2, h3 { font-weight:700; }
 .btn { background:#FFFFFF; border-color:#CBD5E1; }
 .btn:hover { border-color:var(--accent); color:var(--accent); }
 .cta, .btn.baru { background:var(--accent); border-color:var(--accent); color:#FFFFFF; font-weight:600; }
-.cta:hover, .btn.baru:hover { background:#115E59; border-color:#115E59; color:#FFFFFF; }
+.cta:hover, .btn.baru:hover { background:#26665F; border-color:#26665F; color:#FFFFFF; }
 .chip.on, .vt button.on, .mobnav button.on, .aksibar .chip.on { background:var(--accent); border-color:var(--accent); color:#FFFFFF; font-weight:600; }
 .btn.tambah:hover, .btn.tambah.on { background:var(--orange); color:#FFFFFF; }
 .ak .an { color:#FFFFFF; }
 .ak .at.warn { background:var(--warn-bg); color:var(--warn); } .ak .at.bad { background:var(--bad-bg); color:var(--bad); } .ak .at.ok { background:var(--ok-bg); color:var(--ok); }
 .toprow .tb em { color:var(--text); text-shadow:none; }
-.toast.ok { border-left-color:#15803D; } .toast.bad { border-left-color:#B91C1C; }
+.toast.ok { border-left-color:#3F7F6B; } .toast.bad { border-left-color:#B0584F; }
 
 /* jendela, daftar pilihan, dan pratinjau */
 #ingatModal .mbox, .apanel, .msticky, .pilihhasil, .pilihhasil .plh, #vTip, .toast { background:#FFFFFF; box-shadow:0 12px 32px rgba(15,23,42,.18); }

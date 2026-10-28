@@ -618,7 +618,7 @@
   }
   @media (max-width: 980px) { .duo { grid-template-columns:minmax(0,1fr); } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.210">
+<link rel="stylesheet" href="../aset/tema.css?v=1.211">
 </head>
 <body>
 <div class="shell">
@@ -1131,7 +1131,7 @@
     const n = s => lokasi.filter(l => l.status === s).length, C = 2 * Math.PI * 44;
     $('ringhero').innerHTML =
       `<svg viewBox="0 0 110 110" width="100%" height="100%" aria-hidden="true">
-         <defs><linearGradient id="gr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14B8A6"/><stop offset="1" stop-color="#0F766E"/></linearGradient></defs>
+         <defs><linearGradient id="gr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6FBDB1"/><stop offset="1" stop-color="#2F7F79"/></linearGradient></defs>
          <circle cx="55" cy="55" r="44" fill="none" stroke="var(--track)" stroke-width="11"/>
          <circle cx="55" cy="55" r="44" fill="none" stroke="url(#gr)" stroke-width="11" stroke-linecap="round"
            stroke-dasharray="${(C * p / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 55 55)"/>
@@ -4058,7 +4058,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   // dan kartu "terbesar" yang bisa diklik. Angkanya ringkasan seluruh data halaman itu (tidak terpengaruh filter di bawahnya).
   const hariSejak = d => Math.max(0, Math.floor((Date.now() - new Date(d)) / 864e5));
   const BULAT = { info: '#1D4ED8', aksen: 'var(--accent)', jingga: 'var(--orange)', bahaya: 'var(--bad)', ok: 'var(--ok)' };
-  const cincin = (id, p) => { const C = 2 * Math.PI * 44; return `<svg viewBox="0 0 110 110" width="100%" height="100%" aria-hidden="true"><defs><linearGradient id="gr-${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14B8A6"/><stop offset="1" stop-color="#0F766E"/></linearGradient></defs>
+  const cincin = (id, p) => { const C = 2 * Math.PI * 44; return `<svg viewBox="0 0 110 110" width="100%" height="100%" aria-hidden="true"><defs><linearGradient id="gr-${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6FBDB1"/><stop offset="1" stop-color="#2F7F79"/></linearGradient></defs>
     <circle cx="55" cy="55" r="44" fill="none" stroke="var(--track)" stroke-width="11"/><circle cx="55" cy="55" r="44" fill="none" stroke="url(#gr-${id})" stroke-width="11" stroke-linecap="round" stroke-dasharray="${(C * Math.min(100, p) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 55 55)"/></svg>`; };
   const aksiAttr = (k, a, arg) => `data-md="${k}|${a}|${encodeURIComponent(arg || '')}"`;
   // Kartu persetujuan per pimpinan (halaman Permintaan): hitungan dari status tiap pimpinan, disaring status / area / PIC per kartu
