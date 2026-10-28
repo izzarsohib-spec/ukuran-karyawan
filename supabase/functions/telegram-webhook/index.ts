@@ -1,7 +1,7 @@
 // Menerima pembaruan dari Telegram bot (webhook): (1) ketukan tombol ◀ ▶ pada pesan surat: foto diganti halaman lain di pesan yang sama
 // (editMessageMedia), (2) pesan teks dari orang yang membuka bot: dibalas dengan ID chat-nya (dipakai untuk mendaftarkan pimpinan).
 // Dibuat sengaja ringan agar ganti halaman cepat: tanpa pustaka dan tanpa kueri database. Folder surat dan jumlah halaman dibawa di callback_data
-// ("h:<folder>:<y|f>:<halaman tujuan>:<jumlah halaman>"), dan jawaban ke tombol dikirim bersamaan dengan penggantian foto.
+// ("h:<folder>:<y|f>:<halaman tujuan>:<jumlah halaman>[:<nomor pesan foto>]"), dan jawaban ke tombol dikirim bersamaan dengan penggantian foto.
 // Keamanan: header X-Telegram-Bot-Api-Secret-Token harus sama dengan rahasia TELEGRAM_WEBHOOK_SECRET, tombol hanya berlaku bagi chat pimpinan
 // yang terdaftar (TELEGRAM_CHAT_YASIR / TELEGRAM_CHAT_FERRY), dan folder surat berupa nama acak yang tidak bisa ditebak. Tanpa JWT karena Telegram tidak mengirimnya.
 
@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
   const jawab = (teks?: string) => tg('answerCallbackQuery', { callback_query_id: cq.id, ...(teks ? { text: teks } : {}) });
   const data = String(cq.data ?? '');
   if (data === 'x') { await jawab(); return OK(); } // tombol penunjuk halaman ("1 / 6") tidak melakukan apa-apa
-  const m = /^h:(\d+-[a-f0-9]{24}):([yf]):(\d+):(\d+)$/.exec(data);
+  const m = /^h:(\d+-[a-f0-9]{24}):([yf]):(\d+):(\d+)(?::(\d+))?$/.exec(data);
   if (!m) { await jawab('Pesan lama: tombol tidak berlaku. Gunakan pesan surat yang terbaru.'); return OK(); }
   const folder = m[1], k = m[2], hal = Number(m[3]), jml = Number(m[4]), chatId = String(cq.message?.chat?.id ?? '');
   if (!chatPimpinan[k] || chatId !== chatPimpinan[k]) { await jawab('Tidak diizinkan'); return OK(); }
@@ -41,14 +41,13 @@ Deno.serve(async (req) => {
   const foto = `${SB}/storage/v1/object/public/lampiran-surat/${folder}/${String(hal).padStart(2, '0')}.jpg`;
   const sebelum = hal === 1 ? jml : hal - 1, sesudah = hal === jml ? 1 : hal + 1; // putar: dari halaman 1 mundur ke terakhir, dari terakhir maju ke 1
   const barisAksi = (cq.message?.reply_markup?.inline_keyboard ?? []).slice(-1)[0] ?? []; // baris Setujui / Tolak-Revisi dipertahankan apa adanya
-  const [hasil] = await Promise.all([
-    tg('editMessageMedia', {
-      chat_id: chatId, message_id: cq.message.message_id,
-      media: { type: 'photo', media: foto, caption: cq.message?.caption ?? '' },
-      reply_markup: { inline_keyboard: [[{ text: '◀', callback_data: `h:${folder}:${k}:${sebelum}:${jml}` }, { text: `${hal} / ${jml}`, callback_data: 'x' }, { text: '▶', callback_data: `h:${folder}:${k}:${sesudah}:${jml}` }], barisAksi] },
-    }),
-    jawab(), // hentikan putaran loading di tombol tanpa menunggu foto selesai diganti
-  ]);
-  if (!hasil.ok && !hasil.teks.includes('message is not modified')) console.error('editMessageMedia', hasil.teks);
+  const mid = m[5] ? Number(m[5]) : 0; // nomor pesan foto (format baru: foto di BAWAH pesan tombol); kosong = format lama (foto di pesan yang sama dengan tombol)
+  const tanda = `${hal} / ${jml}`, tombol = (h2: number) => `h:${folder}:${k}:${h2}:${jml}${mid ? ':' + mid : ''}`;
+  const papan = { inline_keyboard: [[{ text: '◀', callback_data: tombol(sebelum) }, { text: tanda, callback_data: 'x' }, { text: '▶', callback_data: tombol(sesudah) }], barisAksi] };
+  const kerja = mid
+    ? [tg('editMessageMedia', { chat_id: chatId, message_id: mid, media: { type: 'photo', media: foto } }), tg('editMessageReplyMarkup', { chat_id: chatId, message_id: cq.message.message_id, reply_markup: papan })]
+    : [tg('editMessageMedia', { chat_id: chatId, message_id: cq.message.message_id, media: { type: 'photo', media: foto, caption: cq.message?.caption ?? '' }, reply_markup: papan })];
+  const hasil = await Promise.all([...kerja, jawab()]); // jawab(): hentikan putaran loading di tombol tanpa menunggu foto selesai diganti
+  for (const h of hasil.slice(0, kerja.length)) if (!h.ok && !h.teks.includes('message is not modified')) console.error('Telegram edit', h.teks);
   return OK();
 });
