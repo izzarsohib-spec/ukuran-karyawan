@@ -61,7 +61,7 @@ function teksNotif(n: Notif): string {
 
 // kirim ke pimpinan yang kuncinya ada di `daftar`; hasil: kode status HTTP per pimpinan (0 = gagal tersambung)
 // ---- Telegram (jalur utama bila TELEGRAM_BOT_TOKEN dan TELEGRAM_CHAT_YASIR / TELEGRAM_CHAT_FERRY terpasang; ntfy menjadi cadangan bila Telegram gagal) ----
-// Surat dikirim sebagai album foto (maks 10 per album, bisa digeser dan dizoom), lalu satu pesan berisi ringkasan + tombol Setujui / Tolak-Revisi (album tidak bisa memuat tombol).
+// Surat dikirim sebagai SATU pesan foto: halaman 1 + ringkasan + tombol ◀ ▶ (ganti halaman di tempat) + tombol Setujui / Tolak-Revisi.
 const tgToken = () => Deno.env.get('TELEGRAM_BOT_TOKEN') ?? '';
 const tgChat = (kunci: string) => Deno.env.get(kunci === 'yasir' ? 'TELEGRAM_CHAT_YASIR' : 'TELEGRAM_CHAT_FERRY') ?? '';
 async function tgPanggil(metode: string, isi: unknown): Promise<boolean> {
@@ -74,18 +74,18 @@ async function tgPanggil(metode: string, isi: unknown): Promise<boolean> {
 async function kirimTelegram(n: Notif, p: { kunci: string; nama: string }, urlSetuju: string, urlRevisi: string, teks: string, semuaHalaman: boolean): Promise<boolean> {
   const chat = tgChat(p.kunci); if (!tgToken() || !chat) return false;
   const judul = `${n.pengingat ? 'PENGINGAT ' + n.pengingat + ': ' : ''}${n.tambahan ? 'PENAMBAHAN ITEM - ' : ''}Permintaan seragam: ${n.client} (untuk ${p.nama})`.slice(0, 900);
+  const aksi = [{ text: `✅ Setujui ${p.nama}`, url: urlSetuju }, { text: '✏️ Tolak / Revisi', url: urlRevisi }];
   if (semuaHalaman) {
-    const jml = jumlahHalaman(n.urlSurat);
-    for (let a = 1; a <= jml; a += 10) {
-      const b = Math.min(jml, a + 9), foto = [];
-      for (let i = a; i <= b; i++) { const g = halamanKe(n.urlSurat, i); if (!g) return false; foto.push({ type: 'photo', media: g, ...(i === 1 ? { caption: judul } : {}) }); }
-      const ok = foto.length === 1 ? await tgPanggil('sendPhoto', { chat_id: chat, photo: foto[0].media, ...(a === 1 ? { caption: judul } : {}) }) : await tgPanggil('sendMediaGroup', { chat_id: chat, media: foto });
-      if (!ok) return false;
-    }
+    // satu pesan: foto halaman 1 + ringkasan (maks 1024 huruf) + tombol ◀ ▶ untuk ganti halaman di pesan yang sama (ditangani fungsi telegram-webhook) + tombol persetujuan
+    const jml = jumlahHalaman(n.urlSurat), foto = halamanKe(n.urlSurat, 1); if (!foto) return false;
+    const h = p.kunci[0]; // y / f
+    const nav = jml > 1 ? [[{ text: '◀', callback_data: `h:${n.id}:${h}:${jml}` }, { text: `1 / ${jml}`, callback_data: 'x' }, { text: '▶', callback_data: `h:${n.id}:${h}:2` }]] : [];
+    const cap = [judul, `Bagian: ${n.bagian} (${n.target} anggota)`, ...(n.tambahan ? [`PENAMBAHAN ITEM: ${n.tambahan}`] : []), `Total jual ${rp(n.tJual)} · Sisa RAB ${rp(n.sisa)} · Untung ${rp(n.untung)}`, 'Perlu persetujuan: Pak Yasir dan Pak Ferry'].join('\n').slice(0, 1000);
+    return await tgPanggil('sendPhoto', { chat_id: chat, photo: foto, caption: cap, reply_markup: { inline_keyboard: [...nav, aksi] } });
   }
   return await tgPanggil('sendMessage', {
     chat_id: chat, text: (semuaHalaman ? '' : judul + '\n\n') + teks, disable_web_page_preview: true,
-    reply_markup: { inline_keyboard: [[{ text: `✅ Setujui ${p.nama}`, url: urlSetuju }, { text: '✏️ Tolak / Revisi', url: urlRevisi }]] },
+    reply_markup: { inline_keyboard: [aksi] },
   });
 }
 // semuaHalaman: halaman 2..N surat dikirim lebih dulu sebagai pesan senyap (prioritas min) masing-masing berlampir gambar; pesan utama dikirim terakhir dengan halaman 1,
