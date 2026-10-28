@@ -1845,7 +1845,7 @@
         body: [...Array.from({ length: kontrak }, (_, m) => [{ content: m + 1, styles: { halign: 'center' } }, NAMA_BULAN[m % 12], { content: anggota, styles: { halign: 'center' } }, { content: rpPdf(perOrang), styles: { halign: 'right' } }, { content: rpPdf(anggota * perOrang), styles: { halign: 'right' } }]),
           [{ content: 'TOTAL', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(rab), styles: { halign: 'right', fontStyle: 'bold' } }],
           // penambahan item: sisa RAB setelah belanja sebelumnya (RAB dikurangi pesanan lama yang tidak ditolak, termasuk peralatan yang memakai anggaran seragam)
-          ...(tambahan ? (lalu => [['Belanja sebelumnya (pesanan lama)', lalu.t, false], ['SISA RAB setelah belanja sebelumnya', rab - lalu.t, true]]
+          ...(tambahan ? (lalu => [['Belanja sebelumnya (pesanan lama)', lalu.t, false], ['SISA RAB setelah belanja sebelumnya', rab - lalu.t, true], ['SISA RAB setelah pesanan tambahan', rab - lalu.t - jual, true]]
             .map(([ket, nilai, tebal]) => [{ content: ket, colSpan: 4, styles: { halign: 'center', fontStyle: tebal ? 'bold' : 'normal', ...(tebal ? { fillColor: [220, 230, 241] } : {}) } }, { content: (nilai < 0 ? '-' : '') + rpPdf(Math.abs(nilai)), styles: { halign: 'right', fontStyle: tebal ? 'bold' : 'normal', ...(tebal ? { fillColor: [220, 230, 241] } : {}) } }]))(terpakaiSebelumnya(l.lokasi, bag)) : [])],
         columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 78 }, 3: { cellWidth: 92 }, 4: { cellWidth: 92 } } });
       y += 20 * K; cek((tambahan ? 84 + 42 : 84) * K);

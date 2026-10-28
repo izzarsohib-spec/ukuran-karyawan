@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 28 Okt 2026
+- **v1.193** Memo penambahan item: ditambah baris "SISA RAB setelah pesanan tambahan" (RAB dikurangi belanja sebelumnya dan pesanan tambahan) di bawah "SISA RAB setelah belanja sebelumnya".
 - **v1.192** Memo penambahan item: di bawah baris TOTAL tabel RAB ditambah dua baris: "Belanja sebelumnya (pesanan lama)" dan "SISA RAB setelah belanja sebelumnya" (RAB dikurangi pesanan lama yang tidak ditolak, termasuk peralatan yang memakai anggaran seragam; bertanda minus bila melebihi RAB). Memo biasa tidak berubah.
 - **v1.191** Memo penambahan item: baris total kini tiga: "SUBTOTAL PESANAN SEBELUMNYA", "SUBTOTAL PESANAN TAMBAHAN", dan "TOTAL KESELURUHAN" (lama + baru, diberi warna latar). Memo biasa tetap satu baris SUBTOTAL.
 - **v1.190** Surat memo penambahan item: tabel kebutuhan di halaman 1 kini memuat kolom **Keterangan** di kanan Total. Item yang sudah dipesankan sebelumnya pada bagian itu (permintaan yang tidak ditolak) tampil lebih dulu dengan qty-nya, latar abu-abu, dan keterangan "Sudah dipesankan pada <tanggal>" (mis. 16 Oktober 2026); item baru memakai keterangan "Pesanan tambahan". Baris total menjadi "SUBTOTAL PESANAN TAMBAHAN" yang hanya menjumlah item baru. PO, daftar harga, dan data ukuran tetap hanya untuk item baru.
