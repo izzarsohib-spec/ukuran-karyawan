@@ -499,8 +499,16 @@
   .mini .rcol { grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); grid-template-rows:none; }
   .mini .chartcard { padding:12px 14px 8px; } .mini .gap { padding:12px 14px; grid-template-columns:1fr; gap:10px; }
   .mini .gap .big { font-size:2rem; }
+  .mini .rcol.dua { grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-content:stretch; } .mini .rcol.dua .gap { grid-column:1 / -1; grid-template-columns:1fr 1fr; }
+  .pimp { padding:12px 14px; display:flex; flex-direction:column; gap:7px; min-width:0; }
+  .pimp .ph { display:flex; justify-content:space-between; align-items:baseline; gap:8px; } .pimp .ph b { font-size:.92rem; } .pimp .ph small { color:var(--muted); font-size:.72rem; }
+  .pimp .pbig { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; } .pimp .pbig b { font-family:var(--head); font-size:1.9rem; line-height:1; } .pimp .pbig span { font-size:.76rem; color:var(--muted); }
+  .pimp .pbar { display:flex; height:10px; border-radius:6px; overflow:hidden; background:rgba(255,255,255,.08); } .pimp .pbar i { display:block; height:100%; }
+  .pimp .pleg { display:flex; flex-wrap:wrap; gap:2px 12px; font-size:.7rem; color:var(--muted); } .pimp .pleg i { display:inline-block; width:8px; height:8px; border-radius:3px; margin-right:5px; } .pimp .pleg b { color:var(--text); }
+  .pimp .pf { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin-top:auto; }
+  .pimp .pf select { width:100%; min-width:0; border:1px solid var(--stroke); background:var(--solid); color:var(--text); border-radius:10px; padding:5px 6px; font:inherit; font-size:.74rem; }
   @media (max-width: 980px) { .top.mini { grid-template-columns:1fr; } }
-  @media (max-width: 620px) { .mini .rcol { grid-template-columns:1fr; } .mini .ringhero { width:96px; } }
+  @media (max-width: 620px) { .mini .rcol, .mini .rcol.dua { grid-template-columns:1fr; } .mini .rcol.dua .gap { grid-template-columns:1fr; } .pimp .pf { grid-template-columns:1fr; } .mini .ringhero { width:96px; } }
   /* Monitoring: progres per PIC dan daftar lokasi berdampingan */
   .duo { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.7fr); gap:14px; align-items:start; margin-top:14px; }
   .duo > .pantau, .duo > .bawah { margin-top:0; }
@@ -3709,13 +3717,37 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   const cincin = (id, p) => { const C = 2 * Math.PI * 44; return `<svg viewBox="0 0 110 110" width="100%" height="100%" aria-hidden="true"><defs><linearGradient id="gr-${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb25e"/><stop offset="1" stop-color="#f5d547"/></linearGradient></defs>
     <circle cx="55" cy="55" r="44" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="11"/><circle cx="55" cy="55" r="44" fill="none" stroke="url(#gr-${id})" stroke-width="11" stroke-linecap="round" stroke-dasharray="${(C * Math.min(100, p) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 55 55)"/></svg>`; };
   const aksiAttr = (k, a, arg) => `data-md="${k}|${a}|${encodeURIComponent(arg || '')}"`;
+  // Kartu persetujuan per pimpinan (halaman Permintaan): hitungan dari status tiap pimpinan, disaring status / area / PIC per kartu
+  const MP = { yasir: { st: 'semua', area: '', pic: '' }, ferry: { st: 'semua', area: '', pic: '' } };
+  const PIMP = { yasir: { nama: 'Pak Yasir', jab: 'Direktur', st: p => stYasir(p) }, ferry: { nama: 'Pak Ferry', jab: 'Direktur Utama', st: p => stFerry(p) } };
+  const PIMP_ST = [['semua', 'Semua status'], ['disetujui', 'Disetujui'], ['menunggu', 'Menunggu'], ['ditolak', 'Ditolak / revisi']];
+  const areaPermintaan = p => { const c = window.Saring && Saring.areaDari(p.lokasi_form); return c ? String(c.induk || c.id) : ''; };
+  const statusPimpinan = (who, p) => { const s = PIMP[who].st(p); return s === 'disetujui' ? 'disetujui' : s === 'ditolak' ? 'ditolak' : stReq(p) === 'ditolak' ? 'gugur' : 'menunggu'; };
+  function kartuPimpinan(who) {
+    const f = MP[who], inf = PIMP[who], S = window.Saring;
+    const dasar = daftarMinta.filter(p => (!f.area || areaPermintaan(p) === f.area) && (!f.pic || (S && S.picDari(p.lokasi_form) && String(S.picDari(p.lokasi_form).id) === f.pic)));
+    const c = { disetujui: 0, menunggu: 0, ditolak: 0 }, nilai = { disetujui: 0, menunggu: 0, ditolak: 0 };
+    for (const p of dasar) { const k = statusPimpinan(who, p); if (c[k] !== undefined) { c[k]++; nilai[k] += Number(p.total_jual || 0); } }
+    const tot = c.disetujui + c.menunggu + c.ditolak, pilih = f.st === 'semua' ? tot : c[f.st], nil = f.st === 'semua' ? nilai.disetujui + nilai.menunggu : nilai[f.st];
+    const warna = { disetujui: BULAT.ok, menunggu: BULAT.jingga, ditolak: BULAT.bahaya }, nm = { disetujui: 'Disetujui', menunggu: 'Menunggu', ditolak: 'Ditolak / revisi' };
+    const pct = k => tot ? 100 * c[k] / tot : 0;
+    const opt = (v, t, cur) => `<option value="${esc(v)}" ${String(cur) === String(v) ? 'selected' : ''}>${esc(t)}</option>`;
+    const areas = S ? S.areaUtama() : [], pics = S ? S.picSemua().filter(x => !f.area || x.area === f.area) : [];
+    return `<div class="pimp card"><div class="ph"><b>${inf.nama}</b><small>${inf.jab}</small></div>
+      <div class="pbig"><b>${idn(pilih)}</b><span>${f.st === 'semua' ? 'permintaan masuk' : nm[f.st].toLowerCase()}${f.st === 'ditolak' ? '' : ' · ' + rpRingkas(nil)}</span></div>
+      <div class="pbar" role="img" aria-label="${['disetujui', 'menunggu', 'ditolak'].map(k => nm[k] + ' ' + c[k]).join(', ')}">${['disetujui', 'menunggu', 'ditolak'].map(k => `<i style="width:${pct(k)}%;background:${warna[k]}"></i>`).join('')}</div>
+      <div class="pleg">${['disetujui', 'menunggu', 'ditolak'].map(k => `<span><i style="background:${warna[k]}"></i>${nm[k]} <b>${idn(c[k])}</b></span>`).join('')}</div>
+      <div class="pf"><select data-pf="${who}|st" aria-label="Status ${inf.nama}">${PIMP_ST.map(([v, t]) => opt(v, t, f.st)).join('')}</select>
+        <select data-pf="${who}|area" aria-label="Area ${inf.nama}">${opt('', 'Semua area', f.area)}${areas.map(a => opt(a.id, a.nama, f.area)).join('')}</select>
+        <select data-pf="${who}|pic" aria-label="PIC ${inf.nama}">${opt('', 'Semua PIC', f.pic)}${pics.map(x => opt(x.id, x.nama, f.pic)).join('')}</select></div></div>`;
+  }
   function miniHtml(m) {
     const w = m.gap.worst;
     return `<div class="hero card"><div><small>${esc(m.kecil)}</small><h2>${esc(m.judul)}</h2>
         <div class="rabtotal"><small>${esc(m.labelAngka)}</small><b class="num">${esc(m.angka)}</b></div><button class="cta" ${aksiAttr(m.key, m.cta[1], m.cta[2])}>${esc(m.cta[0])}</button></div>
       <div class="ringhero">${cincin(m.key, m.persen)}<div class="t"><b>${m.persen.toFixed(1).replace('.', ',')}%</b><span>${esc(m.labelRing)}</span></div></div>
       <div class="kpi">${m.kpi.map(([a, b, c]) => `<div><b>${esc(a)}</b><span><i style="background:${c}"></i>${esc(b)}</span></div>`).join('')}</div></div>
-      <div class="rcol"><div class="chartcard card"><div class="ttl"><b>${esc(m.grafik.judul)}</b></div>${grafikGaris('md-' + m.key, m.grafik.sumbu, m.grafik.seri, m.grafik.fmt)}</div>
+      <div class="rcol${m.pimpinan ? ' dua' : ''}">${m.pimpinan ? m.pimpinan.map(kartuPimpinan).join('') : `<div class="chartcard card"><div class="ttl"><b>${esc(m.grafik.judul)}</b></div>${grafikGaris('md-' + m.key, m.grafik.sumbu, m.grafik.seri, m.grafik.fmt)}</div>`}
         <div class="gap card"><div><div class="lbl">${esc(m.gap.label)}</div><div class="big">${esc(m.gap.besar)}</div><span class="pill">${esc(m.gap.pill)}</span><div class="muted" style="margin-top:6px">${esc(m.gap.ket)}</div></div>
           ${w ? `<button class="worst" ${aksiAttr(m.key, w.aksi, w.arg)}><small>${esc(w.kecil)}</small><b>${esc(w.nama)}</b><small>${esc(w.detail)}</small></button>` : '<button class="worst" disabled><small>Tidak ada yang tertunda</small><b>Semua beres ✓</b></button>'}</div></div>`;
   }
@@ -3730,7 +3762,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     return { key: 'permintaan', kecil: 'Permintaan seragam', judul: 'Pantau persetujuan Pak Yasir dan Pak Ferry', labelAngka: 'Nilai jual permintaan (tanpa yang ditolak)', angka: rpRingkas(d.filter(p => stReq(p) !== 'ditolak').reduce((a, p) => a + Number(p.total_jual || 0), 0)),
       persen: d.length ? 100 * n('disetujui') / d.length : 0, labelRing: 'disetujui keduanya', cta: ['Lihat yang menunggu', 'menunggu'],
       kpi: [[idn(d.length), 'Permintaan dibuat', BULAT.info], [idn(tunggu.length), 'Menunggu persetujuan', BULAT.jingga], [idn(n('disetujui')), 'Disetujui keduanya', BULAT.ok], [idn(n('ditolak')), 'Ditolak / revisi', BULAT.bahaya]],
-      grafik: { judul: 'Permintaan dibuat 30 hari terakhir', sumbu, seri: [{ nama: 'Permintaan', warna: WD.s1, nilai }] },
+      pimpinan: ['yasir', 'ferry'], grafik: { judul: 'Permintaan dibuat 30 hari terakhir', sumbu, seri: [{ nama: 'Permintaan', warna: WD.s1, nilai }] },
       gap: { label: 'Menunggu persetujuan', besar: idn(tunggu.length), pill: `Pak Yasir ${wy} · Pak Ferry ${wf}`, ket: 'permintaan belum diputuskan' + (menyusulOrang() ? ` · ${idn(menyusulOrang())} orang masih menyusul` : ''),
         worst: tertua && { kecil: 'Menunggu paling lama', nama: tertua.client, detail: `${hariSejak(tertua.dibuat)} hari · ${tertua.bagian_kerja}`, aksi: 'lokasi', arg: tertua.lokasi_form } } };
   }
@@ -3795,6 +3827,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   }
   document.querySelectorAll('.mini').forEach(el => {
     pasangTip(el);
+    el.addEventListener('change', e => { const x = e.target.dataset && e.target.dataset.pf; if (!x) return; const [who, k] = x.split('|'); MP[who][k] = e.target.value; if (k === 'area') MP[who].pic = ''; renderMini(); });
     el.addEventListener('click', e => { const b = e.target.closest('[data-md]'); if (b && !b.disabled) { const [k, a, arg] = b.dataset.md.split('|'); aksiMini(k, a, decodeURIComponent(arg || '')); } });
   });
   renderMini();

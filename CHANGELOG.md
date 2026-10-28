@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 28 Okt 2026
+- **v1.154** Mini dashboard halaman Permintaan: kartu grafik "Permintaan dibuat 30 hari terakhir" diganti dua kartu, Pak Yasir (Direktur) dan Pak Ferry (Direktur Utama). Tiap kartu menghitung status keputusan pimpinan itu sendiri (disetujui, menunggu, ditolak/revisi) dengan angka besar, nilai jual, batang proporsi, dan tiga filter sendiri: status, area, PIC (PIC mengikuti area yang dipilih). Kartu "Menunggu persetujuan" dipindah ke baris di bawahnya. Permintaan yang sudah ditolak pimpinan lain tidak dihitung sebagai menunggu.
 - **v1.153** Mini dashboard di atas halaman (Permintaan, Ploting, Inventaris, Pengiriman, Tagihan) dirapatkan: cincin persen masuk ke alur kartu di samping judul (tidak lagi melayang), empat angka ringkasan menempel tepat di bawah tombol tanpa ruang kosong, grafik 30 hari dan kartu "terbesar" berdampingan dalam satu baris. Tinggi kartu turun dari sekitar 430 px menjadi sekitar 300 px; di layar sempit tetap tersusun ke bawah. Halaman Monitoring tidak berubah.
 
 ## 27 Okt 2026

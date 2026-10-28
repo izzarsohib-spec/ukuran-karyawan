@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.153', tanggal: '2026-10-28', catatan: 'Mini dashboard di atas halaman dirapatkan: ruang kosong hilang, kartu lebih pendek' };
+window.VERSI = { no: '1.154', tanggal: '2026-10-28', catatan: 'Mini dashboard Permintaan: kartu persetujuan Pak Yasir dan Pak Ferry dengan filter status, area, PIC' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
