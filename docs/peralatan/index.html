@@ -434,8 +434,8 @@
       <div class="ringhero">${cincin(m.key, m.persen)}<div class="t"><b>${m.persen.toFixed(1).replace('.', ',')}%</b><span>${esc(m.labelRing)}</span></div></div>
       <div class="mkpi">${m.kpi.map(([a, b, c]) => `<div><b>${esc(a)}</b><span><i style="background:${c}"></i>${esc(b)}</span></div>`).join('')}</div></div>
       <div class="rcol"><div class="chartcard card"><div class="ttl"><b>${esc(m.grafik.judul)}</b><span class="legend">${m.grafik.seri.map(s => `<span><i style="background:${s.warna}"></i>${esc(s.nama)}</span>`).join('')}</span></div>${m.grafik.html || grafikGaris(m.key, m.grafik.seri, m.grafik.fmt)}</div>
-        <div class="gapcard card"><div><div class="lbl">${esc(m.gap.label)}</div><div class="big">${esc(m.gap.besar)}</div><span class="pill">${esc(m.gap.pill)}</span><div class="muted" style="margin-top:6px;font-size:.82rem">${esc(m.gap.ket)}</div></div>
-          ${w ? `<button class="worst" ${aksiAttr(m.key, w.aksi, w.arg)}><small>${esc(w.kecil)}</small><b>${esc(w.nama)}</b><small>${esc(w.detail)}</small></button>` : '<button class="worst" disabled><small>Tidak ada yang tertunda</small><b>Semua beres ✓</b></button>'}</div></div>`;
+        ${m.tanpaGap ? '' : `<div class="gapcard card"><div><div class="lbl">${esc(m.gap.label)}</div><div class="big">${esc(m.gap.besar)}</div><span class="pill">${esc(m.gap.pill)}</span><div class="muted" style="margin-top:6px;font-size:.82rem">${esc(m.gap.ket)}</div></div>
+          ${w ? `<button class="worst" ${aksiAttr(m.key, w.aksi, w.arg)}><small>${esc(w.kecil)}</small><b>${esc(w.nama)}</b><small>${esc(w.detail)}</small></button>` : '<button class="worst" disabled><small>Tidak ada yang tertunda</small><b>Semua beres ✓</b></button>'}</div>`}</div>`;
   }
   const sisaLok = l => Number(l.rab) - Number(l.terpakai);
   // hitungan lokasi menurut filter daftar lokasi di halaman Permintaan (hanya lokasi yang anggarannya terdaftar)
@@ -447,7 +447,7 @@
     const baru = REQ.filter(p => p.status !== 'arsip'), tunggu = baru.filter(p => stReq(p) === 'menunggu'), c = hitungLokasiMinta();
     const wy = tunggu.filter(p => p.status_yasir === 'menunggu').length, wf = tunggu.filter(p => p.status_ferry === 'menunggu').length, tertua = [...tunggu].sort((a, b) => new Date(a.tanggal || a.dibuat) - new Date(b.tanggal || b.dibuat))[0];
     const baris = [['Proses (menunggu keputusan)', c.proses, WD.warn], ['Disetujui', c.disetujui, WD.ok], ['Ditolak / revisi', c.ditolak, WD.bad], ['Belum ada permintaan baru', c.belum, WD.track]];
-    return { key: 'permintaan', kecil: 'Permintaan peralatan', judul: 'Pantau persetujuan Pak Yasir dan Pak Ferry', labelAngka: 'Nilai jual permintaan baru (tanpa yang ditolak)', angka: rpR(baru.filter(aktif).reduce((a, p) => a + Number(p.total_jual), 0)),
+    return { key: 'permintaan', tanpaGap: true, kecil: 'Permintaan peralatan', judul: 'Pantau persetujuan Pak Yasir dan Pak Ferry', labelAngka: 'Nilai jual permintaan baru (tanpa yang ditolak)', angka: rpR(baru.filter(aktif).reduce((a, p) => a + Number(p.total_jual), 0)),
       persen: c.total ? 100 * c.disetujui / c.total : 0, labelRing: 'lokasi disetujui', cta: ['Lihat lokasi dalam proses', 'menunggu'],
       kpi: [[idn(c.total), 'Semua lokasi', WARNA.info], [idn(c.proses), 'Proses', WARNA.jingga], [idn(c.disetujui), 'Disetujui', WARNA.ok], [idn(c.ditolak), 'Ditolak / revisi', WARNA.bahaya]],
       grafik: { judul: 'Lokasi menurut status permintaan', html: batangH(baris.map(([l, v, w]) => ({ label: l, teks: `${v} lokasi`, segs: [{ v, warna: w, nama: 'Lokasi' }] }))), seri: [] },
