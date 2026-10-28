@@ -1826,7 +1826,7 @@
       [['Lokasi Penempatan', ':' + l.client], ['Departemen', ':' + bag], ['Jumlah Anggota', ':' + anggota], ['Detail Kebutuhan', ':']].forEach(([k, v], i) => { doc.text(k, L + 44, y + i * 13 * K); doc.text(v, L + 200, y + i * 13 * K); });
       y += 4 * 13 * K - 4 * K;
       const barisLama = lama.map((x, i) => [{ content: i + 1, styles: { ...tengah, fillColor: abu } }, { content: x.nama, styles: { fillColor: abu } }, { content: x.qty, styles: { ...tengah, fillColor: abu } },
-        { content: rpPdf(x.jual), styles: { ...tengah, fillColor: abu } }, { content: rpPdf(x.jual * x.qty), styles: { ...kanan, fillColor: abu } }, { content: 'Sudah dipesankan pada ' + x.tgl, styles: { fillColor: abu, fontStyle: 'italic' } }]);
+        { content: rpPdf(x.jual), styles: { ...tengah, fillColor: [255, 255, 0] } }, { content: rpPdf(x.jual * x.qty), styles: { ...kanan, fillColor: abu } }, { content: 'Sudah dipesankan pada ' + x.tgl, styles: { fillColor: abu, fontStyle: 'italic' } }]);
       const barisBaru = isi.map((x, i) => [{ content: lama.length + i + 1, styles: tengah }, x.h.nama, { content: x.q, styles: tengah }, { content: rpPdf(x.h.jual), styles: { ...tengah, fillColor: [255, 255, 0] } }, { content: rpPdf(x.h.jual * x.q), styles: kanan },
         ...(tambahan ? [{ content: 'Pesanan tambahan', styles: { fontStyle: 'bold' } }] : [])]);
       tabel({ startY: y, head: [tambahan ? ['No', 'Deskripsi Barang', 'Qty', 'Harga Jual', 'Total', 'Keterangan'] : ['No', 'Deskripsi Barang', 'Qty', 'Harga Jual', 'Total']],
