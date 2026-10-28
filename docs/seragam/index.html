@@ -403,19 +403,20 @@
   .detail.tiga { display:grid; grid-template-columns:minmax(270px,.95fr) minmax(0,1.65fr) minmax(270px,.95fr); gap:14px; align-items:stretch; background:none; border:0; border-radius:0; }
   .tiga .k3 { min-width:0; margin:0; background:rgba(14,14,16,.5); border:1px solid var(--stroke); border-radius:22px; padding:0; }
   .tiga .pcard.k3 { padding:18px 20px; }
-  .tiga .k3h { padding:16px 20px 0; font-size:1.05rem; }
-  .tuto { margin:8px 18px 12px; padding-left:18px; font-size:.78rem; line-height:1.45; color:var(--muted); display:grid; gap:5px; } .tuto b { color:var(--text); font-weight:600; } .tuto i { font-style:normal; color:var(--accent); }
+  .tiga .k3h { padding:16px 20px 0; font-size:1.12rem; }
+  .tiga .rwi { font-size:.88rem; } .tiga .rwi .rl { padding:3px 0; }
+  .tuto { margin:8px 18px 12px; padding-left:18px; font-size:.86rem; line-height:1.5; color:var(--muted); display:grid; gap:5px; } .tuto b { color:var(--text); font-weight:600; } .tuto i { font-style:normal; color:var(--accent); }
   .tiga .kriw > .tuto + #mDHead { border-top:1px solid var(--stroke); }
-  .tiga .dhead h2 { flex:1 1 100%; font-size:.95rem; line-height:1.25; letter-spacing:0; } .tiga .dhead { padding:12px 18px 10px; } .tiga .dhead .row { flex-wrap:wrap; gap:6px 10px; }
+  .tiga .dhead h2 { flex:1 1 100%; font-size:1.05rem; line-height:1.25; letter-spacing:0; } .tiga .dhead { padding:12px 18px 10px; } .tiga .dhead .row { flex-wrap:wrap; gap:6px 10px; }
   .tiga .kriw { display:flex; flex-direction:column; } .tiga .kriw #mDHead { flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
   .tiga .kriw .dbody { flex:1 1 auto; display:flex; flex-direction:column; min-height:0; padding:2px 18px 14px; } .tiga .kriw .riwlist { flex:1 1 0; min-height:150px; max-height:none; }
-  .rsum { display:grid; gap:6px; margin-top:10px; } .rsum div { display:flex; justify-content:space-between; align-items:baseline; gap:8px; background:rgba(14,14,16,.55); border-radius:14px; padding:8px 12px; } .rsum span { font-size:.72rem; color:var(--muted); } .rsum b { font-size:.92rem; white-space:nowrap; }
+  .rsum { display:grid; gap:6px; margin-top:10px; } .rsum div { display:flex; justify-content:space-between; align-items:baseline; gap:8px; background:rgba(14,14,16,.55); border-radius:14px; padding:8px 12px; } .rsum span { font-size:.8rem; color:var(--muted); } .rsum b { font-size:1rem; white-space:nowrap; }
   .tiga .dbody { padding:4px 20px 16px; }
-  .k3sub { margin:12px 0 6px; font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+  .k3sub { margin:14px 0 6px; font-size:.76rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
   .rb { display:grid; grid-template-columns:1fr; gap:2px 8px; width:100%; padding:8px 10px; margin-bottom:6px; text-align:left; font:inherit; color:inherit; cursor:pointer; background:rgba(255,255,255,.04); border:1px solid var(--stroke); border-radius:12px; }
   .rb:hover, .rb:focus-visible { border-color:var(--orange); outline:none; }
-  .rb .rbn b { font-size:.86rem; } .rb .rbn small { margin-left:6px; color:var(--muted); font-size:.7rem; white-space:nowrap; } .rb .rbs { display:flex; flex-wrap:wrap; gap:4px; justify-content:flex-start; grid-column:1 / -1; }
-  .tiga .badge { display:inline-block; height:auto; line-height:1.3; padding:3px 10px; white-space:normal; text-align:left; } .rb .rbr { grid-column:1 / -1; font-size:.7rem; color:var(--muted); }
+  .rb .rbn b { font-size:.95rem; } .rb .rbn small { margin-left:6px; color:var(--muted); font-size:.7rem; white-space:nowrap; } .rb .rbs { display:flex; flex-wrap:wrap; gap:4px; justify-content:flex-start; grid-column:1 / -1; }
+  .tiga .badge { display:inline-block; height:auto; line-height:1.3; padding:3px 10px; white-space:normal; text-align:left; } .rb .rbr { grid-column:1 / -1; font-size:.78rem; color:var(--muted); }
   .rb .rbr b { color:var(--text); } .rb .rbr b.neg { color:var(--bad); }
   .riwlist { max-height:340px; overflow:auto; scrollbar-width:thin; }
   @media (max-width: 1180px) { .tiga .kriw .riwlist { flex:none; max-height:340px; } }
@@ -536,12 +537,13 @@
   .mini .chartcard { padding:12px 14px 8px; } .mini .gap { padding:12px 14px; grid-template-columns:1fr; gap:10px; }
   .mini .gap .big { font-size:2rem; }
   .mini .rcol.dua { grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-content:stretch; } .mini .rcol.dua .gap { grid-column:1 / -1; grid-template-columns:1fr 1fr; }
-  .pimp { padding:12px 14px; display:flex; flex-direction:column; gap:7px; min-width:0; }
+  .pimp { padding:11px 14px; display:flex; flex-direction:column; gap:5px; min-width:0; }
   .pimp .ph { display:flex; justify-content:space-between; align-items:baseline; gap:8px; } .pimp .ph b { font-size:.92rem; } .pimp .ph small { color:var(--muted); font-size:.72rem; }
   .pimp .pbig { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; } .pimp .pbig b { font-family:var(--head); font-size:1.9rem; line-height:1; } .pimp .pbig span { font-size:.76rem; color:var(--muted); }
   .pimp .pbar { display:flex; height:10px; border-radius:6px; overflow:hidden; background:rgba(255,255,255,.08); } .pimp .pbar i { display:block; height:100%; }
   .pimp .pleg { display:flex; flex-wrap:wrap; gap:2px 12px; font-size:.7rem; color:var(--muted); } .pimp .pleg i { display:inline-block; width:8px; height:8px; border-radius:3px; margin-right:5px; } .pimp .pleg b { color:var(--text); }
-  .pimp .plist { flex:1 1 auto; min-height:56px; max-height:150px; overflow:auto; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.25) transparent; border-top:1px solid var(--stroke); }
+  .pimp .plist { position:relative; flex:1 1 auto; min-height:92px; border-top:1px solid var(--stroke); }
+  .pimp .plin { position:absolute; inset:0; overflow:auto; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.25) transparent; }
   .pimp .plh { position:sticky; top:0; display:flex; justify-content:space-between; padding:5px 2px 3px; font-size:.66rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); background:var(--solid); }
   .pimp .pl { display:flex; align-items:center; gap:8px; width:100%; padding:5px 2px; border:0; border-bottom:1px solid var(--stroke); background:none; color:inherit; text-align:left; cursor:pointer; font:inherit; }
   .pimp .pl:hover, .pimp .pl:focus-visible { background:var(--panel2); outline:none; }
@@ -3838,7 +3840,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
       <div class="pbig"><b>${idn(pilih)}</b><span>${f.st === 'semua' ? 'permintaan masuk' : nm[f.st].toLowerCase()}${f.st === 'ditolak' ? '' : ' · ' + rpRingkas(nil)}</span></div>
       <div class="pbar" role="img" aria-label="${['disetujui', 'menunggu', 'ditolak'].map(k => nm[k] + ' ' + c[k]).join(', ')}">${['disetujui', 'menunggu', 'ditolak'].map(k => `<i style="width:${pct(k)}%;background:${warna[k]}"></i>`).join('')}</div>
       <div class="pleg">${['disetujui', 'menunggu', 'ditolak'].map(k => `<span><i style="background:${warna[k]}"></i>${nm[k]} <b>${idn(c[k])}</b></span>`).join('')}</div>
-      <div class="plist">${dp}</div></div>`;
+      <div class="plist"><div class="plin">${dp}</div></div></div>`;
   }
   function miniHtml(m) {
     const w = m.gap.worst;
@@ -3928,7 +3930,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     pasangTip(el);
     el.addEventListener('input', e => { const w = e.target.dataset && e.target.dataset.pq; if (!w) return; MP[w].q = e.target.value; const c = e.target.closest('.pimp'); if (!c) return; const f = MP[w], S = window.Saring;
       const dasar = daftarMinta.filter(p => (!f.area || areaPermintaan(p) === f.area) && (!f.pic || (S && S.picDari(p.lokasi_form) && String(S.picDari(p.lokasi_form).id) === f.pic)));
-      c.querySelector('.plist').innerHTML = daftarPimp(w, dasar, { disetujui: 'Disetujui', menunggu: 'Menunggu', ditolak: 'Ditolak / revisi' }, { disetujui: BULAT.ok, menunggu: BULAT.jingga, ditolak: BULAT.bahaya }); });
+      c.querySelector('.plin').innerHTML = daftarPimp(w, dasar, { disetujui: 'Disetujui', menunggu: 'Menunggu', ditolak: 'Ditolak / revisi' }, { disetujui: BULAT.ok, menunggu: BULAT.jingga, ditolak: BULAT.bahaya }); });
     el.addEventListener('change', e => { const x = e.target.dataset && e.target.dataset.pf; if (!x) return; const [who, k] = x.split('|'); MP[who][k] = e.target.value; if (k === 'area') MP[who].pic = ''; renderMini(); });
     el.addEventListener('click', e => { const b = e.target.closest('[data-md]'); if (b && !b.disabled) { const [k, a, arg] = b.dataset.md.split('|'); aksiMini(k, a, decodeURIComponent(arg || '')); } });
   });
