@@ -101,16 +101,29 @@ async function kirimNotif(n: Notif, daftar: string[], semuaHalaman = true): Prom
     // Tolak/Revisi membuka halaman web agar pimpinan bisa menulis alasan (tombol http ntfy tidak bisa menerima teks)
     const urlRevisi = `${WEB}/revisi.html?id=${n.id}&p=${p.kunci}&t=${n.token[p.kunci]}`;
     // Telegram lebih dulu; bila tidak terpasang atau gagal, jatuh ke ntfy
-    if (await kirimTelegram(n, p, urlSetuju, urlRevisi, teks, semuaHalaman)) { hasil[p.kunci] = 200; continue; }
-    if (semuaHalaman) {
-      const jml = jumlahHalaman(n.urlSurat);
-      for (let i = jml; i >= 2; i--) {
-        const g = halamanKe(n.urlSurat, i); if (!g) break;
-        try {
-          await fetch(`https://ntfy.sh/${p.topik()}`, { method: 'POST', headers: { Title: kodekan(`Surat halaman ${i} dari ${jml}: ${n.client}`.slice(0, 120)), Attach: g, Filename: `surat-halaman-${i}.jpg`, Priority: '1', Tags: 'page_facing_up' }, body: `${n.client} - ${n.bagian}
-Halaman ${i} dari ${jml}` });
-        } catch { /* halaman gagal terkirim: pesan utama tetap dikirim */ }
-      }
+    if ((Deno.env.get('NOTIF_JALUR') ?? 'telegram') !== 'ntfy' && await kirimTelegram(n, p, urlSetuju, urlRevisi, teks, semuaHalaman)) { hasil[p.kunci] = 200; continue; } // NOTIF_JALUR=ntfy: lewati Telegram
+    // ntfy dengan tombol ◄ ► (aksi http ke fungsi ntfy-halaman): SATU pesan yang halaman suratnya diganti di tempat (sequence_id sama, aplikasi ntfy mengganti notifikasi lama)
+    const jmlN = jumlahHalaman(n.urlSurat), folderN = folderSurat(n.urlSurat), kodeP = p.kunci[0];
+    if (semuaHalaman && jmlN > 1 && folderN && kunciHal()) {
+      try {
+        const g = await tandaHal(`${n.id}.${kodeP}.${folderN}.${jmlN}`), base = `${Deno.env.get('SUPABASE_URL')}/functions/v1/ntfy-halaman`;
+        const tautan = (hal: number) => `${base}?i=${n.id}&p=${kodeP}&f=${folderN}&n=${jmlN}&h=${hal}&g=${g}`;
+        const ringkas = [`Bagian: ${n.bagian} (${n.target} anggota)`, ...(n.tambahan ? [`PENAMBAHAN ITEM: ${n.tambahan}`] : []), `Total jual ${rp(n.tJual)} · Sisa RAB ${rp(n.sisa)} · Untung ${rp(n.untung)}`, 'Perlu persetujuan: Pak Yasir dan Pak Ferry'].join('\n');
+        const r = await fetch('https://ntfy.sh/', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic: p.topik(), sequence_id: `surat-${n.id}-${kodeP}`, title: `${n.tambahan ? 'PENAMBAHAN ITEM - ' : ''}Permintaan seragam: ${n.client} (untuk ${p.nama})`.slice(0, 120), priority: 4, tags: [n.tambahan ? 'heavy_plus_sign' : 'package'],
+            message: `${ringkas}\n\nHalaman 1 dari ${jmlN} · ketuk ◄ ► untuk berpindah`, attach: halamanKe(n.urlSurat, 1), filename: 'surat-halaman-1.jpg',
+            actions: [
+              { action: 'http', label: '◄ Sebelumnya', url: tautan(jmlN), method: 'POST', clear: false },
+              { action: 'http', label: 'Berikutnya ►', url: tautan(2), method: 'POST', clear: false },
+              { action: 'view', label: 'Setujui / Tolak', url: urlSetuju },
+            ],
+          }),
+        });
+        if (r.ok) { hasil[p.kunci] = r.status; continue; }
+        console.error('ntfy json', r.status, (await r.text()).slice(0, 200));
+      } catch (e) { console.error('ntfy json', String(e)); /* jatuh ke pesan biasa di bawah */ }
     }
     try {
       const r = await fetch(`https://ntfy.sh/${p.topik()}`, {
@@ -139,6 +152,13 @@ const halamanKe = (urlSurat: string, i: number) => {
   try { const f = new URL(urlSurat).searchParams.get('f'); return f && /^\d+-[a-f0-9]{24}$/.test(f) ? `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/lampiran-surat/${f}/${String(i).padStart(2, '0')}.jpg` : ''; } catch { return ''; }
 };
 const jumlahHalaman = (urlSurat: string) => { try { const n = Math.floor(Number(new URL(urlSurat).searchParams.get('n'))); return n >= 1 && n <= 60 ? n : 1; } catch { return 1; } };
+// tanda tangan HMAC untuk tautan tombol ◄ ► ntfy (diperiksa fungsi ntfy-halaman); kuncinya rahasia yang sama dengan webhook Telegram
+const kunciHal = () => Deno.env.get('TELEGRAM_WEBHOOK_SECRET') || Deno.env.get('N8N_TOKEN') || '';
+async function tandaHal(teks: string): Promise<string> {
+  const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(kunciHal()), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return [...new Uint8Array(await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(teks)))].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 20);
+}
+const folderSurat = (urlSurat: string) => { try { const f = new URL(urlSurat).searchParams.get('f') ?? ''; return /^\d+-[a-f0-9]{24}$/.test(f) ? f : ''; } catch { return ''; } };
 const kunciNama = (n: string) => String(n).toUpperCase().replace(/\s+/g, ' ').trim();
 
 Deno.serve(async (req) => {
