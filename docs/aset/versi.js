@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.166', tanggal: '2026-10-28', catatan: 'Permintaan: filter Sudah dibuat / Belum pernah dibuat' };
+window.VERSI = { no: '1.167', tanggal: '2026-10-28', catatan: 'Kartu riwayat pemesanan: ruang dimaksimalkan, nama lokasi tidak lagi memakan banyak baris' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

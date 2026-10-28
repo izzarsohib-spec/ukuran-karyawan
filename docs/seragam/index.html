@@ -400,13 +400,15 @@
   .bar.neu i { background:var(--muted); }
   .formminta { margin:0; padding:20px; border-top:1px solid var(--stroke); }
   /* halaman Permintaan: tiga kartu berdampingan (riwayat, form pengisian, rekap & kirim) */
-  .detail.tiga { display:grid; grid-template-columns:minmax(250px,.85fr) minmax(0,1.75fr) minmax(270px,1fr); gap:14px; align-items:start; background:none; border:0; border-radius:0; }
+  .detail.tiga { display:grid; grid-template-columns:minmax(270px,.95fr) minmax(0,1.65fr) minmax(270px,.95fr); gap:14px; align-items:stretch; background:none; border:0; border-radius:0; }
   .tiga .k3 { min-width:0; margin:0; background:rgba(14,14,16,.5); border:1px solid var(--stroke); border-radius:22px; padding:0; }
   .tiga .pcard.k3 { padding:18px 20px; }
   .tiga .k3h { padding:16px 20px 0; font-size:1.05rem; }
-  .tuto { margin:10px 20px 14px; padding-left:18px; font-size:.78rem; line-height:1.45; color:var(--muted); display:grid; gap:5px; } .tuto b { color:var(--text); font-weight:600; } .tuto i { font-style:normal; color:var(--accent); }
+  .tuto { margin:8px 18px 12px; padding-left:18px; font-size:.78rem; line-height:1.45; color:var(--muted); display:grid; gap:5px; } .tuto b { color:var(--text); font-weight:600; } .tuto i { font-style:normal; color:var(--accent); }
   .tiga .kriw > .tuto + #mDHead { border-top:1px solid var(--stroke); }
-  .tiga .dhead h2 { font-size:1.05rem; } .tiga .dhead { padding:14px 20px 12px; }
+  .tiga .dhead h2 { flex:1 1 100%; font-size:.95rem; line-height:1.25; letter-spacing:0; } .tiga .dhead { padding:12px 18px 10px; } .tiga .dhead .row { flex-wrap:wrap; gap:6px 10px; }
+  .tiga .kriw { display:flex; flex-direction:column; } .tiga .kriw #mDHead { flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
+  .tiga .kriw .dbody { flex:1 1 auto; display:flex; flex-direction:column; min-height:0; padding:2px 18px 14px; } .tiga .kriw .riwlist { flex:1 1 0; min-height:150px; max-height:none; }
   .rsum { display:grid; gap:6px; margin-top:10px; } .rsum div { display:flex; justify-content:space-between; align-items:baseline; gap:8px; background:rgba(14,14,16,.55); border-radius:14px; padding:8px 12px; } .rsum span { font-size:.72rem; color:var(--muted); } .rsum b { font-size:.92rem; white-space:nowrap; }
   .tiga .dbody { padding:4px 20px 16px; }
   .k3sub { margin:12px 0 6px; font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
@@ -416,6 +418,7 @@
   .tiga .badge { display:inline-block; height:auto; line-height:1.3; padding:3px 10px; white-space:normal; text-align:left; } .rb .rbr { grid-column:1 / -1; font-size:.7rem; color:var(--muted); }
   .rb .rbr b { color:var(--text); } .rb .rbr b.neg { color:var(--bad); }
   .riwlist { max-height:340px; overflow:auto; scrollbar-width:thin; }
+  @media (max-width: 1180px) { .tiga .kriw .riwlist { flex:none; max-height:340px; } }
   .tiga .kriw .dhead { border-bottom:1px solid var(--stroke); }
   .tiga .k3kosong { padding:22px 6px; text-align:center; color:var(--muted); font-size:.84rem; }
   .tiga [hidden] { display:none !important; }
