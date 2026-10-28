@@ -524,6 +524,8 @@
   .pimp .pl b { display:block; font-size:.78rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .pimp .pl small { display:block; font-size:.68rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .pimp .plist .kosongnya { padding:10px 2px; font-size:.76rem; }
   .pimp .pl.sel { background:var(--panel2); border-radius:8px; }
+  .pimp .pl small.bgs { display:flex; flex-wrap:wrap; gap:1px 10px; white-space:normal; overflow:visible; }
+  .pimp .bg { display:inline-flex; align-items:center; gap:5px; } .pimp .bg i { width:7px; height:7px; margin:0; }
   .pimp .ps { grid-column:1 / -1; display:flex; align-items:center; gap:6px; border:1px solid var(--stroke); background:var(--solid); border-radius:10px; padding:0 8px; font-size:.74rem; }
   .pimp .ps input { flex:1; min-width:0; border:0; background:none; color:var(--text); font:inherit; padding:6px 0; outline:none; }
   .pimp .pf { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
@@ -3724,6 +3726,13 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   const areaLokasi = nm => { const c = window.Saring && Saring.areaDari(nm); return c ? String(c.induk || c.id) : ''; };
   const statusPimpinan = (who, p) => { const s = PIMP[who].st(p); return s === 'disetujui' ? 'disetujui' : s === 'ditolak' ? 'ditolak' : stReq(p) === 'ditolak' ? 'gugur' : 'menunggu'; };
   // isi daftar kartu pimpinan: tanpa kata cari = permintaan menurut status pimpinan itu; dengan kata cari = lokasi yang cocok (termasuk yang belum pernah memesan)
+  // singkatan bagian kerja agar daftar enak dibaca: KEAMANAN PRIA (SECURITY) -> Security, KEBERSIHAN (CLEANING SERVICE) -> CS, PENGEMUDI (DRIVER) -> Driver
+  const SINGKAT_BAGIAN = [[/cleaning|kebersihan/i, 'CS'], [/security|keamanan/i, 'Security'], [/driver|pengemudi|sopir/i, 'Driver'], [/leader|pengawas/i, 'Leader'], [/pramubakti|administrasi/i, 'Pramubakti']];
+  const judulKata = t => t.toLowerCase().replace(/(^|[\s/])(\S)/g, (m, a, b) => a + b.toUpperCase());
+  function singkatBagian(nama) {
+    const t = String(nama || '').trim(); for (const [re, v] of SINGKAT_BAGIAN) if (re.test(t)) return v;
+    const m = t.match(/\(([^)]+)\)/); return judulKata(m ? m[1] : t);
+  }
   const TITIK = { ok: BULAT.ok, warn: BULAT.jingga, bad: BULAT.bahaya, neu: 'var(--muted)' };
   function daftarPimp(who, dasar, nm, warna) {
     const f = MP[who], S = window.Saring, q = (f.q || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -3732,9 +3741,15 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
       const baris = hasil.slice(0, 80).map(l => { const mi = infoLok(l), [lb, cl] = LS[mi.s]; return `<button class="pl ${l.lokasi === mSel ? 'sel' : ''}" ${aksiAttr('permintaan', 'lokasi', l.lokasi)}><i style="background:${TITIK[cl] || TITIK.neu}"></i><span><b>${esc(l.client)}</b><small>${esc(lb)} · ${mi.ada}/${mi.total} bagian kerja</small></span></button>`; }).join('');
       return `<div class="plh"><span>Hasil cari lokasi</span><span>${idn(hasil.length)}</span></div>${baris || '<div class="kosongnya">Lokasi tidak ditemukan.</div>'}`;
     }
-    const daftar = dasar.filter(p => { const k = statusPimpinan(who, p); return k !== 'gugur' && (f.st === 'semua' || k === f.st); }).sort((a, b) => new Date(b.dibuat) - new Date(a.dibuat));
-    const baris = daftar.map(p => { const k = statusPimpinan(who, p); return `<button class="pl ${p.lokasi_form === mSel ? 'sel' : ''}" ${aksiAttr('permintaan', 'lokasi', p.lokasi_form)} title="${esc(nm[k])}"><i style="background:${warna[k]}"></i><span><b>${esc(p.client)}</b><small>${esc(p.bagian_kerja)}</small></span></button>`; }).join('');
-    return `<div class="plh"><span>Lokasi · bagian kerja</span><span>${idn(daftar.length)}</span></div>${baris || '<div class="kosongnya">Tidak ada permintaan untuk pilihan ini.</div>'}`;
+    const sub = dasar.filter(p => { const k = statusPimpinan(who, p); return k !== 'gugur' && (f.st === 'semua' || k === f.st); }).sort((a, b) => new Date(b.dibuat) - new Date(a.dibuat));
+    // satu baris per lokasi: bagian kerjanya digabung (nama disingkat), titik warna = status bagian itu menurut pimpinan ini
+    const grup = new Map(), urutK = { menunggu: 0, ditolak: 1, disetujui: 2 };
+    for (const p of sub) {
+      const k = statusPimpinan(who, p); let g = grup.get(p.lokasi_form); if (!g) grup.set(p.lokasi_form, g = { client: p.client, bag: new Map() });
+      const nb = singkatBagian(p.bagian_kerja), ada = g.bag.get(nb); if (!ada || urutK[k] < urutK[ada]) g.bag.set(nb, k);
+    }
+    const baris = [...grup].map(([lok, g]) => `<button class="pl ${lok === mSel ? 'sel' : ''}" ${aksiAttr('permintaan', 'lokasi', lok)}><span><b>${esc(g.client)}</b><small class="bgs">${[...g.bag].map(([nb, k]) => `<span class="bg" title="${esc(nm[k])}"><i style="background:${warna[k]}"></i>${esc(nb)}</span>`).join('')}</small></span></button>`).join('');
+    return `<div class="plh"><span>Lokasi · bagian kerja</span><span>${idn(grup.size)}</span></div>${baris || '<div class="kosongnya">Tidak ada permintaan untuk pilihan ini.</div>'}`;
   }
   function kartuPimpinan(who) {
     const f = MP[who], inf = PIMP[who], S = window.Saring;
