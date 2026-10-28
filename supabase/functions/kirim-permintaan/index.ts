@@ -60,7 +60,9 @@ function teksNotif(n: Notif): string {
 }
 
 // kirim ke pimpinan yang kuncinya ada di `daftar`; hasil: kode status HTTP per pimpinan (0 = gagal tersambung)
-async function kirimNotif(n: Notif, daftar: string[]): Promise<Record<string, number>> {
+// semuaHalaman: halaman 2..N surat dikirim lebih dulu sebagai pesan senyap (prioritas min) masing-masing berlampir gambar; pesan utama dikirim terakhir dengan halaman 1,
+// jadi di aplikasi ntfy urutannya dari atas: pesan utama (halaman 1 + tombol), halaman 2, halaman 3, dst. Pengingat harian hanya mengirim pesan utama.
+async function kirimNotif(n: Notif, daftar: string[], semuaHalaman = true): Promise<Record<string, number>> {
   const WEB = Deno.env.get('WEB_URL') ?? 'https://izzarsohib-spec.github.io/ukuran-karyawan';
   const teks = teksNotif(n), hasil: Record<string, number> = {};
   for (const p of PIMPINAN.filter((x) => daftar.includes(x.kunci))) {
@@ -68,13 +70,23 @@ async function kirimNotif(n: Notif, daftar: string[]): Promise<Record<string, nu
     const urlSetuju = `${WEB}/setujui.html?id=${n.id}&p=${p.kunci}&t=${n.token[p.kunci]}`;
     // Tolak/Revisi membuka halaman web agar pimpinan bisa menulis alasan (tombol http ntfy tidak bisa menerima teks)
     const urlRevisi = `${WEB}/revisi.html?id=${n.id}&p=${p.kunci}&t=${n.token[p.kunci]}`;
+    if (semuaHalaman) {
+      const jml = jumlahHalaman(n.urlSurat);
+      for (let i = jml; i >= 2; i--) {
+        const g = halamanKe(n.urlSurat, i); if (!g) break;
+        try {
+          await fetch(`https://ntfy.sh/${p.topik()}`, { method: 'POST', headers: { Title: kodekan(`Surat halaman ${i} dari ${jml}: ${n.client}`.slice(0, 120)), Attach: g, Filename: `surat-halaman-${i}.jpg`, Priority: '1', Tags: 'page_facing_up' }, body: `${n.client} - ${n.bagian}
+Halaman ${i} dari ${jml}` });
+        } catch { /* halaman gagal terkirim: pesan utama tetap dikirim */ }
+      }
+    }
     try {
       const r = await fetch(`https://ntfy.sh/${p.topik()}`, {
         method: 'POST',
         headers: {
           Title: kodekan(`${n.pengingat ? 'PENGINGAT ' + n.pengingat + ': ' : ''}${n.tambahan ? 'PENAMBAHAN ITEM - ' : ''}Permintaan seragam: ${n.client} (untuk ${p.nama})`.slice(0, 120)),
-          Click: n.urlSurat, // mengetuk notifikasi membuka penampil surat (geser antar halaman, cubit untuk memperbesar)
-          ...(halaman1(n.urlSurat) ? { Attach: halaman1(n.urlSurat), Filename: 'surat-halaman-1.jpg' } : {}), // halaman 1 surat tampil sebagai gambar di notifikasi (tautan ke Storage, bukan unggahan, jadi tanpa batas 2 MB ntfy)
+          // tanpa Click: mengetuk notifikasi membuka gambar halaman 1 langsung di aplikasi ntfy (bisa dizoom). Gambar berupa tautan ke Storage, bukan unggahan, jadi tanpa batas 2 MB ntfy
+          ...(halamanKe(n.urlSurat, 1) ? { Attach: halamanKe(n.urlSurat, 1), Filename: 'surat-halaman-1.jpg' } : {}),
           Priority: '4',
           Tags: n.tambahan ? 'heavy_plus_sign' : 'package',
           Actions: `view, Setujui ${p.nama}, ${urlSetuju}; view, Tolak/Revisi ${p.nama}, ${urlRevisi}`,
@@ -90,10 +102,11 @@ const sukses = (h: Record<string, number>, k: string) => h[k] >= 200 && h[k] < 3
 // penambahan item (pesanan susulan untuk lokasi yang sudah memesan): alasannya disimpan sebagai baris pertama kolom memo dengan awalan ini
 const MARKER = 'PENAMBAHAN ITEM: ';
 const ambilTambahan = (memo: unknown) => { const r = String(memo ?? '').split('\n').find((l) => l.startsWith(MARKER)); return r ? r.slice(MARKER.length).trim() : ''; };
-// alamat gambar halaman 1 surat di Supabase Storage (bucket publik, folder acak) dari tautan penampil surat
-const halaman1 = (urlSurat: string) => {
-  try { const f = new URL(urlSurat).searchParams.get('f'); return f && /^\d+-[a-f0-9]{24}$/.test(f) ? `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/lampiran-surat/${f}/01.jpg` : ''; } catch { return ''; }
+// alamat gambar halaman ke-i surat di Supabase Storage (bucket publik, folder acak) dan jumlah halamannya, dari tautan penampil surat
+const halamanKe = (urlSurat: string, i: number) => {
+  try { const f = new URL(urlSurat).searchParams.get('f'); return f && /^\d+-[a-f0-9]{24}$/.test(f) ? `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/lampiran-surat/${f}/${String(i).padStart(2, '0')}.jpg` : ''; } catch { return ''; }
 };
+const jumlahHalaman = (urlSurat: string) => { try { const n = Math.floor(Number(new URL(urlSurat).searchParams.get('n'))); return n >= 1 && n <= 60 ? n : 1; } catch { return 1; } };
 const kunciNama = (n: string) => String(n).toUpperCase().replace(/\s+/g, ' ').trim();
 
 Deno.serve(async (req) => {
@@ -120,7 +133,7 @@ Deno.serve(async (req) => {
         const hari = Math.max(1, Math.floor((Date.now() - Date.parse(p.dibuat)) / 86400_000));
         await kirimNotif({ id: p.id, client: p.client, bagian: p.bagian_kerja, target: p.jumlah_anggota, rab: rabU, terpakai: rabU - sisaU - tJ, tJual: tJ, sisa: sisaU, tBeli: tB, untung: Number(p.untung) || 0,
           pengingat: `hari ke-${hari}`, tambahan: ambilTambahan(p.memo), catatan: p.memo ?? '', baris: (p.items ?? []).map((b: any) => ({ nama: b.nama, qty: b.qty, beli: b.beli, jual: b.jual })),
-          urlSurat: p.lampiran_url, token: { yasir: p.token_yasir, ferry: p.token_ferry } }, [k.kunci]);
+          urlSurat: p.lampiran_url, token: { yasir: p.token_yasir, ferry: p.token_ferry } }, [k.kunci], false);
       }
       if (mereka.length > 5) {
         const lain = mereka.slice(5).map((p: any) => `- ${p.client} (${p.bagian_kerja})`).join('\n');
