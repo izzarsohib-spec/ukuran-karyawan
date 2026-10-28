@@ -4,6 +4,9 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
+## 28 Okt 2026
+- **v1.153** Mini dashboard di atas halaman (Permintaan, Ploting, Inventaris, Pengiriman, Tagihan) dirapatkan: cincin persen masuk ke alur kartu di samping judul (tidak lagi melayang), empat angka ringkasan menempel tepat di bawah tombol tanpa ruang kosong, grafik 30 hari dan kartu "terbesar" berdampingan dalam satu baris. Tinggi kartu turun dari sekitar 430 px menjadi sekitar 300 px; di layar sempit tetap tersusun ke bawah. Halaman Monitoring tidak berubah.
+
 ## 27 Okt 2026
 - **v1.152** Apps Script arsip-drive: `buatContohFormGambar` kini membuat SALINAN utuh sebuah form lokasi (default lokasi yang memuat SUKAMARA; halaman, pertanyaan, deskripsi sama persis) lalu mengganti gambar ukurannya dengan 4 gambar baru, jadi tampilannya sama dengan form sungguhan. Salinan di folder utama, tidak terhubung ke spreadsheet tanggapan, boleh dihapus. Log memuat jumlah gambar yang dikenali dan diganti beserta rinciannya.
 - **v1.151** Apps Script arsip-drive: perbaikan galat `setAltText is not a function` (item gambar di Google Form tidak bisa diberi teks alternatif lewat skrip) pada `buatContohFormGambar` dan penggantian gambar. Penanda gambar yang sudah diganti kini disimpan di properti skrip (kunci `gbr_<id item>`), jadi menjalankan ulang aman; fungsi `hapusPenandaGambar` menghapus penanda bila ingin mengganti ulang.
