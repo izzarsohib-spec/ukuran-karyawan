@@ -42,21 +42,13 @@
   /* menu kecil Administrator di dasar sidebar */
   .menu.kecil { margin-top:auto; padding:7px 12px; font-size:.8rem; gap:9px; } .menu.kecil svg { width:16px; height:16px; }
   .menu.kecil + .akun { margin-top:8px; }
-  /* bar atas: tab halaman modul (kiri) dan tombol Filter PIC (kanan) */
+  /* bar atas: tab halaman modul */
   .atas { position:absolute; top:0; left:0; right:0; z-index:4; height:52px; display:flex; align-items:stretch; gap:16px; padding:0 26px; border-bottom:1px solid var(--stroke); background:rgba(0,0,0,.22); backdrop-filter:blur(6px); }
   .atas[hidden] { display:none; }
   .atas .tab { display:flex; gap:22px; min-width:0; flex:1; overflow-x:auto; scrollbar-width:none; }
   .atas .tab button { flex:none; padding:0 2px; margin-bottom:-1px; border:0; border-bottom:2px solid transparent; border-radius:0; background:none; cursor:pointer; color:var(--muted); font-size:.9rem; font-weight:500; white-space:nowrap; }
   .atas .tab button:hover { color:var(--text); }
   .atas .tab button.on { color:#fff; font-weight:700; border-bottom-color:var(--accent); }
-  .fbar { position:relative; flex:none; align-self:center; }
-  .fbtn { display:flex; align-items:center; gap:8px; height:34px; padding:0 14px; border-radius:99px; border:1px solid var(--stroke); background:var(--panel); color:var(--muted); cursor:pointer; font-size:.84rem; font-weight:600; white-space:nowrap; }
-  .fbtn:hover, .fbtn[aria-expanded="true"] { background:var(--panel2); color:var(--text); }
-  .fbtn.aktif { border-color:var(--accent); color:var(--text); }
-  .fbtn svg { width:15px; height:15px; flex:none; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
-  .fpop { position:absolute; right:0; top:calc(100% + 10px); width:262px; padding:14px; border-radius:18px; background:#202024; border:1px solid var(--stroke); box-shadow:0 18px 48px rgba(0,0,0,.55); }
-  .fpop[hidden] { display:none; }
-  .fpop .jdl { font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:10px; }
   .isi.beratas iframe { top:52px; height:calc(100% - 52px); }
   .pemisah { height:1px; background:var(--stroke); margin:8px 6px; }
   .akun { margin-top:auto; padding:12px 8px 0; border-top:1px solid var(--stroke); }
@@ -95,7 +87,6 @@
     .side { flex-wrap:wrap; overflow:visible; }
     .menu.kecil { margin-top:0; } .menu.kecil + .akun { margin-top:0; }
     .atas { position:static; height:auto; flex-wrap:wrap; gap:0; padding:0 12px; backdrop-filter:none; } .atas .tab { flex:1 0 100%; height:44px; gap:18px; }
-    .fbar { margin:8px 0; } .fpop { left:0; right:auto; width:min(262px, calc(100vw - 24px)); }
     .isi.beratas { display:flex; flex-direction:column; }
     .isi.beratas iframe { position:static; flex:1; width:100%; height:auto; min-height:0; top:auto; }
     .akun { margin:0 0 0 auto; padding:0 0 0 8px; border:0; flex:none; } .akun .st { display:none; }
@@ -141,12 +132,8 @@
   </nav>
 
   <div class="isi" id="isi">
-    <nav class="atas" id="atas" aria-label="Halaman modul dan filter" hidden>
+    <nav class="atas" id="atas" aria-label="Halaman modul" hidden>
       <div class="tab" id="tab"></div>
-      <div class="fbar">
-        <button class="fbtn" id="fbtn" type="button" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg><span id="fteks">Filter PIC</span></button>
-        <div class="fpop" id="fpop" hidden><div class="jdl">Filter PIC</div><div id="filterBar"></div></div>
-      </div>
     </nav>
     <div class="beranda" id="p-beranda"><div>
       <header class="kop">
@@ -243,15 +230,6 @@
     subAktif[d.modul] = d.pg; if (aktif === d.modul) tandai();
   });
   Masuk.widget(document.getElementById('akun'));
-  Saring.bar(document.getElementById('filterBar'), 'sisi'); // filter cabang / PIC untuk semua halaman, dibuka dari tombol Filter PIC di bar atas
-  const fbtn = document.getElementById('fbtn'), fpop = document.getElementById('fpop');
-  const tutupF = () => { fpop.hidden = true; fbtn.setAttribute('aria-expanded', 'false'); };
-  const tekF = () => { const on = Saring.aktif(); document.getElementById('fteks').textContent = on ? 'Filter PIC · ' + Saring.label().replace(/^(PIC|Cabang) /, '') : 'Filter PIC'; fbtn.classList.toggle('aktif', on); };
-  fbtn.onclick = () => { fpop.hidden = !fpop.hidden; fbtn.setAttribute('aria-expanded', String(!fpop.hidden)); };
-  document.addEventListener('click', e => { if (!e.target.closest('.fbar')) tutupF(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') tutupF(); });
-  window.addEventListener('blur', tutupF); // klik di dalam halaman modul (iframe) menutup panel
-  window.addEventListener('saring-ubah', tekF); Saring.siap.then(tekF);
   const tulisSt = () => { document.getElementById('akunSt').textContent = Masuk.masuk() ? 'Masuk sebagai admin. Semua fitur menyimpan aktif.' : 'Belum masuk. Halaman bisa dibuka; menyimpan dan mengirim butuh login.'; };
   window.addEventListener('masuk-ubah', tulisSt); tulisSt();
   dariHash();

@@ -9,8 +9,10 @@
   const KUNCI = 'filter.lokasi', TANPA = '__tanpa';
   let peta = new Map(), cab = [], pic = [], dimuat = false;
 
-  const baca = () => { try { return Object.assign({ cabang: '', pic: '' }, JSON.parse(localStorage.getItem(KUNCI)) || {}); } catch (e) { return { cabang: '', pic: '' }; } };
-  const tulis = f => { try { localStorage.setItem(KUNCI, JSON.stringify(f)); } catch (e) {} };
+  // Tombol Filter PIC sudah dihapus: tidak ada lagi penyaringan lokasi; pilihan lama di browser dibuang. Saring.boleh selalu true.
+  try { localStorage.removeItem(KUNCI); } catch (e) {}
+  const baca = () => ({ cabang: '', pic: '' });
+  const tulis = () => {};
   const umumkan = () => window.dispatchEvent(new Event('saring-ubah'));
   window.addEventListener('storage', e => { if (e.key === KUNCI) umumkan(); });
 
@@ -45,33 +47,6 @@
     return f.pic === TANPA ? 'Belum ada PIC' + (c ? ' · ' + c.nama : '') : p ? 'PIC ' + p.nama : c ? (c.induk ? 'Area ' + (cab.find(x => String(x.id) === String(c.induk)) || {}).nama + ' · ' : 'Area ') + c.nama : 'Semua lokasi';
   }
 
-  const CSS = `
-  .sf{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;font-size:.78rem;color:var(--muted,#a4a4ae)}
-  .sf.sisi{flex-direction:column;align-items:stretch;gap:8px}
-  .sf label{display:block;min-width:0} .sf.sisi label{width:100%}
-  .sf select{display:block;width:100%;margin-top:3px;background:rgba(255,255,255,.07);border:1px solid var(--stroke,rgba(255,255,255,.14));border-radius:12px;padding:7px 10px;color:var(--text,#f5f5f7);font:inherit;font-size:.82rem;min-width:150px}
-  .sf select option{background:#202024}
-  .sf .sk{align-self:center;white-space:nowrap} .sf .sk b{color:var(--text,#f5f5f7)}
-  .sf button{border:1px solid var(--stroke,rgba(255,255,255,.2));background:rgba(255,255,255,.06);color:inherit;border-radius:99px;padding:5px 12px;font:inherit;font-size:.76rem;cursor:pointer}
-  .sf.aktif select{border-color:var(--accent,#f5d547)}
-  .sfwrap{margin:0 0 14px;padding:10px 14px;border:1px solid var(--stroke,rgba(255,255,255,.12));border-radius:18px;background:rgba(255,255,255,.05)}`;
-  function pasangCss() { if (document.getElementById('sf-css')) return; const s = document.createElement('style'); s.id = 'sf-css'; s.textContent = CSS; document.head.appendChild(s); }
-
-  // gambar pilihan cabang dan PIC di elemen el. mode 'sisi' = menumpuk (sidebar portal), 'baris' = mendatar (di atas halaman)
-  function bar(el, mode) {
-    pasangCss();
-    const gambar = () => {
-      const f = baca(), cDip = cab.find(x => String(x.id) === String(f.cabang)), areaDipilih = cDip ? (cDip.induk || cDip.id) : '', induk = cab.filter(c => !c.induk), anak = areaDipilih ? cab.filter(c => String(c.induk) === String(areaDipilih)) : [];
-      el.innerHTML = `<div class="sf ${mode || 'baris'} ${aktif() ? 'aktif' : ''}">
-        <label>Area<select data-f="cabang"><option value="">Semua area</option>${induk.map(c => `<option value="${c.id}" ${String(c.id) === String(areaDipilih) ? 'selected' : ''}>${esc(c.nama)}</option>`).join('')}</select></label>
-        ${anak.length ? `<label>Sub-area<select data-f="sub"><option value="">Semua sub-area</option>${anak.map(c => `<option value="${c.id}" ${String(c.id) === String(f.cabang) ? 'selected' : ''}>${esc(c.nama.replace(/^SEMARANG /, ''))}</option>`).join('')}</select></label>` : ''}
-        <label>PIC lapangan<select data-f="pic"><option value="">Semua PIC</option>${pic.filter(p => !f.cabang || turunan(f.cabang).has(String(p.cabang_id))).map(p => `<option value="${p.id}" ${String(p.id) === String(f.pic) ? 'selected' : ''}>${esc(p.nama)}</option>`).join('')}<option value="${TANPA}" ${f.pic === TANPA ? 'selected' : ''}>Belum ada PIC</option></select></label>
-        <div class="sk">${dimuat ? `<b>${jumlah()}</b> lokasi${aktif() ? ' · ' + esc(label()) : ''}` : 'memuat…'}</div>${aktif() ? '<button type="button" data-f="reset">Hapus filter</button>' : ''}</div>`;
-    };
-    el.onchange = e => { const k = e.target.dataset && e.target.dataset.f; if (k === 'cabang') set({ cabang: e.target.value, pic: '' }); else if (k === 'sub') { const c0 = cab.find(x => String(x.id) === String(baca().cabang)), ar = c0 ? (c0.induk || c0.id) : ''; set({ cabang: e.target.value || ar, pic: '' }); } else if (k === 'pic') set({ pic: e.target.value }); };
-    el.onclick = e => { if (e.target.dataset && e.target.dataset.f === 'reset') set({ cabang: '', pic: '' }); };
-    window.addEventListener('saring-ubah', gambar); gambar(); siap.then(gambar);
-  }
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   // PIC yang memegang suatu lokasi ({id, nama}) atau null bila belum ada
@@ -80,12 +55,6 @@
   // area (cabang / sub-area) tempat suatu lokasi, atau null
   const areaDari = nama => { const x = peta.get(String(nama == null ? '' : nama).toUpperCase()); return x && x.c ? cab.find(c => String(c.id) === String(x.c)) || null : null; };
 
-  window.Saring = { siap, boleh, aktif, set, get: baca, label, jumlah, bar, picDari, areaDari, areaUtama: () => cab.filter(c => !c.induk), picSemua: () => pic.map(p => { const c = cab.find(x => String(x.id) === String(p.cabang_id)); return { id: p.id, nama: p.nama, area: c ? String(c.induk || c.id) : '' }; }), TANPA };
+  window.Saring = { siap, boleh, aktif, set, get: baca, label, jumlah, picDari, areaDari, areaUtama: () => cab.filter(c => !c.induk), picSemua: () => pic.map(p => { const c = cab.find(x => String(x.id) === String(p.cabang_id)); return { id: p.id, nama: p.nama, area: c ? String(c.induk || c.id) : '' }; }), TANPA };
 
-  // dibuka sendiri (bukan di dalam portal): pasang bar di bagian atas elemen yang ditunjuk atribut data-otomatis pada tag script
-  const sc = document.currentScript;
-  if (sc && sc.dataset.otomatis && window.top === window.self) {
-    const induk = document.querySelector(sc.dataset.otomatis);
-    if (induk) { const w = document.createElement('div'); w.className = 'sfwrap'; induk.prepend(w); bar(w, 'baris'); }
-  }
 })();
