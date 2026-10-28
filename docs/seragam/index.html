@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="dark">
+<meta name="color-scheme" content="light">
 <title>Sistem Administrasi Seragam Karyawan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
 <style>
   :root {
     --bg:#0b0b0d; --shell:#19191c; --panel:rgba(255,255,255,.075); --panel2:rgba(255,255,255,.12); --stroke:rgba(255,255,255,.12);
@@ -618,6 +618,7 @@
   }
   @media (max-width: 980px) { .duo { grid-template-columns:minmax(0,1fr); } }
 </style>
+<link rel="stylesheet" href="../aset/tema.css?v=1.204">
 </head>
 <body>
 <div class="shell">
@@ -1130,14 +1131,14 @@
     const n = s => lokasi.filter(l => l.status === s).length, C = 2 * Math.PI * 44;
     $('ringhero').innerHTML =
       `<svg viewBox="0 0 110 110" width="100%" height="100%" aria-hidden="true">
-         <defs><linearGradient id="gr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb25e"/><stop offset="1" stop-color="#f5d547"/></linearGradient></defs>
-         <circle cx="55" cy="55" r="44" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="11"/>
+         <defs><linearGradient id="gr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14B8A6"/><stop offset="1" stop-color="#0F766E"/></linearGradient></defs>
+         <circle cx="55" cy="55" r="44" fill="none" stroke="var(--track)" stroke-width="11"/>
          <circle cx="55" cy="55" r="44" fill="none" stroke="url(#gr)" stroke-width="11" stroke-linecap="round"
            stroke-dasharray="${(C * p / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 55 55)"/>
        </svg><div class="t"><b>${p.toFixed(1).replace('.', ',')}%</b><span>sudah mengisi</span></div>`;
     const tj = new Map(TAHAP.map(t => [t[0], 0])); lokasi.forEach(l => tj.set(tahapDari(l.isi, l.target), tj.get(tahapDari(l.isi, l.target)) + 1));
     $('kpi').innerHTML = [
-      [idn(lokasi.length), 'lokasi', 'Total lokasi', 'yang dipantau pengisian ukurannya', '#a4a4ae'],
+      [idn(lokasi.length), 'lokasi', 'Total lokasi', 'yang dipantau pengisian ukurannya', '#5B6577'],
       ...TAHAP.map(([k, nm, c, d]) => [idn(tj.get(k)), 'lokasi', nm, d, c]),
     ].map(([a, u, b, d, c]) => `<div><b>${a}<u>${u}</u></b><span><i style="background:${c}"></i>${b}</span><em>${d}</em></div>`).join('');
     $('rabTotal').innerHTML = `${idn(I)} <span style="font-size:.55em;font-weight:500;color:var(--muted)">dari ${idn(T)} karyawan</span>`;
@@ -3810,7 +3811,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   // ================= DASHBOARD RINGKASAN =================
   // Lima bagian (pengisian ukuran, permintaan, stok, pengiriman, tagihan). Tiap bagian punya satu baris filter di atas isinya;
   // filter itu mengatur semua angka, grafik, dan tabel di bagian tersebut. Warna kategori sudah divalidasi (biru, oranye, aqua) pada permukaan gelap.
-  const WD = { s1: '#3987e5', s2: '#d95926', abu: '#898781', good: '#0ca30c', warn: '#fab219', kritis: '#d03b3b', track: 'rgba(255,255,255,.14)', grid: 'rgba(255,255,255,.09)', permukaan: '#19191c' };
+  const WD = { s1: '#3987e5', s2: '#d95926', abu: '#898781', good: '#0ca30c', warn: '#fab219', kritis: '#d03b3b', track: '#E2E8F0', grid: '#E5EAF1', permukaan: '#FFFFFF' };
   const D = { pengisian: { status: 'semua', bagian: 'semua', hari: 30 }, permintaan: { hari: 0, status: 'semua', bagian: 'semua' }, stok: { kat: 'semua', jenis: 'semua', batas: 2, hari: 30 }, kirim: { status: 'semua', hari: 30 }, tagihan: { status: 'semua', hari: 0 } };
   const modeGrafik = new Map(), dataGrafik = new Map();
   const HARI_OPSI = [['7', '7 hari terakhir'], ['30', '30 hari terakhir'], ['90', '90 hari terakhir']], HARI_SEMUA = [['0', 'Semua waktu'], ...HARI_OPSI];
@@ -3834,14 +3835,14 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const V = 340, H = 185, L = 36, R = 12, T = 10, B = 24, n = sumbu.jml, mx = Math.max(1, ...seri.flatMap(s => s.nilai)), langkah = nice(mx / 4), ymax = langkah * 4;
     const x = i => L + (n === 1 ? (V - L - R) / 2 : i * (V - L - R) / (n - 1)), y = v => T + (H - T - B) * (1 - v / ymax), kompak = v => v >= 1e6 ? (v / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' jt' : v >= 1e3 ? (v / 1e3).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' rb' : String(v);
     dataGrafik.set(id, { sumbu, seri, fmt, V, L, R, n, x, y });
-    const grid = [0, 1, 2, 3, 4].map(k => `<line x1="${L}" x2="${V - R}" y1="${y(k * langkah)}" y2="${y(k * langkah)}" stroke="${WD.grid}" stroke-width="1" vector-effect="non-scaling-stroke"/><text x="${L - 6}" y="${y(k * langkah) + 4}" text-anchor="end" font-size="11" fill="#a4a4ae">${kompak(k * langkah)}</text>`).join('');
+    const grid = [0, 1, 2, 3, 4].map(k => `<line x1="${L}" x2="${V - R}" y1="${y(k * langkah)}" y2="${y(k * langkah)}" stroke="${WD.grid}" stroke-width="1" vector-effect="non-scaling-stroke"/><text x="${L - 6}" y="${y(k * langkah) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${kompak(k * langkah)}</text>`).join('');
     const garis = seri.map(s => { const pts = s.nilai.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`), akhir = s.nilai.length - 1;
       return (seri.length === 1 ? `<path d="M${x(0).toFixed(1)},${y(0)} L${pts.join(' L')} L${x(akhir).toFixed(1)},${y(0)}Z" fill="${s.warna}" fill-opacity=".1"/>` : '')
         + `<path d="M${pts.join(' L')}" fill="none" stroke="${s.warna}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/><circle cx="${x(akhir).toFixed(1)}" cy="${y(s.nilai[akhir]).toFixed(1)}" r="4" fill="${s.warna}" stroke="${WD.permukaan}" stroke-width="2"/>`; }).join('');
-    const lab = (i, a) => `<text x="${x(i)}" y="${H - 8}" text-anchor="${a}" font-size="11" fill="#a4a4ae">${esc(sumbu.label(i))}</text>`;
+    const lab = (i, a) => `<text x="${x(i)}" y="${H - 8}" text-anchor="${a}" font-size="11" fill="var(--muted)">${esc(sumbu.label(i))}</text>`;
     const legenda = seri.length > 1 ? `<div class="vleg">${seri.map(s => `<span><i style="background:${s.warna}"></i>${esc(s.nama)}</span>`).join('')}</div>` : '';
     return `${legenda}<svg class="vsvg" viewBox="0 0 ${V} ${H}" role="img" aria-label="${esc(seri.map(s => s.nama).join(', '))}">${grid}${garis}${lab(0, 'start')}${n > 4 ? lab(Math.floor((n - 1) / 2), 'middle') : ''}${n > 1 ? lab(n - 1, 'end') : ''}
-      <line class="vch" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="#a4a4ae" stroke-width="1" vector-effect="non-scaling-stroke" visibility="hidden"/><g class="vcd"></g>
+      <line class="vch" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="var(--muted)" stroke-width="1" vector-effect="non-scaling-stroke" visibility="hidden"/><g class="vcd"></g>
       <rect class="vov" data-g="${id}" x="${L}" y="${T}" width="${V - L - R}" height="${H - T - B}" fill="transparent"/></svg>`;
   }
   // batang horizontal: rows = [{label, segs:[{v, warna, nama}], teks, ket}]; penuh = tiap baris diskalakan ke 100% (meter)
@@ -4056,9 +4057,9 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   // Kerangka dan gayanya sama dengan bagian atas halaman Monitoring Pengisian: kartu utama (cincin persen + angka), grafik 30 hari,
   // dan kartu "terbesar" yang bisa diklik. Angkanya ringkasan seluruh data halaman itu (tidak terpengaruh filter di bawahnya).
   const hariSejak = d => Math.max(0, Math.floor((Date.now() - new Date(d)) / 864e5));
-  const BULAT = { info: '#8aa4ff', aksen: 'var(--accent)', jingga: 'var(--orange)', bahaya: 'var(--bad)', ok: 'var(--ok)' };
-  const cincin = (id, p) => { const C = 2 * Math.PI * 44; return `<svg viewBox="0 0 110 110" width="100%" height="100%" aria-hidden="true"><defs><linearGradient id="gr-${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb25e"/><stop offset="1" stop-color="#f5d547"/></linearGradient></defs>
-    <circle cx="55" cy="55" r="44" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="11"/><circle cx="55" cy="55" r="44" fill="none" stroke="url(#gr-${id})" stroke-width="11" stroke-linecap="round" stroke-dasharray="${(C * Math.min(100, p) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 55 55)"/></svg>`; };
+  const BULAT = { info: '#1D4ED8', aksen: 'var(--accent)', jingga: 'var(--orange)', bahaya: 'var(--bad)', ok: 'var(--ok)' };
+  const cincin = (id, p) => { const C = 2 * Math.PI * 44; return `<svg viewBox="0 0 110 110" width="100%" height="100%" aria-hidden="true"><defs><linearGradient id="gr-${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14B8A6"/><stop offset="1" stop-color="#0F766E"/></linearGradient></defs>
+    <circle cx="55" cy="55" r="44" fill="none" stroke="var(--track)" stroke-width="11"/><circle cx="55" cy="55" r="44" fill="none" stroke="url(#gr-${id})" stroke-width="11" stroke-linecap="round" stroke-dasharray="${(C * Math.min(100, p) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 55 55)"/></svg>`; };
   const aksiAttr = (k, a, arg) => `data-md="${k}|${a}|${encodeURIComponent(arg || '')}"`;
   // Kartu persetujuan per pimpinan (halaman Permintaan): hitungan dari status tiap pimpinan, disaring status / area / PIC per kartu
   const MP = { yasir: { st: 'semua', area: '', pic: '', q: '' }, ferry: { st: 'semua', area: '', pic: '', q: '' } };

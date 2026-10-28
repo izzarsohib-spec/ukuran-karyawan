@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.203', tanggal: '2026-10-28', catatan: 'Rekap harian 18.00: antrean disetujui ke Mas Wahyu, aksesoris dibelanjakan sendiri' };
+window.VERSI = { no: '1.204', tanggal: '2026-10-28', catatan: 'Tema baru Navy Eksekutif di semua halaman (hanya tampilan)' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

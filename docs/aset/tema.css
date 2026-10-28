@@ -1,0 +1,82 @@
+/* Tema "Navy Eksekutif": hanya warna, huruf, bayangan, dan radius. Tata letak, menu, dan fungsi tidak diubah.
+   Dimuat SETELAH gaya bawaan tiap halaman (seragam, peralatan, administrator, beranda), jadi menimpa variabel warna dan sedikit aturan berwarna keras. */
+:root {
+  --bg:#EDF1F6; --shell:#EDF1F6; --panel:#FFFFFF; --panel2:#EEF2F7; --stroke:#DCE3EC; --solid:#FFFFFF; --track:#E2E8F0;
+  --text:#0F172A; --muted:#5B6577;
+  --accent:#0F766E; --green:#15803D; --orange:#B45309; --info:#1D4ED8;
+  --ok:#15803D; --ok-bg:#DCFCE7; --warn:#B45309; --warn-bg:#FEF3C7; --bad:#B91C1C; --bad-bg:#FEE2E2;
+  --head:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --navy:#0B1F3A; --navy2:#16345C; --lembut:#F4F7FB; --lembut2:#F8FAFC; --garis:#E5EAF1; --teal-lembut:#E1F3F0;
+}
+html { color-scheme:light; }
+body { background:var(--bg); color:var(--text); font-family:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif; }
+h1, h2, h3 { font-weight:700; }
+
+/* kerangka */
+.shell { background:var(--shell); border-radius:20px; box-shadow:0 1px 3px rgba(15,23,42,.06); }
+.shell::before { display:none; }
+.kop img { filter:drop-shadow(0 2px 6px rgba(15,23,42,.18)); }
+.kop .perusahaan { color:var(--accent); }
+
+/* menu samping */
+.side { background:var(--navy); border-radius:18px; }
+.side:hover, .side:focus-within { box-shadow:0 0 0 1px var(--navy2), 0 18px 48px rgba(11,31,58,.35); }
+.side button, .side a.home { color:#B8C4D6; }
+.side button:hover, .side button.on, .side a.home:hover, .side a.home:focus-visible { background:var(--navy2); color:#FFFFFF; }
+.side button.on { box-shadow:inset 3px 0 0 #2DD4BF; }
+
+/* kartu dan panel */
+.card { background:#FFFFFF; -webkit-backdrop-filter:none; backdrop-filter:none; border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,.04), 0 6px 18px rgba(15,23,42,.05); }
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))) { .card { background:#FFFFFF; } }
+.kpi, .worst, .detail, .sums div, .vk, .vc, .tiga .k3, .rsum div, .rwi { background:var(--lembut); }
+.item, .rk, .sz, .kq, .rkkpi > div, .kvstatus, .kvpdf, .kvriw, .rb, .skartu, .pcard input[readonly], .mtx .mlain { background:var(--lembut2); }
+.rb { border-color:var(--stroke); }
+.hb:hover, .hb:focus-visible, .rkt tr:hover td { background:rgba(15,23,42,.04); }
+.picrow .pb, .toprow .tb, .vt, .pimp .pbar { background:var(--track); }
+.rk .rl + .rl, .rb + .rb, .rkt td { border-color:var(--garis); }
+
+/* tombol dan penanda */
+.btn { background:#FFFFFF; border-color:#CBD5E1; }
+.btn:hover { border-color:var(--accent); color:var(--accent); }
+.cta, .btn.baru { background:var(--accent); border-color:var(--accent); color:#FFFFFF; font-weight:600; }
+.cta:hover, .btn.baru:hover { background:#115E59; border-color:#115E59; color:#FFFFFF; }
+.chip.on, .vt button.on, .mobnav button.on, .aksibar .chip.on { background:var(--accent); border-color:var(--accent); color:#FFFFFF; font-weight:600; }
+.btn.tambah:hover, .btn.tambah.on { background:var(--orange); color:#FFFFFF; }
+.ak .an { color:#FFFFFF; }
+.ak .at.warn { background:var(--warn-bg); color:var(--warn); } .ak .at.bad { background:var(--bad-bg); color:var(--bad); } .ak .at.ok { background:var(--ok-bg); color:var(--ok); }
+.toprow .tb em { color:var(--text); text-shadow:none; }
+.toast.ok { border-left-color:#15803D; } .toast.bad { border-left-color:#B91C1C; }
+
+/* jendela, daftar pilihan, dan pratinjau */
+#ingatModal .mbox, .apanel, .msticky, .pilihhasil, .pilihhasil .plh, #vTip, .toast { background:#FFFFFF; box-shadow:0 12px 32px rgba(15,23,42,.18); }
+.mbar { background:rgba(255,255,255,.97); }
+.pvbox { background:#F4F6FA; }
+.pvbody { background:#E2E8F0; }
+.detail { box-shadow:none; }
+@media (max-width: 980px) { .detail { background:#FFFFFF; } }
+
+/* matriks stok dan rekap */
+.mtx th, .mtx td { border-color:#CBD5E1; }
+.mtx thead th { background:var(--navy); color:#FFFFFF; }
+.mtx thead tr:nth-child(2) th { background:var(--navy2); }
+.mtx thead th.mlain { background:var(--navy); }
+.mtx tbody tr:nth-child(even) td { background:var(--lembut2); }
+.mtx td:not(.mnm):not(.mno):not(:empty) { background:var(--teal-lembut) !important; }
+.mtx tfoot td { background:#D5E8E4; color:var(--text); }
+.mtx tbody td.mnm, .mtx tbody td.mno { background:#FFFFFF; }
+
+/* tabel umum */
+table { color:var(--text); }
+
+/* halaman peralatan dan administrator */
+.kpi > div { background:var(--lembut); }
+th { background:#F1F5F9; color:#475569; }
+td { border-bottom-color:var(--garis); }
+tr:hover td { background:rgba(15,23,42,.03); }
+.req { border-top-color:var(--garis); }
+.bar:has(> i) { background:var(--track); }
+.bagian button.on { color:var(--text); }
+.bagian .tag, .badge { background:var(--panel2); }
+.bar input[type=search], .bar select, .fg input:not([type=checkbox]), .fg select, .massal select { background:#FFFFFF; border-color:#CBD5E1; }
+select option, .bar select option, .fg select option, .massal select option { background:#FFFFFF; color:#0F172A; }
+@media (max-width: 980px) { .mdet { background:#FFFFFF; } }
