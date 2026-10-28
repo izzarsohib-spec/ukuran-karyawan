@@ -123,6 +123,7 @@
   .areachips .chip small { opacity:.7; margin-left:3px; }
   .topbar-head { display:flex; justify-content:space-between; font-size:.68rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); padding:0 4px 4px; }
   .toprow { display:grid; grid-template-columns:minmax(0,1fr) minmax(90px,42%); gap:12px; align-items:center; width:100%; padding:7px 4px; border:0; border-radius:12px; background:none; text-align:left; cursor:pointer; color:inherit; }
+  .item .picn { margin:-2px 0 4px; font-size:.72rem; color:var(--muted); }
   .toprow:hover, .toprow:focus-visible { background:var(--panel2); outline:none; }
   .toprow .tn { min-width:0; } .toprow .tn b { display:block; font-size:.84rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .toprow .tn small { color:var(--muted); font-size:.7rem; }
   .toprow .tb { position:relative; display:block; height:22px; border-radius:7px; background:rgba(255,255,255,.07); }
@@ -1125,7 +1126,7 @@
     $('rabTotal').innerHTML = `${idn(I)} <span style="font-size:.55em;font-weight:500;color:var(--muted)">dari ${idn(T)} karyawan</span>`;
     $('info').textContent = `${lokasi.length} lokasi dipantau`;
     fetch(`${SUPABASE_URL}/rest/v1/rpc/sinkron_terakhir`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: '{}' }).then(r => r.json()).then(t => { if (!t) return; const jam = Math.round((Date.now() - Date.parse(t)) / 3600000); $('info').textContent += ` · data Form terakhir masuk ${new Date(t).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` + (jam >= 6 ? ` (${jam >= 48 ? Math.round(jam / 24) + ' hari' : jam + ' jam'} lalu, sinkron Apps Script mungkin berhenti)` : ''); }).catch(() => {});
-    gambarTop(); if (window.Saring) Saring.siap.then(gambarTop); renderRingkasan();
+    gambarTop(); if (window.Saring) Saring.siap.then(() => { gambarTop(); renderDaftar(); }); renderRingkasan();
   }
 
   function tersaring() {
@@ -1138,12 +1139,15 @@
     $('chips').innerHTML = [['semua', 'Semua'], ['kurang', 'Kurang'], ['kosong', 'Kosong'], ['lengkap', 'Lengkap']]
       .map(([s, t]) => `<button class="chip ${status === s ? 'on' : ''}" data-s="${s}">${t} ${jml(s)}</button>`).join('');
   }
+  // PIC lapangan yang memegang lokasi (dari penugasan di Administrator); kosong bila belum ada
+  const picNama = l => { const p = window.Saring && Saring.picDari(l.lokasi); return p ? p.nama : ''; };
   function renderDaftar() {
     const f = tersaring();
     if (!f.some(l => l.lokasi === sel)) { sel = f.length ? f[0].lokasi : null; fBagian = ''; }
     $('daftar').innerHTML = f.map(l =>
       `<button class="item ${l.lokasi === sel ? 'sel' : ''}" data-k="${esc(l.lokasi)}">
          <div class="nm">${esc(l.client)}</div>
+         <div class="picn">${picNama(l) ? 'PIC ' + esc(picNama(l)) : 'Belum ada PIC'}</div>
          <div class="bar ${NADA[l.status]}"><i style="width:${l.persen}%"></i></div>
          <div class="mt"><span>${l.isi}/${l.target} · ${l.persen}%</span><span>${l.kurang > 0 ? 'kurang ' + l.kurang : '✓ lengkap'}</span></div>
        </button>`).join('') || '<div class="kosongnya">Lokasi tidak ditemukan di data acuan.</div>';
@@ -1186,7 +1190,8 @@
       `<div class="dhead">
          <button class="btn back" id="back">‹ Kembali</button>
          <div class="row"><h2>${esc(l.client)}</h2><span class="badge ${NADA[l.status]}">${LABEL[l.status]} · ${l.persen}%</span></div>
-         ${l.status !== 'lengkap' ? `<div style="margin-top:10px"><button class="btn" data-ingat="${esc(l.lokasi)}">Ingatkan PIC (seluruh lokasi)</button></div>` : ''}
+         <div class="muted" style="margin-top:6px">PIC lapangan: <b style="color:var(--text)">${picNama(l) ? esc(picNama(l)) : 'belum ada'}</b>${(a => a ? ' · ' + esc(a.nama) : '')(window.Saring && Saring.areaDari(l.lokasi))}</div>
+         ${l.status !== 'lengkap' ? `<div style="margin-top:10px"><button class="btn" data-ingat="${esc(l.lokasi)}">Ingatkan PIC${picNama(l) ? ' ' + esc(picNama(l)) : ''} (seluruh lokasi)</button></div>` : ''}
          <div class="bar ${NADA[l.status]}" style="height:9px;margin-top:12px"><i style="width:${l.persen}%"></i></div>
          ${ang ? `<div class="row" style="margin-top:10px"><span class="muted">Anggaran RAB lokasi ini</span><b class="num" style="color:var(--green);font-size:1.15rem">${rp(ang.total)}</b></div>`
                : ''}
