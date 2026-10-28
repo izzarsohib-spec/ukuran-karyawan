@@ -2664,6 +2664,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     if (!window.jspdf) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
     if (!(window.jspdf && window.jspdf.jsPDF.API.autoTable)) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
     const [kop, kaki] = await Promise.all([muatGambar('../aset/kop-surat.png'), muatGambar('../aset/kaki-surat.png')]);
+    const ttdPic = await ambilTtdPic(); // tanda tangan PIC (null bila belum login / belum diunggah)
     const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' }), PW = 595.28, L = 40, R = PW - 40, W = R - L, BIRU = [0, 112, 192], BAWAH = 742;
     const now = new Date(), tgl = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }), noPo = `${String(p.id).padStart(3, '0')}/PO/RAY/${now.getMonth() + 1}/${now.getFullYear()}`;
     const rpPdf = n => 'Rp' + Math.round(n).toLocaleString('id-ID');
@@ -2682,7 +2683,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const tabel = o => { doc.autoTable({ theme: 'plain', margin: { top: 92, bottom: 110, left: L, right: PW - R }, didDrawPage: pasang,
       styles: { font: 'times', fontSize: 9.5, cellPadding: { top: 2.6, bottom: 2.6, left: 4, right: 4 }, lineColor: [0, 0, 0], lineWidth: 0.5, textColor: 0 }, headStyles: { fontStyle: 'bold', halign: 'center', fillColor: false }, ...o }); y = doc.lastAutoTable.finalY; };
     const ttd = (kolom, yy) => { huruf(); kolom.forEach(k => doc.text(k.label, k.x, yy, { align: 'center' }));
-      kolom.forEach(k => { huruf('bold'); doc.text(k.t[0], k.x, yy + 58, { align: 'center' }); const w = doc.getTextWidth(k.t[0]); doc.setLineWidth(0.6); doc.setDrawColor(0, 0, 0); doc.line(k.x - w / 2, yy + 60, k.x + w / 2, yy + 60);
+      kolom.forEach(k => { if (k.t === TTD.pic && ttdPic) { const bw = 120, bh = 48, r = Math.min(bw / ttdPic.w, bh / ttdPic.h), w = ttdPic.w * r, h = ttdPic.h * r; doc.addImage(ttdPic.data, 'PNG', k.x - w / 2, yy + 6 + (bh - h) / 2, w, h); } huruf('bold'); doc.text(k.t[0], k.x, yy + 58, { align: 'center' }); const w = doc.getTextWidth(k.t[0]); doc.setLineWidth(0.6); doc.setDrawColor(0, 0, 0); doc.line(k.x - w / 2, yy + 60, k.x + w / 2, yy + 60);
         huruf('bold', 8.5); doc.setTextColor(153, 153, 153); doc.text(k.t[1], k.x, yy + 72, { align: 'center' }); huruf(); }); };
     // --- Purchase Order ---
     pasang(); huruf('bold', 14); doc.text('PURCHASE ORDER (PO)', PW / 2, 104, { align: 'center' }); y = 134;
@@ -3025,6 +3026,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     if (!window.jspdf) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
     if (!(window.jspdf && window.jspdf.jsPDF.API.autoTable)) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
     const [kop, kaki] = await Promise.all([muatGambar('../aset/kop-surat.png'), muatGambar('../aset/kaki-surat.png')]);
+    const ttdPic = await ambilTtdPic(); // tanda tangan PIC (null bila belum login / belum diunggah)
     const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' }), PW = 595.28, L = 40, R = PW - 40, W = R - L, BAWAH = 742, k = { doc, PW, L, R, W, y: 0, dipasang: new Set() };
     k.pasang = () => {
       const n = doc.internal.getCurrentPageInfo().pageNumber; if (k.dipasang.has(n)) return; k.dipasang.add(n);
@@ -3040,7 +3042,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     k.tabel = o => { doc.autoTable({ theme: 'plain', margin: { top: 92, bottom: 110, left: L, right: PW - R }, didDrawPage: k.pasang,
       styles: { font: 'times', fontSize: 10, cellPadding: { top: 2.6, bottom: 2.6, left: 4, right: 4 }, lineColor: [0, 0, 0], lineWidth: 0.5, textColor: 0 }, headStyles: { fontStyle: 'bold', halign: 'center', fillColor: false }, ...o }); k.y = doc.lastAutoTable.finalY; };
     k.ttd = (kolom, yy) => { k.huruf(); kolom.forEach(c => doc.text(c.label, c.x, yy, { align: 'center' }));
-      kolom.forEach(c => { k.huruf('bold'); doc.text(c.t[0] || '', c.x, yy + 58, { align: 'center' }); const w = Math.max(doc.getTextWidth(c.t[0] || ''), 70); doc.setLineWidth(0.6); doc.setDrawColor(0, 0, 0); doc.line(c.x - w / 2, yy + 60, c.x + w / 2, yy + 60);
+      kolom.forEach(c => { if (c.t === TTD.pic && ttdPic) { const bw = 120, bh = 48, r = Math.min(bw / ttdPic.w, bh / ttdPic.h), w = ttdPic.w * r, h = ttdPic.h * r; doc.addImage(ttdPic.data, 'PNG', c.x - w / 2, yy + 6 + (bh - h) / 2, w, h); } k.huruf('bold'); doc.text(c.t[0] || '', c.x, yy + 58, { align: 'center' }); const w = Math.max(doc.getTextWidth(c.t[0] || ''), 70); doc.setLineWidth(0.6); doc.setDrawColor(0, 0, 0); doc.line(c.x - w / 2, yy + 60, c.x + w / 2, yy + 60);
         k.huruf('bold', 8.5); doc.setTextColor(153, 153, 153); doc.text(c.t[1] || '', c.x, yy + 72, { align: 'center' }); k.huruf(); }); };
     k.simpan = nama => { const a = document.createElement('a'); a.href = 'data:application/pdf;base64,' + doc.output('datauristring').split(',')[1]; a.download = nama.replace(/[\\/:*?"<>|]/g, ''); document.body.appendChild(a); a.click(); a.remove(); };
     return k;
