@@ -1711,7 +1711,7 @@
   // Lampiran Data Ukuran = pembagian per karyawan (ukuran yang dipilih + seragam yang diterima), bukan lagi seluruh isian Form
   const barisUkuranPdf = d => d.kar.filter(k => Object.keys(k.alloc).length).map(k => {
     const gab = j => [...new Set(Object.values(k.alloc).map(a => a[j]).filter(Boolean))].join(' / ');
-    return { nama: k.nama, ukuran_baju: gab('baju'), ukuran_celana: gab('celana'), ukuran_sepatu: gab('sepatu'), ket: d.pool.filter(it => k.alloc[it.no]).map(it => `${it.nama} (${k.alloc[it.no].qty})`).join('; ') };
+    return { nama: k.nama, ukuran_baju: gab('baju'), ukuran_celana: gab('celana'), ukuran_sepatu: gab('sepatu'), ket: d.pool.filter(it => k.alloc[it.no]).map(it => `${it.nama} (${k.alloc[it.no].qty})`).join('; ') + (d.tambahan ? ' - Pesanan tambahan' : '') };
   });
   const siapkanPdf = async d => buatPdf(d, { ukuran: barisUkuranPdf(d), rab: mRabBerkas });
   // Tiap halaman PDF diubah jadi satu gambar JPG beresolusi tinggi (lebar 1700 px, sekitar 205 dpi). Pimpinan membukanya lewat
@@ -1757,6 +1757,11 @@
     const NAMA_BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     // data kontrak dari file acuan: lama kontrak (bulan) dan anggaran per orang per bulan
     const anggota = mAnggota().target, angLok = anggaran && anggaran.peta.get(l.lokasi), det = (angLok && angLok.det[bag]) || {};
+    // Penambahan item: pesanan sebelumnya pada bagian ini (yang tidak ditolak) dicantumkan di memo, PO, dan daftar harga
+    const tglId = t => new Date(t).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' });
+    const lama = tambahan ? daftarMinta.filter(p => p.lokasi_form === l.lokasi && p.bagian_kerja === bag && stReq(p) !== 'ditolak').sort((a, b) => new Date(a.dibuat) - new Date(b.dibuat))
+      .flatMap(pm => (pm.items || []).map(it => ({ no: it.no, nama: it.nama, qty: Number(it.qty), jual: Number(it.jual), beli: Number(it.beli), tgl: tglId(pm.dibuat) }))) : [];
+    const abu = [238, 238, 238], tengah = { halign: 'center' }, kanan = { halign: 'right' };
     const kontrak = det.kontrak || 12, perOrang = det.perOrang != null ? det.perOrang : (anggota ? rab / anggota / kontrak : 0);
 
     let K = 1, y = 0; // K = skala huruf/jarak; diturunkan otomatis supaya Memo, PO, dan Daftar Harga muat 1 halaman
@@ -1820,11 +1825,6 @@
       huruf('bold'); doc.text('A. Lokasi & Kebutuhan', L, y); huruf(); y += 14 * K;
       [['Lokasi Penempatan', ':' + l.client], ['Departemen', ':' + bag], ['Jumlah Anggota', ':' + anggota], ['Detail Kebutuhan', ':']].forEach(([k, v], i) => { doc.text(k, L + 44, y + i * 13 * K); doc.text(v, L + 200, y + i * 13 * K); });
       y += 4 * 13 * K - 4 * K;
-      // Penambahan item: baris pesanan sebelumnya (bagian ini, yang tidak ditolak) ikut dicantumkan di atas pesanan baru, dengan kolom Keterangan
-      const tglId = t => new Date(t).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' });
-      const lama = tambahan ? daftarMinta.filter(p => p.lokasi_form === l.lokasi && p.bagian_kerja === bag && stReq(p) !== 'ditolak').sort((a, b) => new Date(a.dibuat) - new Date(b.dibuat))
-        .flatMap(pm => (pm.items || []).map(it => ({ nama: it.nama, qty: Number(it.qty), jual: Number(it.jual), tgl: tglId(pm.dibuat) }))) : [];
-      const abu = [238, 238, 238], tengah = { halign: 'center' }, kanan = { halign: 'right' };
       const barisLama = lama.map((x, i) => [{ content: i + 1, styles: { ...tengah, fillColor: abu } }, { content: x.nama, styles: { fillColor: abu } }, { content: x.qty, styles: { ...tengah, fillColor: abu } },
         { content: rpPdf(x.jual), styles: { ...tengah, fillColor: abu } }, { content: rpPdf(x.jual * x.qty), styles: { ...kanan, fillColor: abu } }, { content: 'Sudah dipesankan pada ' + x.tgl, styles: { fillColor: abu, fontStyle: 'italic' } }]);
       const barisBaru = isi.map((x, i) => [{ content: lama.length + i + 1, styles: tengah }, x.h.nama, { content: x.q, styles: tengah }, { content: rpPdf(x.h.jual), styles: { ...tengah, fillColor: [255, 255, 0] } }, { content: rpPdf(x.h.jual * x.q), styles: kanan },
@@ -1860,10 +1860,18 @@
       y = 134; const g = 14 * K;
       [['Tanggal', tgl], ['No. PO', noSurat], ['Lokasi', l.client + ' - ' + bag]].forEach(([k, v], i) => { huruf('bold'); doc.text(k, L, y + i * g); huruf(); doc.text(v, L + 62, y + i * g); });
       huruf('bold'); doc.text('Detail Pesanan :', L, y + 3 * g + 4 * K); y += 3 * g + 12 * K;
-      tabel({ startY: y, head: [['No', 'Deskripsi Barang', 'Ukuran', 'Qty', 'Harga Beli', 'Total']],
-        body: [...isi.map((x, i) => [{ content: i + 1, styles: { halign: 'center' } }, x.h.nama, { content: 'Terlampir', styles: { halign: 'center', fontStyle: 'italic' } }, { content: x.q, styles: { halign: 'center' } }, { content: rpPdf(x.h.beli), styles: { halign: 'right' } }, { content: rpPdf(x.h.beli * x.q), styles: { halign: 'right' } }]),
-          [{ content: 'SUBTOTAL', colSpan: 5, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(beli), styles: { halign: 'right', fontStyle: 'bold' } }]],
-        columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 58 }, 3: { cellWidth: 34 }, 4: { cellWidth: 66 }, 5: { cellWidth: 72 } } });
+      const poLama = lama.map((x, n) => [{ content: n + 1, styles: { ...tengah, fillColor: abu } }, { content: x.nama, styles: { fillColor: abu } }, { content: '-', styles: { ...tengah, fillColor: abu } }, { content: x.qty, styles: { ...tengah, fillColor: abu } },
+        { content: rpPdf(x.beli), styles: { ...kanan, fillColor: abu } }, { content: rpPdf(x.beli * x.qty), styles: { ...kanan, fillColor: abu } }, { content: 'Sudah dipesankan pada ' + x.tgl, styles: { fillColor: abu, fontStyle: 'italic' } }]);
+      const poBaru = isi.map((x, n) => [{ content: lama.length + n + 1, styles: tengah }, x.h.nama, { content: 'Terlampir', styles: { halign: 'center', fontStyle: 'italic' } }, { content: x.q, styles: tengah }, { content: rpPdf(x.h.beli), styles: kanan }, { content: rpPdf(x.h.beli * x.q), styles: kanan },
+        ...(tambahan ? [{ content: 'Pesanan tambahan', styles: { fontStyle: 'bold' } }] : [])]);
+      const beliLama = lama.reduce((a, x) => a + x.beli * x.qty, 0);
+      tabel({ startY: y, head: [tambahan ? ['No', 'Deskripsi Barang', 'Ukuran', 'Qty', 'Harga Beli', 'Total', 'Keterangan'] : ['No', 'Deskripsi Barang', 'Ukuran', 'Qty', 'Harga Beli', 'Total']],
+        body: [...poLama, ...poBaru,
+          ...(tambahan
+            ? [['SUBTOTAL PESANAN SEBELUMNYA', beliLama], ['SUBTOTAL PESANAN TAMBAHAN', beli], ['TOTAL KESELURUHAN', beliLama + beli]]
+              .map(([ket, nilai], q) => [{ content: ket, colSpan: 5, styles: { halign: 'center', fontStyle: 'bold', ...(q === 2 ? { fillColor: [220, 230, 241] } : {}) } }, { content: rpPdf(nilai), styles: { halign: 'right', fontStyle: 'bold', ...(q === 2 ? { fillColor: [220, 230, 241] } : {}) } }, { content: '', styles: q === 2 ? { fillColor: [220, 230, 241] } : {} }])
+            : [[{ content: 'SUBTOTAL', colSpan: 5, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(beli), styles: { halign: 'right', fontStyle: 'bold' } }]])],
+        columnStyles: tambahan ? { 0: { cellWidth: 26 }, 2: { cellWidth: 50 }, 3: { cellWidth: 30 }, 4: { cellWidth: 62 }, 5: { cellWidth: 68 }, 6: { cellWidth: 110 } } : { 0: { cellWidth: 30 }, 2: { cellWidth: 58 }, 3: { cellWidth: 34 }, 4: { cellWidth: 66 }, 5: { cellWidth: 72 } } });
       y += 28 * K; cek(180 * K); huruf();
       doc.text('Syarat & Ketentuan:', L, y); y += 14 * K;
       doc.text('- Detail Ukuran', L, y); doc.text(': Rincian nama dan ukuran (size) terlampir dalam lembar spesifikasi.', L + 110, y); y += 14 * K;
@@ -1878,7 +1886,9 @@
     // ===== Halaman 3: DAFTAR HARGA (dari tabel harga_seragam; QTY terisi otomatis dari item permintaan) =====
     doc.addPage();
     satuHalaman(() => {
-      const qty = new Map(isi.map(x => [String(x.h.no), x.q])), M = 28, TW = 371;
+      const qty = new Map(), M = 28, TW = 371; // pada penambahan item: qty = pesanan sebelumnya + pesanan tambahan
+      for (const x of lama) qty.set(String(x.no), (qty.get(String(x.no)) || 0) + x.qty);
+      for (const x of isi) qty.set(String(x.h.no), (qty.get(String(x.h.no)) || 0) + x.q);
       let totalQ = 0, totalH = 0;
       const body = HARGA.map(h => {
         const q = qty.get(String(h.no)) || 0, b = q > 0 ? 'bold' : 'normal'; totalQ += q; totalH += q * h.jual;
@@ -1901,9 +1911,10 @@
         columnStyles: { 0: { cellWidth: 98, fontStyle: 'bold' }, 1: { halign: 'right' } },
         body: [[{ content: 'ANGGARAN CLIENT', styles: { fillColor: [255, 255, 0] } }, rpPdf(rab)],
           ...(lalu.t ? [[{ content: 'SUDAH TERPAKAI (' + lalu.n + ' PERMINTAAN SEBELUMNYA)', styles: { fillColor: [0, 176, 240] } }, rpPdf(lalu.t)]] : []),
-          [{ content: 'TOTAL BELANJA SERAGAM (HARGA JUAL)', styles: { fillColor: [0, 176, 240] } }, rpPdf(jual)],
+          [{ content: tambahan ? 'TOTAL PESANAN TAMBAHAN (HARGA JUAL)' : 'TOTAL BELANJA SERAGAM (HARGA JUAL)', styles: { fillColor: [0, 176, 240] } }, rpPdf(jual)],
           ['SISA ANGGARAN', { content: min(sisa), styles: { fontStyle: 'bold' } }],
-          ['TOTAL BELI', rpPdf(beli)], ['UNTUNG (SISA + JUAL - BELI)', { content: min(untung), styles: { fontStyle: 'bold' } }]] });
+          ['TOTAL BELI', rpPdf(beli)], ['UNTUNG (SISA + JUAL - BELI)', { content: min(untung), styles: { fontStyle: 'bold' } }],
+          ...(tambahan ? [[{ content: 'Qty pada tabel = pesanan sebelumnya + pesanan tambahan', colSpan: 2, styles: { halign: 'center', fontStyle: 'italic' } }]] : [])] });
       y = yT + 14 * K;
       const xc = M + TW * 0.68; huruf('normal', 9); doc.text(`Semarang, ${tglPanjang}`, xc, y, { align: 'center' });
       huruf('bold', 9); doc.text(TTD.dir[0], xc, y + 52 * K, { align: 'center' }); huruf('normal', 9); doc.text('Direktur', xc, y + 62 * K, { align: 'center' }); huruf();
@@ -1917,7 +1928,7 @@
     huruf(); doc.text('Lokasi', L, 134); doc.text(': ' + l.client, L + 42, 134); doc.text('Bagian', L, 148); doc.text(': ' + bag, L + 42, 148);
     const uk = ekstra.ukuran || [];
     tabel({ startY: 158, margin: { top: 92, bottom: 110, left: L, right: PW - R },
-      head: [['NO', 'NAMA', 'JABATAN', 'UKURAN BAJU', 'UKURAN CELANA', 'UKURAN SEPATU', 'SERAGAM (PCS)']],
+      head: [['NO', 'NAMA', 'JABATAN', 'UKURAN BAJU', 'UKURAN CELANA', 'UKURAN SEPATU', tambahan ? 'KETERANGAN' : 'SERAGAM (PCS)']],
       body: uk.length ? uk.map((u, i) => [{ content: i + 1, styles: { halign: 'center' } }, u.nama || '', bag, { content: u.ukuran_baju || '', styles: { halign: 'center' } }, { content: u.ukuran_celana || '', styles: { halign: 'center' } }, { content: u.ukuran_sepatu || '', styles: { halign: 'center' } }, u.ket || ''])
         : [[{ content: 'Belum ada karyawan yang diberi seragam.', colSpan: 7, styles: { halign: 'center', fontStyle: 'italic' } }]],
       styles: { font: 'times', fontSize: 9.5, cellPadding: { top: 2.6, bottom: 2.6, left: 4, right: 4 }, lineColor: [0, 0, 0], lineWidth: 0.5, textColor: 0 },
