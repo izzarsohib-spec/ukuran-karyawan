@@ -1191,7 +1191,7 @@
          <button class="btn back" id="back">‹ Kembali</button>
          <div class="row"><h2>${esc(l.client)}</h2><span class="badge ${NADA[l.status]}">${LABEL[l.status]} · ${l.persen}%</span></div>
          <div class="muted" style="margin-top:6px">PIC lapangan: <b style="color:var(--text)">${picNama(l) ? esc(picNama(l)) : 'belum ada'}</b>${(a => a ? ' · ' + esc(a.nama) : '')(window.Saring && Saring.areaDari(l.lokasi))}</div>
-         ${l.status !== 'lengkap' ? `<div style="margin-top:10px"><button class="btn" data-ingat="${esc(l.lokasi)}">Ingatkan PIC${picNama(l) ? ' ' + esc(picNama(l)) : ''} (seluruh lokasi)</button></div>` : ''}
+         ${l.status !== 'lengkap' ? `<div style="margin-top:10px"><button class="btn" data-ingat="${esc(l.lokasi)}">Ingatkan PIC${picNama(l) ? ' ' + esc(picNama(l)) : ''}</button></div>` : ''}
          <div class="bar ${NADA[l.status]}" style="height:9px;margin-top:12px"><i style="width:${l.persen}%"></i></div>
          ${ang ? `<div class="row" style="margin-top:10px"><span class="muted">Anggaran RAB lokasi ini</span><b class="num" style="color:var(--green);font-size:1.15rem">${rp(ang.total)}</b></div>`
                : ''}

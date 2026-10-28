@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 28 Okt 2026
+- **v1.179** Monitoring: tombol di rincian lokasi cukup bertuliskan "Ingatkan PIC <nama>" (tanpa "(seluruh lokasi)").
 - **v1.178** Monitoring Pengisian: tiap lokasi kini menampilkan nama PIC lapangannya. Di daftar lokasi ada baris "PIC <nama>" (atau "Belum ada PIC") di bawah nama lokasi; di rincian lokasi ada "PIC lapangan: <nama> · <area>", dan tombolnya menjadi "Ingatkan PIC <nama> (seluruh lokasi)". Data PIC dari penugasan di Administrator (saat ini masih contoh).
 - **v1.177** Halaman Permintaan: kartu Form pengisian tidak lagi menimpa kartu Rekap & kirim. Tabel "Atas nama siapa" yang terlalu lebar untuk kartu kini disusun per karyawan (nama di atas, kartu seragam di bawah, tanpa meluber), dan bilah total melayang di dasar layar dijadikan bagian kartu Rekap (tidak lagi menutupi kartu lain). Angka total di kartu Rekap diperkecil sedikit agar tidak terpotong.
 - **v1.176** Form pengisian: tombol "Lengkapi ukuran dari Form" dihapus beserta kodenya. Ukuran tetap terisi otomatis dari Google Form saat seragam dipilih; kotak yang kosong diisi manual.
