@@ -162,6 +162,7 @@
     masuk: () => !!baca(),
     email: () => (baca() || {}).email || '',
     kode: () => baca() ? 'sesi' : '', // pengganti kode akses lama: terisi bila sudah login
+    token: () => baca() ? token() : Promise.resolve(''), // token sesi yang masih berlaku (untuk membaca berkas privat, mis. tanda tangan PIC)
     // dipakai sebelum menyimpan/mengirim: lanjut bila sudah login, kalau belum tampilkan layar masuk
     wajib() {
       if (baca()) return Promise.resolve(true);

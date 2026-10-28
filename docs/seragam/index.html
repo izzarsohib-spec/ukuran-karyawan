@@ -1670,6 +1670,20 @@
   }
   // Penandatangan tetap, sama seperti template memo lama
   const TTD = { pic: ['Shohib Izzar', '(PIC Seragam)'], dir: ['Yasir Arafat', '(Direktur)'], dirut: ['Feri Atmadi', '(Direktur Utama)'], vendor: ['Wahyu Ardianto', '(Vendor)'] };
+  // Tanda tangan PIC (gambar PNG di bucket privat "tanda-tangan"/pic.png): hanya admin yang sedang login yang bisa membacanya; dicetak di kolom "Diajukan Oleh / Pemesan".
+  // Bila belum diunggah atau belum login, kolom dibiarkan kosong seperti biasa.
+  let ttdPicCache;
+  async function ambilTtdPic() {
+    if (ttdPicCache) return ttdPicCache;
+    try {
+      if (!Masuk.masuk()) return null;
+      const t = await Masuk.token(), r = await fetch(`${SUPABASE_URL}/storage/v1/object/authenticated/tanda-tangan/pic.png`, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + t } });
+      if (!r.ok) return null;
+      const blob = await r.blob(), data = await new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(blob); }), im = await muatGambar(data);
+      if (!im) return null;
+      return (ttdPicCache = { data, w: im.naturalWidth, h: im.naturalHeight });
+    } catch (e) { return null; }
+  }
   const muatGambar = src => new Promise(ok => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = src; });
 
   // PDF meniru file memo lama: halaman 1 "Surat Memo Internal" (harga jual), halaman berikutnya "Purchase Order" (harga beli)
@@ -1746,6 +1760,7 @@
     if (!window.jspdf) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
     if (!(window.jspdf && window.jspdf.jsPDF.API.autoTable)) await muatSkrip('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
     const [kop, kaki] = await Promise.all([muatGambar('../aset/kop-surat.png'), muatGambar('../aset/kaki-surat.png')]);
+    const ttdPic = await ambilTtdPic(); // tanda tangan PIC (null bila belum login / belum diunggah)
     const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' });
     const PW = 595.28, L = 40, R = PW - 40, W = R - L, BIRU = [0, 112, 192], BAWAH = 742;
     const now = new Date(), bln = now.getMonth() + 1, thn = now.getFullYear();
@@ -1794,6 +1809,7 @@
       kolom.forEach(k => {
         const p = k.ttd === TTD.dir ? 'yasir' : k.ttd === TTD.dirut ? 'ferry' : null, hal = doc.internal.getCurrentPageInfo().pageNumber;
         if (p) posTtd[hal + '|' + p] = { hal, p, x: +(k.x / PW).toFixed(4), y: +((yy + 8 * K) / PH).toFixed(4), w: +(110 / PW).toFixed(4), h: +(46 * K / PH).toFixed(4), cy: +((yy + 81 * K) / PH).toFixed(4), fs: +(6.5 * K / PW).toFixed(5) };
+        if (k.ttd === TTD.pic && ttdPic) { const bw = 120, bh = 48 * K, r = Math.min(bw / ttdPic.w, bh / ttdPic.h), w = ttdPic.w * r, h = ttdPic.h * r; doc.addImage(ttdPic.data, 'PNG', k.x - w / 2, yy + 6 * K + (bh - h) / 2, w, h); } // tanda tangan PIC di atas namanya
         huruf('bold', 10.5); doc.text(k.ttd[0], k.x, yy + 58 * K, { align: 'center' });
         const w = doc.getTextWidth(k.ttd[0]); doc.setLineWidth(0.6); doc.setDrawColor(0, 0, 0); doc.line(k.x - w / 2, yy + 60 * K, k.x + w / 2, yy + 60 * K);
         huruf('bold', 8.5); doc.setTextColor(153, 153, 153); doc.text(k.ttd[1], k.x, yy + 72 * K, { align: 'center' }); huruf();
