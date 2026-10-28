@@ -79,7 +79,9 @@ async function kirimTelegram(n: Notif, p: { kunci: string; nama: string }, urlSe
     // satu pesan: foto halaman 1 + ringkasan (maks 1024 huruf) + tombol ◀ ▶ untuk ganti halaman di pesan yang sama (ditangani fungsi telegram-webhook) + tombol persetujuan
     const jml = jumlahHalaman(n.urlSurat), foto = halamanKe(n.urlSurat, 1); if (!foto) return false;
     const h = p.kunci[0]; // y / f
-    const nav = jml > 1 ? [[{ text: '◀', callback_data: `h:${n.id}:${h}:${jml}` }, { text: `1 / ${jml}`, callback_data: 'x' }, { text: '▶', callback_data: `h:${n.id}:${h}:2` }]] : [];
+    const folder = (() => { try { return new URL(n.urlSurat).searchParams.get('f') ?? ''; } catch { return ''; } })();
+    // callback_data memuat folder surat dan jumlah halaman supaya fungsi telegram-webhook tidak perlu membuka database (ganti halaman lebih cepat)
+    const nav = jml > 1 ? [[{ text: '◀', callback_data: `h:${folder}:${h}:${jml}:${jml}` }, { text: `1 / ${jml}`, callback_data: 'x' }, { text: '▶', callback_data: `h:${folder}:${h}:2:${jml}` }]] : [];
     const cap = [judul, `Bagian: ${n.bagian} (${n.target} anggota)`, ...(n.tambahan ? [`PENAMBAHAN ITEM: ${n.tambahan}`] : []), `Total jual ${rp(n.tJual)} · Sisa RAB ${rp(n.sisa)} · Untung ${rp(n.untung)}`, 'Perlu persetujuan: Pak Yasir dan Pak Ferry'].join('\n').slice(0, 1000);
     return await tgPanggil('sendPhoto', { chat_id: chat, photo: foto, caption: cap, reply_markup: { inline_keyboard: [...nav, aksi] } });
   }
