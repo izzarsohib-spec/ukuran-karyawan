@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.188', tanggal: '2026-10-28', catatan: 'Telegram: surat di bawah tombol geser (pesan teks + tombol, lalu foto)' };
+window.VERSI = { no: '1.189', tanggal: '2026-10-28', catatan: 'Telegram: kembali ke satu pesan foto dengan tombol geser di bawahnya' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

@@ -61,7 +61,7 @@ function teksNotif(n: Notif): string {
 
 // kirim ke pimpinan yang kuncinya ada di `daftar`; hasil: kode status HTTP per pimpinan (0 = gagal tersambung)
 // ---- Telegram (jalur utama bila TELEGRAM_BOT_TOKEN dan TELEGRAM_CHAT_YASIR / TELEGRAM_CHAT_FERRY terpasang; ntfy menjadi cadangan bila Telegram gagal) ----
-// Surat dikirim sebagai pesan teks (ringkasan + tombol ◀ ▶ + Setujui / Tolak-Revisi) diikuti foto halaman surat di bawahnya yang diganti oleh tombol ◀ ▶.
+// Surat dikirim sebagai SATU pesan foto: halaman 1 + ringkasan + tombol ◀ ▶ (ganti halaman di tempat) + tombol Setujui / Tolak-Revisi.
 const tgToken = () => Deno.env.get('TELEGRAM_BOT_TOKEN') ?? '';
 const tgChat = (kunci: string) => Deno.env.get(kunci === 'yasir' ? 'TELEGRAM_CHAT_YASIR' : 'TELEGRAM_CHAT_FERRY') ?? '';
 async function tgPanggil(metode: string, isi: unknown): Promise<boolean> {
@@ -71,35 +71,19 @@ async function tgPanggil(metode: string, isi: unknown): Promise<boolean> {
     return r.ok;
   } catch (e) { console.error('Telegram', metode, String(e)); return false; }
 }
-// seperti tgPanggil, tetapi mengembalikan isi `result` (mis. message_id pesan yang baru dikirim), atau null bila gagal
-async function tgData(metode: string, isi: unknown): Promise<any | null> {
-  try {
-    const r = await fetch(`https://api.telegram.org/bot${tgToken()}/${metode}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(isi) });
-    if (!r.ok) { console.error('Telegram', metode, r.status, (await r.text()).slice(0, 200)); return null; }
-    return (await r.json())?.result ?? null;
-  } catch (e) { console.error('Telegram', metode, String(e)); return null; }
-}
 async function kirimTelegram(n: Notif, p: { kunci: string; nama: string }, urlSetuju: string, urlRevisi: string, teks: string, semuaHalaman: boolean): Promise<boolean> {
   const chat = tgChat(p.kunci); if (!tgToken() || !chat) return false;
   const judul = `${n.pengingat ? 'PENGINGAT ' + n.pengingat + ': ' : ''}${n.tambahan ? 'PENAMBAHAN ITEM - ' : ''}Permintaan seragam: ${n.client} (untuk ${p.nama})`.slice(0, 900);
   const aksi = [{ text: `✅ Setujui ${p.nama}`, url: urlSetuju }, { text: '✏️ Tolak / Revisi', url: urlRevisi }];
   if (semuaHalaman) {
-    // Urutan di chat: pesan teks (ringkasan + tombol ◀ 1/N ▶ + Setujui / Tolak-Revisi), lalu DI BAWAHNYA foto halaman surat.
-    // Tombol ◀ ▶ mengganti foto di pesan kedua (ditangani fungsi telegram-webhook); nomor pesan foto dibawa di callback_data, jadi tombol dipasang setelah foto terkirim.
+    // satu pesan: foto halaman 1 + ringkasan (maks 1024 huruf) + tombol ◀ ▶ untuk ganti halaman di pesan yang sama (ditangani fungsi telegram-webhook) + tombol persetujuan
     const jml = jumlahHalaman(n.urlSurat), foto = halamanKe(n.urlSurat, 1); if (!foto) return false;
     const h = p.kunci[0]; // y / f
     const folder = (() => { try { return new URL(n.urlSurat).searchParams.get('f') ?? ''; } catch { return ''; } })();
-    const pesan = await tgData('sendMessage', { chat_id: chat, text: judul + '\n\n' + teks, disable_web_page_preview: true, reply_markup: { inline_keyboard: [aksi] } });
-    if (!pesan) return false;
-    const gambar = await tgData('sendPhoto', { chat_id: chat, photo: foto, disable_notification: true });
-    if (!gambar) { await tgPanggil('deleteMessage', { chat_id: chat, message_id: pesan.message_id }); return false; } // gagal: hapus pesan teks supaya tidak dobel dengan ntfy
-    if (jml > 1) {
-      // callback_data memuat folder surat, jumlah halaman, dan nomor pesan foto supaya telegram-webhook tidak perlu membuka database (ganti halaman cepat)
-      const mid = gambar.message_id;
-      const nav = [{ text: '◀', callback_data: `h:${folder}:${h}:${jml}:${jml}:${mid}` }, { text: `1 / ${jml}`, callback_data: 'x' }, { text: '▶', callback_data: `h:${folder}:${h}:2:${jml}:${mid}` }];
-      await tgPanggil('editMessageReplyMarkup', { chat_id: chat, message_id: pesan.message_id, reply_markup: { inline_keyboard: [nav, aksi] } });
-    }
-    return true;
+    // callback_data memuat folder surat dan jumlah halaman supaya fungsi telegram-webhook tidak perlu membuka database (ganti halaman lebih cepat)
+    const nav = jml > 1 ? [[{ text: '◀', callback_data: `h:${folder}:${h}:${jml}:${jml}` }, { text: `1 / ${jml}`, callback_data: 'x' }, { text: '▶', callback_data: `h:${folder}:${h}:2:${jml}` }]] : [];
+    const cap = [judul, `Bagian: ${n.bagian} (${n.target} anggota)`, ...(n.tambahan ? [`PENAMBAHAN ITEM: ${n.tambahan}`] : []), `Total jual ${rp(n.tJual)} · Sisa RAB ${rp(n.sisa)} · Untung ${rp(n.untung)}`, 'Perlu persetujuan: Pak Yasir dan Pak Ferry'].join('\n').slice(0, 1000);
+    return await tgPanggil('sendPhoto', { chat_id: chat, photo: foto, caption: cap, reply_markup: { inline_keyboard: [...nav, aksi] } });
   }
   return await tgPanggil('sendMessage', {
     chat_id: chat, text: (semuaHalaman ? '' : judul + '\n\n') + teks, disable_web_page_preview: true,
