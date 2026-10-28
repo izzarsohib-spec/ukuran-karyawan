@@ -565,6 +565,12 @@
   .pimp .ps input { flex:1; min-width:0; border:0; background:none; color:var(--text); font:inherit; padding:6px 0; outline:none; }
   .pimp .pf { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
   .pimp .pf select { width:100%; min-width:0; border:1px solid var(--stroke); background:var(--solid); color:var(--text); border-radius:10px; padding:5px 6px; font:inherit; font-size:.74rem; }
+  /* Permintaan: tiga kartu atas dibuat lebih panjang supaya daftar lokasi pimpinan memuat lebih banyak baris */
+  #md-permintaan { min-height:470px; }
+  #md-permintaan .hero { padding:22px 24px; } #md-permintaan .hero h2 { font-size:1.5rem; margin:6px 0 12px; } #md-permintaan .rabtotal b { font-size:1.9rem; } #md-permintaan .cta { padding:12px 26px; }
+  #md-permintaan .ringhero { width:146px; } #md-permintaan .ringhero b { font-size:1.6rem; } #md-permintaan .ringhero span { font-size:.74rem; }
+  #md-permintaan .kpi { padding:14px 18px; } #md-permintaan .kpi b { font-size:1.55rem; } #md-permintaan .kpi span { font-size:.76rem; }
+  #md-permintaan .pimp .plist { min-height:200px; }
   @media (max-width: 980px) { .top.mini { grid-template-columns:1fr; } }
   @media (max-width: 620px) { .mini .rcol, .mini .rcol.dua { grid-template-columns:1fr; } .mini .rcol.dua .gap { grid-template-columns:1fr; } .pimp .pf { grid-template-columns:1fr; } .mini .ringhero { width:96px; } }
   /* Monitoring: progres per PIC dan daftar lokasi berdampingan */
