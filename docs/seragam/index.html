@@ -1831,7 +1831,10 @@
         ...(tambahan ? [{ content: 'Pesanan tambahan', styles: { fontStyle: 'bold' } }] : [])]);
       tabel({ startY: y, head: [tambahan ? ['No', 'Deskripsi Barang', 'Qty', 'Harga Jual', 'Total', 'Keterangan'] : ['No', 'Deskripsi Barang', 'Qty', 'Harga Jual', 'Total']],
         body: [...barisLama, ...barisBaru,
-          [{ content: tambahan ? 'SUBTOTAL PESANAN TAMBAHAN' : 'SUBTOTAL', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(jual), styles: { halign: 'right', fontStyle: 'bold' } }, ...(tambahan ? [''] : [])]],
+          ...(tambahan
+            ? [['SUBTOTAL PESANAN SEBELUMNYA', lama.reduce((a, x) => a + x.jual * x.qty, 0)], ['SUBTOTAL PESANAN TAMBAHAN', jual], ['TOTAL KESELURUHAN', lama.reduce((a, x) => a + x.jual * x.qty, 0) + jual]]
+              .map(([ket, nilai], k) => [{ content: ket, colSpan: 4, styles: { halign: 'center', fontStyle: 'bold', ...(k === 2 ? { fillColor: [220, 230, 241] } : {}) } }, { content: rpPdf(nilai), styles: { halign: 'right', fontStyle: 'bold', ...(k === 2 ? { fillColor: [220, 230, 241] } : {}) } }, { content: '', styles: k === 2 ? { fillColor: [220, 230, 241] } : {} }])
+            : [[{ content: 'SUBTOTAL', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(jual), styles: { halign: 'right', fontStyle: 'bold' } }]])],
         columnStyles: tambahan ? { 0: { cellWidth: 26 }, 2: { cellWidth: 30 }, 3: { cellWidth: 66 }, 4: { cellWidth: 72 }, 5: { cellWidth: 118 } } : { 0: { cellWidth: 30 }, 2: { cellWidth: 38 }, 3: { cellWidth: 80 }, 4: { cellWidth: 82 } } });
       const cat = tambahan ? '' : memoMinta(); // pada penambahan item, alasannya tercetak sebagai "Keterangan" di bawah tanda tangan
       if (cat) { y += 10 * K; const c = doc.splitTextToSize('Catatan: ' + cat, W - 28); huruf('italic', 10); doc.text(c, L + 28, y); y += c.length * 12 * K - 4 * K; huruf(); }
