@@ -1820,10 +1820,19 @@
       huruf('bold'); doc.text('A. Lokasi & Kebutuhan', L, y); huruf(); y += 14 * K;
       [['Lokasi Penempatan', ':' + l.client], ['Departemen', ':' + bag], ['Jumlah Anggota', ':' + anggota], ['Detail Kebutuhan', ':']].forEach(([k, v], i) => { doc.text(k, L + 44, y + i * 13 * K); doc.text(v, L + 200, y + i * 13 * K); });
       y += 4 * 13 * K - 4 * K;
-      tabel({ startY: y, head: [['No', 'Deskripsi Barang', 'Qty', 'Harga Jual', 'Total']],
-        body: [...isi.map((x, i) => [{ content: i + 1, styles: { halign: 'center' } }, x.h.nama, { content: x.q, styles: { halign: 'center' } }, { content: rpPdf(x.h.jual), styles: { halign: 'center', fillColor: [255, 255, 0] } }, { content: rpPdf(x.h.jual * x.q), styles: { halign: 'right' } }]),
-          [{ content: 'SUBTOTAL', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(jual), styles: { halign: 'right', fontStyle: 'bold' } }]],
-        columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 38 }, 3: { cellWidth: 80 }, 4: { cellWidth: 82 } } });
+      // Penambahan item: baris pesanan sebelumnya (bagian ini, yang tidak ditolak) ikut dicantumkan di atas pesanan baru, dengan kolom Keterangan
+      const tglId = t => new Date(t).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' });
+      const lama = tambahan ? daftarMinta.filter(p => p.lokasi_form === l.lokasi && p.bagian_kerja === bag && stReq(p) !== 'ditolak').sort((a, b) => new Date(a.dibuat) - new Date(b.dibuat))
+        .flatMap(pm => (pm.items || []).map(it => ({ nama: it.nama, qty: Number(it.qty), jual: Number(it.jual), tgl: tglId(pm.dibuat) }))) : [];
+      const abu = [238, 238, 238], tengah = { halign: 'center' }, kanan = { halign: 'right' };
+      const barisLama = lama.map((x, i) => [{ content: i + 1, styles: { ...tengah, fillColor: abu } }, { content: x.nama, styles: { fillColor: abu } }, { content: x.qty, styles: { ...tengah, fillColor: abu } },
+        { content: rpPdf(x.jual), styles: { ...tengah, fillColor: abu } }, { content: rpPdf(x.jual * x.qty), styles: { ...kanan, fillColor: abu } }, { content: 'Sudah dipesankan pada ' + x.tgl, styles: { fillColor: abu, fontStyle: 'italic' } }]);
+      const barisBaru = isi.map((x, i) => [{ content: lama.length + i + 1, styles: tengah }, x.h.nama, { content: x.q, styles: tengah }, { content: rpPdf(x.h.jual), styles: { ...tengah, fillColor: [255, 255, 0] } }, { content: rpPdf(x.h.jual * x.q), styles: kanan },
+        ...(tambahan ? [{ content: 'Pesanan tambahan', styles: { fontStyle: 'bold' } }] : [])]);
+      tabel({ startY: y, head: [tambahan ? ['No', 'Deskripsi Barang', 'Qty', 'Harga Jual', 'Total', 'Keterangan'] : ['No', 'Deskripsi Barang', 'Qty', 'Harga Jual', 'Total']],
+        body: [...barisLama, ...barisBaru,
+          [{ content: tambahan ? 'SUBTOTAL PESANAN TAMBAHAN' : 'SUBTOTAL', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold' } }, { content: rpPdf(jual), styles: { halign: 'right', fontStyle: 'bold' } }, ...(tambahan ? [''] : [])]],
+        columnStyles: tambahan ? { 0: { cellWidth: 26 }, 2: { cellWidth: 30 }, 3: { cellWidth: 66 }, 4: { cellWidth: 72 }, 5: { cellWidth: 118 } } : { 0: { cellWidth: 30 }, 2: { cellWidth: 38 }, 3: { cellWidth: 80 }, 4: { cellWidth: 82 } } });
       const cat = tambahan ? '' : memoMinta(); // pada penambahan item, alasannya tercetak sebagai "Keterangan" di bawah tanda tangan
       if (cat) { y += 10 * K; const c = doc.splitTextToSize('Catatan: ' + cat, W - 28); huruf('italic', 10); doc.text(c, L + 28, y); y += c.length * 12 * K - 4 * K; huruf(); }
       y += 16 * K;
