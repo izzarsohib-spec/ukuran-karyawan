@@ -23,7 +23,9 @@ Deno.serve(async (req) => {
   const i = q.get('i') ?? '', p = q.get('p') ?? '', f = q.get('f') ?? '', n = Math.floor(Number(q.get('n'))), h = Math.floor(Number(q.get('h')));
   if (!kunci() || !['y', 'f', 'a'].includes(p) || !/^\d+$/.test(i) || !/^\d+-[a-f0-9]{24}$/.test(f) || !(n >= 1 && n <= 60) || !(h >= 1 && h <= n)) return new Response('Permintaan tidak valid', { status: 400 });
   if ((q.get('g') ?? '') !== await tanda(`${i}.${p}.${f}.${n}`)) return new Response('Tidak diizinkan', { status: 401 });
-  const topik = TOPIK[p](); if (!topik) return new Response('Topik belum diatur', { status: 500 });
+  // uji coba (p=a): topik boleh ditentukan lewat parameter t, hanya yang berawalan ray-uji- (tautan tetap harus bertanda tangan sah)
+  const uji = (q.get('t') ?? '').startsWith('ray-uji-') ? q.get('t')! : '';
+  const topik = p === 'a' && uji ? uji : TOPIK[p](); if (!topik) return new Response('Topik belum diatur', { status: 500 });
 
   // judul + ringkasan: dari database (permintaan nyata), atau dari parameter pada uji coba (p=a)
   let judul = '', ringkas = '', urlKeputusan = '';
@@ -43,7 +45,7 @@ Deno.serve(async (req) => {
   }
 
   const base = `${Deno.env.get('SUPABASE_URL')}/functions/v1/ntfy-halaman`, g = q.get('g')!;
-  const tautan = (hal: number) => `${base}?i=${i}&p=${p}&f=${f}&n=${n}&h=${hal}&g=${g}${p === 'a' ? `&j=${encodeURIComponent(judul)}&r=${encodeURIComponent(ringkas)}` : ''}`;
+  const tautan = (hal: number) => `${base}?i=${i}&p=${p}&f=${f}&n=${n}&h=${hal}&g=${g}${p === 'a' ? `&j=${encodeURIComponent(judul)}&r=${encodeURIComponent(ringkas)}${uji ? `&t=${uji}` : ''}` : ''}`;
   const sebelum = h === 1 ? n : h - 1, sesudah = h === n ? 1 : h + 1;
   const hasil = await fetch('https://ntfy.sh/', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
