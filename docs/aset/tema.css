@@ -80,3 +80,21 @@ tr:hover td { background:rgba(15,23,42,.03); }
 .bar input[type=search], .bar select, .fg input:not([type=checkbox]), .fg select, .massal select { background:#FFFFFF; border-color:#CBD5E1; }
 select option, .bar select option, .fg select option, .massal select option { background:#FFFFFF; color:#0F172A; }
 @media (max-width: 980px) { .mdet { background:#FFFFFF; } }
+
+/* portal (docs/index.html): menu samping dan bar tab atas */
+.side { border-right-color:var(--navy2); }
+.merek, .akun, .pemisah { border-color:var(--navy2); }
+.pemisah { background:var(--navy2); }
+.merek span { color:#5EEAD4; }
+.menu { color:#B8C4D6; }
+.menu:hover { background:var(--navy2); color:#FFFFFF; }
+.menu.on { background:var(--navy2); color:#FFFFFF; border-color:#2A4A78; }
+.menu.on svg { color:#2DD4BF; }
+.menu .tag { background:rgba(255,255,255,.14); color:#E6ECF5; }
+.menu[disabled]:hover { background:none; color:#B8C4D6; }
+.versi, .akun .st { color:#9FB1C9; }
+.atas { background:var(--navy); border-bottom-color:var(--navy2); backdrop-filter:none; }
+.atas .tab button { color:#B8C4D6; }
+.atas .tab button:hover, .atas .tab button.on { color:#FFFFFF; }
+.atas .tab button.on { border-bottom-color:#2DD4BF; }
+.kartu:hover, .kartu:focus-visible { background:#FFFFFF; border-color:var(--accent); box-shadow:0 10px 28px rgba(15,23,42,.12); }
