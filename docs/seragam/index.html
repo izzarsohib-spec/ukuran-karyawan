@@ -278,6 +278,7 @@
   /* mode kerja lebar: daftar lokasi disembunyikan, form memakai seluruh lebar, dan daftar nama bergulir bersama halaman (bukan di kotak kecil) */
   #pg-permintaan .layout { grid-template-columns:minmax(0,1fr); }
   .aksibar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+  .aksibar .fchips { display:flex; flex-wrap:wrap; gap:6px; align-items:center; } .aksibar .fchips .chip { cursor:pointer; font-size:.8rem; padding:6px 13px; } .aksibar select.aktif { border-color:var(--accent); } .aksibar .chip.on { background:var(--accent); border-color:var(--accent); color:#111; }
   .aksibar select { border:1px solid var(--stroke); background:var(--solid); color:var(--text); border-radius:99px; padding:7px 12px; font:inherit; font-size:.82rem; max-width:100%; } .btn.baru { background:#fff; color:#111; border-color:#fff; font-weight:600; } .btn.baru:hover { background:var(--accent); border-color:var(--accent); }
   .formminta .pplot { max-height:none; overflow:visible; border:0; border-radius:0; }
   .formminta .pplot table { width:100%; }
@@ -829,7 +830,7 @@
     <section class="bawah card" id="mBawah">
       <div class="bar-top">
         <h3>Pemesanan per lokasi</h3>
-        <div class="aksibar"><select id="mFilterDibuat" aria-label="Filter lokasi menurut pengajuan"><option value="semua">Semua lokasi</option><option value="sudah">Sudah dibuat</option><option value="belum">Belum pernah dibuat</option></select><button class="btn baru" id="mBaru" type="button">+ Buat baru</button><button class="btn" id="stMuat">Muat ulang</button></div>
+        <div class="aksibar"><div class="fchips" id="mFilterBar" role="group" aria-label="Filter lokasi"><button class="chip on" type="button" data-fl="semua">Semua lokasi</button><button class="chip" type="button" data-fl="sudah">Sudah dipesan</button><button class="chip" type="button" data-fl="belum">Belum dipesan</button><select id="mFilterBagian" aria-label="Filter bagian kerja"><option value="">Bagian kerja</option></select></div><button class="btn baru" id="mBaru" type="button">+ Buat baru</button><button class="btn" id="stMuat">Muat ulang</button></div>
       </div>
       <div class="layout">
         <div class="detail tiga" id="mDetail">
@@ -1397,7 +1398,14 @@
   const hargaDari = no => HARGA.find(h => String(h.no) === String(no));
   const opsiItem = no => '<option value="">Pilih item</option>' + [...new Set(HARGA.map(h => h.kat))].map(k =>
     `<optgroup label="${esc(k)}">` + HARGA.filter(h => h.kat === k).map(h => `<option value="${h.no}" ${String(h.no) === String(no) ? 'selected' : ''}>${esc(h.nama)}</option>`).join('') + '</optgroup>').join('');
-  let mPilih = false, mFilterDibuat = 'semua', mSel = '', terbukaMinta = false, mStatusF = 'semua', mKerja = false; // mKerja: form permintaan memakai seluruh lebar halaman (daftar lokasi disembunyikan)
+  // singkatan bagian kerja agar daftar enak dibaca: KEAMANAN PRIA (SECURITY) -> Security, KEBERSIHAN (CLEANING SERVICE) -> CS, PENGEMUDI (DRIVER) -> Driver
+  const SINGKAT_BAGIAN = [[/cleaning|kebersihan/i, 'CS'], [/security|keamanan/i, 'Security'], [/driver|pengemudi|sopir/i, 'Driver'], [/leader|pengawas/i, 'Pengawas'], [/pramubakti|administrasi/i, 'Pramubakti']];
+  const judulKata = t => t.toLowerCase().replace(/(^|[\s/])(\S)/g, (m, a, b) => a + b.toUpperCase());
+  function singkatBagian(nama) {
+    const t = String(nama || '').trim(); for (const [re, v] of SINGKAT_BAGIAN) if (re.test(t)) return v;
+    const m = t.match(/\(([^)]+)\)/); return judulKata(m ? m[1] : t);
+  }
+  let mPilih = false, mFilterDibuat = 'semua', mFilterBagian = '', mSel = '', terbukaMinta = false, mStatusF = 'semua', mKerja = false; // mKerja: form permintaan memakai seluruh lebar halaman (daftar lokasi disembunyikan)
   const mAnggota = () => { const l = lokasi.find(x => x.lokasi === mSel); return l && l.bagian.find(b => b.nama === $('mBagian').value); };
   // permintaan yang ditolak/revisi tidak dihitung, karena akan dibuat ulang
   // peralatan yang memakai anggaran seragam (halaman Peralatan) ikut mengurangi sisa RAB seragam bagian itu
@@ -2084,16 +2092,32 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     if (mSel && !semua.some(l => l.lokasi === mSel)) setLokasiMinta('');
     const n = s => s === 'semua' ? semua.length : s === 'menyusul' ? semua.filter(l => l.mi.nyusul > 0).length : semua.filter(l => l.mi.s === s).length;
     $('infoMinta').textContent = semua.length ? `${semua.length} lokasi · ${n('belum')} belum dibuat · ${n('menunggu')} menunggu · ${n('disetujui')} disetujui · ${n('ditolak')} ditolak/revisi${n('menyusul') ? ` · ${n('menyusul')} lokasi ada yang menyusul (${idn(semua.reduce((a, l) => a + l.mi.nyusul, 0))} orang)` : ''}` : 'Memuat data…';
-    const fo = $('mFilterDibuat'); if (fo) { const sd = semua.filter(l => l.mi.ada > 0).length; fo.options[0].textContent = `Semua lokasi (${semua.length})`; fo.options[1].textContent = `Sudah dibuat (${sd})`; fo.options[2].textContent = `Belum pernah dibuat (${semua.length - sd})`; }
+    renderFilterLok();
     renderDetailMinta();
+  }
+  // filter lokasi (berdampingan): Semua lokasi / Sudah dipesan / Belum dipesan + Bagian kerja. Dengan bagian kerja dipilih, "sudah/belum dipesan" berlaku untuk bagian itu saja.
+  const punyaBagian = l => !mFilterBagian || l.bagian.some(x => singkatBagian(x.nama) === mFilterBagian);
+  const sudahDipesan = l => mFilterBagian ? daftarMinta.some(p => p.lokasi_form === l.lokasi && singkatBagian(p.bagian_kerja) === mFilterBagian) : infoLok(l).ada > 0;
+  const cocokFilter = l => punyaBagian(l) && (mFilterDibuat === 'semua' || (mFilterDibuat === 'sudah') === sudahDipesan(l));
+  function renderFilterLok() {
+    const bar = $('mFilterBar'); if (!bar) return;
+    const semua = lokMinta(), dasar = semua.filter(punyaBagian), sd = dasar.filter(sudahDipesan).length;
+    const jml = { semua: dasar.length, sudah: sd, belum: dasar.length - sd }, nama = { semua: 'Semua lokasi', sudah: 'Sudah dipesan', belum: 'Belum dipesan' };
+    bar.querySelectorAll('[data-fl]').forEach(b => { const k = b.dataset.fl; b.textContent = `${nama[k]} (${idn(jml[k])})`; b.classList.toggle('on', mFilterDibuat === k); b.setAttribute('aria-pressed', String(mFilterDibuat === k)); });
+    const sel = $('mFilterBagian'), ada = new Map();
+    for (const l of semua) for (const b of l.bagian) { const n = singkatBagian(b.nama); ada.set(n, (ada.get(n) || 0) + 1); }
+    const urut = [...ada.keys()].sort((a, b) => { const ia = SINGKAT_BAGIAN.findIndex(x => x[1] === a), ib = SINGKAT_BAGIAN.findIndex(x => x[1] === b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b); });
+    const html = '<option value="">Semua bagian kerja</option>' + urut.map(n => `<option value="${esc(n)}" ${n === mFilterBagian ? 'selected' : ''}>${esc(n)} (${ada.get(n)})</option>`).join('');
+    if (sel.dataset.h !== html) { sel.innerHTML = html; sel.dataset.h = html; }
+    sel.value = mFilterBagian; sel.classList.toggle('aktif', !!mFilterBagian);
   }
   // pemilih lokasi di dalam kartu form (muncul selama belum ada lokasi terpilih); mengikuti filter Sudah dibuat / Belum pernah dibuat
   function renderPilihLok() {
     const el = $('mPilihHasil'); if (!el) return;
     const q = $('mPilihLok').value.trim().toLowerCase().split(/\s+/).filter(Boolean), warna = { ok: 'var(--ok)', warn: 'var(--orange)', bad: 'var(--bad)', neu: 'var(--muted)' };
-    const hasil = lokMinta().filter(l => q.every(w => l.kunci.includes(w)) && (mFilterDibuat === 'semua' || (mFilterDibuat === 'sudah') === (infoLok(l).ada > 0)))
+    const hasil = lokMinta().filter(l => q.every(w => l.kunci.includes(w)) && cocokFilter(l))
       .sort((a, b) => q.length ? a.client.localeCompare(b.client) : (URUT_LS[infoLok(a).s] - URUT_LS[infoLok(b).s]) || a.client.localeCompare(b.client));
-    el.innerHTML = `<div class="plh"><span>${mFilterDibuat === 'belum' ? 'Lokasi belum pernah dibuat' : mFilterDibuat === 'sudah' ? 'Lokasi yang sudah dibuat' : 'Semua lokasi'}</span><span>${idn(hasil.length)}</span></div>`
+    el.innerHTML = `<div class="plh"><span>${(mFilterDibuat === 'belum' ? 'Belum dipesan' : mFilterDibuat === 'sudah' ? 'Sudah dipesan' : 'Semua lokasi') + (mFilterBagian ? ' · ' + mFilterBagian : '')}</span><span>${idn(hasil.length)}</span></div>`
       + (hasil.slice(0, 300).map(l => { const mi = infoLok(l), [lb, cl] = LS[mi.s]; return `<button class="pk ${l.lokasi === mSel ? 'sel' : ''}" type="button" role="option" data-pilih="${esc(l.lokasi)}"><i style="background:${warna[cl] || warna.neu}"></i><span><b>${esc(l.client)}</b><small>${esc(lb)} · ${mi.ada}/${mi.total} bagian kerja</small></span></button>`; }).join('') || '<div class="kosongnya">Lokasi tidak ditemukan.</div>');
   }
   function renderDetailMinta() {
@@ -2143,9 +2167,11 @@ Alasan (boleh kosong):`); if (alasan === null) return;
   $('mPilihLok').oninput = cbBuka;
   $('mPilihTog').onclick = () => { if ($('mPilihHasil').hidden) $('mPilihLok').focus(); else cbTutup(); };
   $('mPilihHasil').onclick = e => { const b = e.target.closest('[data-pilih]'); if (!b) return; mPilih = false; terbukaMinta = true; setLokasiMinta(b.dataset.pilih); renderDaftarMinta(); renderMini(); cbTutup(); };
-  document.addEventListener('click', e => { if (!$('mPilihHasil').hidden && !e.target.closest('.lokbox, #mBaru, #mFilterDibuat')) cbTutup(); });
+  document.addEventListener('click', e => { if (!$('mPilihHasil').hidden && !e.target.closest('.lokbox, #mBaru, #mFilterBar')) cbTutup(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('mPilihHasil').hidden) { cbTutup(); $('mPilihLok').blur(); } });
-  $('mFilterDibuat').onchange = e => { mFilterDibuat = e.target.value; $('mForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('mPilihLok').value = ''; $('mPilihLok').focus({ preventScroll: true }); cbBuka(); };
+  const bukaDaftarFilter = () => { renderFilterLok(); $('mForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('mPilihLok').value = ''; $('mPilihLok').focus({ preventScroll: true }); cbBuka(); };
+  $('mFilterBar').onclick = e => { const b = e.target.closest('[data-fl]'); if (!b) return; mFilterDibuat = b.dataset.fl; bukaDaftarFilter(); };
+  $('mFilterBagian').onchange = e => { mFilterBagian = e.target.value; bukaDaftarFilter(); };
   // Buat baru: lepas lokasi terpilih (form dikosongkan, isian lokasi sebelumnya tetap tersimpan sebagai draf selama halaman terbuka), lalu tampilkan form dengan pemilih lokasi di dalamnya
   $('mBaru').onclick = () => {
     mPilih = true; terbukaMinta = true; setLokasiMinta(''); renderDaftarMinta(); renderMini();
@@ -3810,13 +3836,6 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   const areaLokasi = nm => { const c = window.Saring && Saring.areaDari(nm); return c ? String(c.induk || c.id) : ''; };
   const statusPimpinan = (who, p) => { const s = PIMP[who].st(p); return s === 'disetujui' ? 'disetujui' : s === 'ditolak' ? 'ditolak' : stReq(p) === 'ditolak' ? 'gugur' : 'menunggu'; };
   // isi daftar kartu pimpinan: tanpa kata cari = permintaan menurut status pimpinan itu; dengan kata cari = lokasi yang cocok (termasuk yang belum pernah memesan)
-  // singkatan bagian kerja agar daftar enak dibaca: KEAMANAN PRIA (SECURITY) -> Security, KEBERSIHAN (CLEANING SERVICE) -> CS, PENGEMUDI (DRIVER) -> Driver
-  const SINGKAT_BAGIAN = [[/cleaning|kebersihan/i, 'CS'], [/security|keamanan/i, 'Security'], [/driver|pengemudi|sopir/i, 'Driver'], [/leader|pengawas/i, 'Pengawas'], [/pramubakti|administrasi/i, 'Pramubakti']];
-  const judulKata = t => t.toLowerCase().replace(/(^|[\s/])(\S)/g, (m, a, b) => a + b.toUpperCase());
-  function singkatBagian(nama) {
-    const t = String(nama || '').trim(); for (const [re, v] of SINGKAT_BAGIAN) if (re.test(t)) return v;
-    const m = t.match(/\(([^)]+)\)/); return judulKata(m ? m[1] : t);
-  }
   const TITIK = { ok: BULAT.ok, warn: BULAT.jingga, bad: BULAT.bahaya, neu: 'var(--muted)' };
   function daftarPimp(who, dasar, nm, warna) {
     const f = MP[who], S = window.Saring, q = (f.q || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
