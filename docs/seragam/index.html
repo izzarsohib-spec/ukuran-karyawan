@@ -421,6 +421,13 @@
   @media (max-width: 1180px) { .tiga .kriw .riwlist { flex:none; max-height:340px; } }
   .tiga .kriw .dhead { border-bottom:1px solid var(--stroke); }
   .tiga .k3kosong { padding:22px 6px; text-align:center; color:var(--muted); font-size:.84rem; }
+  .tiga #mKosongB { text-align:left; padding:2px 0 0; }
+  .pilihlok { display:block; font-size:.76rem; color:var(--muted); } .pilihhasil { margin-top:10px; max-height:420px; overflow:auto; scrollbar-width:thin; border-top:1px solid var(--stroke); }
+  .pilihhasil .plh { position:sticky; top:0; display:flex; justify-content:space-between; padding:5px 2px 3px; font-size:.66rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); background:var(--shell); }
+  .pk { display:flex; align-items:center; gap:10px; width:100%; padding:7px 4px; border:0; border-bottom:1px solid var(--stroke); background:none; color:inherit; text-align:left; cursor:pointer; font:inherit; }
+  .pk:hover, .pk:focus-visible { background:var(--panel2); outline:none; } .pk i { width:8px; height:8px; border-radius:3px; flex:none; } .pk span { min-width:0; }
+  .pk b { display:block; font-size:.84rem; font-weight:600; } .pk small { display:block; font-size:.72rem; color:var(--muted); }
+  @media (min-width: 1181px) { .tiga #mKosongB .back { display:none; } }
   .tiga [hidden] { display:none !important; }
   .tiga .sums { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; } .tiga .sums div { padding:10px 12px; border-radius:14px; } .tiga .sums b { font-size:1rem; }
   .tiga .formminta .fgrid { grid-template-columns:repeat(3,minmax(0,1fr)); }
@@ -812,7 +819,7 @@
           <div class="k3 kriw">
             <div class="k3h"><b>Cara mengisi permintaan</b></div>
             <ol class="tuto">
-              <li>Cari lokasi di kolom cari pada kartu Pak Yasir atau Pak Ferry, lalu klik lokasinya.</li>
+              <li>Tekan <b>+ Buat baru</b> lalu pilih lokasi di form pengisian (atau klik lokasinya di kartu Pak Yasir atau Pak Ferry).</li>
               <li>Pilih <b>Bagian kerja</b> di form pengisian (atau klik bagiannya di daftar bawah).</li>
               <li>Di <b>Atas nama siapa</b>: klik <i>Masuk dan muat karyawan</i>, centang nama, lalu <i>Beri seragam ke yang dicentang</i> dan pilih seragam serta jumlahnya. Nama dan ukuran diambil dari isian Google Form.</li>
               <li>Cek <b>Ringkasan pesanan</b> dan <b>Sisa RAB</b> di kartu Rekap &amp; kirim. Sisa merah berarti melebihi anggaran.</li>
@@ -822,7 +829,11 @@
             <div id="mDHead"></div>
           </div>
           <div class="pcard k3 formminta" id="mForm">
-            <div class="k3kosong" id="mKosongB">Pilih lokasi lebih dulu (kolom cari di kartu Pak Yasir atau Pak Ferry), lalu isi form di sini.</div>
+            <div class="k3kosong" id="mKosongB">
+              <div class="row" style="margin-bottom:12px"><h3 style="margin:0">Form pengisian</h3><button class="btn back" id="mBack" type="button">‹ Kembali</button></div>
+              <label class="pilihlok">Pilih lokasi<input id="mPilihLok" type="search" placeholder="Cari lokasi, mis. pengadilan negeri kudus" autocomplete="off"></label>
+              <div class="pilihhasil" id="mPilihHasil"></div>
+            </div>
             <div id="mIsiB" hidden>
             <div class="row" style="margin-bottom:14px"><h3 style="margin:0">Form pengisian</h3><button class="btn" id="mReset">Kosongkan form</button></div>
             <div class="fgrid">
@@ -1368,7 +1379,7 @@
   const hargaDari = no => HARGA.find(h => String(h.no) === String(no));
   const opsiItem = no => '<option value="">Pilih item</option>' + [...new Set(HARGA.map(h => h.kat))].map(k =>
     `<optgroup label="${esc(k)}">` + HARGA.filter(h => h.kat === k).map(h => `<option value="${h.no}" ${String(h.no) === String(no) ? 'selected' : ''}>${esc(h.nama)}</option>`).join('') + '</optgroup>').join('');
-  let mFilterDibuat = 'semua', mSel = '', terbukaMinta = false, mStatusF = 'semua', mKerja = false; // mKerja: form permintaan memakai seluruh lebar halaman (daftar lokasi disembunyikan)
+  let mPilih = false, mFilterDibuat = 'semua', mSel = '', terbukaMinta = false, mStatusF = 'semua', mKerja = false; // mKerja: form permintaan memakai seluruh lebar halaman (daftar lokasi disembunyikan)
   const mAnggota = () => { const l = lokasi.find(x => x.lokasi === mSel); return l && l.bagian.find(b => b.nama === $('mBagian').value); };
   // permintaan yang ditolak/revisi tidak dihitung, karena akan dibuat ulang
   // peralatan yang memakai anggaran seragam (halaman Peralatan) ikut mengurangi sisa RAB seragam bagian itu
@@ -2058,11 +2069,21 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     const fo = $('mFilterDibuat'); if (fo) { const sd = semua.filter(l => l.mi.ada > 0).length; fo.options[0].textContent = `Semua lokasi (${semua.length})`; fo.options[1].textContent = `Sudah dibuat (${sd})`; fo.options[2].textContent = `Belum pernah dibuat (${semua.length - sd})`; }
     renderDetailMinta();
   }
+  // pemilih lokasi di dalam kartu form (muncul selama belum ada lokasi terpilih); mengikuti filter Sudah dibuat / Belum pernah dibuat
+  function renderPilihLok() {
+    const el = $('mPilihHasil'); if (!el) return;
+    const q = $('mPilihLok').value.trim().toLowerCase().split(/\s+/).filter(Boolean), warna = { ok: 'var(--ok)', warn: 'var(--orange)', bad: 'var(--bad)', neu: 'var(--muted)' };
+    const hasil = lokMinta().filter(l => q.every(w => l.kunci.includes(w)) && (mFilterDibuat === 'semua' || (mFilterDibuat === 'sudah') === (infoLok(l).ada > 0)))
+      .sort((a, b) => q.length ? a.client.localeCompare(b.client) : (URUT_LS[infoLok(a).s] - URUT_LS[infoLok(b).s]) || a.client.localeCompare(b.client));
+    el.innerHTML = `<div class="plh"><span>${mFilterDibuat === 'belum' ? 'Lokasi belum pernah dibuat' : mFilterDibuat === 'sudah' ? 'Lokasi yang sudah dibuat' : 'Semua lokasi'}</span><span>${idn(hasil.length)}</span></div>`
+      + (hasil.slice(0, 300).map(l => { const mi = infoLok(l), [lb, cl] = LS[mi.s]; return `<button class="pk" type="button" data-pilih="${esc(l.lokasi)}"><i style="background:${warna[cl] || warna.neu}"></i><span><b>${esc(l.client)}</b><small>${esc(lb)} · ${mi.ada}/${mi.total} bagian kerja</small></span></button>`; }).join('') || '<div class="kosongnya">Lokasi tidak ditemukan.</div>');
+  }
   function renderDetailMinta() {
     const l = lokasi.find(x => x.lokasi === mSel);
-    $('mDetail').classList.toggle('open', terbukaMinta && !!l);
+    $('mDetail').classList.toggle('open', terbukaMinta && (!!l || mPilih));
+    renderPilihLok();
     for (const x of ['B', 'C']) { $('mIsi' + x).hidden = !l; $('mKosong' + x).hidden = !!l; }
-    if (!l) { $('mDHead').innerHTML = '<div class="kosongnya">Cari lokasi di kartu Pak Yasir atau Pak Ferry di atas untuk melihat riwayat pemesanan dan membuat permintaan.</div>'; return; }
+    if (!l) { $('mDHead').innerHTML = '<div class="kosongnya">Tekan + Buat baru, atau klik lokasi di kartu Pak Yasir atau Pak Ferry di atas, untuk melihat riwayat pemesanan dan membuat permintaan.</div>'; return; }
     const mi = l.mi || infoLok(l), [lbl, cls] = LS[mi.s], ang = anggaran && anggaran.peta.get(l.lokasi);
     let totLalu = 0;
     const bagian = l.bagian.map((b, i) => {
@@ -2090,19 +2111,20 @@ Alasan (boleh kosong):`); if (alasan === null) return;
          <div class="riwlist">${riwHtml || '<div class="muted" style="padding:6px 0">Belum pernah memesan.</div>'}</div></div>`;
   }
   $('mDetail').onclick = e => {
-    if (e.target.id === 'mBack') { terbukaMinta = false; renderDetailMinta(); return; }
+    if (e.target.id === 'mBack') { terbukaMinta = false; mPilih = false; renderDetailMinta(); return; }
     const bt = e.target.closest('[data-buat]');
     if (bt) { $('mBagian').value = bt.dataset.buat; gantiKonteks(); infoMinta(); $('mForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     const rw = e.target.closest('[data-riw]');
     if (rw) { const k = rw.dataset.riw; riwTutup.has(k) ? riwTutup.delete(k) : riwTutup.add(k); renderDetailMinta(); }
   };
   $('stMuat').onclick = muatStatus;
-  $('mFilterDibuat').onchange = e => { mFilterDibuat = e.target.value; renderMini(); };
-  // Buat baru: lepas lokasi terpilih (form dikosongkan, isian lokasi sebelumnya tetap tersimpan sebagai draf selama halaman terbuka), lalu arahkan ke kolom cari di kartu Pak Yasir
+  $('mPilihLok').oninput = renderPilihLok;
+  $('mPilihHasil').onclick = e => { const b = e.target.closest('[data-pilih]'); if (!b) return; mPilih = false; terbukaMinta = true; setLokasiMinta(b.dataset.pilih); renderDaftarMinta(); renderMini(); $('mForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  $('mFilterDibuat').onchange = e => { mFilterDibuat = e.target.value; renderMini(); renderPilihLok(); };
+  // Buat baru: lepas lokasi terpilih (form dikosongkan, isian lokasi sebelumnya tetap tersimpan sebagai draf selama halaman terbuka), lalu tampilkan form dengan pemilih lokasi di dalamnya
   $('mBaru').onclick = () => {
-    terbukaMinta = false; MP.yasir.q = MP.ferry.q = ''; setLokasiMinta(''); renderDaftarMinta(); renderMini();
-    const mini = $('md-permintaan'), bar = document.querySelector('.lipatbar[data-mini="md-permintaan"]'); if (mini.classList.contains('tutup') && bar) bar.click();
-    const i = document.querySelector('#md-permintaan [data-pq="yasir"]'); if (i) { i.scrollIntoView({ behavior: 'smooth', block: 'center' }); i.focus(); }
+    mPilih = true; terbukaMinta = true; $('mPilihLok').value = ''; setLokasiMinta(''); renderDaftarMinta(); renderMini();
+    $('mForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('mPilihLok').focus({ preventScroll: true });
   };
 
   // ---- preview surat sebelum dikirim ----
