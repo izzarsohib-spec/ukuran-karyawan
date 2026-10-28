@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 28 Okt 2026
+- **v1.159** Kartu Pak Yasir dan Pak Ferry: tiga filter (status, area, PIC) dipindah dari dasar kartu ke bagian atas, tepat di bawah nama pimpinan.
 - **v1.158** Mini dashboard Permintaan (Seragam): ruang kosong di kartu Pak Yasir dan Pak Ferry diisi daftar lokasi dan bagian kerja, mengikuti filter status, area, dan PIC kartu itu (terbaru di atas, titik warna = status, bisa digulir). Klik satu baris membuka lokasinya di daftar permintaan di bawah.
 - **v1.157** Mini dashboard halaman Permintaan di modul Peralatan: kartu "Menunggu persetujuan" (angka menunggu dan "menunggu paling lama") dihapus, sama seperti di modul Seragam (v1.156). Grafik status lokasi kini mengisi seluruh sisi kanan.
 - **v1.156** Mini dashboard halaman Permintaan: kartu "Menunggu persetujuan" (angka menunggu dan "menunggu paling lama") dihapus; kartu Pak Yasir dan Pak Ferry kini mengisi seluruh sisi kanan. Mini dashboard halaman lain tidak berubah.

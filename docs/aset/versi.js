@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.158', tanggal: '2026-10-28', catatan: 'Kartu Pak Yasir dan Pak Ferry memuat daftar lokasi dan bagian kerja' };
+window.VERSI = { no: '1.159', tanggal: '2026-10-28', catatan: 'Filter kartu Pak Yasir dan Pak Ferry dipindah ke atas kartu' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
