@@ -388,9 +388,9 @@
   // Angkanya ringkasan seluruh data halaman itu (tidak ikut filter di bawahnya). Tombol utama dan kartu "terbesar" memfilter daftar di bawahnya.
   const idn = n => Number(n).toLocaleString('id-ID');
   const hariSejak = d => Math.max(0, Math.floor((Date.now() - new Date(d)) / 864e5));
-  const WARNA = { info: '#8aa4ff', ok: 'var(--ok)', jingga: 'var(--warn)', bahaya: 'var(--bad)', aksen: 'var(--accent)' };
-  const cincin = (id, p) => { const C = 2 * Math.PI * 44; return `<svg viewBox="0 0 110 110" width="100%" height="100%" aria-hidden="true"><defs><linearGradient id="gr-${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb25e"/><stop offset="1" stop-color="#f5d547"/></linearGradient></defs>
-    <circle cx="55" cy="55" r="44" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="11"/>${p > 0 ? `<circle cx="55" cy="55" r="44" fill="none" stroke="url(#gr-${id})" stroke-width="11" stroke-linecap="round" stroke-dasharray="${(C * Math.max(0, Math.min(100, p)) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 55 55)"/>` : ''}</svg>`; };
+  const WARNA = { info: '#4B8F9E', ok: 'var(--ok)', jingga: 'var(--warn)', bahaya: 'var(--bad)', aksen: 'var(--accent)' };
+  const cincin = (id, p) => { const C = 2 * Math.PI * 44; return `<svg viewBox="0 0 110 110" width="100%" height="100%" aria-hidden="true"><defs><linearGradient id="gr-${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14B8A6"/><stop offset="1" stop-color="#0F766E"/></linearGradient></defs>
+    <circle cx="55" cy="55" r="44" fill="none" stroke="var(--track)" stroke-width="11"/>${p > 0 ? `<circle cx="55" cy="55" r="44" fill="none" stroke="url(#gr-${id})" stroke-width="11" stroke-linecap="round" stroke-dasharray="${(C * Math.max(0, Math.min(100, p)) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 55 55)"/>` : ''}</svg>`; };
   // grafik per bulan berdasarkan tanggal pesanan; permintaan tanpa tanggal tidak masuk grafik
   const kunciBulan = d => { const x = new Date(d); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0'); };
   function sumbuBulan() {
@@ -422,7 +422,7 @@
     const lebar = (W - L - R) / n, bw = Math.max(2, lebar * .72), dasar = Ht - B, tinggi = v => (dasar - T) * Math.min(1, v / maks);
     const bar = d.map((l, i) => {
       const x = L + i * lebar + (lebar - bw) / 2, rab = Number(l.rab), pakai = Number(l.terpakai), hr = tinggi(rab), hp = Math.min(tinggi(pakai), Math.max(hr, 3));
-      return `<g tabindex="0"><title>${esc(l.nama)}: anggaran ${esc(rpR(rab))}, terpakai ${esc(rpR(pakai))}</title><rect x="${x.toFixed(1)}" y="${(dasar - hr).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(hr, 1).toFixed(1)}" rx="1.5" fill="rgba(255,255,255,.3)"/>${pakai > 0 ? `<rect x="${x.toFixed(1)}" y="${(dasar - hp).toFixed(1)}" width="${bw.toFixed(1)}" height="${hp.toFixed(1)}" rx="1.5" fill="${pakai > rab ? '#ff7a7a' : '#ffb25e'}"/>` : ''}</g>`;
+      return `<g tabindex="0"><title>${esc(l.nama)}: anggaran ${esc(rpR(rab))}, terpakai ${esc(rpR(pakai))}</title><rect x="${x.toFixed(1)}" y="${(dasar - hr).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(hr, 1).toFixed(1)}" rx="1.5" fill="#CBD5E1"/>${pakai > 0 ? `<rect x="${x.toFixed(1)}" y="${(dasar - hp).toFixed(1)}" width="${bw.toFixed(1)}" height="${hp.toFixed(1)}" rx="1.5" fill="${pakai > rab ? '#ff7a7a' : '#ffb25e'}"/>` : ''}</g>`;
     }).join('');
     return `<svg viewBox="0 0 ${W} ${Ht}" role="img" aria-label="Anggaran tiap lokasi dari terbesar ke terkecil"><line x1="${L}" x2="${W - R}" y1="${dasar}" y2="${dasar}" stroke="rgba(255,255,255,.12)"/>${bar}
       <text x="${L}" y="10" font-size="9" fill="#a4a4ae">${esc(rpR(maks))}</text><text x="${L}" y="${Ht - 5}" font-size="9" fill="#a4a4ae">terbesar</text><text x="${W - R}" y="${Ht - 5}" font-size="9" fill="#a4a4ae" text-anchor="end">terkecil (${n} lokasi)</text></svg>`;
@@ -461,7 +461,7 @@
     return { key: 'anggaran', kecil: 'Anggaran peralatan', judul: 'Pantau pemakaian anggaran tiap lokasi', labelAngka: 'Sisa anggaran peralatan', angka: rpR(rab - pakai),
       persen: rab ? 100 * pakai / rab : 0, labelRing: 'terpakai dari anggaran', cta: ['Lihat yang melebihi RAB', 'lewat'],
       kpi: [[idn(LOK.length), 'Lokasi', WARNA.info], [idn(LOK.filter(l => Number(l.terpakai) > 0).length), 'Sudah memesan', WARNA.ok], [idn(hampir.length), 'Hampir habis (>85%)', WARNA.jingga], [idn(lewat.length), 'Melebihi RAB', WARNA.bahaya]],
-      grafik: { judul: 'Anggaran per lokasi', html: grafikAnggaran(), seri: [{ nama: 'Anggaran', warna: 'rgba(255,255,255,.4)' }, { nama: 'Terpakai', warna: '#ffb25e' }] },
+      grafik: { judul: 'Anggaran per lokasi', html: grafikAnggaran(), seri: [{ nama: 'Anggaran', warna: '#CBD5E1' }, { nama: 'Terpakai', warna: '#D9A441' }] },
       gap: { label: 'Melebihi RAB', besar: idn(lewat.length), pill: lewat.length ? `lebih ${rpR(lebih)}` : 'semua dalam anggaran', ket: 'lokasi dengan jual di atas anggaran',
         worst: buruk && { kecil: 'Kelebihan terbesar', nama: buruk.nama, detail: `${rpR(-sisaLok(buruk))} di atas RAB`, aksi: 'lokasi', arg: buruk.nama } } };
   }
@@ -667,7 +667,7 @@
   }
 
   // ================= GRAFIK DASHBOARD UTAMA (gaya sama dengan dashboard seragam: kartu dengan tombol Grafik / Tabel) =================
-  const WD = { s1: '#3987e5', s2: '#d95926', ok: '#0ca30c', warn: '#fab219', bad: '#d03b3b', track: 'rgba(255,255,255,.14)', grid: 'rgba(255,255,255,.09)', permukaan: '#19191c' };
+  const WD = { s1: '#4B8F9E', s2: '#C98A6B', ok: '#5FA37B', warn: '#D9A441', bad: '#C9645E', track: '#E2E8F0', grid: '#E5EAF1', permukaan: '#FFFFFF' };
   const modeG = new Map();
   const nice = v => { const p = Math.pow(10, Math.floor(Math.log10(Math.max(v, 1)))), f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; };
   const kompak = v => v >= 1e9 ? (v / 1e9).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' M' : v >= 1e6 ? (v / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' jt' : v >= 1e3 ? (v / 1e3).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' rb' : String(v);

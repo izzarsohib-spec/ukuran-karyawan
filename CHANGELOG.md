@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 28 Okt 2026
+- **v1.208** Warna bar tahap pengisian (Sudah lengkap, Sudah mengisi, Proses, Belum mengisi) dan warna grafik di halaman Seragam dan Peralatan diganti palet tenang yang senada tema: teal tua, mint, pasir, dan rose lembut. Bar peringkat lokasi tidak lagi oranye menyala. Latar grafik Peralatan yang masih gelap juga disesuaikan. Hanya warna.
 - **v1.207** Semua halaman diarahkan ke berkas gaya tema versi baru (	ema.css?v=1.207) supaya browser yang masih menyimpan gaya lama langsung memakai warna terbaru (menu samping hijau).
 - **v1.206** Teks menu samping (judul, menu, keterangan akun, tombol Keluar, nomor versi) diganti hijau terang agar jelas di atas navy; menu yang dipilih atau disorot hijau lebih muda. Hanya warna.
 - **v1.205** Tema Navy Eksekutif: sudut yang masih hitam di portal diperbaiki, yaitu menu samping (teks dan ikon terang, penanda aktif teal), bar tab atas (navy dengan garis bawah teal), dan kartu pilihan bidang di Beranda. Hanya warna; tata letak dan fungsi tidak berubah.
