@@ -3748,8 +3748,8 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
       <div class="ringhero">${cincin(m.key, m.persen)}<div class="t"><b>${m.persen.toFixed(1).replace('.', ',')}%</b><span>${esc(m.labelRing)}</span></div></div>
       <div class="kpi">${m.kpi.map(([a, b, c]) => `<div><b>${esc(a)}</b><span><i style="background:${c}"></i>${esc(b)}</span></div>`).join('')}</div></div>
       <div class="rcol${m.pimpinan ? ' dua' : ''}">${m.pimpinan ? m.pimpinan.map(kartuPimpinan).join('') : `<div class="chartcard card"><div class="ttl"><b>${esc(m.grafik.judul)}</b></div>${grafikGaris('md-' + m.key, m.grafik.sumbu, m.grafik.seri, m.grafik.fmt)}</div>`}
-        <div class="gap card"><div><div class="lbl">${esc(m.gap.label)}</div><div class="big">${esc(m.gap.besar)}</div><span class="pill">${esc(m.gap.pill)}</span><div class="muted" style="margin-top:6px">${esc(m.gap.ket)}</div></div>
-          ${w ? `<button class="worst" ${aksiAttr(m.key, w.aksi, w.arg)}><small>${esc(w.kecil)}</small><b>${esc(w.nama)}</b><small>${esc(w.detail)}</small></button>` : '<button class="worst" disabled><small>Tidak ada yang tertunda</small><b>Semua beres ✓</b></button>'}</div></div>`;
+        ${m.pimpinan ? '' : `<div class="gap card"><div><div class="lbl">${esc(m.gap.label)}</div><div class="big">${esc(m.gap.besar)}</div><span class="pill">${esc(m.gap.pill)}</span><div class="muted" style="margin-top:6px">${esc(m.gap.ket)}</div></div>
+          ${w ? `<button class="worst" ${aksiAttr(m.key, w.aksi, w.arg)}><small>${esc(w.kecil)}</small><b>${esc(w.nama)}</b><small>${esc(w.detail)}</small></button>` : '<button class="worst" disabled><small>Tidak ada yang tertunda</small><b>Semua beres ✓</b></button>'}</div>`}</div>`;
   }
   const bulan30 = () => sumbuWaktu(30);
   // jumlah anggota yang seragamnya belum dipesankan (permintaan bertahap), seluruh lokasi yang tampil

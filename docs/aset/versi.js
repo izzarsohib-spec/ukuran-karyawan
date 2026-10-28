@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.155', tanggal: '2026-10-28', catatan: 'Tombol dan panel Filter PIC dihapus dari semua halaman' };
+window.VERSI = { no: '1.156', tanggal: '2026-10-28', catatan: 'Kartu Menunggu persetujuan dihapus dari mini dashboard Permintaan' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
