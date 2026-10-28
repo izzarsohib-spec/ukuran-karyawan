@@ -30,7 +30,8 @@ Deno.serve(async (req) => {
   // judul + ringkasan: dari database (permintaan nyata), atau dari parameter pada uji coba (p=a)
   let judul = '', ringkas = '', urlKeputusan = '';
   const WEB = Deno.env.get('WEB_URL') ?? 'https://izzarsohib-spec.github.io/ukuran-karyawan';
-  if (p === 'a') {
+  const uji0 = p === 'a' || i === '0'; // i=0: pesan uji (tanpa baris database); teks dari parameter, tombol keputusan hanya membuka web
+  if (uji0) {
     judul = (q.get('j') ?? 'Uji coba').slice(0, 120); ringkas = (q.get('r') ?? '').slice(0, 400); urlKeputusan = WEB + '/';
   } else {
     const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -45,7 +46,7 @@ Deno.serve(async (req) => {
   }
 
   const base = `${Deno.env.get('SUPABASE_URL')}/functions/v1/ntfy-halaman`, g = q.get('g')!;
-  const tautan = (hal: number) => `${base}?i=${i}&p=${p}&f=${f}&n=${n}&h=${hal}&g=${g}${p === 'a' ? `&j=${encodeURIComponent(judul)}&r=${encodeURIComponent(ringkas)}${uji ? `&t=${uji}` : ''}` : ''}`;
+  const tautan = (hal: number) => `${base}?i=${i}&p=${p}&f=${f}&n=${n}&h=${hal}&g=${g}${uji0 ? `&j=${encodeURIComponent(judul)}&r=${encodeURIComponent(ringkas)}${uji ? `&t=${uji}` : ''}` : ''}`;
   const sebelum = h === 1 ? n : h - 1, sesudah = h === n ? 1 : h + 1;
   const hasil = await fetch('https://ntfy.sh/', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
