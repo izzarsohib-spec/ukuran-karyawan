@@ -61,7 +61,7 @@ function teksNotif(n: Notif): string {
 
 // kirim ke pimpinan yang kuncinya ada di `daftar`; hasil: kode status HTTP per pimpinan (0 = gagal tersambung)
 // ---- Telegram (jalur utama bila TELEGRAM_BOT_TOKEN dan TELEGRAM_CHAT_YASIR / TELEGRAM_CHAT_FERRY terpasang; ntfy menjadi cadangan bila Telegram gagal) ----
-// Surat dikirim sebagai album foto (maks 10 per album, bisa digeser dan dizoom), lalu satu pesan berisi ringkasan + tombol Setujui / Tolak-Revisi (album tidak bisa memuat tombol).
+// Surat dikirim sebagai foto satu per halaman (tampil besar, bisa dizoom dan digeser di penampil Telegram), lalu satu pesan berisi ringkasan + tombol Setujui / Tolak-Revisi.
 const tgToken = () => Deno.env.get('TELEGRAM_BOT_TOKEN') ?? '';
 const tgChat = (kunci: string) => Deno.env.get(kunci === 'yasir' ? 'TELEGRAM_CHAT_YASIR' : 'TELEGRAM_CHAT_FERRY') ?? '';
 async function tgPanggil(metode: string, isi: unknown): Promise<boolean> {
@@ -75,12 +75,12 @@ async function kirimTelegram(n: Notif, p: { kunci: string; nama: string }, urlSe
   const chat = tgChat(p.kunci); if (!tgToken() || !chat) return false;
   const judul = `${n.pengingat ? 'PENGINGAT ' + n.pengingat + ': ' : ''}${n.tambahan ? 'PENAMBAHAN ITEM - ' : ''}Permintaan seragam: ${n.client} (untuk ${p.nama})`.slice(0, 900);
   if (semuaHalaman) {
+    // satu foto per pesan (bukan album): album ditampilkan Telegram sebagai kotak-kotak kecil, sedangkan foto tunggal tampil besar dan terbaca;
+    // saat dibuka, penampil Telegram bisa digeser ke halaman sebelum/sesudahnya karena semuanya foto berurutan di chat yang sama
     const jml = jumlahHalaman(n.urlSurat);
-    for (let a = 1; a <= jml; a += 10) {
-      const b = Math.min(jml, a + 9), foto = [];
-      for (let i = a; i <= b; i++) { const g = halamanKe(n.urlSurat, i); if (!g) return false; foto.push({ type: 'photo', media: g, ...(i === 1 ? { caption: judul } : {}) }); }
-      const ok = foto.length === 1 ? await tgPanggil('sendPhoto', { chat_id: chat, photo: foto[0].media, ...(a === 1 ? { caption: judul } : {}) }) : await tgPanggil('sendMediaGroup', { chat_id: chat, media: foto });
-      if (!ok) return false;
+    for (let i = 1; i <= jml; i++) {
+      const g = halamanKe(n.urlSurat, i); if (!g) return false;
+      if (!(await tgPanggil('sendPhoto', { chat_id: chat, photo: g, caption: (i === 1 ? judul + '\n' : '') + `Halaman ${i} dari ${jml}` }))) return false;
     }
   }
   return await tgPanggil('sendMessage', {
