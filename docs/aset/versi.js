@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.199', tanggal: '2026-10-28', catatan: 'Tanda tangan PIC di semua dokumen yang memuat kolom PIC (seragam dan peralatan)' };
+window.VERSI = { no: '1.200', tanggal: '2026-10-28', catatan: 'Rekap Permintaan: tab Rekap ke vendor per rentang tanggal + PDF' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
