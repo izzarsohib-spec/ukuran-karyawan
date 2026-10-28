@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.176', tanggal: '2026-10-28', catatan: 'Tombol Lengkapi ukuran dari Form dihapus' };
+window.VERSI = { no: '1.177', tanggal: '2026-10-28', catatan: 'Kartu form tidak lagi menimpa kartu sebelah (tabel pembagian seragam, bilah total)' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

@@ -434,6 +434,17 @@
   .pk:hover, .pk:focus-visible, .pk.sel { background:var(--panel2); outline:none; border-radius:8px; } .pk i { width:8px; height:8px; border-radius:3px; flex:none; } .pk span { min-width:0; }
   .pk b { display:block; font-size:.84rem; font-weight:600; } .pk small { display:block; font-size:.72rem; color:var(--muted); }
   .tiga [hidden] { display:none !important; }
+  /* tabel pembagian seragam di kartu form yang sempit: tiap karyawan menjadi satu blok (nama di atas, seragam di bawah), tidak meluber ke kartu sebelah */
+  .tiga .k3 { overflow-x:clip; }
+  .tiga .pplot { overflow-x:hidden; }
+  .tiga .pplot table, .tiga .pplot tbody, .tiga .pplot tr, .tiga .pplot td { display:block; width:100%; min-width:0; }
+  .tiga .pplot thead { display:none; }
+  .tiga .pplot tr { padding:6px 0; border-bottom:1px solid var(--stroke); }
+  .tiga .pplot td, .tiga .pplot td.kn { min-width:0; padding:6px 4px; }
+  .tiga .kcards .skartu { flex:1 1 100%; max-width:none; }
+  .tiga .mbar { margin:0 -20px 10px; padding:10px 20px 8px; }
+  .tiga .msticky { position:static; box-shadow:none; margin-top:12px; } /* totalnya sudah tampil di kartu Rekap; bilah melayang di dasar layar menimpa kartu */
+  .tiga .sums b { font-size:.92rem; white-space:nowrap; letter-spacing:0; }
   .tiga .sums { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; } .tiga .sums div { padding:10px 12px; border-radius:14px; } .tiga .sums b { font-size:1rem; }
   .tiga .formminta .fgrid { grid-template-columns:repeat(3,minmax(0,1fr)); }
   @media (max-width: 1180px) { .detail.tiga { grid-template-columns:minmax(0,1fr); } }
