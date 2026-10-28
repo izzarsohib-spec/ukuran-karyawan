@@ -277,7 +277,8 @@
   .kq .kb { display:flex; gap:6px; flex-wrap:wrap; } .kq .kb .btn { padding:2px 10px; font-size:.72rem; }
   /* mode kerja lebar: daftar lokasi disembunyikan, form memakai seluruh lebar, dan daftar nama bergulir bersama halaman (bukan di kotak kecil) */
   #pg-permintaan .layout { grid-template-columns:minmax(0,1fr); }
-  .aksibar { display:flex; gap:8px; align-items:center; } .btn.baru { background:#fff; color:#111; border-color:#fff; font-weight:600; } .btn.baru:hover { background:var(--accent); border-color:var(--accent); }
+  .aksibar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+  .aksibar select { border:1px solid var(--stroke); background:var(--solid); color:var(--text); border-radius:99px; padding:7px 12px; font:inherit; font-size:.82rem; max-width:100%; } .btn.baru { background:#fff; color:#111; border-color:#fff; font-weight:600; } .btn.baru:hover { background:var(--accent); border-color:var(--accent); }
   .formminta .pplot { max-height:none; overflow:visible; border:0; border-radius:0; }
   .formminta .pplot table { width:100%; }
   .mbar { position:sticky; top:0; z-index:5; margin:0 -22px 10px; padding:10px 22px 8px; background:rgba(27,27,30,.97); border-bottom:1px solid var(--stroke); backdrop-filter:blur(6px); }
@@ -801,7 +802,7 @@
     <section class="bawah card" id="mBawah">
       <div class="bar-top">
         <h3>Pemesanan per lokasi</h3>
-        <div class="aksibar"><button class="btn baru" id="mBaru" type="button">+ Buat baru</button><button class="btn" id="stMuat">Muat ulang</button></div>
+        <div class="aksibar"><select id="mFilterDibuat" aria-label="Filter lokasi menurut pengajuan"><option value="semua">Semua lokasi</option><option value="sudah">Sudah dibuat</option><option value="belum">Belum pernah dibuat</option></select><button class="btn baru" id="mBaru" type="button">+ Buat baru</button><button class="btn" id="stMuat">Muat ulang</button></div>
       </div>
       <div class="layout">
         <div class="detail tiga" id="mDetail">
@@ -1364,7 +1365,7 @@
   const hargaDari = no => HARGA.find(h => String(h.no) === String(no));
   const opsiItem = no => '<option value="">Pilih item</option>' + [...new Set(HARGA.map(h => h.kat))].map(k =>
     `<optgroup label="${esc(k)}">` + HARGA.filter(h => h.kat === k).map(h => `<option value="${h.no}" ${String(h.no) === String(no) ? 'selected' : ''}>${esc(h.nama)}</option>`).join('') + '</optgroup>').join('');
-  let mSel = '', terbukaMinta = false, mStatusF = 'semua', mKerja = false; // mKerja: form permintaan memakai seluruh lebar halaman (daftar lokasi disembunyikan)
+  let mFilterDibuat = 'semua', mSel = '', terbukaMinta = false, mStatusF = 'semua', mKerja = false; // mKerja: form permintaan memakai seluruh lebar halaman (daftar lokasi disembunyikan)
   const mAnggota = () => { const l = lokasi.find(x => x.lokasi === mSel); return l && l.bagian.find(b => b.nama === $('mBagian').value); };
   // permintaan yang ditolak/revisi tidak dihitung, karena akan dibuat ulang
   // peralatan yang memakai anggaran seragam (halaman Peralatan) ikut mengurangi sisa RAB seragam bagian itu
@@ -2051,6 +2052,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     if (mSel && !semua.some(l => l.lokasi === mSel)) setLokasiMinta('');
     const n = s => s === 'semua' ? semua.length : s === 'menyusul' ? semua.filter(l => l.mi.nyusul > 0).length : semua.filter(l => l.mi.s === s).length;
     $('infoMinta').textContent = semua.length ? `${semua.length} lokasi · ${n('belum')} belum dibuat · ${n('menunggu')} menunggu · ${n('disetujui')} disetujui · ${n('ditolak')} ditolak/revisi${n('menyusul') ? ` · ${n('menyusul')} lokasi ada yang menyusul (${idn(semua.reduce((a, l) => a + l.mi.nyusul, 0))} orang)` : ''}` : 'Memuat data…';
+    const fo = $('mFilterDibuat'); if (fo) { const sd = semua.filter(l => l.mi.ada > 0).length; fo.options[0].textContent = `Semua lokasi (${semua.length})`; fo.options[1].textContent = `Sudah dibuat (${sd})`; fo.options[2].textContent = `Belum pernah dibuat (${semua.length - sd})`; }
     renderDetailMinta();
   }
   function renderDetailMinta() {
@@ -2092,6 +2094,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     if (rw) { const k = rw.dataset.riw; riwTutup.has(k) ? riwTutup.delete(k) : riwTutup.add(k); renderDetailMinta(); }
   };
   $('stMuat').onclick = muatStatus;
+  $('mFilterDibuat').onchange = e => { mFilterDibuat = e.target.value; renderMini(); };
   // Buat baru: lepas lokasi terpilih (form dikosongkan, isian lokasi sebelumnya tetap tersimpan sebagai draf selama halaman terbuka), lalu arahkan ke kolom cari di kartu Pak Yasir
   $('mBaru').onclick = () => {
     terbukaMinta = false; MP.yasir.q = MP.ferry.q = ''; setLokasiMinta(''); renderDaftarMinta(); renderMini();
@@ -3767,10 +3770,10 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   const TITIK = { ok: BULAT.ok, warn: BULAT.jingga, bad: BULAT.bahaya, neu: 'var(--muted)' };
   function daftarPimp(who, dasar, nm, warna) {
     const f = MP[who], S = window.Saring, q = (f.q || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
-    if (q.length) {
-      const hasil = lokMinta().filter(l => q.every(w => l.kunci.includes(w)) && (!f.area || areaLokasi(l.lokasi) === f.area) && (!f.pic || (S && S.picDari(l.lokasi) && String(S.picDari(l.lokasi).id) === f.pic))).sort((a, b) => a.client.localeCompare(b.client));
-      const baris = hasil.slice(0, 80).map(l => { const mi = infoLok(l), [lb, cl] = LS[mi.s]; return `<button class="pl ${l.lokasi === mSel ? 'sel' : ''}" ${aksiAttr('permintaan', 'lokasi', l.lokasi)}><i style="background:${TITIK[cl] || TITIK.neu}"></i><span><b>${esc(l.client)}</b><small>${esc(lb)} · ${mi.ada}/${mi.total} bagian kerja</small></span></button>`; }).join('');
-      return `<div class="plh"><span>Hasil cari lokasi</span><span>${idn(hasil.length)}</span></div>${baris || '<div class="kosongnya">Lokasi tidak ditemukan.</div>'}`;
+    if (q.length || mFilterDibuat === 'belum') {
+      const hasil = lokMinta().filter(l => q.every(w => l.kunci.includes(w)) && (mFilterDibuat === 'semua' || (mFilterDibuat === 'sudah') === (infoLok(l).ada > 0)) && (!f.area || areaLokasi(l.lokasi) === f.area) && (!f.pic || (S && S.picDari(l.lokasi) && String(S.picDari(l.lokasi).id) === f.pic))).sort((a, b) => a.client.localeCompare(b.client));
+      const baris = hasil.slice(0, 300).map(l => { const mi = infoLok(l), [lb, cl] = LS[mi.s]; return `<button class="pl ${l.lokasi === mSel ? 'sel' : ''}" ${aksiAttr('permintaan', 'lokasi', l.lokasi)}><i style="background:${TITIK[cl] || TITIK.neu}"></i><span><b>${esc(l.client)}</b><small>${esc(lb)} · ${mi.ada}/${mi.total} bagian kerja</small></span></button>`; }).join('');
+      return `<div class="plh"><span>${q.length ? 'Hasil cari lokasi' : 'Lokasi belum pernah dibuat'}</span><span>${idn(hasil.length)}</span></div>${baris || '<div class="kosongnya">Lokasi tidak ditemukan.</div>'}`;
     }
     const sub = dasar.filter(p => { const k = statusPimpinan(who, p); return k !== 'gugur' && (f.st === 'semua' || k === f.st); }).sort((a, b) => new Date(b.dibuat) - new Date(a.dibuat));
     // satu baris per lokasi: bagian kerjanya digabung (nama disingkat), titik warna = status bagian itu menurut pimpinan ini
