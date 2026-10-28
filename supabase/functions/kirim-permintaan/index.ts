@@ -60,6 +60,34 @@ function teksNotif(n: Notif): string {
 }
 
 // kirim ke pimpinan yang kuncinya ada di `daftar`; hasil: kode status HTTP per pimpinan (0 = gagal tersambung)
+// ---- Telegram (jalur utama bila TELEGRAM_BOT_TOKEN dan TELEGRAM_CHAT_YASIR / TELEGRAM_CHAT_FERRY terpasang; ntfy menjadi cadangan bila Telegram gagal) ----
+// Surat dikirim sebagai album foto (maks 10 per album, bisa digeser dan dizoom), lalu satu pesan berisi ringkasan + tombol Setujui / Tolak-Revisi (album tidak bisa memuat tombol).
+const tgToken = () => Deno.env.get('TELEGRAM_BOT_TOKEN') ?? '';
+const tgChat = (kunci: string) => Deno.env.get(kunci === 'yasir' ? 'TELEGRAM_CHAT_YASIR' : 'TELEGRAM_CHAT_FERRY') ?? '';
+async function tgPanggil(metode: string, isi: unknown): Promise<boolean> {
+  try {
+    const r = await fetch(`https://api.telegram.org/bot${tgToken()}/${metode}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(isi) });
+    if (!r.ok) console.error('Telegram', metode, r.status, (await r.text()).slice(0, 200));
+    return r.ok;
+  } catch (e) { console.error('Telegram', metode, String(e)); return false; }
+}
+async function kirimTelegram(n: Notif, p: { kunci: string; nama: string }, urlSetuju: string, urlRevisi: string, teks: string, semuaHalaman: boolean): Promise<boolean> {
+  const chat = tgChat(p.kunci); if (!tgToken() || !chat) return false;
+  const judul = `${n.pengingat ? 'PENGINGAT ' + n.pengingat + ': ' : ''}${n.tambahan ? 'PENAMBAHAN ITEM - ' : ''}Permintaan seragam: ${n.client} (untuk ${p.nama})`.slice(0, 900);
+  if (semuaHalaman) {
+    const jml = jumlahHalaman(n.urlSurat);
+    for (let a = 1; a <= jml; a += 10) {
+      const b = Math.min(jml, a + 9), foto = [];
+      for (let i = a; i <= b; i++) { const g = halamanKe(n.urlSurat, i); if (!g) return false; foto.push({ type: 'photo', media: g, ...(i === 1 ? { caption: judul } : {}) }); }
+      const ok = foto.length === 1 ? await tgPanggil('sendPhoto', { chat_id: chat, photo: foto[0].media, ...(a === 1 ? { caption: judul } : {}) }) : await tgPanggil('sendMediaGroup', { chat_id: chat, media: foto });
+      if (!ok) return false;
+    }
+  }
+  return await tgPanggil('sendMessage', {
+    chat_id: chat, text: (semuaHalaman ? '' : judul + '\n\n') + teks, disable_web_page_preview: true,
+    reply_markup: { inline_keyboard: [[{ text: `✅ Setujui ${p.nama}`, url: urlSetuju }, { text: '✏️ Tolak / Revisi', url: urlRevisi }]] },
+  });
+}
 // semuaHalaman: halaman 2..N surat dikirim lebih dulu sebagai pesan senyap (prioritas min) masing-masing berlampir gambar; pesan utama dikirim terakhir dengan halaman 1,
 // jadi di aplikasi ntfy urutannya dari atas: pesan utama (halaman 1 + tombol), halaman 2, halaman 3, dst. Pengingat harian hanya mengirim pesan utama.
 async function kirimNotif(n: Notif, daftar: string[], semuaHalaman = true): Promise<Record<string, number>> {
@@ -70,6 +98,8 @@ async function kirimNotif(n: Notif, daftar: string[], semuaHalaman = true): Prom
     const urlSetuju = `${WEB}/setujui.html?id=${n.id}&p=${p.kunci}&t=${n.token[p.kunci]}`;
     // Tolak/Revisi membuka halaman web agar pimpinan bisa menulis alasan (tombol http ntfy tidak bisa menerima teks)
     const urlRevisi = `${WEB}/revisi.html?id=${n.id}&p=${p.kunci}&t=${n.token[p.kunci]}`;
+    // Telegram lebih dulu; bila tidak terpasang atau gagal, jatuh ke ntfy
+    if (await kirimTelegram(n, p, urlSetuju, urlRevisi, teks, semuaHalaman)) { hasil[p.kunci] = 200; continue; }
     if (semuaHalaman) {
       const jml = jumlahHalaman(n.urlSurat);
       for (let i = jml; i >= 2; i--) {
