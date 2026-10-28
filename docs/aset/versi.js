@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.163', tanggal: '2026-10-28', catatan: 'Singkatan bagian kerja: Pengawas ditampilkan sebagai Pengawas' };
+window.VERSI = { no: '1.164', tanggal: '2026-10-28', catatan: 'Kartu 1 halaman Permintaan: tutorial cara mengisi + riwayat singkat dan sisa RAB' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
