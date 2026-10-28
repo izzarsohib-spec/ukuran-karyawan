@@ -53,6 +53,8 @@ Deno.serve(async (req) => {
       topic: topik, sequence_id: `surat-${i}-${p}`, title: judul, priority: 4, tags: ['package'],
       message: `${ringkas}\n\nHalaman ${h} dari ${n} · ketuk ◄ ► untuk berpindah`,
       attach: `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/lampiran-surat/${f}/${String(h).padStart(2, '0')}.jpg`, filename: `surat-halaman-${h}.jpg`,
+      // mengetuk notifikasi membuka gambar halaman ini utuh (portrait, bisa dizoom); pratinjau di dalam notifikasi dipotong aplikasi ntfy (maks 150 dp)
+      click: `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/lampiran-surat/${f}/${String(h).padStart(2, '0')}.jpg`,
       actions: [
         { action: 'http', label: '◄ Sebelumnya', url: tautan(sebelum), method: 'POST', clear: false },
         { action: 'http', label: 'Berikutnya ►', url: tautan(sesudah), method: 'POST', clear: false },

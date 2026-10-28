@@ -113,7 +113,7 @@ async function kirimNotif(n: Notif, daftar: string[], semuaHalaman = true): Prom
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             topic: p.topik(), sequence_id: `surat-${n.id}-${kodeP}`, title: `${n.tambahan ? 'PENAMBAHAN ITEM - ' : ''}Permintaan seragam: ${n.client} (untuk ${p.nama})`.slice(0, 120), priority: 4, tags: [n.tambahan ? 'heavy_plus_sign' : 'package'],
-            message: `${ringkas}\n\nHalaman 1 dari ${jmlN} · ketuk ◄ ► untuk berpindah`, attach: halamanKe(n.urlSurat, 1), filename: 'surat-halaman-1.jpg',
+            message: `${ringkas}\n\nHalaman 1 dari ${jmlN} · ketuk ◄ ► untuk berpindah`, attach: halamanKe(n.urlSurat, 1), filename: 'surat-halaman-1.jpg', click: halamanKe(n.urlSurat, 1), // ketuk notifikasi = buka halaman utuh (portrait, bisa dizoom)
             actions: [
               { action: 'http', label: '◄ Sebelumnya', url: tautan(jmlN), method: 'POST', clear: false },
               { action: 'http', label: 'Berikutnya ►', url: tautan(2), method: 'POST', clear: false },
