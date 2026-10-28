@@ -277,7 +277,8 @@
   .kq .kb { display:flex; gap:6px; flex-wrap:wrap; } .kq .kb .btn { padding:2px 10px; font-size:.72rem; }
   /* mode kerja lebar: daftar lokasi disembunyikan, form memakai seluruh lebar, dan daftar nama bergulir bersama halaman (bukan di kotak kecil) */
   #mBawah.kerja .layout { grid-template-columns:minmax(0,1fr); }
-  #mBawah.kerja .list, #mBawah.kerja .bar-top, #mBawah.kerja #mChips { display:none; }
+  #mBawah.kerja .bar-top { display:none; }
+  #pg-permintaan .layout { grid-template-columns:minmax(0,1fr); }
   .formminta .pplot { max-height:none; overflow:visible; border:0; border-radius:0; }
   .formminta .pplot table { width:100%; }
   .mbar { position:sticky; top:0; z-index:5; margin:0 -22px 10px; padding:10px 22px 8px; background:rgba(27,27,30,.97); border-bottom:1px solid var(--stroke); backdrop-filter:blur(6px); }
@@ -512,6 +513,9 @@
   .pimp .pl i { width:8px; height:8px; border-radius:3px; flex:none; } .pimp .pl span { min-width:0; }
   .pimp .pl b { display:block; font-size:.78rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .pimp .pl small { display:block; font-size:.68rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .pimp .plist .kosongnya { padding:10px 2px; font-size:.76rem; }
+  .pimp .pl.sel { background:var(--panel2); border-radius:8px; }
+  .pimp .ps { grid-column:1 / -1; display:flex; align-items:center; gap:6px; border:1px solid var(--stroke); background:var(--solid); border-radius:10px; padding:0 8px; font-size:.74rem; }
+  .pimp .ps input { flex:1; min-width:0; border:0; background:none; color:var(--text); font:inherit; padding:6px 0; outline:none; }
   .pimp .pf { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
   .pimp .pf select { width:100%; min-width:0; border:1px solid var(--stroke); background:var(--solid); color:var(--text); border-radius:10px; padding:5px 6px; font:inherit; font-size:.74rem; }
   @media (max-width: 980px) { .top.mini { grid-template-columns:1fr; } }
@@ -771,15 +775,10 @@
 
     <section class="bawah card" id="mBawah">
       <div class="bar-top">
-        <h3>Daftar lokasi</h3>
-        <label class="search"><span aria-hidden="true">🔍</span>
-          <input id="mCari" type="search" placeholder="Cari lokasi, mis. pengadilan negeri kudus">
-        </label>
+        <h3>Riwayat pemesanan</h3>
         <button class="btn" id="stMuat">Muat ulang</button>
       </div>
-      <div class="chips" id="mChips" style="margin-bottom:14px"></div>
       <div class="layout">
-        <div class="list"><div class="scroll" id="mDaftar"></div></div>
         <div class="detail" id="mDetail">
           <div id="mDHead"></div>
           <div class="pcard formminta" id="mForm" hidden>
@@ -1924,7 +1923,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     .map(([n, st, t, kirim, alasan]) => `<div class="rl"><span>${n}</span><span class="badge ${st === 'disetujui' ? 'ok' : st === 'ditolak' ? 'bad' : 'warn'}">${st === 'disetujui' ? 'Disetujui' : st === 'ditolak' ? 'Ditolak / Revisi' : 'Menunggu'}${t ? ' · ' + tglP(t) : ''}${kirim === false ? ' · gagal terkirim' : ''}</span></div>${kirim === false && st === 'menunggu' ? `<div class="rl"><span class="muted">Notifikasi ke ${n} belum sampai.</span><button class="btn ghost" data-ulang="${x.id}" type="button">Kirim ulang notifikasi</button></div>` : ''}${st === 'ditolak' && alasan ? `<div class="alasan"><b>Alasan ${n}:</b> ${esc(alasan)}</div>` : ''}`).join('');
   const LS = { belum: ['Belum dibuat', 'neu'], sebagian: ['Belum lengkap', 'warn'], menunggu: ['Menunggu', 'warn'], setuju_yasir: ['Disetujui Pak Yasir', 'warn'], setuju_ferry: ['Disetujui Pak Ferry', 'warn'], disetujui: ['Disetujui', 'ok'], ditolak: ['Ditolak / Revisi', 'bad'], terkunci: ['', 'neu'] };
   const URUT_LS = { ditolak: 0, belum: 1, sebagian: 2, menunggu: 3, setuju_yasir: 4, setuju_ferry: 5, disetujui: 6, terkunci: 7 };
-  let daftarMinta = [], statusMuat = false, terbaru = new Map(), riwBuka = new Set(), cakupan = new Map(); // cakupan: lokasi|bagian -> jumlah penerima yang sudah dipesankan (permintaan tidak ditolak)
+  let daftarMinta = [], statusMuat = false, terbaru = new Map(), riwTutup = new Set(), cakupan = new Map(); // cakupan: lokasi|bagian -> jumlah penerima yang sudah dipesankan (permintaan tidak ditolak)
   const tglP = d => new Date(d).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   const rpMin = n => (n < 0 ? '-' : '') + rp(Math.abs(n));
   const lokMinta = () => anggaran ? lokasi.filter(l => anggaran.peta.has(l.lokasi)) : lokasi;
@@ -2007,33 +2006,20 @@ Alasan (boleh kosong):`); if (alasan === null) return;
   }
   function renderDaftarMinta() {
     const semua = lokMinta(); semua.forEach(l => { l.mi = infoLok(l); });
-    const q = $('mCari').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    const f = semua.filter(l => q.every(w => l.kunci.includes(w)) && (mStatusF === 'semua' || (mStatusF === 'menyusul' ? l.mi.nyusul > 0 : l.mi.s === mStatusF)))
-      .sort((a, b) => q.length ? a.client.localeCompare(b.client) : (URUT_LS[a.mi.s] - URUT_LS[b.mi.s]) || a.client.localeCompare(b.client));
-    if (!f.some(l => l.lokasi === mSel)) setLokasiMinta(f.length ? f[0].lokasi : '');
+    if (mSel && !semua.some(l => l.lokasi === mSel)) setLokasiMinta('');
     const n = s => s === 'semua' ? semua.length : s === 'menyusul' ? semua.filter(l => l.mi.nyusul > 0).length : semua.filter(l => l.mi.s === s).length;
-    const chips = [['semua', 'Semua'], ['belum', 'Belum dibuat'], ['sebagian', 'Belum lengkap'], ['menyusul', 'Ada yang menyusul'], ['menunggu', 'Menunggu'], ['setuju_yasir', 'Disetujui Pak Yasir'], ['setuju_ferry', 'Disetujui Pak Ferry'], ['disetujui', 'Disetujui (keduanya)'], ['ditolak', 'Ditolak / Revisi']];
-    $('mChips').innerHTML = chips.map(([s, t]) => `<button class="chip ${mStatusF === s ? 'on' : ''}" data-s="${s}">${t} ${n(s)}</button>`).join('');
     $('infoMinta').textContent = semua.length ? `${semua.length} lokasi · ${n('belum')} belum dibuat · ${n('menunggu')} menunggu · ${n('disetujui')} disetujui · ${n('ditolak')} ditolak/revisi${n('menyusul') ? ` · ${n('menyusul')} lokasi ada yang menyusul (${idn(semua.reduce((a, l) => a + l.mi.nyusul, 0))} orang)` : ''}` : 'Memuat data…';
-    $('mDaftar').innerHTML = f.map(l => {
-      const [lbl, cls] = LS[l.mi.s], pct = l.mi.total ? 100 * l.mi.ada / l.mi.total : 0;
-      return `<button class="item ${l.lokasi === mSel ? 'sel' : ''}" data-k="${esc(l.lokasi)}">
-         <div class="nm">${esc(l.client)}</div>
-         <div class="bar ${cls === 'neu' ? '' : cls}"><i style="width:${pct}%"></i></div>
-         <div class="mt"><span>${l.mi.ada}/${l.mi.total} bagian${l.mi.nyusul ? ` · <b style="color:var(--warn)">menyusul ${l.mi.nyusul} orang</b>` : ''}</span><span class="badge ${cls}">${lbl}</span></div>
-       </button>`;
-    }).join('') || '<div class="kosongnya">Lokasi tidak ditemukan.</div>';
     renderDetailMinta();
   }
   function renderDetailMinta() {
     const l = lokasi.find(x => x.lokasi === mSel);
     $('mDetail').classList.toggle('open', terbukaMinta && !!l);
     $('mForm').hidden = !l;
-    if (!l) { mKerja = false; $('mBawah').classList.remove('kerja'); $('mDHead').innerHTML = '<div class="kosongnya">Pilih lokasi di daftar untuk melihat status dan membuat permintaan.</div>'; return; }
+    if (!l) { mKerja = false; $('mBawah').classList.remove('kerja'); $('mDHead').innerHTML = '<div class="kosongnya">Cari lokasi di kartu Pak Yasir atau Pak Ferry di atas untuk melihat riwayat pemesanan dan membuat permintaan.</div>'; return; }
     $('mBawah').classList.toggle('kerja', mKerja);
     if (mKerja) { // mode kerja: hanya judul lokasi + tombol kembali, sisanya untuk form selebar halaman
       const m0 = l.mi || infoLok(l), [lb0, cl0] = LS[m0.s];
-      $('mDHead').innerHTML = `<div class="dhead"><div class="row"><button class="btn" id="mKeluar">‹ Kembali ke daftar lokasi</button><span class="badge ${cl0}">${lb0}</span></div><h2 style="margin-top:10px">${esc(l.client)}</h2></div>`;
+      $('mDHead').innerHTML = `<div class="dhead"><div class="row"><button class="btn" id="mKeluar">‹ Kembali ke riwayat</button><span class="badge ${cl0}">${lb0}</span></div><h2 style="margin-top:10px">${esc(l.client)}</h2></div>`;
       return;
     }
     const mi = l.mi || infoLok(l), [lbl, cls] = LS[mi.s], ang = anggaran && anggaran.peta.get(l.lokasi);
@@ -2041,7 +2027,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
       const p = mi.per[i], k = l.lokasi + '|' + b.nama, riw = daftarMinta.filter(x => x.lokasi_form === l.lokasi && x.bagian_kerja === b.nama);
       const c0 = cakupan.get(k), sisa = c0 ? Math.max(0, b.target - c0) : 0, nyusul = !!p && stReq(p) !== 'ditolak' && sisa > 0; // sebagian anggota sudah dipesankan, sisanya menyusul
       const badge = (p ? (([t, c]) => `<span class="badge ${c}">${t}</span>`)(labelReq(p)) : '<span class="badge neu">Belum dibuat</span>') + (nyusul ? `<span class="badge warn">Menyusul ${sisa} orang</span>` : '');
-      const buka = riwBuka.has(k);
+      const buka = !riwTutup.has(k);
       return `<div class="bgr"><div class="row"><div><b>${esc(b.nama)}</b><div class="muted">${b.target} orang${ang && ang.per[b.nama] != null ? ' · RAB ' + rp(ang.per[b.nama]) : ''}</div></div>
           <div class="bgact">${badge}<button class="btn" data-buat="${esc(b.nama)}">${p ? (stReq(p) === 'ditolak' ? 'Revisi / buat ulang' : nyusul ? 'Pesankan yang menyusul' : 'Buat lagi') : 'Buat permintaan'}</button></div></div>
         ${riw.length ? `<button class="riw" data-riw="${esc(k)}">${buka ? '▾' : '▸'} Riwayat permintaan (${riw.length})</button>` : ''}
@@ -2061,17 +2047,14 @@ Alasan (boleh kosong):`); if (alasan === null) return;
        </div>
        <div class="dbody">${bagian}</div>`;
   }
-  $('mDaftar').onclick = e => { const b = e.target.closest('.item'); if (b) { terbukaMinta = true; setLokasiMinta(b.dataset.k); renderDaftarMinta(); } };
   $('mDetail').onclick = e => {
     if (e.target.id === 'mBack') { terbukaMinta = false; renderDetailMinta(); return; }
     const bt = e.target.closest('[data-buat]');
     if (e.target.id === 'mKeluar') { mKerja = false; renderDetailMinta(); $('mBawah').scrollIntoView({ block: 'start' }); return; }
     if (bt) { $('mBagian').value = bt.dataset.buat; gantiKonteks(); infoMinta(); mKerja = true; renderDetailMinta(); $('mBawah').scrollIntoView({ block: 'start' }); return; }
     const rw = e.target.closest('[data-riw]');
-    if (rw) { const k = rw.dataset.riw; riwBuka.has(k) ? riwBuka.delete(k) : riwBuka.add(k); renderDetailMinta(); }
+    if (rw) { const k = rw.dataset.riw; riwTutup.has(k) ? riwTutup.delete(k) : riwTutup.add(k); renderDetailMinta(); }
   };
-  $('mChips').onclick = e => { const s = e.target.dataset && e.target.dataset.s; if (s) { mStatusF = s; terbukaMinta = false; renderDaftarMinta(); } };
-  $('mCari').oninput = () => { terbukaMinta = false; renderDaftarMinta(); };
   $('stMuat').onclick = muatStatus;
 
   // ---- preview surat sebelum dikirim ----
@@ -3725,11 +3708,25 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     <circle cx="55" cy="55" r="44" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="11"/><circle cx="55" cy="55" r="44" fill="none" stroke="url(#gr-${id})" stroke-width="11" stroke-linecap="round" stroke-dasharray="${(C * Math.min(100, p) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 55 55)"/></svg>`; };
   const aksiAttr = (k, a, arg) => `data-md="${k}|${a}|${encodeURIComponent(arg || '')}"`;
   // Kartu persetujuan per pimpinan (halaman Permintaan): hitungan dari status tiap pimpinan, disaring status / area / PIC per kartu
-  const MP = { yasir: { st: 'semua', area: '', pic: '' }, ferry: { st: 'semua', area: '', pic: '' } };
+  const MP = { yasir: { st: 'semua', area: '', pic: '', q: '' }, ferry: { st: 'semua', area: '', pic: '', q: '' } };
   const PIMP = { yasir: { nama: 'Pak Yasir', jab: 'Direktur', st: p => stYasir(p) }, ferry: { nama: 'Pak Ferry', jab: 'Direktur Utama', st: p => stFerry(p) } };
   const PIMP_ST = [['semua', 'Semua status'], ['disetujui', 'Disetujui'], ['menunggu', 'Menunggu'], ['ditolak', 'Ditolak / revisi']];
-  const areaPermintaan = p => { const c = window.Saring && Saring.areaDari(p.lokasi_form); return c ? String(c.induk || c.id) : ''; };
+  const areaPermintaan = p => areaLokasi(p.lokasi_form);
+  const areaLokasi = nm => { const c = window.Saring && Saring.areaDari(nm); return c ? String(c.induk || c.id) : ''; };
   const statusPimpinan = (who, p) => { const s = PIMP[who].st(p); return s === 'disetujui' ? 'disetujui' : s === 'ditolak' ? 'ditolak' : stReq(p) === 'ditolak' ? 'gugur' : 'menunggu'; };
+  // isi daftar kartu pimpinan: tanpa kata cari = permintaan menurut status pimpinan itu; dengan kata cari = lokasi yang cocok (termasuk yang belum pernah memesan)
+  const TITIK = { ok: BULAT.ok, warn: BULAT.jingga, bad: BULAT.bahaya, neu: 'var(--muted)' };
+  function daftarPimp(who, dasar, nm, warna) {
+    const f = MP[who], S = window.Saring, q = (f.q || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (q.length) {
+      const hasil = lokMinta().filter(l => q.every(w => l.kunci.includes(w)) && (!f.area || areaLokasi(l.lokasi) === f.area) && (!f.pic || (S && S.picDari(l.lokasi) && String(S.picDari(l.lokasi).id) === f.pic))).sort((a, b) => a.client.localeCompare(b.client));
+      const baris = hasil.slice(0, 80).map(l => { const mi = infoLok(l), [lb, cl] = LS[mi.s]; return `<button class="pl ${l.lokasi === mSel ? 'sel' : ''}" ${aksiAttr('permintaan', 'lokasi', l.lokasi)}><i style="background:${TITIK[cl] || TITIK.neu}"></i><span><b>${esc(l.client)}</b><small>${esc(lb)} · ${mi.ada}/${mi.total} bagian kerja</small></span></button>`; }).join('');
+      return `<div class="plh"><span>Hasil cari lokasi</span><span>${idn(hasil.length)}</span></div>${baris || '<div class="kosongnya">Lokasi tidak ditemukan.</div>'}`;
+    }
+    const daftar = dasar.filter(p => { const k = statusPimpinan(who, p); return k !== 'gugur' && (f.st === 'semua' || k === f.st); }).sort((a, b) => new Date(b.dibuat) - new Date(a.dibuat));
+    const baris = daftar.map(p => { const k = statusPimpinan(who, p); return `<button class="pl ${p.lokasi_form === mSel ? 'sel' : ''}" ${aksiAttr('permintaan', 'lokasi', p.lokasi_form)} title="${esc(nm[k])}"><i style="background:${warna[k]}"></i><span><b>${esc(p.client)}</b><small>${esc(p.bagian_kerja)}</small></span></button>`; }).join('');
+    return `<div class="plh"><span>Lokasi · bagian kerja</span><span>${idn(daftar.length)}</span></div>${baris || '<div class="kosongnya">Tidak ada permintaan untuk pilihan ini.</div>'}`;
+  }
   function kartuPimpinan(who) {
     const f = MP[who], inf = PIMP[who], S = window.Saring;
     const dasar = daftarMinta.filter(p => (!f.area || areaPermintaan(p) === f.area) && (!f.pic || (S && S.picDari(p.lokasi_form) && String(S.picDari(p.lokasi_form).id) === f.pic)));
@@ -3739,17 +3736,17 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const warna = { disetujui: BULAT.ok, menunggu: BULAT.jingga, ditolak: BULAT.bahaya }, nm = { disetujui: 'Disetujui', menunggu: 'Menunggu', ditolak: 'Ditolak / revisi' };
     const pct = k => tot ? 100 * c[k] / tot : 0;
     const opt = (v, t, cur) => `<option value="${esc(v)}" ${String(cur) === String(v) ? 'selected' : ''}>${esc(t)}</option>`;
-    const daftar = dasar.filter(p => { const k = statusPimpinan(who, p); return k !== 'gugur' && (f.st === 'semua' || k === f.st); }).sort((a, b) => new Date(b.dibuat) - new Date(a.dibuat));
-    const baris = daftar.map(p => { const k = statusPimpinan(who, p); return `<button class="pl" ${aksiAttr('permintaan', 'lokasi', p.lokasi_form)} title="${esc(nm[k])}"><i style="background:${warna[k]}"></i><span><b>${esc(p.client)}</b><small>${esc(p.bagian_kerja)}</small></span></button>`; }).join('');
+    const dp = daftarPimp(who, dasar, nm, warna);
     const areas = S ? S.areaUtama() : [], pics = S ? S.picSemua().filter(x => !f.area || x.area === f.area) : [];
-    return `<div class="pimp card"><div class="ph"><b>${inf.nama}</b><small>${inf.jab}</small></div>
-      <div class="pf"><select data-pf="${who}|st" aria-label="Status ${inf.nama}">${PIMP_ST.map(([v, t]) => opt(v, t, f.st)).join('')}</select>
+    return `<div class="pimp card" data-who="${who}"><div class="ph"><b>${inf.nama}</b><small>${inf.jab}</small></div>
+      <div class="pf"><label class="ps"><span aria-hidden="true">🔍</span><input type="search" data-pq="${who}" value="${esc(f.q)}" placeholder="Cari lokasi, mis. pengadilan negeri kudus" autocomplete="off" aria-label="Cari lokasi ${inf.nama}"></label>
+        <select data-pf="${who}|st" aria-label="Status ${inf.nama}">${PIMP_ST.map(([v, t]) => opt(v, t, f.st)).join('')}</select>
         <select data-pf="${who}|area" aria-label="Area ${inf.nama}">${opt('', 'Semua area', f.area)}${areas.map(a => opt(a.id, a.nama, f.area)).join('')}</select>
         <select data-pf="${who}|pic" aria-label="PIC ${inf.nama}">${opt('', 'Semua PIC', f.pic)}${pics.map(x => opt(x.id, x.nama, f.pic)).join('')}</select></div>
       <div class="pbig"><b>${idn(pilih)}</b><span>${f.st === 'semua' ? 'permintaan masuk' : nm[f.st].toLowerCase()}${f.st === 'ditolak' ? '' : ' · ' + rpRingkas(nil)}</span></div>
       <div class="pbar" role="img" aria-label="${['disetujui', 'menunggu', 'ditolak'].map(k => nm[k] + ' ' + c[k]).join(', ')}">${['disetujui', 'menunggu', 'ditolak'].map(k => `<i style="width:${pct(k)}%;background:${warna[k]}"></i>`).join('')}</div>
       <div class="pleg">${['disetujui', 'menunggu', 'ditolak'].map(k => `<span><i style="background:${warna[k]}"></i>${nm[k]} <b>${idn(c[k])}</b></span>`).join('')}</div>
-      <div class="plist"><div class="plh"><span>Lokasi · bagian kerja</span><span>${idn(daftar.length)}</span></div>${baris || '<div class="kosongnya">Tidak ada permintaan untuk pilihan ini.</div>'}</div></div>`;
+      <div class="plist">${dp}</div></div>`;
   }
   function miniHtml(m) {
     const w = m.gap.worst;
@@ -3829,7 +3826,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   }
   const gulirKe = id => { const el = document.querySelector(`#pg-${id} .bawah`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
   function aksiMini(k, a, arg) {
-    if (k === 'permintaan') { if (a === 'menunggu') { const ada = lokMinta().map(l => infoLok(l).s); mStatusF = ['menunggu', 'setuju_yasir', 'setuju_ferry'].find(x => ada.includes(x)) || 'menunggu'; terbukaMinta = false; } else { mStatusF = 'semua'; $('mCari').value = ''; terbukaMinta = true; setLokasiMinta(arg); } renderDaftarMinta(); gulirKe('permintaan'); }
+    if (k === 'permintaan') { if (a === 'menunggu') { MP.yasir.st = MP.ferry.st = 'menunggu'; renderMini(); return; } terbukaMinta = true; setLokasiMinta(arg); renderDaftarMinta(); renderMini(); gulirKe('permintaan'); }
     else if (k === 'ploting') { if (a === 'belum') { const sj = setujuTerakhir(), ada = lokMinta().map(l => infoPlot(l, sj).s); pStatusF = ada.includes('belum') ? 'belum' : 'sebagian'; terbukaPlot = false; } else { pStatusF = 'semua'; $('pCari').value = ''; pSel = arg; pData = null; terbukaPlot = true; } renderPlotList(); gulirKe('ploting'); }
     else if (k === 'inventaris') { if (a === 'masuk') return bukaFormMasuk(); iTab = 'stok'; iAda = false; iKat = 'semua'; $('iCari').value = arg; renderInventaris(); gulirKe('inventaris'); }
     else if (k === 'pengiriman') { if (a === 'belum') { const sj = setujuTerakhir(), ada = lokMinta().map(l => infoKirim(l, sj).s); kStatusF = ada.includes('belum') ? 'belum' : 'sebagian'; kTerbuka = false; } else { kStatusF = 'semua'; $('kCari').value = ''; kSel = arg; kData = null; kTerbuka = true; } renderKirimList(); gulirKe('pengiriman'); }
@@ -3837,6 +3834,9 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   }
   document.querySelectorAll('.mini').forEach(el => {
     pasangTip(el);
+    el.addEventListener('input', e => { const w = e.target.dataset && e.target.dataset.pq; if (!w) return; MP[w].q = e.target.value; const c = e.target.closest('.pimp'); if (!c) return; const f = MP[w], S = window.Saring;
+      const dasar = daftarMinta.filter(p => (!f.area || areaPermintaan(p) === f.area) && (!f.pic || (S && S.picDari(p.lokasi_form) && String(S.picDari(p.lokasi_form).id) === f.pic)));
+      c.querySelector('.plist').innerHTML = daftarPimp(w, dasar, { disetujui: 'Disetujui', menunggu: 'Menunggu', ditolak: 'Ditolak / revisi' }, { disetujui: BULAT.ok, menunggu: BULAT.jingga, ditolak: BULAT.bahaya }); });
     el.addEventListener('change', e => { const x = e.target.dataset && e.target.dataset.pf; if (!x) return; const [who, k] = x.split('|'); MP[who][k] = e.target.value; if (k === 'area') MP[who].pic = ''; renderMini(); });
     el.addEventListener('click', e => { const b = e.target.closest('[data-md]'); if (b && !b.disabled) { const [k, a, arg] = b.dataset.md.split('|'); aksiMini(k, a, decodeURIComponent(arg || '')); } });
   });
