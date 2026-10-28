@@ -6,7 +6,7 @@
   --accent:#2F7F79; --green:#3F7F6B; --orange:#A8743A; --info:#4B8F9E;
   --ok:#3F7F6B; --ok-bg:#E5F1EC; --warn:#9A7432; --warn-bg:#F7EFDC; --bad:#B0584F; --bad-bg:#F8E7E4;
   --head:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
-  --navy:#0B1F3A; --navy2:#16345C; --lembut:#F4F7FB; --lembut2:#F8FAFC; --garis:#E5EAF1; --teal-lembut:#E1F3F0;
+  --navy:#33475B; --navy2:#445A71; --lembut:#F4F7FB; --lembut2:#F8FAFC; --garis:#E5EAF1; --teal-lembut:#E1F3F0;
 }
 html { color-scheme:light; }
 body { background:var(--bg); color:var(--text); font-family:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif; }
@@ -21,9 +21,9 @@ h1, h2, h3 { font-weight:700; }
 /* menu samping */
 .side { background:var(--navy); border-radius:18px; }
 .side:hover, .side:focus-within { box-shadow:0 0 0 1px var(--navy2), 0 18px 48px rgba(11,31,58,.35); }
-.side button, .side a.home { color:#B8C4D6; }
+.side button, .side a.home { color:#DDE5EE; }
 .side button:hover, .side button.on, .side a.home:hover, .side a.home:focus-visible { background:var(--navy2); color:#FFFFFF; }
-.side button.on { box-shadow:inset 3px 0 0 #2DD4BF; }
+.side button.on { box-shadow:inset 3px 0 0 #7FD6C8; }
 
 /* kartu dan panel */
 .card { background:#FFFFFF; -webkit-backdrop-filter:none; backdrop-filter:none; border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,.04), 0 6px 18px rgba(15,23,42,.05); }
@@ -86,17 +86,17 @@ select option, .bar select option, .fg select option, .massal select option { ba
 .merek, .akun, .pemisah { border-color:var(--navy2); }
 .pemisah { background:var(--navy2); }
 .merek span { color:#5EEAD4; }
-.menu { color:#B8C4D6; }
+.menu { color:#DDE5EE; }
 .menu:hover { background:var(--navy2); color:#FFFFFF; }
-.menu.on { background:var(--navy2); color:#FFFFFF; border-color:#2A4A78; }
-.menu.on svg { color:#2DD4BF; }
+.menu.on { background:var(--navy2); color:#FFFFFF; border-color:#587089; }
+.menu.on svg { color:#7FD6C8; }
 .menu .tag { background:rgba(255,255,255,.14); color:#E6ECF5; }
-.menu[disabled]:hover { background:none; color:#B8C4D6; }
+.menu[disabled]:hover { background:none; color:#DDE5EE; }
 .versi, .akun .st { color:#9FB1C9; }
 .atas { background:var(--navy); border-bottom-color:var(--navy2); backdrop-filter:none; }
-.atas .tab button { color:#B8C4D6; }
+.atas .tab button { color:#DDE5EE; }
 .atas .tab button:hover, .atas .tab button.on { color:#FFFFFF; }
-.atas .tab button.on { border-bottom-color:#2DD4BF; }
+.atas .tab button.on { border-bottom-color:#7FD6C8; }
 .kartu:hover, .kartu:focus-visible { background:#FFFFFF; border-color:var(--accent); box-shadow:0 10px 28px rgba(15,23,42,.12); }
 
 /* teks menu samping: putih terang (jelas di atas navy) */

@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 28 Okt 2026
+- **v1.212** Warna navy (menu samping, bar tab atas, header matriks, header halaman tautan) diganti biru keabu-abuan lembut (slate #33475B) yang lebih tenang; teks dan penanda aktif disesuaikan. Hanya warna.
 - **v1.211** Seluruh warna dibuat lebih tenang dan senada dengan bar Monitoring: aksen teal diturunkan (#2F7F79), hijau, kuning, dan merah status (badge, angka, pesan) memakai nada lembut, cincin progres bergradasi mint ke teal, dan halaman tautan ringan ikut. Hanya warna.
 - **v1.210** Kotak ringkasan yang belum punya garis tepi (Total beli, Total jual, Sisa RAB, Total untung, ringkasan pesanan, dan kotak angka di Monitoring) diberi outline tipis berwarna abu kebiruan. Hanya tampilan.
 - **v1.209** Teks menu samping (judul, menu, keterangan akun, email, tombol Keluar) diganti putih terang menggantikan hijau agar tidak mencolok; ikon menu yang dipilih teal muda. Hanya warna.
