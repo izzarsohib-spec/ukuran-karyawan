@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.216', tanggal: '2026-10-29', catatan: 'Rekap permintaan disederhanakan: matriks per jenis dan ukuran' };
+window.VERSI = { no: '1.217', tanggal: '2026-10-29', catatan: 'Rekap permintaan dirapikan: tabel ukuran lebih rapat' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

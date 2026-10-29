@@ -621,10 +621,10 @@
   .datang2 { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; align-items:start; }
   .datang2 > section { margin:0; min-width:0; }
   @media (max-width: 1100px) { .datang2 { grid-template-columns:minmax(0,1fr); } }
-  .rkmx th, .rkmx td { padding:7px 10px; white-space:nowrap; } .rkmx .mxv { font-weight:600; } .rkmx .mxn { color:var(--muted); opacity:.5; }
+  .rkmx { width:auto !important; min-width:0; } .rkmx th:first-child, .rkmx td:first-child { min-width:260px; white-space:normal; } .rkmx th.r, .rkmx td.r { min-width:58px; text-align:center; } .rkmx th, .rkmx td { padding:7px 12px; white-space:nowrap; } .rkmx .mxv { font-weight:600; } .rkmx .mxn { color:var(--muted); opacity:.5; }
   .rkmx .rktot td { border-top:2px solid var(--stroke); background:rgba(0,0,0,.03); }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.216">
+<link rel="stylesheet" href="../aset/tema.css?v=1.217">
 </head>
 <body>
 <div class="shell">
@@ -2884,7 +2884,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
       : d.sem.map(p => `<label class="kcek" style="display:flex;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--stroke)"><input type="checkbox" class="hCek" value="${p.id}" ${rkHPilih.has(p.id) ? 'checked' : ''}><span><b>${esc(p.client)}</b> · ${esc(namaRapi(p.bagian_kerja))} <span class="muted">· no. ${p.id} · ${idn(pcsPermintaan(p))} pcs · disetujui ${esc(tglDisetujui(p).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }))}</span></span></label>`).join('');
     $('rkIsi').innerHTML = `${sudah ? '' : '<div class="row" style="margin:0 0 12px;flex-wrap:wrap;gap:10px"><p class="rkcat" style="margin:0">Hitungan di bawah mengikuti permintaan yang dicentang pada daftar di bagian bawah.</p><button class="cta" id="hKirim" ' + (d.pilih.length ? '' : 'disabled') + '>Kirim ke Mas Wahyu &amp; tandai PO terkirim</button></div>'}
       ${matriks}
-      <section class="rk" style="margin-bottom:16px"><div class="rkh"><h4>Aksesoris (belanja online, tanpa ukuran)</h4><b>${idn(aks.reduce((a, x) => a + x.qty, 0))} pcs</b></div>${aks.length ? `<div class="wrap rkt"><table><thead><tr><th>Aksesoris</th><th class="r">Jumlah</th></tr></thead><tbody>${aks.map(a => `<tr><td><b>${esc(namaRapi(a.nama))}</b></td><td class="r">${idn(a.qty)}</td></tr>`).join('')}</tbody></table></div><div class="bgact" style="margin-top:8px"><button class="btn" id="hSalin">Salin daftar belanja</button></div>` : '<div class="kosongnya">Tidak ada aksesoris.</div>'}</section>
+      <section class="rk" style="margin-bottom:16px"><div class="rkh"><h4>Aksesoris (belanja online, tanpa ukuran)</h4><b>${idn(aks.reduce((a, x) => a + x.qty, 0))} pcs</b></div>${aks.length ? `<div class="wrap rkt"><table><thead><tr><th>Aksesoris</th><th class="r">Jumlah</th></tr></thead><tbody>${aks.map(a => `<tr><td><b>${esc(namaRapi(a.nama))}</b></td><td class="r">${idn(a.qty)}</td></tr>`).join('')}</tbody></table></div><div class="bgact" style="margin-top:8px"><button class="btn" id="hSalin">Salin daftar belanja</button></div>` : '<div class="muted" style="padding:4px 2px 2px">Tidak ada aksesoris.</div>'}</section>
       <details class="rk" ${sudah ? '' : 'open'}><summary class="rkh" style="cursor:pointer"><h4>Daftar permintaan yang dihitung</h4><b>${sudah ? idn(d.ps.length) + ' permintaan' : d.pilih.length + ' dari ' + d.sem.length + ' dipilih'}</b></summary><div class="wrap rkt">${daftar}</div></details>`;
     $('rkIsi').querySelectorAll('.hCek').forEach(c => { c.onchange = () => { c.checked ? rkHPilih.add(Number(c.value)) : rkHPilih.delete(Number(c.value)); renderRekapPage(); }; });
     const hk = $('hKirim'); if (hk) hk.onclick = async e => {
