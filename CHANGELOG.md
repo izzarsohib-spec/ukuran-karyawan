@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 29 Okt 2026
+- **v1.249** Rekap Permintaan: bagian bawah dibagi dua kartu berdampingan, **Rekap pesanan ke Mas Wahyu** (kiri) dan **Daftar belanja online** (kanan). Tabel matriks ukuran kini selebar kartunya sehingga tidak ada ruang kosong di sisi kanan.
 - **v1.248** Perbaikan: kolom pencarian di Rekap Permintaan ternyata masih tampil karena gayanya menimpa atribut hidden; kini disembunyikan dengan benar.
 - **v1.247** Rekap Permintaan: rekap pesanan ke Mas Wahyu (matriks Baju, Celana, Sepatu) dan daftar belanja online dipindah dari dalam kartu penandaan menjadi kartu sendiri selebar halaman di bawah dua kartu (Tandai pemesanan dan tutorial). Kartu penandaan kini hanya berisi bar simpan dan daftar lokasi.
 - **v1.246** Kartu tutorial di Rekap Permintaan diringkas: penjelasan "Kenapa" dihapus, tiap langkah cukup satu kalimat pendek.
