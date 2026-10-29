@@ -627,9 +627,9 @@
   .ukcell { display:flex; flex-wrap:wrap; gap:5px; min-width:260px; } .ukb { min-width:42px; padding:5px 9px; border:1px solid var(--stroke); border-radius:9px; background:#fff; cursor:pointer; font-size:.82rem; font-weight:600; color:var(--text); } .ukb:hover { border-color:var(--accent); } .ukb.on { background:var(--accent); border-color:var(--accent); color:#fff; }
   .dfilter { display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; } .dfilter label { display:flex; flex-direction:column; gap:4px; font-size:.76rem; font-weight:600; color:var(--muted); }
   .dfilter input { width:100%; padding:8px 10px; border:1px solid #CBD5E1; border-radius:10px; background:#fff; color:var(--text); font:inherit; font-size:.88rem; font-weight:400; }
-  #dBody td:first-child { white-space:nowrap; } .dbrg { padding:2px 0; border-bottom:1px dashed var(--stroke); font-size:.84rem; } .dbrg:last-child { border-bottom:0; } .dlain summary { cursor:pointer; color:var(--accent); font-size:.8rem; font-weight:600; padding:3px 0; } #dBody td { white-space:normal; vertical-align:top; } #dBody td:nth-child(3) { min-width:180px; }
+  #dBody td:first-child { white-space:nowrap; } .dit { padding:7px 0; border-bottom:1px solid var(--stroke); } .dit:last-child { border-bottom:0; } .dith { display:flex; justify-content:space-between; gap:10px; font-size:.86rem; } .dith span { color:var(--muted); font-size:.78rem; white-space:nowrap; } .djn { display:flex; flex-wrap:wrap; align-items:center; gap:4px 6px; margin-top:4px; } .djl { min-width:52px; font-size:.72rem; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.03em; } .duk { padding:2px 8px; border:1px solid var(--stroke); border-radius:8px; background:rgba(0,0,0,.025); font-size:.78rem; } .dbrg { padding:2px 0; border-bottom:1px dashed var(--stroke); font-size:.84rem; } .dbrg:last-child { border-bottom:0; } .dlain summary { cursor:pointer; color:var(--accent); font-size:.8rem; font-weight:600; padding:3px 0; } #dBody td { white-space:normal; vertical-align:top; } #dBody td:nth-child(3) { min-width:180px; }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.226">
+<link rel="stylesheet" href="../aset/tema.css?v=1.227">
 </head>
 <body>
 <div class="shell">
@@ -3237,12 +3237,21 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   $('iCari').oninput = renderInventaris; $('iMuat').onclick = muatHilir;
   // --- halaman Barang datang: riwayat dikelompokkan per tanggal + supplier + dokumen ---
   let dSup = 'semua';
+  // satu barang = satu blok; di bawahnya per jenis (Baju / Celana / Sepatu) dengan jumlah tiap ukuran
+  const htmlBarangDatang = m => {
+    const urutJ = ['baju', 'celana', 'sepatu', '-'], blok = [...m.rinci.entries()].map(([nama, pj]) => {
+      const tot = [...pj.values()].reduce((a, pu) => a + [...pu.values()].reduce((b, q) => b + q, 0), 0);
+      const baris = [...pj.entries()].sort((a, b) => urutJ.indexOf(a[0]) - urutJ.indexOf(b[0])).map(([j, pu]) => `<div class="djn">${j === '-' ? '' : `<span class="djl">${NAMA_JENIS[j]}</span>`}${[...pu.entries()].sort((a, b) => urutUkuran(a[0], b[0])).map(([u, q]) => `<span class="duk">${j === '-' ? '' : esc(u) + ' '}<b>×${idn(q)}</b></span>`).join('')}</div>`).join('');
+      return `<div class="dit"><div class="dith"><b>${esc(nama)}</b><span>${idn(tot)} pcs</span></div>${baris}</div>`;
+    }), n = 3;
+    return blok.slice(0, n).join('') + (blok.length > n ? `<details class="dlain"><summary>+ ${blok.length - n} barang lainnya</summary>${blok.slice(n).join('')}</details>` : '');
+  };
   function renderDatang() {
     const qb = $('dBarang').value.toLowerCase().trim(), dari = $('dDari').value, sampai = $('dSampai').value, grup = new Map();
     for (const g of gerak) if (g.jenis === 'masuk' && !g.sumber) {
       const k = `${String(g.tanggal).slice(0, 10)}|${g.supplier || ''}|${g.no_dokumen || ''}`;
-      if (!grup.has(k)) grup.set(k, { tgl: String(g.tanggal).slice(0, 10), sup: g.supplier || '-', dok: g.no_dokumen || '', ket: g.keterangan || '', pcs: 0, baris: [], brg: new Set() });
-      const m = grup.get(k); m.brg.add(g.item_nama); m.pcs += Number(g.qty); m.baris.push(`${g.item_nama}${g.jenis_ukuran === '-' ? '' : ' ' + g.ukuran} ×${g.qty}`);
+      if (!grup.has(k)) grup.set(k, { tgl: String(g.tanggal).slice(0, 10), sup: g.supplier || '-', dok: g.no_dokumen || '', ket: g.keterangan || '', pcs: 0, baris: [], brg: new Set(), rinci: new Map() });
+      const m = grup.get(k); m.brg.add(g.item_nama); { const pj = m.rinci.get(g.item_nama) || m.rinci.set(g.item_nama, new Map()).get(g.item_nama), pu = pj.get(g.jenis_ukuran) || pj.set(g.jenis_ukuran, new Map()).get(g.jenis_ukuran); pu.set(g.ukuran, (pu.get(g.ukuran) || 0) + Number(g.qty)); } m.pcs += Number(g.qty); m.baris.push(`${g.item_nama}${g.jenis_ukuran === '-' ? '' : ' ' + g.ukuran} ×${g.qty}`);
     }
     const semua = [...grup.values()].sort((a, b) => b.tgl.localeCompare(a.tgl));
 
@@ -3254,7 +3263,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     if (dl.dataset.k !== kunciDl) { dl.dataset.k = kunciDl; dl.innerHTML = namaBrg.map(n => `<option value="${esc(n)}"></option>`).join(''); }
     const f = semua.filter(x => (dSup === 'semua' || (dSup === 'online') === online(x)) && (!dari || x.tgl >= dari) && (!sampai || x.tgl <= sampai) && (!qb || x.baris.join(' ').toLowerCase().includes(qb)));
     $('infoDatang').textContent = `${idn(semua.length)} penerimaan tercatat · ${idn(semua.reduce((a, x) => a + x.pcs, 0))} pcs${gerak.length >= 1000 ? ' (dari 1000 gerak stok terakhir)' : ''}`;
-    $('dBody').innerHTML = f.map(x => `<tr><td>${tglPendek(x.tgl)}</td><td><b>${esc(x.sup)}</b><div class="muted">${esc(x.dok || '-')}${x.ket ? ' · ' + esc(x.ket) : ''}</div></td><td>${(n => x.baris.slice(0, n).map(b => `<div class="dbrg">${esc(b)}</div>`).join('') + (x.baris.length > n ? `<details class="dlain"><summary>+ ${x.baris.length - n} barang lainnya</summary>${x.baris.slice(n).map(b => `<div class="dbrg">${esc(b)}</div>`).join('')}</details>` : ''))(3)}</td><td class="r"><b>${idn(x.pcs)}</b> pcs</td></tr>`).join('') || '<tr><td colspan="4" class="kosongnya">Tidak ada barang datang yang cocok.</td></tr>';
+    $('dBody').innerHTML = f.map(x => `<tr><td>${tglPendek(x.tgl)}</td><td><b>${esc(x.sup)}</b><div class="muted">${esc(x.dok || '-')}${x.ket ? ' · ' + esc(x.ket) : ''}</div></td><td>${htmlBarangDatang(x)}</td><td class="r"><b>${idn(x.pcs)}</b> pcs</td></tr>`).join('') || '<tr><td colspan="4" class="kosongnya">Tidak ada barang datang yang cocok.</td></tr>';
   }
   $('dChips').onclick = e => { const d = e.target.dataset && e.target.dataset.d; if (d) { dSup = d; renderDatang(); } };
   ['dDari', 'dSampai', 'dBarang'].forEach(id => { $(id).oninput = renderDatang; }); $('dReset').onclick = () => { ['dDari', 'dSampai', 'dBarang'].forEach(id => { $(id).value = ''; }); dSup = 'semua'; renderDatang(); }; $('dMuat').onclick = muatHilir;
