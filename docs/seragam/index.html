@@ -648,12 +648,13 @@
   #rkDatang:not([hidden]), #rkKurang:not([hidden]) { display:grid; grid-template-columns:minmax(210px,240px) minmax(0,1fr); gap:16px; align-items:start; } .rkw { min-width:0; } .rkw .datang2 { grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); } #rkDatang .tutl, #rkKurang .tutl { font-size:.82rem; }
   #rkDatang .rktut, #rkKurang .rktut { height:auto; min-height:0; overflow:visible; }
   @media (max-width: 1100px) { #rkDatang:not([hidden]), #rkKurang:not([hidden]) { grid-template-columns:minmax(0,1fr); } }
+  #rkDatang > .rkw > header, #rkKurang > .rkw > header { display:none; } #rkDatang .tutl, #rkKurang .tutl { margin-top:2px; } .rkw > .datang2 { align-items:start; }
   #rkKpi, label.search[hidden] { display:none !important; }
   .rk2 { display:grid; grid-template-columns:minmax(260px,1fr) minmax(0,1.7fr); gap:16px; align-items:stretch; height:clamp(580px, calc(100vh - 230px), 780px); } .rk2k { min-width:0; min-height:0; } .rk2k > .card { margin:0; height:100%; display:flex; flex-direction:column; min-height:0; } .pmscroll { flex:1; min-height:0; overflow-y:auto; padding-right:4px; } .rktut { margin:0; height:100%; overflow-y:auto; min-height:0; }
   .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
   @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); height:auto; } .rk2k > .card { height:auto; } .pmscroll { max-height:70vh; } .rktut { height:auto; overflow:visible; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.269">
+<link rel="stylesheet" href="../aset/tema.css?v=1.270">
 </head>
 <body>
 <div class="shell">
@@ -3621,7 +3622,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
       const aksi = x.status === 'terbuka' ? `<button class="btn" data-kc="terpenuhi" data-id="${x.id}" type="button">Tandai terpenuhi</button> <button class="btn" data-kc="batal" data-id="${x.id}" type="button">Batal</button>` : `<button class="btn" data-kc="terbuka" data-id="${x.id}" type="button">Buka lagi</button>`;
       return `<tr><td>${tglPendek(x.tgl)}</td><td><b>${esc(x.vendor)}</b><div class="muted">${esc(x.ref || '-')}${x.ket ? ' · ' + esc(x.ket) : ''}</div>${est}<div style="margin-top:6px"><span class="badge ${x.efek === 'terpenuhi' ? 'ok' : x.efek === 'batal' ? '' : x.efek === 'sebagian' ? 'warn' : 'bad'}">${x.efek === 'terpenuhi' ? '✓ ' : ''}${NS[x.efek]}</span></div>${x.efek === 'batal' ? '' : `<div class="kcprog" title="Dihitung dari barang datang vendor ini sejak ${esc(tglPendek(x.tgl))}"><i style="width:${Math.min(100, Math.round(x.got / x.pcs * 100))}%"></i></div><div class="muted" style="font-size:.76rem">Datang ${idn(x.got)} dari ${idn(x.pcs)} pcs${x.efek !== 'terpenuhi' ? ' · sisa <b>' + idn(x.pcs - x.got) + '</b>' : ''}${x.status === 'terpenuhi' && x.got === x.pcs ? ' (ditandai manual)' : ''}</div>`}<div style="margin-top:6px">${aksi}</div></td><td>${htmlBarangDatang(x)}</td>
         <td class="r dtot">${['baju', 'celana', 'sepatu', '-'].filter(j => x.tj.get(j)).map(j => `<div><span>${j === '-' ? 'Lainnya' : NAMA_JENIS[j]}</span><b>${idn(x.tj.get(j))}</b></div>`).join('')}</td></tr>`;
-    }).join('') || `<tr><td colspan="4" class="kosongnya">${Masuk.kode() ? 'Tidak ada catatan kekurangan yang cocok.' : 'Masuk dulu untuk melihat riwayat.'}</td></tr>`;
+    }).join('') || `<tr><td colspan="4" class="kosongnya">${Masuk.kode() ? 'Tidak ada catatan kekurangan yang cocok.' : 'Masuk dulu untuk melihat riwayat. <button class="btn" type="button" onclick="Masuk.wajib().then(muatKc).catch(() => {})">Masuk dan muat</button>'}</td></tr>`;
   }
   $('kcChips').onclick = e => { const k = e.target.dataset && e.target.dataset.k; if (k) { kcStat = k; renderKc(); } };
   $('kcBody').onclick = async e => {
