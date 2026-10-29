@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 29 Okt 2026
+- **v1.258** Kartu Rekap pesanan ke Mas Wahyu diringkas jadi satu tombol **Submit & kirim PDF ke Mas Wahyu**: menyimpan penandaan Mas Wahyu, menandai PO terkirim, lalu mengirim PDF rekap lewat ntfy dengan permintaan estimasi datang (satu konfirmasi saja, dan ada peringatan bila rekap itu sudah pernah dikirim). Tombol Buat PDF dan Kirim ke Mas Wahyu (ntfy) yang terpisah dihapus.
 - **v1.257** Rekap Permintaan: tombol "Simpan penandaan" di bar atas kartu penandaan dihapus; penyimpanan cukup lewat tombol Submit di kartu Mas Wahyu dan kartu Belanja online.
 - **v1.256** Rekap Permintaan: kartu "Konfirmasi Mas Wahyu" dihapus dari kartu Rekap pesanan ke Mas Wahyu; log konfirmasi kini hanya ada di chip Riwayat & monitoring.
 - **v1.255** Rekap Permintaan: chip **Sudah ditandai** diganti menjadi **Riwayat & monitoring** (jumlahnya = rekap yang sudah dikirim ke Mas Wahyu). Isinya log tiap rekap yang dikirim: nomor, waktu kirim, jumlah pcs dan permintaan, total per jenis, status **Menunggu estimasi / Estimasi sudah diterima / Belum bisa dipenuhi** (dengan lama menunggu, tanggal estimasi, catatan Mas Wahyu, dan kapan dijawab), serta isi pesanan per lokasi lengkap dengan jumlah per ukuran. Di bawahnya: lokasi yang sudah ditandai Mas Wahyu tetapi rekapnya belum dikirim, dan item yang ditandai belanja online.

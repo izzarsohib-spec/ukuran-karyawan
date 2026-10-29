@@ -647,7 +647,7 @@
   .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
   @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); height:auto; } .rk2k > .card { height:auto; } .pmscroll { max-height:70vh; } .rktut { height:auto; overflow:visible; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.257">
+<link rel="stylesheet" href="../aset/tema.css?v=1.258">
 </head>
 <body>
 <div class="shell">
@@ -3035,7 +3035,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const monitor = tab === 'selesai';
     $('rkIsi').innerHTML = '<div class="rk2"><div class="rk2k"><section class="card pcard"><h3 style="margin:0 0 12px">' + (monitor ? 'Monitoring pesanan ke Mas Wahyu' : 'Tandai pemesanan per item') + '</h3>' + (monitor ? '' : bar) + '<div class="pmscroll">' + (monitor ? htmlMonitoring(semuaP) : tampil.length ? tampil.map(kartuPermintaan).join('') : `<div class="kosongnya">${semuaP.length ? 'Tidak ada lokasi yang cocok dengan filter ini.' : 'Belum ada lokasi yang disetujui kedua pimpinan. Setelah disetujui, lokasinya muncul di sini.'}</div>`)
       + `</div></section></div>` + TUTORIAL_REKAP + `</div>
-      <div class="rk3"><section class="card pcard"><div class="rk3h"><h3>Rekap pesanan ke Mas Wahyu</h3><div class="bgact"><button class="cta" id="pmSubW" type="button" ${nDirtyW ? '' : 'disabled'}>Submit (${nDirtyW})</button><button class="btn" id="pmPdfW" type="button">Buat PDF Mas Wahyu</button><button class="btn" id="pmNtfyW" type="button" title="Kirim PDF rekap ke Mas Wahyu lewat ntfy dan minta estimasi datang">Kirim ke Mas Wahyu (ntfy)</button></div></div><div class="pmscroll">${matriksW}${lainW}</div></section>
+      <div class="rk3"><section class="card pcard"><div class="rk3h"><h3>Rekap pesanan ke Mas Wahyu</h3><div class="bgact"><button class="cta" id="pmSubW" type="button" ${dW.ps.length ? '' : 'disabled'} title="Simpan penandaan, tandai PO terkirim, lalu kirim PDF rekap ke Mas Wahyu lewat ntfy dan minta estimasi datang">Submit &amp; kirim PDF ke Mas Wahyu${nDirtyW ? ` (${nDirtyW})` : ''}</button></div></div><div class="pmscroll">${matriksW}${lainW}</div></section>
       <section class="card pcard"><div class="rk3h"><h3>Belanja online</h3><div class="bgact"><button class="cta" id="pmSubO" type="button" ${nDirtyO ? '' : 'disabled'}>Submit (${nDirtyO})</button><button class="btn" id="pmPdfO" type="button">Buat PDF pengajuan</button></div></div><div class="pmscroll" id="pmOnline"></div></section></div>`;
     // daftar belanja online (digabung per item)
     const agg = new Map(); for (const p of dO.ps) for (const i of p.items) { const k = String(i.nama).toUpperCase(), e = agg.get(k) || { n: i.nama, q: 0, l: [] }; e.q += Number(i.qty) || 0; e.l.push(`${p.client} · ${namaRapi(p.bagian_kerja)} (${Number(i.qty) || 0})`); agg.set(k, e); }
@@ -3043,34 +3043,32 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const sl = $('pmSalin'); if (sl) sl.onclick = async () => { const t = `Daftar belanja online (${tglPanjangIso(wibIso())})\n` + [...agg.values()].map(e => `- ${e.n}: ${e.q} pcs`).join('\n'); try { await navigator.clipboard.writeText(t); sl.textContent = 'Tersalin ✓'; } catch (x) { alert(t); } };
     if ($('pmTgl')) $('pmTgl').onchange = e => { pmTgl = e.target.value; };
     if ($('pmSimpan')) $('pmSimpan').onclick = () => simpanPemesanan('semua');
-    $('pmNtfyW').onclick = e => kirimKonfirmasiWahyu(e.currentTarget);
-    $('pmSubW').onclick = () => simpanPemesanan('wahyu'); $('pmSubO').onclick = () => simpanPemesanan('online');
-    $('pmPdfW').onclick = async e => { const b = e.currentTarget, a = b.textContent; b.disabled = true; b.textContent = 'Menyiapkan PDF…'; try { await pdfRekapVendor(dataPesan('wahyu'), opsiPdfRk()); } catch (x) { alert('Gagal membuat PDF: ' + x.message); } b.disabled = false; b.textContent = a; };
+    $('pmSubW').onclick = e => submitKirimWahyu(e.currentTarget); $('pmSubO').onclick = () => simpanPemesanan('online');
     $('pmPdfO').onclick = async e => { const b = e.currentTarget, a = b.textContent; b.disabled = true; b.textContent = 'Menyiapkan PDF…'; try { await pdfBelanjaOnline(); } catch (x) { alert('Gagal membuat PDF: ' + x.message); } b.disabled = false; b.textContent = a; };
   }
   // mode: 'semua' | 'wahyu' | 'online'. Submit per jalur hanya menyimpan item yang berjalur itu; PO terkirim ditandai untuk permintaan yang punya item ke Mas Wahyu.
-  async function simpanPemesanan(mode = 'semua') {
+  async function simpanPemesanan(mode = 'semua', diam = false) {
     const tgl = ($('pmTgl') && $('pmTgl').value) || wibIso(), baris = [], poIds = new Set(); let nW = 0, nO = 0;
     for (const p of disetujuiSemua()) for (const i of (p.items || [])) {
       const v = viaDraft(p, i);
       if (kotorPm(p, i) && (mode === 'semua' || v === mode)) { baris.push({ permintaan_id: p.id, item_no: Number(i.no), via: v, tanggal: tgl }); if (v === 'wahyu') nW++; else if (v === 'online') nO++; }
       if (mode !== 'online' && v === 'wahyu' && !tglPo(p) && (mode === 'semua' || kotorPm(p, i))) poIds.add(p.id);
     }
-    if (!baris.length) return;
-    if (!confirm(`Submit ${baris.length} item?\n\n${nW ? `- Ke Mas Wahyu: ${nW} item\n` : ''}${nO ? `- Online: ${nO} item\n` : ''}${poIds.size ? `\nPermintaan yang punya item ke Mas Wahyu ikut ditandai PO terkirim (${poIds.size} permintaan) pada ${tglPanjangIso(tgl)}.` : ''}`)) return;
+    if (!baris.length) return true;
+    if (!diam && !confirm(`Submit ${baris.length} item?\n\n${nW ? `- Ke Mas Wahyu: ${nW} item\n` : ''}${nO ? `- Online: ${nO} item\n` : ''}${poIds.size ? `\nPermintaan yang punya item ke Mas Wahyu ikut ditandai PO terkirim (${poIds.size} permintaan) pada ${tglPanjangIso(tgl)}.` : ''}`)) return false;
     const tombol = [$('pmSimpan'), $('pmSubW'), $('pmSubO')].filter(Boolean); tombol.forEach(b => { b.disabled = true; });
     try {
       await Masuk.wajib(); const kode = Masuk.kode();
       await rpc('simpan_pemesanan', { kode, p_baris: baris });
       if (poIds.size) await rpc('po_tandai', { kode, p_ids: [...poIds], p_tanggal: tgl });
       for (const b of baris) pmDraft.delete(pmKey(b.permintaan_id, b.item_no));
-      await muatStatus(); await muatPemesanan();
-    } catch (x) { alert('Gagal: ' + x.message); renderRekapPage(); }
+      await muatStatus(); await muatPemesanan(); return true;
+    } catch (x) { alert('Gagal: ' + x.message); renderRekapPage(); return false; }
   }
   // Kirim rekap ke Mas Wahyu lewat ntfy: PDF terlampir, tombol cepat estimasi datang, dan halaman konfirmasi (fungsi server konfirmasi-vendor).
-  async function kirimKonfirmasiWahyu(btn) {
+  async function kirimKonfirmasiWahyu(btn, diam = false) {
     const d = dataPesan('wahyu'); if (!d.ps.length) { alert('Belum ada item yang ditandai ke Mas Wahyu.'); return; }
-    if (!confirm(`Kirim rekap ke Mas Wahyu lewat ntfy?\n\n${idn(d.pcs)} pcs · ${idn(d.lokasi.length)} lokasi.\nMas Wahyu menerima notifikasi berisi PDF rekap dan tombol untuk menjawab kapan pesanan bisa datang.\n\nIni mengirim pesan sungguhan ke Mas Wahyu.`)) return;
+    if (!diam && !confirm(`Kirim rekap ke Mas Wahyu lewat ntfy?\n\n${idn(d.pcs)} pcs · ${idn(d.lokasi.length)} lokasi.\nMas Wahyu menerima notifikasi berisi PDF rekap dan tombol untuk menjawab kapan pesanan bisa datang.\n\nIni mengirim pesan sungguhan ke Mas Wahyu.`)) return;
     const a = btn.textContent; btn.disabled = true; btn.textContent = 'Mengirim…';
     try {
       await Masuk.wajib();
@@ -3081,6 +3079,18 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
       alert('Terkirim ke Mas Wahyu lewat ntfy. Jawabannya akan muncul di kartu ini dan Anda diberi tahu lewat notifikasi admin.'); await muatPemesanan();
     } catch (x) { alert('Gagal mengirim: ' + x.message); }
     btn.disabled = false; btn.textContent = a;
+  }
+  // Satu tombol: simpan penandaan Mas Wahyu (+ PO terkirim), lalu kirim PDF rekap ke Mas Wahyu lewat ntfy dan minta estimasi datang
+  let pmSedangKirim = false;
+  async function submitKirimWahyu(btn) {
+    if (pmSedangKirim) return;
+    const d0 = dataPesan('wahyu'); if (!d0.ps.length) { alert('Belum ada item yang ditandai ke Mas Wahyu.'); return; }
+    const dirty = disetujuiSemua().reduce((a, p) => a + (p.items || []).filter(i => kotorPm(p, i) && viaDraft(p, i) === 'wahyu').length, 0);
+    const terkirim = new Set(pmKonf.flatMap(k => k.permintaan_ids || [])), sudah = d0.ps.every(p => terkirim.has(p.id));
+    if (!confirm(`Submit dan kirim PDF ke Mas Wahyu?\n\n${dirty ? `- Simpan penandaan ${dirty} item dan tandai PO terkirim\n` : ''}- Kirim rekap ${idn(d0.pcs)} pcs (${idn(d0.lokasi.length)} lokasi) lewat ntfy dan minta estimasi datang\n${sudah ? '\nRekap ini sudah pernah dikirim; ini akan mengirim lagi.\n' : ''}\nIni mengirim pesan sungguhan ke Mas Wahyu.`)) return;
+    pmSedangKirim = true; btn.disabled = true; btn.textContent = 'Memproses…';
+    try { if (dirty && !(await simpanPemesanan('wahyu', true))) return; await kirimKonfirmasiWahyu(btn, true); }
+    finally { pmSedangKirim = false; renderRekapPage(); }
   }
   // PDF pengajuan anggaran belanja online: dibawa menghadap pimpinan untuk meminta anggaran (pembelian online tidak kontan seperti ke Mas Wahyu)
   async function pdfBelanjaOnline() {
