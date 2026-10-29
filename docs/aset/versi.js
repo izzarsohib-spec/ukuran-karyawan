@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.249', tanggal: '2026-10-29', catatan: 'Rekap: kartu Mas Wahyu dan Online berdampingan' };
+window.VERSI = { no: '1.250', tanggal: '2026-10-29', catatan: 'Rekap: tabel ukuran muat di kartu' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

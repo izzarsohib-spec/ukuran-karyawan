@@ -621,7 +621,7 @@
   .datang2 { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; align-items:start; }
   .datang2 > section { margin:0; min-width:0; }
   @media (max-width: 1100px) { .datang2 { grid-template-columns:minmax(0,1fr); } }
-  .rkmx { width:100% !important; min-width:0; } .rkmx th:first-child, .rkmx td:first-child { min-width:260px; white-space:normal; } .rkmx th.r, .rkmx td.r { min-width:58px; text-align:center; } .rkmx th, .rkmx td { padding:7px 12px; white-space:nowrap; } .rkmx .mxv { font-weight:600; } .rkmx .mxn { color:var(--muted); opacity:.5; }
+  .rkmx { width:100% !important; min-width:0; } .rkmx { table-layout:auto; } .rkmx th:first-child, .rkmx td:first-child { min-width:0; width:34%; white-space:normal; } .rkmx th.r, .rkmx td.r { min-width:0; text-align:center; } .rkmx th, .rkmx td { padding:7px 6px; white-space:nowrap; } .rkmx th.r { white-space:normal; line-height:1.15; font-size:.68rem; } .rkmx .mxv { font-weight:600; } .rkmx .mxn { color:var(--muted); opacity:.5; }
   .rkmx .rktot td { border-top:2px solid var(--stroke); background:rgba(0,0,0,.03); }
   #iBaris select, #kcBaris select, #rBaris select, #iBaris input, #kcBaris input, #rBaris input { width:100%; min-width:0; } #iBaris select.im-jenis, #kcBaris select.im-jenis, #rBaris select.im-jenis { min-width:105px; } #iBaris select.im-item, #kcBaris select.im-item, #rBaris select.im-item { min-width:150px; } #iBaris td:nth-child(2), #kcBaris td:nth-child(2), #rBaris td:nth-child(2) { min-width:105px; } #iBaris td:nth-child(4), #kcBaris td:nth-child(4), #rBaris td:nth-child(4) { min-width:70px; } #iBaris td, #kcBaris td, #rBaris td { padding-left:6px; padding-right:6px; } #iBaris select:disabled, #kcBaris select:disabled, #rBaris select:disabled { opacity:.55; cursor:not-allowed; }
   .ukcell { display:flex; flex-wrap:wrap; gap:5px; min-width:190px; } .ukb { min-width:42px; padding:5px 9px; border:1px solid var(--stroke); border-radius:9px; background:#fff; cursor:pointer; font-size:.82rem; font-weight:600; color:var(--text); } .ukb:hover { border-color:var(--accent); } .ukb.on { background:var(--accent); border-color:var(--accent); color:#fff; }
@@ -643,7 +643,7 @@
   .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
   @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); height:auto; } .rk2k > .card { height:auto; } .pmscroll { max-height:70vh; } .rktut { height:auto; overflow:visible; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.249">
+<link rel="stylesheet" href="../aset/tema.css?v=1.250">
 </head>
 <body>
 <div class="shell">
