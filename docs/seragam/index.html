@@ -624,8 +624,9 @@
   .rkmx { width:auto !important; min-width:0; } .rkmx th:first-child, .rkmx td:first-child { min-width:260px; white-space:normal; } .rkmx th.r, .rkmx td.r { min-width:58px; text-align:center; } .rkmx th, .rkmx td { padding:7px 12px; white-space:nowrap; } .rkmx .mxv { font-weight:600; } .rkmx .mxn { color:var(--muted); opacity:.5; }
   .rkmx .rktot td { border-top:2px solid var(--stroke); background:rgba(0,0,0,.03); }
   #iBaris select, #iBaris input { width:100%; min-width:0; } #iBaris select:disabled { opacity:.55; cursor:not-allowed; }
+  .ukcell { display:flex; flex-wrap:wrap; gap:5px; min-width:260px; } .ukb { min-width:42px; padding:5px 9px; border:1px solid var(--stroke); border-radius:9px; background:#fff; cursor:pointer; font-size:.82rem; font-weight:600; color:var(--text); } .ukb:hover { border-color:var(--accent); } .ukb.on { background:var(--accent); border-color:var(--accent); color:#fff; }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.218">
+<link rel="stylesheet" href="../aset/tema.css?v=1.219">
 </head>
 <body>
 <div class="shell">
@@ -734,7 +735,7 @@
         <label>Tanggal<input type="date" id="iTgl"></label><label>Supplier<select id="iSup"><option>Wahyu Ardianto</option><option>Online</option></select></label>
         <label><span id="iDokL">No. surat jalan / faktur Wahyu Ardianto</span><input id="iDok"></label><label>Keterangan<input id="iKet" placeholder="opsional"></label></div>
       <div class="row" style="margin:16px 0 8px"><b>Barang yang masuk</b><button class="btn" id="iTambah">+ Tambah baris</button></div>
-      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:200px">Barang</th><th style="min-width:100px">Jenis</th><th style="min-width:110px">Ukuran</th><th style="min-width:80px">Qty</th><th></th></tr></thead><tbody id="iBaris"></tbody></table></div>
+      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:200px">Barang</th><th style="min-width:100px">Jenis</th><th style="min-width:260px">Ukuran</th><th style="min-width:80px">Qty</th><th></th></tr></thead><tbody id="iBaris"></tbody></table></div>
       <div class="hint" id="iPesan"></div>
       <div class="bgact" style="margin-top:12px"><button class="cta" id="iSimpan">Simpan barang masuk</button><button class="btn" id="iBatal">Kosongkan form</button></div>
     </section>
@@ -3251,7 +3252,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
       const h = HARGA.find(x => String(x.no) === String(b.no)), js = h ? jenisItem(h.no, h.nama) : [];
       return `<tr data-n="${n}"><td><select class="im-item">${opsiItemMasuk(b.no)}</select></td>
         <td><select class="im-jenis" ${h ? '' : 'disabled'}>${js.length > 1 ? '<option value="">Pilih</option>' : ''}${js.map(j => `<option value="${j}" ${b.jenis === j ? 'selected' : ''}>${NAMA_JENIS[j]}</option>`).join('')}</select></td>
-        <td><select class="im-uk" ${b.jenis && b.jenis !== '-' ? '' : 'disabled'}>${b.jenis === '-' ? '<option value="-">-</option>' : (b.jenis ? opsiUk(daftarUkuran(b.jenis), b.ukuran) : '<option value="">Pilih jenis dulu</option>')}</select></td>
+        <td class="ukcell">${b.jenis === '-' ? '<span class="muted">Tanpa ukuran</span>' : b.jenis ? daftarUkuran(b.jenis).map(u => `<button type="button" class="ukb ${u === b.ukuran ? 'on' : ''}" data-u="${esc(u)}">${esc(u)}</button>`).join('') : '<span class="muted">Pilih jenis dulu</span>'}</td>
         <td><input class="im-qty" type="number" min="1" inputmode="numeric" placeholder="0" value="${esc(b.qty)}"></td><td><button class="x" title="Hapus baris" aria-label="Hapus baris">✕</button></td></tr>`;
     }).join('');
   }
@@ -3274,7 +3275,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     else if (e.target.classList.contains('im-uk')) b.ukuran = e.target.value;
   };
   $('iBaris').oninput = e => { if (e.target.classList.contains('im-qty')) iBaris[e.target.closest('tr').dataset.n].qty = e.target.value; };
-  $('iBaris').onclick = e => { if (!e.target.classList.contains('x')) return; if (iBaris.length === 1) iBaris = [barisMasukBaru()]; else iBaris.splice(e.target.closest('tr').dataset.n, 1); renderBarisMasuk(); };
+  $('iBaris').onclick = e => { const ub = e.target.closest('.ukb'); if (ub) { const b = iBaris[ub.closest('tr').dataset.n]; b.ukuran = ub.dataset.u; renderBarisMasuk(); return; } if (!e.target.classList.contains('x')) return; if (iBaris.length === 1) iBaris = [barisMasukBaru()]; else iBaris.splice(e.target.closest('tr').dataset.n, 1); renderBarisMasuk(); };
   $('iSimpan').onclick = async () => {
     const ps = $('iPesan'), btn = $('iSimpan'); ps.style.color = 'var(--bad)';
     const baris = iBaris.filter(b => b.no || b.qty || b.jenis);
