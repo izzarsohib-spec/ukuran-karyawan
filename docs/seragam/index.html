@@ -647,7 +647,7 @@
   .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
   @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); height:auto; } .rk2k > .card { height:auto; } .pmscroll { max-height:70vh; } .rktut { height:auto; overflow:visible; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.261">
+<link rel="stylesheet" href="../aset/tema.css?v=1.262">
 </head>
 <body>
 <div class="shell">
@@ -3043,10 +3043,10 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     if (!$('rkIsi')) return;
     $('rkPeriode').hidden = true;
     if (!statusMuat) { $('infoRekap').textContent = 'Memuat data…'; $('rkIsi').innerHTML = ''; $('rkKpi').innerHTML = ''; return; }
-    const semuaP = disetujuiSemua(), tab = rkTab === 'belum' || rkTab === 'selesai' || rkTab === 'semua' ? rkTab : 'belum';
+    const semuaP = disetujuiSemua(), tab = rkTab === 'selesai' ? 'selesai' : 'belum';
     const selesaiP = p => (p.items || []).every(i => pmSaved.has(pmKey(p.id, i.no)) && !kotorPm(p, i));
     const nBelum = semuaP.filter(p => !selesaiP(p)).length;
-    $('rkTab').innerHTML = [['belum', `Belum selesai ditandai (${nBelum})`], ['selesai', `Riwayat & monitoring (${pmKonf.length})`], ['semua', 'Semua']].map(([k, t]) => `<button class="chip ${tab === k ? 'on' : ''}" data-t="${k}">${t}</button>`).join('');
+    $('rkTab').innerHTML = [['belum', `Belum selesai ditandai (${nBelum})`], ['selesai', `Riwayat & monitoring (${pmKonf.length})`]].map(([k, t]) => `<button class="chip ${tab === k ? 'on' : ''}" data-t="${k}">${t}</button>`).join('');
     const tampil = semuaP.filter(p => rkCocok(p.client || p.lokasi_form, p.bagian_kerja) && tab !== 'selesai' && (tab === 'semua' || (tab === 'belum') === !selesaiP(p))).sort((a, b) => (selesaiP(a) - selesaiP(b)) || (tglDisetujui(b) - tglDisetujui(a)));
     const dW = dataPesan('wahyu', kotorPm), dO = dataPesan('online'), kotorN = semuaP.reduce((a, p) => a + (p.items || []).filter(i => kotorPm(p, i)).length, 0);
     $('infoRekap').textContent = (semuaP.length ? `${idn(semuaP.length)} lokasi sudah disetujui kedua pimpinan · ${idn(nBelum)} belum selesai ditandai` : 'Belum ada permintaan yang disetujui Pak Yasir dan Pak Ferry') + (Saring.aktif() ? ' · ' + Saring.label() : '');
