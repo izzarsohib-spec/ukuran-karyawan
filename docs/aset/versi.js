@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.266', tanggal: '2026-10-29', catatan: 'Riwayat & monitoring tanpa kartu rekap di bawah' };
+window.VERSI = { no: '1.267', tanggal: '2026-10-29', catatan: 'Tutorial per chip di Rekap permintaan' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

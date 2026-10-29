@@ -643,12 +643,14 @@
   .mnl { padding:8px 0; border-top:1px solid var(--stroke); font-size:.88rem; } .mni { display:flex; flex-wrap:wrap; justify-content:space-between; gap:2px 10px; padding:3px 0 3px 10px; font-size:.84rem; } .mni .rkukw { flex-basis:100%; }
   .mnest { margin:6px 0 2px; padding:7px 10px; border-radius:10px; background:var(--ok-bg, #E5F1EC); font-size:.86rem; } .mnest.telat { background:var(--warn-bg, #F7EFDC); }
   #rkDatang > header, #rkKurang > header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 12px; } #rkDatang > header h1, #rkKurang > header h1 { font-size:1.15rem; margin:0; } #rkDatang > header .sub, #rkKurang > header .sub { font-size:.82rem; }
+  .tutbar { margin:0 0 14px !important; padding:12px 16px !important; } .tutbar > b { display:block; margin-bottom:6px; font-size:.9rem; }
+  .tutrow { flex-direction:row !important; flex-wrap:wrap; gap:6px 26px !important; } .tutrow li { flex:1 1 230px; max-width:360px; }
   #rkKpi, label.search[hidden] { display:none !important; }
   .rk2 { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr); gap:16px; align-items:stretch; height:clamp(580px, calc(100vh - 230px), 780px); } .rk2k { min-width:0; min-height:0; } .rk2k > .card { margin:0; height:100%; display:flex; flex-direction:column; min-height:0; } .pmscroll { flex:1; min-height:0; overflow-y:auto; padding-right:4px; } .rktut { margin:0; height:100%; overflow-y:auto; min-height:0; }
   .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
   @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); height:auto; } .rk2k > .card { height:auto; } .pmscroll { max-height:70vh; } .rktut { height:auto; overflow:visible; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.266">
+<link rel="stylesheet" href="../aset/tema.css?v=1.267">
 </head>
 <body>
 <div class="shell">
@@ -2997,17 +2999,33 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     return `<section class="rk" style="margin-bottom:16px"><div class="rkh"><h4>${judul}</h4><b>${idn(semua)} pcs</b></div><div class="wrap rkt"><table class="rkmx"><thead><tr><th>Jenis barang</th>${kol.map(u => `<th class="r">${u === '?' ? 'Ukuran belum dibagi' : esc(u)}</th>`).join('')}<th class="r">Total</th></tr></thead><tbody>${baris}<tr class="rktot"><td><b>Total</b></td>${kol.map(u => `<td class="r"><b>${idn(tot.get(u) || 0)}</b></td>`).join('')}<td class="r"><b>${idn(semua)}</b></td></tr></tbody></table></div>${adaSisa ? '<div class="muted" style="font-size:.76rem;margin-top:6px">Kolom <b>Ukuran belum dibagi</b>: jumlah barang yang belum dibagikan ke nama karyawan (beserta ukurannya) di form permintaan.</div>' : ''}</section>`;
   }
   // kartu tutorial di sisi kanan halaman Rekap Permintaan: urutan alur dan alasannya
-  const TUTORIAL_REKAP = `<aside class="card pcard rktut"><h3 style="margin:0 0 4px">Alur setelah memo disetujui</h3><p class="muted" style="margin:0 0 12px;font-size:.84rem">Langkah singkat:</p>
-    <ol class="tutl">
-      <li><b>Memo disetujui.</b> Lokasi yang sudah disetujui kedua pimpinan otomatis muncul di kiri.</li>
-      <li><b>Tandai tiap item.</b> Pilih Mas Wahyu atau Online (seragam dan sepatu diusulkan Mas Wahyu, aksesoris Online).</li>
-      <li><b>Simpan penandaan.</b> PO ikut ditandai terkirim, dan item masuk hitungan kekurangan vendor.</li>
-      <li><b>Kirim rekap dan belanja.</b> Unduh PDF untuk Mas Wahyu, salin daftar belanja online.</li>
-      <li><b>Catat barang datang.</b> Stok bertambah dan kekurangan berkurang otomatis.</li>
-      <li><b>Belum lengkap?</b> Catat di Kekurangan vendor.</li>
-      <li><b>Stok siap.</b> Lanjut ke Ploting dan Pengiriman.</li>
-    </ol>
-    <div class="hint" style="margin-top:10px">Salah tandai? Ubah tombolnya lalu simpan lagi.</div></aside>`;
+  // tutorial singkat per chip di halaman Rekap permintaan: judul + langkah (huruf tebal = inti langkah, sisanya penjelasan)
+  const TUT = {
+    belum: ['Cara memakai halaman ini', [
+      ['Memo disetujui.', 'Lokasi yang sudah disetujui kedua pimpinan otomatis muncul di kiri.'],
+      ['Tandai tiap item.', 'Pilih Mas Wahyu atau Online. Usulan awal: seragam dan sepatu ke Mas Wahyu, aksesoris Online. Tombol "Semua ke ..." menandai satu lokasi sekaligus.'],
+      ['Submit & kirim PDF ke Mas Wahyu.', 'Menyimpan penandaan, menandai PO terkirim, lalu mengirim PDF rekap lewat ntfy dan meminta estimasi datang.'],
+      ['Belanja online.', 'Submit menyimpan item online. Buat PDF pengajuan untuk dibawa menghadap pimpinan meminta anggaran.'],
+      ['Setelah Submit,', 'rekapnya pindah ke chip Riwayat & monitoring.']]],
+    selesai: ['Cara memakai Riwayat & monitoring', [
+      ['Satu kartu = satu rekap', 'yang pernah dikirim ke Mas Wahyu, lengkap dengan waktu kirim dan jumlah pcs.'],
+      ['Status estimasi:', 'Menunggu estimasi, Estimasi sudah diterima (dengan tanggalnya), atau Belum bisa dipenuhi. Pop-up kanan atas muncul seketika saat Mas Wahyu menjawab.'],
+      ['Lihat isi pesanan per lokasi', 'untuk memeriksa seragam dan ukuran yang diminta.'],
+      ['Buka PDF rekap.', 'Setelah dikonfirmasi, PDF berisi tanggal estimasi dan tanda tangan Mas Wahyu.'],
+      ['Estimasi sudah lewat?', 'Tanggalnya berwarna kuning; tanyakan ke Mas Wahyu dan catat di chip Kekurangan vendor bila barang belum lengkap.']]],
+    datang: ['Cara memakai Barang datang', [
+      ['Isi data penerimaan:', 'tanggal, supplier (Mas Wahyu atau Online), dan no. surat jalan atau faktur.'],
+      ['Tambah baris barang:', 'pilih barang, lalu jenis, ukuran, dan jumlah. Satu baris untuk tiap ukuran.'],
+      ['Simpan.', 'Stok gudang bertambah dan kekurangan vendor berkurang otomatis.'],
+      ['Riwayat di kanan', 'dikelompokkan per penerimaan; saring dengan tanggal dan Cari barang.'],
+      ['Barang belum lengkap?', 'Catat di chip Kekurangan vendor.']]],
+    kurang: ['Cara memakai Kekurangan vendor', [
+      ['Catat kekurangan:', 'barang, jenis, ukuran, dan jumlah yang belum dikirim vendor, beserta estimasi kirim dan keterangan.'],
+      ['Status otomatis.', 'Belum, Sebagian, atau Sudah terpenuhi, dihitung dari Barang datang vendor yang sama sejak tanggal catatan.'],
+      ['Tandai manual', 'dengan Tandai terpenuhi atau Batal bila perlu; Buka lagi untuk membatalkan penutupan.'],
+      ['Estimasi kirim lewat', 'ditandai merah supaya bisa Anda tagih ke vendor.']]],
+  };
+  const tutorialRekap = (tab, bar = false) => { const [judul, langkah] = TUT[tab] || TUT.belum, li = langkah.map(([a, b]) => `<li><b>${a}</b> ${b}</li>`).join(''); return bar ? `<aside class="card pcard tutbar"><b>${judul}</b><ol class="tutl tutrow">${li}</ol></aside>` : `<aside class="card pcard rktut"><h3 style="margin:0 0 10px">${judul}</h3><ol class="tutl">${li}</ol></aside>`; };
   // Monitoring: log rekap yang dikirim ke Mas Wahyu (isi pesanan + sudah/belum ada estimasi darinya), pesanan yang belum dikirim, dan item online
   function htmlMonitoring(semuaP) {
     if (!Masuk.kode()) return '<div class="kosongnya">Riwayat dibuka setelah login. <button class="btn" id="pmMasuk" type="button" onclick="Masuk.wajib().then(muatPemesanan).catch(() => {})">Masuk dan muat</button></div>';
@@ -3053,6 +3071,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const selesaiP = p => (p.items || []).every(i => pmSaved.has(pmKey(p.id, i.no)) && !kotorPm(p, i));
     const nBelum = semuaP.filter(p => !selesaiP(p)).length;
     $('rkTab').innerHTML = [['belum', `Belum selesai ditandai (${nBelum})`], ['selesai', `Riwayat & monitoring (${pmKonf.length})`], ['datang', 'Barang datang'], ['kurang', 'Kekurangan vendor']].map(([k, t]) => `<button class="chip ${tab === k ? 'on' : ''}" data-t="${k}">${t}</button>`).join('');
+    for (const [idw, kt] of [['rkDatang', 'datang'], ['rkKurang', 'kurang']]) if (!$(idw).querySelector('.tutbar')) $(idw).insertAdjacentHTML('afterbegin', tutorialRekap(kt, true));
     $('rkKurang').hidden = tab !== 'kurang'; $('rkDatang').hidden = tab !== 'datang'; $('rkIsi').hidden = tab === 'kurang' || tab === 'datang';
     if (tab === 'datang') { $('infoRekap').textContent = 'Catat barang yang datang dari vendor atau online, dan lihat riwayatnya'; return; }
     if (tab === 'kurang') { $('infoRekap').textContent = 'Catat kekurangan dari vendor dan pantau riwayatnya'; return; }
@@ -3066,7 +3085,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const lainW = dW.aks.length ? `<section class="rk" style="margin-bottom:16px"><div class="rkh"><h4>Tanpa ukuran (ke Mas Wahyu)</h4><b>${idn(dW.aks.reduce((a, x) => a + x.qty, 0))} pcs</b></div><div class="wrap rkt"><table><tbody>${dW.aks.map(a => `<tr><td><b>${esc(namaRapi(a.nama))}</b></td><td class="r">${idn(a.qty)}</td></tr>`).join('')}</tbody></table></div></section>` : '';
     const monitor = tab === 'selesai';
     $('rkIsi').innerHTML = '<div class="rk2"><div class="rk2k"><section class="card pcard"><h3 style="margin:0 0 12px">' + (monitor ? 'Monitoring pesanan ke Mas Wahyu' : 'Tandai pemesanan per item') + '</h3>' + (monitor ? '' : bar) + '<div class="pmscroll">' + (monitor ? htmlMonitoring(semuaP) : tampil.length ? tampil.map(kartuPermintaan).join('') : `<div class="kosongnya">${semuaP.length ? 'Tidak ada lokasi yang cocok dengan filter ini.' : 'Belum ada lokasi yang disetujui kedua pimpinan. Setelah disetujui, lokasinya muncul di sini.'}</div>`)
-      + `</div></section></div>` + TUTORIAL_REKAP + `</div>` + (monitor ? '' : `
+      + `</div></section></div>` + tutorialRekap(tab) + `</div>` + (monitor ? '' : `
       <div class="rk3"><section class="card pcard"><div class="rk3h"><h3>Rekap pesanan ke Mas Wahyu</h3><div class="bgact"><button class="cta" id="pmSubW" type="button" ${dW.ps.length ? '' : 'disabled'} title="Simpan penandaan, tandai PO terkirim, lalu kirim PDF rekap ke Mas Wahyu lewat ntfy dan minta estimasi datang">Submit &amp; kirim PDF ke Mas Wahyu${nDirtyW ? ` (${nDirtyW})` : ''}</button></div></div><div class="pmscroll">${matriksW}${lainW}</div></section>
       <section class="card pcard"><div class="rk3h"><h3>Belanja online</h3><div class="bgact"><button class="cta" id="pmSubO" type="button" ${nDirtyO ? '' : 'disabled'}>Submit (${nDirtyO})</button><button class="btn" id="pmPdfO" type="button">Buat PDF pengajuan</button></div></div><div class="pmscroll" id="pmOnline"></div></section></div>`);
     if (monitor) return; // chip Riwayat & monitoring hanya berisi log; kartu rekap Mas Wahyu dan belanja online hanya di chip penandaan
