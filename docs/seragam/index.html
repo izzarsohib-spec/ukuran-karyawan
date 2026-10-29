@@ -623,8 +623,9 @@
   @media (max-width: 1100px) { .datang2 { grid-template-columns:minmax(0,1fr); } }
   .rkmx { width:auto !important; min-width:0; } .rkmx th:first-child, .rkmx td:first-child { min-width:260px; white-space:normal; } .rkmx th.r, .rkmx td.r { min-width:58px; text-align:center; } .rkmx th, .rkmx td { padding:7px 12px; white-space:nowrap; } .rkmx .mxv { font-weight:600; } .rkmx .mxn { color:var(--muted); opacity:.5; }
   .rkmx .rktot td { border-top:2px solid var(--stroke); background:rgba(0,0,0,.03); }
+  #iBaris select, #iBaris input { width:100%; min-width:0; } #iBaris select:disabled { opacity:.55; cursor:not-allowed; }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.217">
+<link rel="stylesheet" href="../aset/tema.css?v=1.218">
 </head>
 <body>
 <div class="shell">
@@ -733,7 +734,7 @@
         <label>Tanggal<input type="date" id="iTgl"></label><label>Supplier<select id="iSup"><option>Wahyu Ardianto</option><option>Online</option></select></label>
         <label><span id="iDokL">No. surat jalan / faktur Wahyu Ardianto</span><input id="iDok"></label><label>Keterangan<input id="iKet" placeholder="opsional"></label></div>
       <div class="row" style="margin:16px 0 8px"><b>Barang yang masuk</b><button class="btn" id="iTambah">+ Tambah baris</button></div>
-      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:250px">Barang</th><th>Jenis</th><th>Ukuran</th><th style="width:96px">Qty</th><th></th></tr></thead><tbody id="iBaris"></tbody></table></div>
+      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:200px">Barang</th><th style="min-width:100px">Jenis</th><th style="min-width:110px">Ukuran</th><th style="min-width:80px">Qty</th><th></th></tr></thead><tbody id="iBaris"></tbody></table></div>
       <div class="hint" id="iPesan"></div>
       <div class="bgact" style="margin-top:12px"><button class="cta" id="iSimpan">Simpan barang masuk</button><button class="btn" id="iBatal">Kosongkan form</button></div>
     </section>
@@ -3250,7 +3251,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
       const h = HARGA.find(x => String(x.no) === String(b.no)), js = h ? jenisItem(h.no, h.nama) : [];
       return `<tr data-n="${n}"><td><select class="im-item">${opsiItemMasuk(b.no)}</select></td>
         <td><select class="im-jenis" ${h ? '' : 'disabled'}>${js.length > 1 ? '<option value="">Pilih</option>' : ''}${js.map(j => `<option value="${j}" ${b.jenis === j ? 'selected' : ''}>${NAMA_JENIS[j]}</option>`).join('')}</select></td>
-        <td><select class="im-uk" ${b.jenis && b.jenis !== '-' ? '' : 'disabled'}>${b.jenis === '-' ? '<option value="-">-</option>' : opsiUk(daftarUkuran(b.jenis), b.ukuran)}</select></td>
+        <td><select class="im-uk" ${b.jenis && b.jenis !== '-' ? '' : 'disabled'}>${b.jenis === '-' ? '<option value="-">-</option>' : (b.jenis ? opsiUk(daftarUkuran(b.jenis), b.ukuran) : '<option value="">Pilih jenis dulu</option>')}</select></td>
         <td><input class="im-qty" type="number" min="1" inputmode="numeric" placeholder="0" value="${esc(b.qty)}"></td><td><button class="x" title="Hapus baris" aria-label="Hapus baris">✕</button></td></tr>`;
     }).join('');
   }
