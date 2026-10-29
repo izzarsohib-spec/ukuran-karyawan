@@ -133,3 +133,11 @@ select option, .bar select option, .fg select option, .massal select option { ba
   .atas .tab { height:auto; padding:6px 0; overflow-x:auto; }
   .isi.beratas iframe { top:auto; height:auto; }
 }
+
+/* menu aktif senada dengan sidebar: tanpa hijau menyala (latar slate lebih terang, ikon dan teks putih) */
+.side .menu.on, .side button.on, .menu.on { background:rgba(255,255,255,.14); border-color:rgba(255,255,255,.26); box-shadow:inset 0 1px 0 rgba(255,255,255,.08); color:#FFFFFF; }
+.side .menu.on svg, .side button.on svg, .menu.on svg { color:#FFFFFF; }
+.side .menu:hover:not(.on), .side button:hover:not(.on) { background:rgba(255,255,255,.08); }
+.merek span, .side .merek span { color:#CBD5E1; }
+.atas .tab button.on { box-shadow:inset 0 -2.5px 0 rgba(255,255,255,.75); }
+.atas .tab button.on { border-bottom-color:transparent; }

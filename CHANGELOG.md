@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 29 Okt 2026
+- **v1.230** Menu aktif di sidebar tidak lagi hijau menyala: latar slate yang sedikit lebih terang dengan garis tepi halus, ikon dan teks putih, tanpa garis hijau di kiri. Nama perusahaan di sidebar dan garis bawah tab aktif di bar atas juga dibuat senada (putih lembut). Hanya warna.
 - **v1.229** Riwayat barang datang: ukuran dan jumlah dipisah. Tiap ukuran berupa kotak kecil dengan ukuran di baris atas (abu-abu) dan jumlahnya di baris bawah (tebal), bukan satu teks "M x6". Label jenis (Baju, Celana, Sepatu) kini menampilkan subtotal pcs-nya.
 - **v1.228** Form Catat barang datang: lebar kolom Barang, Jenis, Ukuran, dan Qty disesuaikan supaya semuanya muat di kartu (kolom Qty sebelumnya terdorong keluar kartu).
 - **v1.227** Riwayat barang datang: isi tiap penerimaan dipecah per barang. Satu barang satu blok dengan jumlah totalnya, di bawahnya per jenis (Baju, Celana, Sepatu) dengan jumlah tiap ukuran, misalnya Baju M x6, L x8 dan Celana 34 x4, 36 x6. Tiga barang pertama langsung tampil, sisanya dilipat.
