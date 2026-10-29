@@ -632,8 +632,13 @@
   .ijudul { padding:6px 8px 4px; font-size:.7rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); } .ifo { display:flex; align-items:center; gap:10px; width:100%; padding:7px 8px; border:0; border-radius:9px; background:none; cursor:pointer; text-align:left; font-size:.88rem; color:var(--text); } .ifo:hover { background:rgba(0,0,0,.05); } .ifo.on { font-weight:600; }
   .ifo .ck, .ifo .rd { display:inline-grid; place-items:center; width:18px; height:18px; border:1.5px solid #94A3B8; font-size:.72rem; color:#fff; flex:none; } .ifo .ck { border-radius:5px; } .ifo .rd { border-radius:50%; } .ifo.on .ck, .ifo.on .rd { background:var(--navy, #33475B); border-color:var(--navy, #33475B); }
   .kcprog { height:6px; margin:6px 0 3px; max-width:220px; border-radius:99px; background:rgba(0,0,0,.09); overflow:hidden; } .kcprog i { display:block; height:100%; border-radius:99px; background:var(--ok, #3F7F6B); }
+  .pmbar { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin:0 0 14px; padding:10px 14px; border:1px solid var(--stroke); border-radius:14px; background:var(--lembut, #F4F7FB); position:sticky; top:62px; z-index:5; }
+  .pmbar label { display:flex; align-items:center; gap:8px; font-size:.8rem; color:var(--muted); } .pmbar input { padding:6px 8px; border:1px solid #CBD5E1; border-radius:9px; background:#fff; }
+  .seg { display:inline-flex; border:1px solid #CBD5E1; border-radius:10px; overflow:hidden; } .seg button { padding:6px 12px; border:0; background:#fff; cursor:pointer; font-size:.82rem; font-weight:600; color:var(--muted); } .seg button + button { border-left:1px solid #CBD5E1; }
+  .seg button.on { background:var(--navy, #33475B); color:#fff; } .seg button.on.onl { background:var(--accent, #2F7F79); }
+  .rkukw { margin-top:3px; display:flex; flex-direction:column; gap:1px; } .rkuk { font-size:.76rem; color:var(--muted); } .rkuk b { color:var(--accent); text-transform:uppercase; font-size:.68rem; margin-right:4px; } .rkuk i { font-style:normal; font-weight:700; color:var(--text); margin:0 6px 0 1px; }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.238">
+<link rel="stylesheet" href="../aset/tema.css?v=1.239">
 </head>
 <body>
 <div class="shell">
@@ -1499,7 +1504,7 @@
     if (window.parent !== window) window.parent.postMessage({ tipe: 'halaman', modul: 'seragam', pg: g }, location.origin); // sorotan menu portal ikut
     window.scrollTo({ top: 0 });
     if (pg === 'permintaan' || pg === 'ploting' || pg === 'monitor') muatStatus();
-    if (pg === 'rekap') { muatStatus(); muatRekapUkuran(); muatRekapVendor(); muatAntreanUkuran(); }
+    if (pg === 'rekap') { muatStatus(); muatPemesanan(); }
     if (pg === 'kurang') { muatKekurangan(); muatKc(); }
     if (pg === 'datang') { muatStatus(); muatHilir(); }
     if (pg === 'kurang') muatHilir();
@@ -2915,10 +2920,34 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     return { sem, pilih, ps: psVendor, jenis, ukuran, lokasi: [...lok.values()].sort((a, b) => a.client.localeCompare(b.client)), daftar: psVendor, aks: [...aks.values()].sort((a, b) => a.nama.localeCompare(b.nama, 'id')), kepala: ['Jenis', 'Barang', 'Ukuran', 'Jumlah'], baris: barisUkuranRk(ukuran) };
   }
   const teksBelanjaAksesoris = d => `Daftar belanja aksesoris (${tglPanjangIso(wibIso())})\n` + d.aks.map(a => `- ${a.nama}: ${a.qty} pcs`).join('\n');
-  // ---- tampilan rekap: satu filter (status PO + periode), tiga tabel matriks (Baju, Celana, Sepatu), aksesoris, dan daftar permintaan ----
+  // ---- REKAP PERMINTAAN: lokasi yang sudah disetujui kedua pimpinan masuk di sini; tiap item ditandai dipesan ke Mas Wahyu atau Online ----
+  // Penandaan disimpan di tabel pemesanan_item (RPC daftar_pemesanan / simpan_pemesanan). Sebelum disimpan, seragam dan sepatu diusulkan ke Mas Wahyu, aksesoris diusulkan Online.
+  let pmSaved = new Map(), pmDraft = new Map(), rkUkAll = [], pmTgl = '';
+  const pmKey = (pid, no) => pid + '|' + no;
+  const usulanVia = i => itemAksesoris(i) ? 'online' : 'wahyu';
+  const viaDraft = (p, i) => { const k = pmKey(p.id, i.no); if (pmDraft.has(k)) return pmDraft.get(k); const sv = pmSaved.get(k); return sv ? sv.via : usulanVia(i); };
+  const kotorPm = (p, i) => { const sv = pmSaved.get(pmKey(p.id, i.no)), v = viaDraft(p, i); return sv ? sv.via !== v : v !== ''; };
+  async function muatPemesanan() {
+    try { const [a, b] = await Promise.all([rpc('daftar_pemesanan', {}), rpc('rekap_ukuran_semua', {}).catch(() => [])]); await Saring.siap; pmSaved = new Map(a.map(r => [pmKey(r.permintaan_id, r.item_no), { via: r.via, tanggal: String(r.tanggal).slice(0, 10) }])); rkUkAll = b.filter(x => Saring.boleh(x.lokasi_form)); }
+    catch (e) { $('infoRekap').textContent = 'Gagal memuat penandaan pemesanan: ' + e.message + ' (bila fungsi database belum dipasang, jalankan supabase/migrasi-pemesanan-item.sql).'; }
+    renderRekapPage();
+  }
+  const ukuranItem = (p, i) => {
+    const per = new Map(); for (const r of rkUkAll) if (r.permintaan_id === p.id && Number(r.item_no) === Number(i.no)) { if (!per.has(r.jenis)) per.set(r.jenis, new Map()); per.get(r.jenis).set(r.ukuran, (per.get(r.jenis).get(r.ukuran) || 0) + Number(r.qty)); }
+    return [...per.entries()].map(([j, m]) => `<span class="rkuk"><b>${NAMA_JENIS[j] || j}</b> ${[...m.entries()].sort((a, b) => urutUkuran(a[0], b[0])).map(([u, q]) => `${esc(u)}<i>×${idn(q)}</i>`).join(' ')}</span>`).join('');
+  };
+  // data rekap untuk satu jalur (Mas Wahyu / Online) dari penandaan yang sedang tampil (termasuk usulan yang belum disimpan)
+  function dataPesan(via) {
+    const q0 = $('rkCari').value; $('rkCari').value = '';
+    try {
+      const psV = disetujuiSemua().map(p => ({ ...p, items: (p.items || []).filter(i => viaDraft(p, i) === via) })).filter(p => p.items.length), pasang = new Set(psV.flatMap(p => p.items.map(i => pmKey(p.id, i.no))));
+      const jenis = rekapBarang(psV.flatMap(p => p.items.map(i => ({ no: i.no, nama: i.nama, qty: i.qty })))), ukuran = hitungUkuranRk(psV, rkUkAll.filter(r => pasang.has(pmKey(r.permintaan_id, r.item_no))));
+      const lok = new Map(); for (const p of psV) { const k = p.lokasi_form + '|' + p.bagian_kerja; if (!lok.has(k)) lok.set(k, { client: p.client, bagian: p.bagian_kerja, n: 0, pcs: 0, beli: 0 }); const x = lok.get(k); x.n++; x.pcs += p.items.reduce((a, i) => a + (Number(i.qty) || 0), 0); x.beli += p.items.reduce((a, i) => a + (Number(i.beli) || 0) * (Number(i.qty) || 0), 0); }
+      return { ps: psV, jenis, ukuran, lokasi: [...lok.values()].sort((a, b) => a.client.localeCompare(b.client)), daftar: psV, aks: hitungAks(psV), pcs: psV.reduce((a, p) => a + pcsPermintaan({ items: p.items }), 0), kepala: ['Jenis', 'Barang', 'Ukuran', 'Jumlah'], baris: barisUkuranRk(ukuran) };
+    } finally { $('rkCari').value = q0; }
+  }
   const hitungAks = ps => { const m = new Map(); for (const p of ps) for (const i of (p.items || []).filter(itemAksesoris)) { const k = String(i.nama).toUpperCase(); if (!m.has(k)) m.set(k, { nama: i.nama, qty: 0, asal: [] }); const x = m.get(k); x.qty += Number(i.qty) || 0; x.asal.push([p.client, p.bagian_kerja, Number(i.qty) || 0]); } return [...m.values()].sort((a, b) => a.nama.localeCompare(b.nama, 'id')); };
-  const dataRk = () => rkTab === 'sudah' ? dataVendor() : dataHarian();
-  const opsiPdfRk = () => rkTab === 'sudah' ? undefined : { periode: `Rekap ${tglPanjangIso(wibIso())} (permintaan disetujui yang belum dikirim)`, tglBaris: () => wibIso(), berkas: `Rekap ke Mas Wahyu ${wibIso()}.pdf` };
+  const opsiPdfRk = () => ({ periode: `Pesanan ke Mas Wahyu per ${tglPanjangIso(wibIso())}`, tglBaris: p => (pmSaved.get(pmKey(p.id, (p.items[0] || {}).no)) || {}).tanggal || wibIso(), berkas: `Rekap pesanan ke Mas Wahyu ${wibIso()}.pdf` });
   // matriks: baris = jenis barang, kolom = ukuran yang ada (kolom kosong tidak ditampilkan), plus Total
   function matriksRk(g, judul) {
     const uk = [...new Set(g.baris.flatMap(([, m]) => m.map(([u]) => u)))].sort(urutUkuran), adaSisa = g.baris.some(([, , sisa]) => sisa);
@@ -2928,52 +2957,72 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const semua = [...tot.values()].reduce((a, b) => a + b, 0);
     return `<section class="rk" style="margin-bottom:16px"><div class="rkh"><h4>${judul}</h4><b>${idn(semua)} pcs</b></div><div class="wrap rkt"><table class="rkmx"><thead><tr><th>Jenis barang</th>${kol.map(u => `<th class="r">${u === '?' ? 'Tanpa ukuran' : esc(u)}</th>`).join('')}<th class="r">Total</th></tr></thead><tbody>${baris}<tr class="rktot"><td><b>Total</b></td>${kol.map(u => `<td class="r"><b>${idn(tot.get(u) || 0)}</b></td>`).join('')}<td class="r"><b>${idn(semua)}</b></td></tr></tbody></table></div></section>`;
   }
+  function kartuPermintaan(p) {
+    const items = p.items || [], kotor = items.filter(i => kotorPm(p, i)).length, tersimpan = items.filter(i => pmSaved.has(pmKey(p.id, i.no))).length, lengkap = tersimpan === items.length && !kotor;
+    const baris = items.map(i => {
+      const v = viaDraft(p, i), sv = pmSaved.get(pmKey(p.id, i.no)), kt = kotorPm(p, i);
+      return `<tr><td><b>${esc(namaRapi(i.nama))}</b><div class="rkukw">${ukuranItem(p, i)}</div></td><td class="r">${idn(Number(i.qty) || 0)} pcs</td>
+        <td><div class="seg" data-p="${p.id}" data-no="${esc(i.no)}"><button type="button" data-via="wahyu" class="${v === 'wahyu' ? 'on' : ''}">Mas Wahyu</button><button type="button" data-via="online" class="${v === 'online' ? 'on onl' : ''}">Online</button></div>
+        <div class="muted" style="font-size:.72rem;margin-top:2px">${kt ? (sv ? 'diubah, belum disimpan' : v ? 'usulan, belum disimpan' : 'belum ditandai') : v ? 'dipesan ' + esc(tglPendek(sv.tanggal)) : 'belum ditandai'}</div></td></tr>`;
+    }).join('');
+    return `<section class="rk pmk" style="margin-bottom:14px"><div class="rkh"><div><h4 style="margin:0">${esc(p.client)}</h4><div class="muted" style="font-size:.8rem">${esc(namaRapi(p.bagian_kerja))} · no. ${p.id} · disetujui ${esc(tglDisetujui(p).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }))}</div></div>
+      <div style="text-align:right"><span class="badge ${lengkap ? 'ok' : kotor ? 'warn' : 'bad'}">${lengkap ? '✓ Semua item sudah ditandai' : tersimpan ? `${tersimpan} dari ${items.length} item ditandai` : 'Belum ditandai'}</span>
+      <div style="margin-top:6px"><button type="button" class="btn" data-semua="wahyu" data-p="${p.id}">Semua ke Mas Wahyu</button> <button type="button" class="btn" data-semua="online" data-p="${p.id}">Semua Online</button></div></div></div>
+      <div class="wrap rkt"><table><thead><tr><th>Item</th><th class="r">Jumlah</th><th>Dipesan lewat</th></tr></thead><tbody>${baris}</tbody></table></div></section>`;
+  }
   function renderRekapPage() {
     if (!$('rkIsi')) return;
-    const sudah = rkTab === 'sudah';
-    $('rkTab').innerHTML = RK_TAB.map(([k, t]) => `<button class="chip ${rkTab === k ? 'on' : ''}" data-t="${k}">${t}</button>`).join('');
-    $('rkPeriode').hidden = !sudah; $('rkPdf').hidden = false;
-    if (sudah) { if ($('rkDari').value !== rkDari) $('rkDari').value = rkDari; if ($('rkSampai').value !== rkSampai) $('rkSampai').value = rkSampai; $('rkPreset').innerHTML = [['hari', 'Hari ini'], ['7', '7 hari terakhir'], ['bulan', 'Bulan ini'], ['lalu', 'Bulan lalu'], ['semua', 'Semua']].map(([k, t]) => `<button class="chip" data-p="${k}">${t}</button>`).join(''); }
+    $('rkPeriode').hidden = true;
     if (!statusMuat) { $('infoRekap').textContent = 'Memuat data…'; $('rkIsi').innerHTML = ''; $('rkKpi').innerHTML = ''; return; }
-    const d = dataRk(), ps = sudah ? d.ps : d.sem, ukMuat = sudah ? rkUkVMuat : rkUkAMuat, aks = d.aks || hitungAks(d.ps), tJ = j => (d.jenis.find(x => x.jenis === j) || { total: 0 }).total;
-    $('infoRekap').textContent = (sudah ? `${idn(d.ps.length)} permintaan dikirim ke vendor pada ${tglPanjangIso(rkDari)} s.d. ${tglPanjangIso(rkSampai)}` : `${idn(d.sem.length)} permintaan disetujui kedua pimpinan, PO belum dikirim ke vendor`) + (Saring.aktif() ? ' · ' + Saring.label() : '');
-    $('rkKpi').innerHTML = [[idn(sudah ? d.ps.length : d.pilih.length), 'Permintaan dihitung'], [idn(tJ('Baju')), 'Baju (pcs)'], [idn(tJ('Celana')), 'Celana (pcs)'], [idn(tJ('Sepatu')), 'Sepatu (pcs)'], [idn(aks.reduce((a, x) => a + x.qty, 0)), 'Aksesoris (pcs)']].map(([a, b]) => `<div><span>${b}</span><b>${a}</b></div>`).join('');
-    if (!ps.length) { $('rkIsi').innerHTML = `<div class="kosongnya">${sudah ? 'Tidak ada permintaan yang PO-nya dikirim ke vendor pada rentang ini. Ubah tanggal di atas.' : 'Tidak ada permintaan yang menunggu dikirim ke vendor. Permintaan baru yang disetujui kedua pimpinan akan muncul di sini.'}</div>`; return; }
-    const matriks = !ukMuat ? '<div class="kosongnya">Memuat rekap ukuran…</div>' : (['Baju', 'Celana', 'Sepatu'].map(j => { const g = d.ukuran.find(x => x.jenis === j); return g ? matriksRk(g, j === 'Sepatu' ? 'Sepatu' : 'Seragam: ' + j) : ''; }).join('') || '<div class="kosongnya">Tidak ada seragam atau sepatu pada permintaan ini, atau data ukuran dari pembagian per karyawan belum ada.</div>');
-    const daftar = sudah
-      ? `<table><thead><tr><th>Tgl PO</th><th>Lokasi</th><th class="r">Pcs</th></tr></thead><tbody>${d.daftar.map(p => `<tr><td>${esc(tglPanjangIso(tglPo(p)))}</td><td><b>${esc(p.client)}</b><small>${esc(namaRapi(p.bagian_kerja))}</small></td><td class="r">${idn(pcsPermintaan(p))}</td></tr>`).join('')}</tbody></table>`
-      : d.sem.map(p => `<label class="kcek" style="display:flex;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--stroke)"><input type="checkbox" class="hCek" value="${p.id}" ${rkHPilih.has(p.id) ? 'checked' : ''}><span><b>${esc(p.client)}</b> · ${esc(namaRapi(p.bagian_kerja))} <span class="muted">· no. ${p.id} · ${idn(pcsPermintaan(p))} pcs · disetujui ${esc(tglDisetujui(p).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }))}</span></span></label>`).join('');
-    $('rkIsi').innerHTML = `${sudah ? '' : '<div class="row" style="margin:0 0 12px;flex-wrap:wrap;gap:10px"><p class="rkcat" style="margin:0">Hitungan di bawah mengikuti permintaan yang dicentang pada daftar di bagian bawah.</p><button class="cta" id="hKirim" ' + (d.pilih.length ? '' : 'disabled') + '>Kirim ke Mas Wahyu &amp; tandai PO terkirim</button></div>'}
-      ${matriks}
-      <section class="rk" style="margin-bottom:16px"><div class="rkh"><h4>Aksesoris (belanja online, tanpa ukuran)</h4><b>${idn(aks.reduce((a, x) => a + x.qty, 0))} pcs</b></div>${aks.length ? `<div class="wrap rkt"><table><thead><tr><th>Aksesoris</th><th class="r">Jumlah</th></tr></thead><tbody>${aks.map(a => `<tr><td><b>${esc(namaRapi(a.nama))}</b></td><td class="r">${idn(a.qty)}</td></tr>`).join('')}</tbody></table></div><div class="bgact" style="margin-top:8px"><button class="btn" id="hSalin">Salin daftar belanja</button></div>` : '<div class="muted" style="padding:4px 2px 2px">Tidak ada aksesoris.</div>'}</section>
-      <details class="rk" ${sudah ? '' : 'open'}><summary class="rkh" style="cursor:pointer"><h4>Daftar permintaan yang dihitung</h4><b>${sudah ? idn(d.ps.length) + ' permintaan' : d.pilih.length + ' dari ' + d.sem.length + ' dipilih'}</b></summary><div class="wrap rkt">${daftar}</div></details>`;
-    $('rkIsi').querySelectorAll('.hCek').forEach(c => { c.onchange = () => { c.checked ? rkHPilih.add(Number(c.value)) : rkHPilih.delete(Number(c.value)); renderRekapPage(); }; });
-    const hk = $('hKirim'); if (hk) hk.onclick = async e => {
-      const b = e.currentTarget, a = b.innerHTML, dd = dataHarian(); if (!dd.pilih.length) return;
-      if (!confirm(`Kirim rekap ke Mas Wahyu untuk ${dd.pilih.length} permintaan?\n\nPDF rekap akan diunduh, lalu PO ${dd.pilih.length} permintaan ditandai TERKIRIM hari ini (${tglPanjangIso(wibIso())}). Kirim PDF itu ke Mas Wahyu (WhatsApp) setelah terunduh.`)) return;
-      b.disabled = true; b.textContent = 'Memproses…';
-      try { await Masuk.wajib(); await pdfRekapVendor(dd, opsiPdfRk()); await rpc('po_tandai', { kode: Masuk.kode(), p_ids: dd.pilih.map(p => p.id), p_tanggal: wibIso() }); rkHPilih.clear(); await muatStatus(); await muatAntreanUkuran(); alert('Selesai. PDF rekap sudah diunduh dan PO ditandai terkirim. Kirim PDF-nya ke Mas Wahyu.'); }
-      catch (x) { alert('Gagal: ' + x.message); }
-      b.disabled = false; b.innerHTML = a;
-    };
-    const sl = $('hSalin'); if (sl) sl.onclick = async () => { const t = `Daftar belanja aksesoris (${tglPanjangIso(wibIso())})\n` + aks.map(a => `- ${a.nama}: ${a.qty} pcs`).join('\n'); try { await navigator.clipboard.writeText(t); sl.textContent = 'Tersalin ✓'; } catch (x) { alert(t); } };
+    const semuaP = disetujuiSemua(), tab = rkTab === 'belum' || rkTab === 'selesai' || rkTab === 'semua' ? rkTab : 'belum';
+    const selesaiP = p => (p.items || []).every(i => pmSaved.has(pmKey(p.id, i.no)) && !kotorPm(p, i));
+    const nBelum = semuaP.filter(p => !selesaiP(p)).length;
+    $('rkTab').innerHTML = [['belum', `Belum selesai ditandai (${nBelum})`], ['selesai', `Sudah ditandai (${semuaP.length - nBelum})`], ['semua', 'Semua']].map(([k, t]) => `<button class="chip ${tab === k ? 'on' : ''}" data-t="${k}">${t}</button>`).join('');
+    const tampil = semuaP.filter(p => rkCocok(p.client || p.lokasi_form, p.bagian_kerja) && (tab === 'semua' || (tab === 'belum') === !selesaiP(p))).sort((a, b) => (selesaiP(a) - selesaiP(b)) || (tglDisetujui(b) - tglDisetujui(a)));
+    const dW = dataPesan('wahyu'), dO = dataPesan('online'), kotorN = semuaP.reduce((a, p) => a + (p.items || []).filter(i => kotorPm(p, i)).length, 0);
+    $('infoRekap').textContent = (semuaP.length ? `${idn(semuaP.length)} lokasi sudah disetujui kedua pimpinan · ${idn(nBelum)} belum selesai ditandai` : 'Belum ada permintaan yang disetujui Pak Yasir dan Pak Ferry') + (Saring.aktif() ? ' · ' + Saring.label() : '');
+    $('rkKpi').innerHTML = [[idn(semuaP.length), 'Lokasi disetujui'], [idn(kotorN), 'Item belum disimpan'], [idn(dW.pcs), 'Ke Mas Wahyu (pcs)'], [idn(dO.pcs), 'Online (pcs)'], [idn(dW.ps.length + dO.ps.length ? new Set([...dW.ps, ...dO.ps].map(p => p.id)).size : 0), 'Permintaan terlibat']].map(([a, b]) => `<div><span>${b}</span><b>${a}</b></div>`).join('');
+    const bar = `<div class="pmbar"><div><b>${idn(kotorN)}</b> item belum disimpan</div><label>Tanggal pemesanan<input type="date" id="pmTgl" value="${esc(pmTgl || wibIso())}"></label><button class="cta" id="pmSimpan" type="button" ${kotorN ? '' : 'disabled'}>Simpan penandaan</button></div>`;
+    const matriksW = (['Baju', 'Celana', 'Sepatu'].map(j => { const g = dW.ukuran.find(x => x.jenis === j); return g ? matriksRk(g, j === 'Sepatu' ? 'Sepatu' : 'Seragam: ' + j) : ''; }).join('')) || '<div class="kosongnya">Belum ada seragam atau sepatu yang ditandai ke Mas Wahyu.</div>';
+    const lainW = dW.aks.length ? `<section class="rk" style="margin-bottom:16px"><div class="rkh"><h4>Tanpa ukuran (ke Mas Wahyu)</h4><b>${idn(dW.aks.reduce((a, x) => a + x.qty, 0))} pcs</b></div><div class="wrap rkt"><table><tbody>${dW.aks.map(a => `<tr><td><b>${esc(namaRapi(a.nama))}</b></td><td class="r">${idn(a.qty)}</td></tr>`).join('')}</tbody></table></div></section>` : '';
+    $('rkIsi').innerHTML = bar + (tampil.length ? tampil.map(kartuPermintaan).join('') : `<div class="kosongnya">${semuaP.length ? 'Tidak ada lokasi yang cocok dengan filter ini.' : 'Belum ada lokasi yang disetujui kedua pimpinan. Setelah disetujui, lokasinya muncul di sini.'}</div>`)
+      + `<h3 class="rksub" style="margin-top:22px">Rekap pesanan ke Mas Wahyu</h3>${matriksW}${lainW}<h3 class="rksub">Daftar belanja online</h3><div id="pmOnline"></div>`;
+    // daftar belanja online (digabung per item)
+    const agg = new Map(); for (const p of dO.ps) for (const i of p.items) { const k = String(i.nama).toUpperCase(), e = agg.get(k) || { n: i.nama, q: 0, l: [] }; e.q += Number(i.qty) || 0; e.l.push(`${p.client} · ${namaRapi(p.bagian_kerja)} (${Number(i.qty) || 0})`); agg.set(k, e); }
+    $('pmOnline').innerHTML = agg.size ? `<div class="wrap rkt"><table><thead><tr><th>Item</th><th class="r">Jumlah</th><th>Untuk lokasi</th></tr></thead><tbody>${[...agg.values()].sort((a, b) => a.n.localeCompare(b.n, 'id')).map(e => `<tr><td><b>${esc(namaRapi(e.n))}</b></td><td class="r">${idn(e.q)}</td><td>${e.l.map(t => `<small>${esc(t)}</small>`).join('')}</td></tr>`).join('')}</tbody></table></div><div class="bgact" style="margin-top:8px"><button class="btn" id="pmSalin" type="button">Salin daftar belanja online</button></div>` : '<div class="kosongnya">Belum ada item yang ditandai online.</div>';
+    const sl = $('pmSalin'); if (sl) sl.onclick = async () => { const t = `Daftar belanja online (${tglPanjangIso(wibIso())})\n` + [...agg.values()].map(e => `- ${e.n}: ${e.q} pcs`).join('\n'); try { await navigator.clipboard.writeText(t); sl.textContent = 'Tersalin ✓'; } catch (x) { alert(t); } };
+    $('pmTgl').onchange = e => { pmTgl = e.target.value; };
+    $('pmSimpan').onclick = simpanPemesanan;
+  }
+  async function simpanPemesanan() {
+    const tgl = $('pmTgl').value || wibIso(), baris = [], poIds = new Set(); let nW = 0, nO = 0;
+    for (const p of disetujuiSemua()) for (const i of (p.items || [])) {
+      if (kotorPm(p, i)) { const v = viaDraft(p, i); baris.push({ permintaan_id: p.id, item_no: Number(i.no), via: v, tanggal: tgl }); if (v === 'wahyu') nW++; else if (v === 'online') nO++; }
+      if (viaDraft(p, i) === 'wahyu' && !tglPo(p)) poIds.add(p.id);
+    }
+    if (!baris.length) return;
+    if (!confirm(`Simpan penandaan ${baris.length} item?\n\n- Ke Mas Wahyu: ${nW} item\n- Online: ${nO} item\n\nPermintaan yang punya item ke Mas Wahyu ikut ditandai PO terkirim (${poIds.size} permintaan) pada ${tglPanjangIso(tgl)}.`)) return;
+    const b = $('pmSimpan'), a = b.textContent; b.disabled = true; b.textContent = 'Menyimpan…';
+    try {
+      await Masuk.wajib(); const kode = Masuk.kode();
+      await rpc('simpan_pemesanan', { kode, p_baris: baris });
+      if (poIds.size) await rpc('po_tandai', { kode, p_ids: [...poIds], p_tanggal: tgl });
+      pmDraft.clear(); await muatStatus(); await muatPemesanan();
+    } catch (x) { alert('Gagal: ' + x.message); b.disabled = false; b.textContent = a; }
   }
   function unduhRekapCsv() {
-    const d = dataRk(), sel = v => { const s = String(v ?? ''); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const d = dataPesan('wahyu'), sel = v => { const s = String(v ?? ''); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
     const isi = '﻿' + [d.kepala, ...d.baris].map(b => b.map(sel).join(';')).join('\r\n'), a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([isi], { type: 'text/csv;charset=utf-8' })); a.download = `rekap-permintaan-${rkTab}-${new Date().toISOString().slice(0, 10)}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    a.href = URL.createObjectURL(new Blob([isi], { type: 'text/csv;charset=utf-8' })); a.download = `rekap-ke-mas-wahyu-${new Date().toISOString().slice(0, 10)}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   }
-  $('rkTab').onclick = e => { const t = e.target.dataset && e.target.dataset.t; if (t) { rkTab = t; if (t === 'sudah') muatRekapVendor(); renderRekapPage(); } };
-  $('rkCari').oninput = () => { renderRekapPage(); if (rkTab === 'sudah') { clearTimeout(rkVTimer); rkVTimer = setTimeout(muatRekapVendor, 350); } };
-  $('rkDari').onchange = e => { if (e.target.value) ubahRentang(e.target.value, e.target.value > rkSampai ? e.target.value : rkSampai); };
-  $('rkSampai').onchange = e => { if (e.target.value) ubahRentang(e.target.value < rkDari ? e.target.value : rkDari, e.target.value); };
-  $('rkPreset').onclick = e => {
-    const k = e.target.dataset && e.target.dataset.p; if (!k) return; const h = wibIso();
-    if (k === 'hari') ubahRentang(h, h); else if (k === '7') ubahRentang(geserHari(h, -6), h); else if (k === 'bulan') ubahRentang(h.slice(0, 8) + '01', h);
-    else if (k === 'lalu') { const akhir = geserHari(h.slice(0, 8) + '01', -1); ubahRentang(akhir.slice(0, 8) + '01', akhir); } else ubahRentang('2020-01-01', h);
+  $('rkTab').onclick = e => { const t = e.target.dataset && e.target.dataset.t; if (t) { rkTab = t; renderRekapPage(); } };
+  $('rkCari').oninput = renderRekapPage;
+  $('rkIsi').onclick = e => {
+    const sg = e.target.closest('.seg button'); if (sg) { const seg = sg.parentElement, k = pmKey(Number(seg.dataset.p), seg.dataset.no), aktif = sg.classList.contains('on'); pmDraft.set(k, aktif ? '' : sg.dataset.via); renderRekapPage(); return; }
+    const sm = e.target.closest('[data-semua]'); if (sm) { const p = disetujuiSemua().find(x => x.id === Number(sm.dataset.p)); if (p) { (p.items || []).forEach(i => pmDraft.set(pmKey(p.id, i.no), sm.dataset.semua)); renderRekapPage(); } }
   };
-  $('rkPdf').onclick = async e => { const b = e.currentTarget, a = b.textContent; b.disabled = true; b.textContent = 'Menyiapkan PDF…'; try { await pdfRekapVendor(dataRk(), opsiPdfRk()); } catch (x) { alert('Gagal membuat PDF: ' + x.message); } b.disabled = false; b.textContent = a; };
-  $('rkMuat').onclick = () => { muatStatus(); muatRekapUkuran(); muatRekapVendor(); muatAntreanUkuran(); };
+  $('rkPdf').onclick = async e => { const b = e.currentTarget, a = b.textContent; b.disabled = true; b.textContent = 'Menyiapkan PDF…'; try { await pdfRekapVendor(dataPesan('wahyu'), opsiPdfRk()); } catch (x) { alert('Gagal membuat PDF: ' + x.message); } b.disabled = false; b.textContent = a; };
+  $('rkMuat').onclick = () => { muatStatus(); muatPemesanan(); };
   $('rkCsv').onclick = unduhRekapCsv;
 
   // ================= KEKURANGAN VENDOR =================

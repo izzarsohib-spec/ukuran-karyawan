@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.238', tanggal: '2026-10-29', catatan: 'Pilihan ukuran kembali berupa dropdown' };
+window.VERSI = { no: '1.239', tanggal: '2026-10-29', catatan: 'Rekap permintaan: tandai item ke Mas Wahyu atau online' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
