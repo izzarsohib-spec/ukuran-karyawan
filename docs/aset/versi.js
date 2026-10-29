@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.282', tanggal: '2026-10-29', catatan: 'Alat pemeriksa tata letak otomatis' };
+window.VERSI = { no: '1.283', tanggal: '2026-10-29', catatan: 'Gaya kartu mengikuti Monitoring pengisian' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

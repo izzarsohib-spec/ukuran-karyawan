@@ -4,7 +4,7 @@
 //   KRITIS      kontrol keluar dari kartunya, elemen terpotong (overflow tersembunyi), error JavaScript
 //   PERINGATAN  tabel yang harus digeser ke samping, teks dropdown terpotong, halaman bergulir melebihi layar
 //   INFO        kartu .k3 dengan ruang kosong besar atau gaya (sudut) tidak sama dengan acuan, huruf terlalu kecil
-// Acuan gaya: halaman Permintaan seragam (kartu .k3: sudut 22px, padding 18px 20px).
+// Acuan gaya: halaman Monitoring pengisian (kartu putih polos: sudut 16px, padding 20px 22px, garis #DCE3EC, bayangan halus). Halaman Permintaan memakai gaya lamanya sendiri dan tidak diperiksa gayanya.
 //
 // Pakai:  node alat/cek-tata-letak.mjs                       (situs langsung, semua halaman, layar 1500x1000)
 //         node alat/cek-tata-letak.mjs --url http://localhost:8000/seragam/ --halaman datang,kurang --lebar 1366 --tinggi 768
@@ -21,7 +21,7 @@ const LEBAR = Number(arg.lebar || 1500), TINGGI = Number(arg.tinggi || 1000), TU
 const CHROME = process.env.CHROME || arg.chrome || ['C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe', '/usr/bin/google-chrome', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'].find(p => existsSync(p));
 // halaman yang diperiksa: kunci = hash, klik = teks chip/tombol yang diklik sesudah dimuat
 const SEMUA = [
-  { h: 'ringkasan', n: 'Dashboard Utama' }, { h: 'monitor', n: 'Monitoring pengisian' }, { h: 'permintaan', n: 'Permintaan seragam (acuan)' },
+  { h: 'ringkasan', n: 'Dashboard Utama' }, { h: 'monitor', n: 'Monitoring pengisian (acuan)' }, { h: 'permintaan', n: 'Permintaan seragam' },
   { h: 'rekap', n: 'Pemesanan: Belum selesai ditandai' }, { h: 'rekap', klik: 'Riwayat & monitoring', n: 'Pemesanan: Riwayat & monitoring' },
   { h: 'datang', n: 'Pemesanan: Barang datang' }, { h: 'kurang', n: 'Pemesanan: Kekurangan vendor' },
   { h: 'inventaris', n: 'Inventaris' }, { h: 'opname', n: 'Stock opname' }, { h: 'retur', n: 'Retur' },
@@ -61,7 +61,7 @@ const PERIKSA = `(() => {
   // 4. kartu .k3: gaya dan ruang kosong
   for (const k of root.querySelectorAll('.k3')) {
     if (!nyata(k)) continue; const cs = getComputedStyle(k), r = k.getBoundingClientRect();
-    if (cs.borderRadius !== '22px') tambah('gaya-kartu', 'INFO', k, 'sudut ' + cs.borderRadius + ' (acuan 22px)');
+    if (root.id !== 'pg-permintaan' && (cs.borderRadius !== '16px' || cs.backgroundColor !== 'rgb(255, 255, 255)')) tambah('gaya-kartu', 'INFO', k, 'sudut ' + cs.borderRadius + ', latar ' + cs.backgroundColor + ' (acuan 16px, putih)');
     if (r.height > 320) { let bawah = r.top; for (const c of k.children) { if (!nyata(c)) continue; bawah = Math.max(bawah, c.getBoundingClientRect().bottom); } const kosong = (r.bottom - bawah) / r.height; if (kosong > 0.4) tambah('ruang-kosong', 'INFO', k, Math.round(kosong * 100) + '% bagian bawah kartu kosong'); }
   }
   // 5. huruf terlalu kecil
