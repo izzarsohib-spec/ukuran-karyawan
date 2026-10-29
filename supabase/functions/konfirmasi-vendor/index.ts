@@ -6,6 +6,7 @@
 // verify_jwt dimatikan karena tombol ntfy tidak bisa mengirim JWT; keamanan lewat token acak per pengiriman. Aksi "kirim" memeriksa admin sendiri.
 // Rahasia: NTFY_TOPIC_WAHYU (topik ntfy Mas Wahyu), NTFY_TOPIC_ADMIN (pemberitahuan ke admin, opsional).
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { PDFDocument, StandardFonts, rgb } from 'npm:pdf-lib@1.17.1';
 
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'content-type, authorization, apikey, x-client-info' };
 const teks = (s: string, status = 200) => new Response(s, { status, headers: { 'Content-Type': 'text/plain; charset=utf-8', ...CORS } });
@@ -15,6 +16,39 @@ const acak = () => crypto.randomUUID().replaceAll('-', '') + crypto.randomUUID()
 const wib = (tambahHari = 0) => new Date(Date.now() + 7 * 3600e3 + tambahHari * 864e5).toISOString().slice(0, 10);
 const tgl = (iso: string) => new Date(iso + 'T00:00:00Z').toLocaleDateString('id-ID', { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' });
 const BASE = 'https://izzarsohib-spec.github.io/ukuran-karyawan';
+
+const hex = async (s: string) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))).map((b) => b.toString(16).padStart(2, '0')).join('');
+const bytesDari = (b64: string) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+const ascii = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7E]/g, '');
+const wibWaktu = (iso: string) => new Date(new Date(iso).getTime() + 7 * 3600e3).toISOString().slice(0, 16).replace('T', ' ') + ' WIB';
+
+// PDF akhir: bila vendor sudah mengonfirmasi, isi baris "Estimasi pengiriman" dan tempelkan tanda tangan digital vendor pada kotak "Penyedia".
+// Letak isian dicatat saat PDF dibuat (kolom pdf_pos). Tanpa konfirmasi, PDF asli dikembalikan apa adanya.
+// tanda tangan vendor: bucket privat 'tanda-tangan' (wahyu.png), hanya terbaca oleh fungsi server; tidak ada di repo. Tanpa gambar, stempel teks dipakai.
+const ambilTtd = async (db: any): Promise<Uint8Array | null> => { try { const { data } = await db.storage.from('tanda-tangan').download('wahyu.png'); return data ? new Uint8Array(await data.arrayBuffer()) : null; } catch { return null; } };
+async function pdfAkhir(k: any, gambar: Uint8Array | null = null): Promise<Uint8Array> {
+  const asli = bytesDari(k.pdf);
+  if (k.status !== 'dikonfirmasi' || !k.estimasi || !k.pdf_pos) return asli;
+  const doc = await PDFDocument.load(asli), halaman = doc.getPages(), times = await doc.embedFont(StandardFonts.TimesRoman), hel = await doc.embedFont(StandardFonts.HelveticaBold), helR = await doc.embedFont(StandardFonts.Helvetica);
+  const est = k.pdf_pos.est, ttd = k.pdf_pos.ttd;
+  if (est && halaman[est.hal - 1]) {
+    const h = halaman[est.hal - 1], H = h.getHeight();
+    h.drawRectangle({ x: est.x - 1, y: H - est.y - 3, width: 220, height: 13, color: rgb(1, 1, 1) });
+    h.drawText(ascii(tgl(String(k.estimasi).slice(0, 10))), { x: est.x, y: H - est.y, size: 11, font: times, color: rgb(0, 0, 0) });
+  }
+  if (ttd && halaman[ttd.hal - 1]) {
+    const h = halaman[ttd.hal - 1], H = h.getHeight(), kode = (await hex(`${k.token}|${k.estimasi}|${k.dijawab_pada}`)).slice(0, 10).toUpperCase();
+    const cx = ttd.x, yAtas = H - (ttd.y + 4), hijau = rgb(0.12, 0.45, 0.3);
+    let yTeks = yAtas - 9;
+    if (gambar) {
+      const img = await doc.embedPng(gambar), sk = Math.min(110 / img.width, 30 / img.height), w = img.width * sk, hh = img.height * sk;
+      h.drawImage(img, { x: cx - w / 2, y: yAtas - hh, width: w, height: hh }); yTeks = yAtas - hh - 8;
+    } else { const t0 = 'DIKONFIRMASI DIGITAL', w0 = hel.widthOfTextAtSize(t0, 8); h.drawText(t0, { x: cx - w0 / 2, y: yTeks, size: 8, font: hel, color: hijau }); yTeks -= 11; }
+    const baris: [string, any, number][] = [[`Dikonfirmasi ${wibWaktu(k.dijawab_pada)}`, helR, 6.5], [`Kode: ${kode}`, helR, 6.5]];
+    for (const [tt, f, sz] of baris) { const w = f.widthOfTextAtSize(tt, sz); h.drawText(tt, { x: cx - w / 2, y: yTeks, size: sz, font: f, color: hijau }); yTeks -= sz + 1.5; }
+  }
+  return await doc.save();
+}
 
 async function adalahAdmin(db: any, req: Request): Promise<boolean> {
   const t = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
@@ -46,7 +80,7 @@ Deno.serve(async (req) => {
     if (!ids.length || !pdf) return json({ error: 'Data pesanan atau PDF kosong' }, 400);
     const token = acak();
     if (pdf.length > 6_000_000) return json({ error: 'PDF terlalu besar' }, 413);
-    const { data: baris, error } = await db.from('konfirmasi_vendor').insert({ token, vendor, permintaan_ids: ids, ringkasan, pdf }).select('id').single();
+    const { data: baris, error } = await db.from('konfirmasi_vendor').insert({ token, vendor, permintaan_ids: ids, ringkasan, pdf, pdf_pos: b?.pdf_pos ?? null }).select('id').single();
     if (error || !baris) return json({ error: 'Gagal menyimpan konfirmasi: ' + (error?.message ?? '') }, 500);
     const fn = `${Deno.env.get('SUPABASE_URL')}/functions/v1/konfirmasi-vendor`;
     const cepat = (hari: number, label: string) => `http, ${label} (${tgl(wib(hari))}), ${fn}?t=${token}&a=jawab&estimasi=${wib(hari)}, method=POST, clear=true`;
@@ -60,13 +94,21 @@ Deno.serve(async (req) => {
     return json({ ok: true, id: baris.id });
   }
 
+  // ---------- admin: buka PDF akhir (dengan estimasi dan tanda tangan vendor bila sudah dikonfirmasi) ----------
+  if (req.method === 'GET' && a === 'pdf') {
+    if (!(await adalahAdmin(db, req))) return teks('Perlu login admin.', 401);
+    const { data: p } = await db.from('konfirmasi_vendor').select('token,pdf,pdf_pos,vendor,status,estimasi,dijawab_pada').eq('id', Number(u.searchParams.get('id'))).maybeSingle();
+    if (!p?.pdf) return teks('Data tidak ditemukan.', 404);
+    return new Response(await pdfAkhir(p, await ambilTtd(db)), { headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'inline; filename="Rekap pesanan.pdf"', ...CORS } });
+  }
+
   // ---------- vendor: lihat ringkasan / buka PDF ----------
   if (req.method === 'GET') {
     if (t.length < 32) return teks('Tautan tidak valid.', 400);
     if (u.searchParams.get('pdf')) {
-      const { data: p } = await db.from('konfirmasi_vendor').select('pdf,vendor').eq('token', t).maybeSingle();
+      const { data: p } = await db.from('konfirmasi_vendor').select('token,pdf,pdf_pos,vendor,status,estimasi,dijawab_pada').eq('token', t).maybeSingle();
       if (!p?.pdf) return teks('Tautan tidak dikenali.', 403);
-      return new Response(Uint8Array.from(atob(p.pdf), (c) => c.charCodeAt(0)), { headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename="Rekap pesanan ${wib()}.pdf"`, ...CORS } });
+      return new Response(await pdfAkhir(p, await ambilTtd(db)), { headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename="Rekap pesanan ${wib()}.pdf"`, ...CORS } });
     }
     const { data: k } = await db.from('konfirmasi_vendor').select('vendor,ringkasan,dikirim_pada,status,estimasi,catatan,dijawab_pada').eq('token', t).maybeSingle();
     if (!k) return teks('Tautan tidak dikenali.', 403);

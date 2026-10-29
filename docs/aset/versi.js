@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.259', tanggal: '2026-10-29', catatan: 'Rekap Mas Wahyu hanya menampilkan yang belum di-submit' };
+window.VERSI = { no: '1.260', tanggal: '2026-10-29', catatan: 'PDF Mas Wahyu: estimasi pengiriman dan tanda tangan' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

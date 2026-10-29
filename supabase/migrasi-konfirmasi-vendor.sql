@@ -17,6 +17,7 @@ create table if not exists public.konfirmasi_vendor (
   pdf text                                        -- PDF rekap (base64); dibuka vendor lewat tautan, bukan lampiran ntfy (batas ukuran ntfy.sh)
 );
 alter table public.konfirmasi_vendor add column if not exists pdf text;
+alter table public.konfirmasi_vendor add column if not exists pdf_pos jsonb;   -- letak isian estimasi dan kotak tanda tangan vendor pada PDF: {est:{hal,x,y}, ttd:{hal,x,y}}
 alter table public.konfirmasi_vendor enable row level security;
 revoke all on public.konfirmasi_vendor from anon, authenticated;
 

@@ -647,7 +647,7 @@
   .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
   @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); height:auto; } .rk2k > .card { height:auto; } .pmscroll { max-height:70vh; } .rktut { height:auto; overflow:visible; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.259">
+<link rel="stylesheet" href="../aset/tema.css?v=1.260">
 </head>
 <body>
 <div class="shell">
@@ -2897,8 +2897,9 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const d = d0 || dataVendor(); o = o || {}; if (!d.ps.length) { alert('Tidak ada permintaan pada rentang ini.'); return; }
     const k = await kertasKop(), { doc, PW, L, W } = k; k.pasang();
     k.huruf('bold', 13); doc.text('REKAPITULASI PERMINTAAN KE VENDOR', PW / 2, 104, { align: 'center' });
-    k.huruf(); [['Vendor', VENDOR.nama], ['Periode', o.periode || `${tglPanjangIso(rkDari)} s.d. ${tglPanjangIso(rkSampai)} (tanggal PO dikirim)`], ['Jumlah PO', `${d.ps.length} permintaan · ${idn(d.ps.reduce((a, p) => a + pcsPermintaan(p), 0))} pcs · ${idn(d.lokasi.length)} lokasi/bagian`]].forEach(([a, b], i) => { doc.text(a, L, 130 + i * 14); doc.text(': ' + b, L + 62, 130 + i * 14); });
-    k.y = 178;
+    k.huruf(); [['Vendor', VENDOR.nama], ['Periode', o.periode || `${tglPanjangIso(rkDari)} s.d. ${tglPanjangIso(rkSampai)} (tanggal PO dikirim)`], ['Jumlah PO', `${d.ps.length} permintaan · ${idn(d.ps.reduce((a, p) => a + pcsPermintaan(p), 0))} pcs · ${idn(d.lokasi.length)} lokasi/bagian`]].forEach(([a, b], i) => { doc.text(a, L, 130 + i * 14); doc.text(': ' + b, L + 108, 130 + i * 14); });
+    doc.text('Estimasi pengiriman', L, 130 + 3 * 14); doc.text(':', L + 108, 130 + 3 * 14); // diisi vendor lewat ntfy; tanggalnya ditempel otomatis pada PDF setelah vendor menjawab
+    k.y = 196;
     const judul = t => { k.cek(60); k.huruf('bold', 11); doc.text(t, L, k.y + 12); k.y += 16; };
     judul('A. Rekap per jenis barang (setelan dipecah menjadi baju + celana)');
     k.tabel({ startY: k.y, head: [['NO', 'JENIS', 'NAMA BARANG', 'JUMLAH (PCS)']], body: d.jenis.flatMap((x, i) => x.baris.map(([n, q], j) => [{ content: j === 0 ? i + 1 : '', styles: { halign: 'center' } }, j === 0 ? x.jenis : '', namaRapi(n), { content: q, styles: { halign: 'right' } }])), columnStyles: { 0: { cellWidth: 30 }, 1: { cellWidth: 80 }, 3: { cellWidth: 80 } } });
@@ -2907,7 +2908,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     k.y += 10; judul('C. Daftar PO yang dikirim');
     k.tabel({ startY: k.y, head: [['NO', 'TGL PO', 'LOKASI', 'BAGIAN KERJA', 'PCS', 'NILAI BELI']], body: d.daftar.map((p, i) => [{ content: i + 1, styles: { halign: 'center' } }, tglPanjangIso(o.tglBaris ? o.tglBaris(p) : tglPo(p)), p.client, namaRapi(p.bagian_kerja), { content: pcsPermintaan(p), styles: { halign: 'right' } }, { content: rp(Number(p.total_beli || 0)), styles: { halign: 'right' } }]), columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 82 }, 4: { cellWidth: 36 }, 5: { cellWidth: 70 } } });
     k.y += 26; k.cek(100); k.ttd([{ x: L + W * 0.25, label: 'Pemesan,', t: TTD.pic }, { x: L + W * 0.75, label: 'Penyedia,', t: TTD.vendor }], k.y);
-    if (o.kembali) return doc.output('datauristring').split(',')[1];
+    if (o.kembali) return { pdf: doc.output('datauristring').split(',')[1], pos: { est: { hal: 1, x: L + 114, y: 130 + 3 * 14 }, ttd: { hal: doc.internal.getCurrentPageInfo().pageNumber, x: L + W * 0.75, y: k.y } } };
     k.simpan(o.berkas || `Rekap permintaan ke vendor ${rkDari} sampai ${rkSampai}.pdf`);
   }
   // ---- Rekap harian (jam 18.00): permintaan yang sudah disetujui kedua pimpinan tetapi PO-nya BELUM ditandai terkirim ke vendor ----
@@ -2995,6 +2996,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
         ${k.estimasi ? `<div class="mnest ${telat ? 'telat' : ''}">Estimasi datang: <b>${esc(tglPendek(k.estimasi))}</b>${telat ? ' · sudah lewat' : ''}${k.dijawab_pada ? ` <span class="muted">(dijawab ${esc(wkt(k.dijawab_pada))}${k.jumlah_jawab > 1 ? ', diperbarui ' + (k.jumlah_jawab - 1) + 'x' : ''})</span>` : ''}</div>` : k.dijawab_pada ? `<div class="mnest telat">Dijawab ${esc(wkt(k.dijawab_pada))}</div>` : ''}
         ${k.catatan ? `<div class="mnest">Catatan Mas Wahyu: ${esc(k.catatan)}</div>` : ''}
         <div class="chips" style="margin:6px 0">${(rg.jenis || []).map(j => `<span class="chip" style="cursor:default">${esc(j.jenis)} <b>${idn(j.total)}</b></span>`).join('')}</div>
+        <div style="margin:6px 0"><button class="btn" type="button" data-pdfkonf="${k.id}">Buka PDF rekap${k.status === 'dikonfirmasi' ? ' (dengan estimasi &amp; tanda tangan)' : ''}</button></div>
         <details><summary class="muted" style="cursor:pointer;font-size:.82rem">Lihat isi pesanan per lokasi</summary>${blokLokasi(k.permintaan_ids || []) || '<div class="muted">Data lokasi tidak ditemukan.</div>'}</details></section>`;
     }).join('');
     const belumKirim = semuaP.filter(p => !terkirim.has(p.id) && (p.items || []).some(i => pmSaved.get(pmKey(p.id, i.no))?.via === 'wahyu'));
@@ -3072,13 +3074,22 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const a = btn.textContent; btn.disabled = true; btn.textContent = 'Mengirim…';
     try {
       await Masuk.wajib();
-      const pdf = await pdfRekapVendor(d, { ...opsiPdfRk(), kembali: true });
+      const hasilPdf = await pdfRekapVendor(d, { ...opsiPdfRk(), kembali: true });
       const ringkasan = { total_pcs: d.pcs, lokasi: d.lokasi.map(x => ({ client: x.client, bagian: x.bagian, pcs: x.pcs })), jenis: d.jenis.map(j => ({ jenis: j.jenis, total: j.total })) };
-      const r = await fetch(`${SUPABASE_URL}/functions/v1/konfirmasi-vendor?a=kirim`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ vendor: VENDOR.nama, permintaan_ids: d.ps.map(p => p.id), ringkasan, pdf }) });
+      const r = await fetch(`${SUPABASE_URL}/functions/v1/konfirmasi-vendor?a=kirim`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ vendor: VENDOR.nama, permintaan_ids: d.ps.map(p => p.id), ringkasan, pdf: hasilPdf.pdf, pdf_pos: hasilPdf.pos }) });
       const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
       alert('Terkirim ke Mas Wahyu lewat ntfy. Jawabannya akan muncul di kartu ini dan Anda diberi tahu lewat notifikasi admin.'); await muatPemesanan();
     } catch (x) { alert('Gagal mengirim: ' + x.message); }
     btn.disabled = false; btn.textContent = a;
+  }
+  async function bukaPdfKonfirmasi(btn) {
+    const a = btn.innerHTML; btn.disabled = true; btn.textContent = 'Membuka…';
+    try {
+      const r = await fetch(`${SUPABASE_URL}/functions/v1/konfirmasi-vendor?a=pdf&id=${encodeURIComponent(btn.dataset.pdfkonf)}`, { headers: { ...H } });
+      if (!r.ok) throw new Error((await r.text().catch(() => '')) || 'HTTP ' + r.status);
+      const url = URL.createObjectURL(await r.blob()); window.open(url, '_blank'); setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (x) { alert('Gagal membuka PDF: ' + x.message); }
+    btn.disabled = false; btn.innerHTML = a;
   }
   // Satu tombol: simpan penandaan Mas Wahyu (+ PO terkirim), lalu kirim PDF rekap ke Mas Wahyu lewat ntfy dan minta estimasi datang
   let pmSedangKirim = false;
@@ -3119,6 +3130,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   $('rkTab').onclick = e => { const t = e.target.dataset && e.target.dataset.t; if (t) { rkTab = t; renderRekapPage(); } };
   $('rkCari').oninput = renderRekapPage;
   $('rkIsi').onclick = e => {
+    const pk = e.target.closest('[data-pdfkonf]'); if (pk) { bukaPdfKonfirmasi(pk); return; }
     const sg = e.target.closest('.seg button'); if (sg) { const seg = sg.parentElement, k = pmKey(Number(seg.dataset.p), seg.dataset.no), aktif = sg.classList.contains('on'); pmDraft.set(k, aktif ? '' : sg.dataset.via); renderRekapPage(); return; }
     const sm = e.target.closest('[data-semua]'); if (sm) { const p = disetujuiSemua().find(x => x.id === Number(sm.dataset.p)); if (p) { (p.items || []).forEach(i => pmDraft.set(pmKey(p.id, i.no), sm.dataset.semua)); renderRekapPage(); } }
   };
