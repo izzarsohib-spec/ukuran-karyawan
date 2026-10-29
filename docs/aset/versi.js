@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.285', tanggal: '2026-10-29', catatan: 'Riwayat Inventaris tanpa retur dan opname' };
+window.VERSI = { no: '1.286', tanggal: '2026-10-29', catatan: 'Tutorial di Stock opname' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
