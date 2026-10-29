@@ -656,7 +656,9 @@
   #rkDatang .tiga .k3, #rkKurang .tiga .k3, #pg-retur .tiga .k3 { overflow:auto; min-height:0; }
   .rk2.detail.tiga { grid-template-columns:minmax(270px,.95fr) minmax(0,2.6fr); } .rk2.detail.tiga > .k3 { overflow:auto; min-height:0; }
   .rk3.detail.tiga { grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr); align-items:stretch; margin-top:14px; } .rk3.detail.tiga > .k3 { display:flex; flex-direction:column; height:clamp(380px, 56vh, 600px); }
-  .riw2 .dfilter { grid-template-columns:minmax(0,1fr) !important; } .riw2 .dfilter input[type=date] { width:100%; }
+  .riw2 .dfilter { grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important; gap:6px 8px !important; } .riw2 .dfilter label { font-size:.72rem; gap:3px; }
+  .riw2 .dfilter input { padding:6px 8px; font-size:.82rem; border-radius:9px; min-width:0; width:100%; } .riw2 .dfilter input[type=date] { padding-right:4px; }
+  .riw2 .chips { margin-bottom:8px !important; } .riw2 .bgact { margin:6px 0 8px !important; } .riw2 > .bar-top { margin-bottom:8px; } .riw2 .bgact .btn { padding:5px 12px; font-size:.8rem; }
   /* kartu riwayat: daftar bertumpuk (tanpa geser ke samping) di kolom sempit */
   .riw2 { display:flex; flex-direction:column; overflow:hidden !important; } .riw2 > .bar-top { flex:none; } .riw2 .wrap { flex:1; min-height:0; overflow:auto; }
   .riw2 table, .riw2 tbody, .riw2 tr, .riw2 td { display:block; width:100%; } .riw2 thead { display:none; }
@@ -674,7 +676,7 @@
   .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
   @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); height:auto; } .rk2k > .card { height:auto; } .pmscroll { max-height:70vh; } .rktut { height:auto; overflow:visible; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.278">
+<link rel="stylesheet" href="../aset/tema.css?v=1.279">
 </head>
 <body>
 <div class="shell">
@@ -776,7 +778,7 @@
       <div class="bar-top"><h3>Riwayat kekurangan vendor</h3></div>
       <div class="chips" id="kcChips" style="margin-bottom:12px"></div>
       <div class="fgrid dfilter">
-        <label>Dari tanggal<input type="date" id="kcDari"></label><label>Sampai tanggal<input type="date" id="kcSampai"></label>
+        <label>Dari<input type="date" id="kcDari"></label><label>Sampai<input type="date" id="kcSampai"></label>
         <label style="grid-column:1/-1">Cari barang<input type="search" id="kcBarang" list="kcBarangList" placeholder="Ketik atau pilih barang" autocomplete="off"><datalist id="kcBarangList"></datalist></label>
       </div>
       <div class="bgact" style="margin:8px 0 12px"><button class="btn" id="kcReset" type="button">Reset filter</button></div>
@@ -817,7 +819,7 @@
       <div class="bar-top"><h3>Riwayat barang datang</h3></div>
       <div class="chips" id="dChips" style="margin-bottom:12px"></div>
       <div class="fgrid dfilter">
-        <label>Dari tanggal<input type="date" id="dDari"></label><label>Sampai tanggal<input type="date" id="dSampai"></label>
+        <label>Dari<input type="date" id="dDari"></label><label>Sampai<input type="date" id="dSampai"></label>
         <label style="grid-column:1/-1">Cari barang<input type="search" id="dBarang" list="dBarangList" placeholder="Ketik atau pilih barang" autocomplete="off"><datalist id="dBarangList"></datalist></label>
       </div>
       <div class="bgact" style="margin:8px 0 12px"><button class="btn" id="dReset" type="button">Reset filter</button></div>
@@ -844,7 +846,7 @@
       <div class="bar-top"><h3>Riwayat retur</h3></div>
       <div class="chips" id="rtChips" style="margin-bottom:12px"></div>
       <div class="fgrid dfilter">
-        <label>Dari tanggal<input type="date" id="rtDari"></label><label>Sampai tanggal<input type="date" id="rtSampai"></label>
+        <label>Dari<input type="date" id="rtDari"></label><label>Sampai<input type="date" id="rtSampai"></label>
         <label style="grid-column:1/-1">Cari barang<input type="search" id="rtBarang" list="rtBarangList" placeholder="Ketik atau pilih barang" autocomplete="off"><datalist id="rtBarangList"></datalist></label>
       </div>
       <div class="bgact" style="margin:8px 0 12px"><button class="btn" id="rtReset" type="button">Reset filter</button></div>
