@@ -640,12 +640,14 @@
   .rk3 { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr); gap:16px; align-items:start; margin-top:16px; } .rk3 > .card { margin:0; min-width:0; } @media (max-width: 1100px) { .rk3 { grid-template-columns:minmax(0,1fr); } }
   .rk3 { align-items:stretch !important; } .rk3 > .card { display:flex; flex-direction:column; height:clamp(380px, 56vh, 600px); min-height:0; } .rk3 .pmscroll { flex:1; min-height:0; overflow:auto; padding-right:4px; }
   .rk3h { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin:0 0 12px; flex:none; } .rk3h h3 { margin:0; } @media (max-width: 1100px) { .rk3 > .card { height:auto; max-height:none; } .rk3 .pmscroll { max-height:60vh; } }
+  .mnl { padding:8px 0; border-top:1px solid var(--stroke); font-size:.88rem; } .mni { display:flex; flex-wrap:wrap; justify-content:space-between; gap:2px 10px; padding:3px 0 3px 10px; font-size:.84rem; } .mni .rkukw { flex-basis:100%; }
+  .mnest { margin:6px 0 2px; padding:7px 10px; border-radius:10px; background:var(--ok-bg, #E5F1EC); font-size:.86rem; } .mnest.telat { background:var(--warn-bg, #F7EFDC); }
   #rkKpi, label.search[hidden] { display:none !important; }
   .rk2 { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr); gap:16px; align-items:stretch; height:clamp(580px, calc(100vh - 230px), 780px); } .rk2k { min-width:0; min-height:0; } .rk2k > .card { margin:0; height:100%; display:flex; flex-direction:column; min-height:0; } .pmscroll { flex:1; min-height:0; overflow-y:auto; padding-right:4px; } .rktut { margin:0; height:100%; overflow-y:auto; min-height:0; }
   .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
   @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); height:auto; } .rk2k > .card { height:auto; } .pmscroll { max-height:70vh; } .rktut { height:auto; overflow:visible; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.254">
+<link rel="stylesheet" href="../aset/tema.css?v=1.255">
 </head>
 <body>
 <div class="shell">
@@ -2978,6 +2980,29 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
       <li><b>Stok siap.</b> Lanjut ke Ploting dan Pengiriman.</li>
     </ol>
     <div class="hint" style="margin-top:10px">Salah tandai? Ubah tombolnya lalu simpan lagi.</div></aside>`;
+  // Monitoring: log rekap yang dikirim ke Mas Wahyu (isi pesanan + sudah/belum ada estimasi darinya), pesanan yang belum dikirim, dan item online
+  function htmlMonitoring(semuaP) {
+    if (!Masuk.kode()) return '<div class="kosongnya">Riwayat dibuka setelah login. <button class="btn" id="pmMasuk" type="button" onclick="Masuk.wajib().then(muatPemesanan).catch(() => {})">Masuk dan muat</button></div>';
+    const lamaHari = iso => Math.max(0, Math.floor((Date.now() - Date.parse(iso)) / 864e5)), wkt = iso => new Date(iso).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const peta = new Map(semuaP.map(p => [p.id, p])), terkirim = new Set(pmKonf.flatMap(k => k.permintaan_ids || []));
+    const itemsWahyu = p => (p.items || []).filter(i => { const sv = pmSaved.get(pmKey(p.id, i.no)); return sv ? sv.via === 'wahyu' : viaDraft(p, i) === 'wahyu'; });
+    const blokLokasi = (ids) => ids.map(id => peta.get(id)).filter(Boolean).map(p => { const it = itemsWahyu(p); return it.length ? `<div class="mnl"><b>${esc(p.client)}</b> <span class="muted">· ${esc(namaRapi(p.bagian_kerja))} · no. ${p.id}</span>${it.map(i => `<div class="mni"><span>${esc(namaRapi(i.nama))}</span><b>${idn(Number(i.qty) || 0)} pcs</b><div class="rkukw">${ukuranItem(p, i)}</div></div>`).join('')}</div>` : ''; }).join('');
+    const NS = { menunggu: ['warn', 'Menunggu estimasi dari Mas Wahyu'], dikonfirmasi: ['ok', '✓ Estimasi sudah diterima'], tidak_bisa: ['bad', 'Mas Wahyu: belum bisa dipenuhi'] };
+    const kartu = pmKonf.map(k => {
+      const [bk, lb] = NS[k.status] || ['', k.status], rg = k.ringkasan || {}, hari = lamaHari(k.dikirim_pada), telat = k.status === 'dikonfirmasi' && k.estimasi && String(k.estimasi).slice(0, 10) < wibIso();
+      return `<section class="rk pmk" style="margin-bottom:14px"><div class="rkh"><div><h4 style="margin:0">Rekap #${k.id} · ${idn(rg.total_pcs || 0)} pcs · ${(k.permintaan_ids || []).length} permintaan</h4><div class="muted" style="font-size:.8rem">Dikirim ${esc(wkt(k.dikirim_pada))} · ke ${esc(k.vendor)}</div></div>
+        <div style="text-align:right"><span class="badge ${bk}">${lb}</span>${k.status === 'menunggu' ? `<div class="muted" style="font-size:.76rem;margin-top:3px">${hari ? 'sudah ' + hari + ' hari belum dijawab' : 'baru dikirim hari ini'}</div>` : ''}</div></div>
+        ${k.estimasi ? `<div class="mnest ${telat ? 'telat' : ''}">Estimasi datang: <b>${esc(tglPendek(k.estimasi))}</b>${telat ? ' · sudah lewat' : ''}${k.dijawab_pada ? ` <span class="muted">(dijawab ${esc(wkt(k.dijawab_pada))}${k.jumlah_jawab > 1 ? ', diperbarui ' + (k.jumlah_jawab - 1) + 'x' : ''})</span>` : ''}</div>` : k.dijawab_pada ? `<div class="mnest telat">Dijawab ${esc(wkt(k.dijawab_pada))}</div>` : ''}
+        ${k.catatan ? `<div class="mnest">Catatan Mas Wahyu: ${esc(k.catatan)}</div>` : ''}
+        <div class="chips" style="margin:6px 0">${(rg.jenis || []).map(j => `<span class="chip" style="cursor:default">${esc(j.jenis)} <b>${idn(j.total)}</b></span>`).join('')}</div>
+        <details><summary class="muted" style="cursor:pointer;font-size:.82rem">Lihat isi pesanan per lokasi</summary>${blokLokasi(k.permintaan_ids || []) || '<div class="muted">Data lokasi tidak ditemukan.</div>'}</details></section>`;
+    }).join('');
+    const belumKirim = semuaP.filter(p => !terkirim.has(p.id) && (p.items || []).some(i => pmSaved.get(pmKey(p.id, i.no))?.via === 'wahyu'));
+    const bk = belumKirim.length ? `<section class="rk" style="margin-bottom:14px"><div class="rkh"><h4>Sudah ditandai Mas Wahyu, belum dikirim rekapnya</h4><b>${belumKirim.length} lokasi</b></div>${belumKirim.map(p => `<div class="mnl"><b>${esc(p.client)}</b> <span class="muted">· ${esc(namaRapi(p.bagian_kerja))} · ${idn(itemsWahyu(p).reduce((a, i) => a + (Number(i.qty) || 0), 0))} pcs</span></div>`).join('')}<div class="muted" style="font-size:.78rem;margin-top:4px">Tekan <b>Kirim ke Mas Wahyu (ntfy)</b> di kartu rekap bawah untuk mengirim dan meminta estimasi.</div></section>` : '';
+    const onl = semuaP.filter(p => (p.items || []).some(i => pmSaved.get(pmKey(p.id, i.no))?.via === 'online'));
+    const ol = onl.length ? `<section class="rk" style="margin-bottom:14px"><div class="rkh"><h4>Ditandai belanja online</h4><b>${onl.length} lokasi</b></div>${onl.map(p => `<div class="mnl"><b>${esc(p.client)}</b> <span class="muted">· ${esc(namaRapi(p.bagian_kerja))}</span>${(p.items || []).filter(i => pmSaved.get(pmKey(p.id, i.no))?.via === 'online').map(i => `<div class="mni"><span>${esc(namaRapi(i.nama))}</span><b>${idn(Number(i.qty) || 0)} pcs</b></div>`).join('')}</div>`).join('')}</section>` : '';
+    return (kartu || '<div class="kosongnya">Belum ada rekap yang dikirim ke Mas Wahyu. Tandai item, lalu tekan Kirim ke Mas Wahyu (ntfy) di kartu rekap bawah.</div>') + bk + ol;
+  }
   function kartuPermintaan(p) {
     const items = p.items || [], kotor = items.filter(i => kotorPm(p, i)).length, tersimpan = items.filter(i => pmSaved.has(pmKey(p.id, i.no))).length, lengkap = tersimpan === items.length && !kotor;
     const baris = items.map(i => {
@@ -2998,8 +3023,8 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const semuaP = disetujuiSemua(), tab = rkTab === 'belum' || rkTab === 'selesai' || rkTab === 'semua' ? rkTab : 'belum';
     const selesaiP = p => (p.items || []).every(i => pmSaved.has(pmKey(p.id, i.no)) && !kotorPm(p, i));
     const nBelum = semuaP.filter(p => !selesaiP(p)).length;
-    $('rkTab').innerHTML = [['belum', `Belum selesai ditandai (${nBelum})`], ['selesai', `Sudah ditandai (${semuaP.length - nBelum})`], ['semua', 'Semua']].map(([k, t]) => `<button class="chip ${tab === k ? 'on' : ''}" data-t="${k}">${t}</button>`).join('');
-    const tampil = semuaP.filter(p => rkCocok(p.client || p.lokasi_form, p.bagian_kerja) && (tab === 'semua' || (tab === 'belum') === !selesaiP(p))).sort((a, b) => (selesaiP(a) - selesaiP(b)) || (tglDisetujui(b) - tglDisetujui(a)));
+    $('rkTab').innerHTML = [['belum', `Belum selesai ditandai (${nBelum})`], ['selesai', `Riwayat & monitoring (${pmKonf.length})`], ['semua', 'Semua']].map(([k, t]) => `<button class="chip ${tab === k ? 'on' : ''}" data-t="${k}">${t}</button>`).join('');
+    const tampil = semuaP.filter(p => rkCocok(p.client || p.lokasi_form, p.bagian_kerja) && tab !== 'selesai' && (tab === 'semua' || (tab === 'belum') === !selesaiP(p))).sort((a, b) => (selesaiP(a) - selesaiP(b)) || (tglDisetujui(b) - tglDisetujui(a)));
     const dW = dataPesan('wahyu'), dO = dataPesan('online'), kotorN = semuaP.reduce((a, p) => a + (p.items || []).filter(i => kotorPm(p, i)).length, 0);
     $('infoRekap').textContent = (semuaP.length ? `${idn(semuaP.length)} lokasi sudah disetujui kedua pimpinan · ${idn(nBelum)} belum selesai ditandai` : 'Belum ada permintaan yang disetujui Pak Yasir dan Pak Ferry') + (Saring.aktif() ? ' · ' + Saring.label() : '');
     $('rkKpi').innerHTML = '';
@@ -3009,7 +3034,8 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const bar = `<div class="pmbar"><div><b>${idn(kotorN)}</b> item belum disimpan</div><label>Tanggal pemesanan<input type="date" id="pmTgl" value="${esc(pmTgl || wibIso())}"></label><button class="cta" id="pmSimpan" type="button" ${kotorN ? '' : 'disabled'}>Simpan penandaan</button></div>`;
     const matriksW = (['Baju', 'Celana', 'Sepatu'].map(j => { const g = dW.ukuran.find(x => x.jenis === j); return g ? matriksRk(g, j === 'Sepatu' ? 'Sepatu' : 'Seragam: ' + j) : ''; }).join('')) || '<div class="kosongnya">Belum ada seragam atau sepatu yang ditandai ke Mas Wahyu.</div>';
     const lainW = dW.aks.length ? `<section class="rk" style="margin-bottom:16px"><div class="rkh"><h4>Tanpa ukuran (ke Mas Wahyu)</h4><b>${idn(dW.aks.reduce((a, x) => a + x.qty, 0))} pcs</b></div><div class="wrap rkt"><table><tbody>${dW.aks.map(a => `<tr><td><b>${esc(namaRapi(a.nama))}</b></td><td class="r">${idn(a.qty)}</td></tr>`).join('')}</tbody></table></div></section>` : '';
-    $('rkIsi').innerHTML = '<div class="rk2"><div class="rk2k"><section class="card pcard"><h3 style="margin:0 0 12px">Tandai pemesanan per item</h3>' + bar + '<div class="pmscroll">' + (tampil.length ? tampil.map(kartuPermintaan).join('') : `<div class="kosongnya">${semuaP.length ? 'Tidak ada lokasi yang cocok dengan filter ini.' : 'Belum ada lokasi yang disetujui kedua pimpinan. Setelah disetujui, lokasinya muncul di sini.'}</div>`)
+    const monitor = tab === 'selesai';
+    $('rkIsi').innerHTML = '<div class="rk2"><div class="rk2k"><section class="card pcard"><h3 style="margin:0 0 12px">' + (monitor ? 'Monitoring pesanan ke Mas Wahyu' : 'Tandai pemesanan per item') + '</h3>' + (monitor ? '' : bar) + '<div class="pmscroll">' + (monitor ? htmlMonitoring(semuaP) : tampil.length ? tampil.map(kartuPermintaan).join('') : `<div class="kosongnya">${semuaP.length ? 'Tidak ada lokasi yang cocok dengan filter ini.' : 'Belum ada lokasi yang disetujui kedua pimpinan. Setelah disetujui, lokasinya muncul di sini.'}</div>`)
       + `</div></section></div>` + TUTORIAL_REKAP + `</div>
       <div class="rk3"><section class="card pcard"><div class="rk3h"><h3>Rekap pesanan ke Mas Wahyu</h3><div class="bgact"><button class="cta" id="pmSubW" type="button" ${nDirtyW ? '' : 'disabled'}>Submit (${nDirtyW})</button><button class="btn" id="pmPdfW" type="button">Buat PDF Mas Wahyu</button><button class="btn" id="pmNtfyW" type="button" title="Kirim PDF rekap ke Mas Wahyu lewat ntfy dan minta estimasi datang">Kirim ke Mas Wahyu (ntfy)</button></div></div><div class="pmscroll">${konfHtml}${matriksW}${lainW}</div></section>
       <section class="card pcard"><div class="rk3h"><h3>Belanja online</h3><div class="bgact"><button class="cta" id="pmSubO" type="button" ${nDirtyO ? '' : 'disabled'}>Submit (${nDirtyO})</button><button class="btn" id="pmPdfO" type="button">Buat PDF pengajuan</button></div></div><div class="pmscroll" id="pmOnline"></div></section></div>`;
@@ -3017,8 +3043,8 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const agg = new Map(); for (const p of dO.ps) for (const i of p.items) { const k = String(i.nama).toUpperCase(), e = agg.get(k) || { n: i.nama, q: 0, l: [] }; e.q += Number(i.qty) || 0; e.l.push(`${p.client} · ${namaRapi(p.bagian_kerja)} (${Number(i.qty) || 0})`); agg.set(k, e); }
     $('pmOnline').innerHTML = agg.size ? `<div class="wrap rkt"><table><thead><tr><th>Item</th><th class="r">Jumlah</th><th>Untuk lokasi</th></tr></thead><tbody>${[...agg.values()].sort((a, b) => a.n.localeCompare(b.n, 'id')).map(e => `<tr><td><b>${esc(namaRapi(e.n))}</b></td><td class="r">${idn(e.q)}</td><td>${e.l.map(t => `<small>${esc(t)}</small>`).join('')}</td></tr>`).join('')}</tbody></table></div><div class="bgact" style="margin-top:8px"><button class="btn" id="pmSalin" type="button">Salin daftar belanja online</button></div>` : '<div class="kosongnya">Belum ada item yang ditandai online.</div>';
     const sl = $('pmSalin'); if (sl) sl.onclick = async () => { const t = `Daftar belanja online (${tglPanjangIso(wibIso())})\n` + [...agg.values()].map(e => `- ${e.n}: ${e.q} pcs`).join('\n'); try { await navigator.clipboard.writeText(t); sl.textContent = 'Tersalin ✓'; } catch (x) { alert(t); } };
-    $('pmTgl').onchange = e => { pmTgl = e.target.value; };
-    $('pmSimpan').onclick = () => simpanPemesanan('semua');
+    if ($('pmTgl')) $('pmTgl').onchange = e => { pmTgl = e.target.value; };
+    if ($('pmSimpan')) $('pmSimpan').onclick = () => simpanPemesanan('semua');
     $('pmNtfyW').onclick = e => kirimKonfirmasiWahyu(e.currentTarget);
     $('pmSubW').onclick = () => simpanPemesanan('wahyu'); $('pmSubO').onclick = () => simpanPemesanan('online');
     $('pmPdfW').onclick = async e => { const b = e.currentTarget, a = b.textContent; b.disabled = true; b.textContent = 'Menyiapkan PDF…'; try { await pdfRekapVendor(dataPesan('wahyu'), opsiPdfRk()); } catch (x) { alert('Gagal membuat PDF: ' + x.message); } b.disabled = false; b.textContent = a; };
