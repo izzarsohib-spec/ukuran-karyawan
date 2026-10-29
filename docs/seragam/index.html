@@ -638,12 +638,14 @@
   .seg button.on { background:var(--navy, #33475B); color:#fff; } .seg button.on.onl { background:var(--accent, #2F7F79); }
   .rkukw { margin-top:3px; display:flex; flex-direction:column; gap:1px; } .rkuk { font-size:.76rem; color:var(--muted); } .rkuk b { color:var(--accent); text-transform:uppercase; font-size:.68rem; margin-right:4px; } .rkuk i { font-style:normal; font-weight:700; color:var(--text); margin:0 6px 0 1px; }
   .rk3 { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr); gap:16px; align-items:start; margin-top:16px; } .rk3 > .card { margin:0; min-width:0; } @media (max-width: 1100px) { .rk3 { grid-template-columns:minmax(0,1fr); } }
+  .rk3 { align-items:stretch !important; } .rk3 > .card { display:flex; flex-direction:column; height:clamp(380px, 56vh, 600px); min-height:0; } .rk3 .pmscroll { flex:1; min-height:0; overflow:auto; padding-right:4px; }
+  .rk3h { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin:0 0 12px; flex:none; } .rk3h h3 { margin:0; } @media (max-width: 1100px) { .rk3 > .card { height:auto; max-height:none; } .rk3 .pmscroll { max-height:60vh; } }
   #rkKpi, label.search[hidden] { display:none !important; }
   .rk2 { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr); gap:16px; align-items:stretch; height:clamp(580px, calc(100vh - 230px), 780px); } .rk2k { min-width:0; min-height:0; } .rk2k > .card { margin:0; height:100%; display:flex; flex-direction:column; min-height:0; } .pmscroll { flex:1; min-height:0; overflow-y:auto; padding-right:4px; } .rktut { margin:0; height:100%; overflow-y:auto; min-height:0; }
   .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
   @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); height:auto; } .rk2k > .card { height:auto; } .pmscroll { max-height:70vh; } .rktut { height:auto; overflow:visible; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.250">
+<link rel="stylesheet" href="../aset/tema.css?v=1.251">
 </head>
 <body>
 <div class="shell">
@@ -2999,35 +3001,60 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const dW = dataPesan('wahyu'), dO = dataPesan('online'), kotorN = semuaP.reduce((a, p) => a + (p.items || []).filter(i => kotorPm(p, i)).length, 0);
     $('infoRekap').textContent = (semuaP.length ? `${idn(semuaP.length)} lokasi sudah disetujui kedua pimpinan · ${idn(nBelum)} belum selesai ditandai` : 'Belum ada permintaan yang disetujui Pak Yasir dan Pak Ferry') + (Saring.aktif() ? ' · ' + Saring.label() : '');
     $('rkKpi').innerHTML = '';
+    const dirtyVia = v => semuaP.reduce((a, p) => a + (p.items || []).filter(i => kotorPm(p, i) && viaDraft(p, i) === v).length, 0), nDirtyW = dirtyVia('wahyu'), nDirtyO = dirtyVia('online');
     const bar = `<div class="pmbar"><div><b>${idn(kotorN)}</b> item belum disimpan</div><label>Tanggal pemesanan<input type="date" id="pmTgl" value="${esc(pmTgl || wibIso())}"></label><button class="cta" id="pmSimpan" type="button" ${kotorN ? '' : 'disabled'}>Simpan penandaan</button></div>`;
     const matriksW = (['Baju', 'Celana', 'Sepatu'].map(j => { const g = dW.ukuran.find(x => x.jenis === j); return g ? matriksRk(g, j === 'Sepatu' ? 'Sepatu' : 'Seragam: ' + j) : ''; }).join('')) || '<div class="kosongnya">Belum ada seragam atau sepatu yang ditandai ke Mas Wahyu.</div>';
     const lainW = dW.aks.length ? `<section class="rk" style="margin-bottom:16px"><div class="rkh"><h4>Tanpa ukuran (ke Mas Wahyu)</h4><b>${idn(dW.aks.reduce((a, x) => a + x.qty, 0))} pcs</b></div><div class="wrap rkt"><table><tbody>${dW.aks.map(a => `<tr><td><b>${esc(namaRapi(a.nama))}</b></td><td class="r">${idn(a.qty)}</td></tr>`).join('')}</tbody></table></div></section>` : '';
     $('rkIsi').innerHTML = '<div class="rk2"><div class="rk2k"><section class="card pcard"><h3 style="margin:0 0 12px">Tandai pemesanan per item</h3>' + bar + '<div class="pmscroll">' + (tampil.length ? tampil.map(kartuPermintaan).join('') : `<div class="kosongnya">${semuaP.length ? 'Tidak ada lokasi yang cocok dengan filter ini.' : 'Belum ada lokasi yang disetujui kedua pimpinan. Setelah disetujui, lokasinya muncul di sini.'}</div>`)
       + `</div></section></div>` + TUTORIAL_REKAP + `</div>
-      <div class="rk3"><section class="card pcard"><h3 style="margin:0 0 12px">Rekap pesanan ke Mas Wahyu</h3>${matriksW}${lainW}</section>
-      <section class="card pcard"><h3 style="margin:0 0 12px">Daftar belanja online</h3><div id="pmOnline"></div></section></div>`;
+      <div class="rk3"><section class="card pcard"><div class="rk3h"><h3>Rekap pesanan ke Mas Wahyu</h3><div class="bgact"><button class="cta" id="pmSubW" type="button" ${nDirtyW ? '' : 'disabled'}>Submit (${nDirtyW})</button><button class="btn" id="pmPdfW" type="button">Buat PDF Mas Wahyu</button></div></div><div class="pmscroll">${matriksW}${lainW}</div></section>
+      <section class="card pcard"><div class="rk3h"><h3>Belanja online</h3><div class="bgact"><button class="cta" id="pmSubO" type="button" ${nDirtyO ? '' : 'disabled'}>Submit (${nDirtyO})</button><button class="btn" id="pmPdfO" type="button">Buat PDF pengajuan</button></div></div><div class="pmscroll" id="pmOnline"></div></section></div>`;
     // daftar belanja online (digabung per item)
     const agg = new Map(); for (const p of dO.ps) for (const i of p.items) { const k = String(i.nama).toUpperCase(), e = agg.get(k) || { n: i.nama, q: 0, l: [] }; e.q += Number(i.qty) || 0; e.l.push(`${p.client} · ${namaRapi(p.bagian_kerja)} (${Number(i.qty) || 0})`); agg.set(k, e); }
     $('pmOnline').innerHTML = agg.size ? `<div class="wrap rkt"><table><thead><tr><th>Item</th><th class="r">Jumlah</th><th>Untuk lokasi</th></tr></thead><tbody>${[...agg.values()].sort((a, b) => a.n.localeCompare(b.n, 'id')).map(e => `<tr><td><b>${esc(namaRapi(e.n))}</b></td><td class="r">${idn(e.q)}</td><td>${e.l.map(t => `<small>${esc(t)}</small>`).join('')}</td></tr>`).join('')}</tbody></table></div><div class="bgact" style="margin-top:8px"><button class="btn" id="pmSalin" type="button">Salin daftar belanja online</button></div>` : '<div class="kosongnya">Belum ada item yang ditandai online.</div>';
     const sl = $('pmSalin'); if (sl) sl.onclick = async () => { const t = `Daftar belanja online (${tglPanjangIso(wibIso())})\n` + [...agg.values()].map(e => `- ${e.n}: ${e.q} pcs`).join('\n'); try { await navigator.clipboard.writeText(t); sl.textContent = 'Tersalin ✓'; } catch (x) { alert(t); } };
     $('pmTgl').onchange = e => { pmTgl = e.target.value; };
-    $('pmSimpan').onclick = simpanPemesanan;
+    $('pmSimpan').onclick = () => simpanPemesanan('semua');
+    $('pmSubW').onclick = () => simpanPemesanan('wahyu'); $('pmSubO').onclick = () => simpanPemesanan('online');
+    $('pmPdfW').onclick = async e => { const b = e.currentTarget, a = b.textContent; b.disabled = true; b.textContent = 'Menyiapkan PDF…'; try { await pdfRekapVendor(dataPesan('wahyu'), opsiPdfRk()); } catch (x) { alert('Gagal membuat PDF: ' + x.message); } b.disabled = false; b.textContent = a; };
+    $('pmPdfO').onclick = async e => { const b = e.currentTarget, a = b.textContent; b.disabled = true; b.textContent = 'Menyiapkan PDF…'; try { await pdfBelanjaOnline(); } catch (x) { alert('Gagal membuat PDF: ' + x.message); } b.disabled = false; b.textContent = a; };
   }
-  async function simpanPemesanan() {
-    const tgl = $('pmTgl').value || wibIso(), baris = [], poIds = new Set(); let nW = 0, nO = 0;
+  // mode: 'semua' | 'wahyu' | 'online'. Submit per jalur hanya menyimpan item yang berjalur itu; PO terkirim ditandai untuk permintaan yang punya item ke Mas Wahyu.
+  async function simpanPemesanan(mode = 'semua') {
+    const tgl = ($('pmTgl') && $('pmTgl').value) || wibIso(), baris = [], poIds = new Set(); let nW = 0, nO = 0;
     for (const p of disetujuiSemua()) for (const i of (p.items || [])) {
-      if (kotorPm(p, i)) { const v = viaDraft(p, i); baris.push({ permintaan_id: p.id, item_no: Number(i.no), via: v, tanggal: tgl }); if (v === 'wahyu') nW++; else if (v === 'online') nO++; }
-      if (viaDraft(p, i) === 'wahyu' && !tglPo(p)) poIds.add(p.id);
+      const v = viaDraft(p, i);
+      if (kotorPm(p, i) && (mode === 'semua' || v === mode)) { baris.push({ permintaan_id: p.id, item_no: Number(i.no), via: v, tanggal: tgl }); if (v === 'wahyu') nW++; else if (v === 'online') nO++; }
+      if (mode !== 'online' && v === 'wahyu' && !tglPo(p) && (mode === 'semua' || kotorPm(p, i))) poIds.add(p.id);
     }
     if (!baris.length) return;
-    if (!confirm(`Simpan penandaan ${baris.length} item?\n\n- Ke Mas Wahyu: ${nW} item\n- Online: ${nO} item\n\nPermintaan yang punya item ke Mas Wahyu ikut ditandai PO terkirim (${poIds.size} permintaan) pada ${tglPanjangIso(tgl)}.`)) return;
-    const b = $('pmSimpan'), a = b.textContent; b.disabled = true; b.textContent = 'Menyimpan…';
+    if (!confirm(`Submit ${baris.length} item?\n\n${nW ? `- Ke Mas Wahyu: ${nW} item\n` : ''}${nO ? `- Online: ${nO} item\n` : ''}${poIds.size ? `\nPermintaan yang punya item ke Mas Wahyu ikut ditandai PO terkirim (${poIds.size} permintaan) pada ${tglPanjangIso(tgl)}.` : ''}`)) return;
+    const tombol = [$('pmSimpan'), $('pmSubW'), $('pmSubO')].filter(Boolean); tombol.forEach(b => { b.disabled = true; });
     try {
       await Masuk.wajib(); const kode = Masuk.kode();
       await rpc('simpan_pemesanan', { kode, p_baris: baris });
       if (poIds.size) await rpc('po_tandai', { kode, p_ids: [...poIds], p_tanggal: tgl });
-      pmDraft.clear(); await muatStatus(); await muatPemesanan();
-    } catch (x) { alert('Gagal: ' + x.message); b.disabled = false; b.textContent = a; }
+      for (const b of baris) pmDraft.delete(pmKey(b.permintaan_id, b.item_no));
+      await muatStatus(); await muatPemesanan();
+    } catch (x) { alert('Gagal: ' + x.message); renderRekapPage(); }
+  }
+  // PDF pengajuan anggaran belanja online: dibawa menghadap pimpinan untuk meminta anggaran (pembelian online tidak kontan seperti ke Mas Wahyu)
+  async function pdfBelanjaOnline() {
+    const d = dataPesan('online'); if (!d.ps.length) { alert('Belum ada item yang ditandai online.'); return; }
+    const agg = new Map();
+    for (const p of d.ps) for (const i of p.items) { const kk = String(i.nama).toUpperCase(), e = agg.get(kk) || { n: i.nama, q: 0, jml: 0, l: [] }; const q = Number(i.qty) || 0; e.q += q; e.jml += (Number(i.beli) || 0) * q; e.l.push(`${p.client} (${q})`); agg.set(kk, e); }
+    const rows = [...agg.values()].sort((a, b) => a.n.localeCompare(b.n, 'id')), total = rows.reduce((a, r) => a + r.jml, 0), pcs = rows.reduce((a, r) => a + r.q, 0);
+    const k = await kertasKop(), { doc, PW, L, W } = k; k.pasang();
+    k.huruf('bold', 13); doc.text('PENGAJUAN ANGGARAN BELANJA ONLINE', PW / 2, 104, { align: 'center' });
+    k.huruf(); [['Tanggal', tglPanjangIso(wibIso())], ['Perihal', 'Permohonan anggaran pembelian barang secara online'], ['Jumlah', `${rows.length} jenis barang · ${idn(pcs)} pcs · ${idn(d.lokasi.length)} lokasi/bagian`]].forEach(([a, b], i) => { doc.text(a, L, 130 + i * 14); doc.text(': ' + b, L + 62, 130 + i * 14); });
+    k.y = 182; k.huruf(); const pr = doc.splitTextToSize('Dengan hormat, bersama ini kami mengajukan anggaran untuk pembelian barang berikut secara online. Pembayaran pembelian online tidak dapat dilakukan secara kontan seperti pemesanan ke vendor, sehingga kami mohon persetujuan dan pencairan anggaran sebelum pembelian dilakukan.', W); doc.text(pr, L, k.y); k.y += pr.length * 12 + 6;
+    k.tabel({ startY: k.y, head: [['NO', 'NAMA BARANG', 'QTY', 'HARGA SATUAN', 'JUMLAH', 'UNTUK LOKASI']],
+      body: [...rows.map((r, i) => [{ content: i + 1, styles: { halign: 'center' } }, namaRapi(r.n), { content: r.q, styles: { halign: 'center' } }, { content: rp(r.q ? Math.round(r.jml / r.q) : 0), styles: { halign: 'right' } }, { content: rp(r.jml), styles: { halign: 'right' } }, { content: r.l.join(', '), styles: { fontSize: 7 } }]),
+        [{ content: 'TOTAL ESTIMASI ANGGARAN', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } }, { content: rp(total), styles: { halign: 'right', fontStyle: 'bold' } }, '']],
+      columnStyles: { 0: { cellWidth: 26 }, 2: { cellWidth: 34 }, 3: { cellWidth: 70 }, 4: { cellWidth: 76 } } });
+    k.y += 12; k.huruf('italic', 9); const tb = doc.splitTextToSize(`Terbilang: ${terbilang(total)} rupiah`, W); doc.text(tb, L, k.y + 6); k.y += tb.length * 11 + 28;
+    k.cek(100); k.ttd([{ x: L + W * 0.17, label: 'Diajukan oleh,', t: TTD.pic }, { x: L + W * 0.5, label: 'Mengetahui,', t: TTD.dir }, { x: L + W * 0.83, label: 'Menyetujui,', t: TTD.dirut }], k.y);
+    k.simpan(`Pengajuan anggaran belanja online ${wibIso()}.pdf`);
   }
   function unduhRekapCsv() {
     const d = dataPesan('wahyu'), sel = v => { const s = String(v ?? ''); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };

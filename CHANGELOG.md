@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 29 Okt 2026
+- **v1.251** Rekap Permintaan: dua kartu bawah kini bergulir di dalam kartunya (halaman tidak ikut turun) dan masing-masing punya tombol **Submit** dan **Buat PDF**. Kartu Mas Wahyu: Submit menyimpan item yang ditandai Mas Wahyu dan menandai PO terkirim; Buat PDF membuat rekap untuk dikirim ke Mas Wahyu. Kartu Belanja online: Submit menyimpan item yang ditandai online; Buat PDF membuat **Pengajuan Anggaran Belanja Online** (daftar barang, qty, harga beli, total estimasi dan terbilang, untuk lokasi, serta tanda tangan PIC, Direktur, dan Direktur Utama) untuk dibawa menghadap pimpinan meminta anggaran, karena belanja online tidak kontan seperti ke Mas Wahyu.
 - **v1.250** Rekap Permintaan: tabel matriks ukuran di kartu Rekap pesanan ke Mas Wahyu dirapatkan (kolom dan jarak lebih kecil, judul kolom boleh turun baris) supaya semua kolom, termasuk Tanpa ukuran dan Total, terlihat tanpa terpotong.
 - **v1.249** Rekap Permintaan: bagian bawah dibagi dua kartu berdampingan, **Rekap pesanan ke Mas Wahyu** (kiri) dan **Daftar belanja online** (kanan). Tabel matriks ukuran kini selebar kartunya sehingga tidak ada ruang kosong di sisi kanan.
 - **v1.248** Perbaikan: kolom pencarian di Rekap Permintaan ternyata masih tampil karena gayanya menimpa atribut hidden; kini disembunyikan dengan benar.
