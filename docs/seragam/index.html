@@ -625,9 +625,11 @@
   .rkmx .rktot td { border-top:2px solid var(--stroke); background:rgba(0,0,0,.03); }
   #iBaris select, #iBaris input { width:100%; min-width:0; } #iBaris select.im-jenis { min-width:130px; } #iBaris select.im-item { min-width:190px; } #iBaris td:nth-child(2) { min-width:130px; } #iBaris select:disabled { opacity:.55; cursor:not-allowed; }
   .ukcell { display:flex; flex-wrap:wrap; gap:5px; min-width:260px; } .ukb { min-width:42px; padding:5px 9px; border:1px solid var(--stroke); border-radius:9px; background:#fff; cursor:pointer; font-size:.82rem; font-weight:600; color:var(--text); } .ukb:hover { border-color:var(--accent); } .ukb.on { background:var(--accent); border-color:var(--accent); color:#fff; }
-  .dfilter { grid-template-columns:1fr 1fr; gap:10px; } #dBody td { white-space:normal; vertical-align:top; } #dBody td:nth-child(3) { min-width:180px; }
+  .dfilter { display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; } .dfilter label { display:flex; flex-direction:column; gap:4px; font-size:.76rem; font-weight:600; color:var(--muted); }
+  .dfilter input { width:100%; padding:8px 10px; border:1px solid #CBD5E1; border-radius:10px; background:#fff; color:var(--text); font:inherit; font-size:.88rem; font-weight:400; }
+  #dBody td:first-child { white-space:nowrap; } .dbrg { padding:2px 0; border-bottom:1px dashed var(--stroke); font-size:.84rem; } .dbrg:last-child { border-bottom:0; } .dlain summary { cursor:pointer; color:var(--accent); font-size:.8rem; font-weight:600; padding:3px 0; } #dBody td { white-space:normal; vertical-align:top; } #dBody td:nth-child(3) { min-width:180px; }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.221">
+<link rel="stylesheet" href="../aset/tema.css?v=1.222">
 </head>
 <body>
 <div class="shell">
@@ -3247,7 +3249,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     $('dChips').innerHTML = [['semua', 'Semua'], ['vendor', 'Dari vendor'], ['online', 'Online']].map(([k, n]) => `<button class="chip ${dSup === k ? 'on' : ''}" data-d="${k}">${n}</button>`).join('');
     const f = semua.filter(x => (dSup === 'semua' || (dSup === 'online') === online(x)) && (!dari || x.tgl >= dari) && (!sampai || x.tgl <= sampai) && (!qs || x.sup.toLowerCase().includes(qs)) && (!qb || x.baris.join(' ').toLowerCase().includes(qb)));
     $('infoDatang').textContent = `${idn(semua.length)} penerimaan tercatat · ${idn(semua.reduce((a, x) => a + x.pcs, 0))} pcs${gerak.length >= 1000 ? ' (dari 1000 gerak stok terakhir)' : ''}`;
-    $('dBody').innerHTML = f.map(x => `<tr><td>${tglPendek(x.tgl)}</td><td><b>${esc(x.sup)}</b><div class="muted">${esc(x.dok || '-')}${x.ket ? ' · ' + esc(x.ket) : ''}</div></td><td>${x.baris.map(esc).join(', ')}</td><td class="r"><b>${idn(x.pcs)}</b> pcs</td></tr>`).join('') || '<tr><td colspan="4" class="kosongnya">Tidak ada barang datang yang cocok.</td></tr>';
+    $('dBody').innerHTML = f.map(x => `<tr><td>${tglPendek(x.tgl)}</td><td><b>${esc(x.sup)}</b><div class="muted">${esc(x.dok || '-')}${x.ket ? ' · ' + esc(x.ket) : ''}</div></td><td>${(n => x.baris.slice(0, n).map(b => `<div class="dbrg">${esc(b)}</div>`).join('') + (x.baris.length > n ? `<details class="dlain"><summary>+ ${x.baris.length - n} barang lainnya</summary>${x.baris.slice(n).map(b => `<div class="dbrg">${esc(b)}</div>`).join('')}</details>` : ''))(3)}</td><td class="r"><b>${idn(x.pcs)}</b> pcs</td></tr>`).join('') || '<tr><td colspan="4" class="kosongnya">Tidak ada barang datang yang cocok.</td></tr>';
   }
   $('dChips').onclick = e => { const d = e.target.dataset && e.target.dataset.d; if (d) { dSup = d; renderDatang(); } };
   ['dDari', 'dSampai', 'dBarang', 'dSupQ'].forEach(id => { $(id).oninput = renderDatang; }); $('dReset').onclick = () => { ['dDari', 'dSampai', 'dBarang', 'dSupQ'].forEach(id => { $(id).value = ''; }); dSup = 'semua'; renderDatang(); }; $('dMuat').onclick = muatHilir;
