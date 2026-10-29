@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 29 Okt 2026
+- **v1.273** Menu dan judul halaman "Rekap Permintaan & Barang Datang" diganti menjadi **Pemesanan & Barang Datang** (bar atas portal, sidebar modul, menu ponsel, dan judul halaman).
 - **v1.272** Perbaikan: sub-tab "Monitoring pengisian / Permintaan seragam" masih tampil di halaman yang tidak punya sub-tab (Rekap permintaan, Dashboard Utama, Tagihan) setelah membuka halaman Monitoring. Baris sub-tab kini dikosongkan dan disembunyikan bila halaman tidak punya sub-tab.
 - **v1.271** Chip Barang datang dan Kekurangan vendor: tinggi tiga kartu (tutorial, form, riwayat) disamakan sehingga rata di atas dan di bawah.
 - **v1.270** Chip Barang datang dan Kekurangan vendor: judul halaman di atas kartu kanan dihapus (sudah ada di tab) supaya kartu tutorial, form, dan riwayat sejajar dari garis atas yang sama. Tombol Masuk dan muat untuk riwayat kekurangan dipindah ke dalam kartu riwayat.
