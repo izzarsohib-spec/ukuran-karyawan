@@ -623,13 +623,13 @@
   @media (max-width: 1100px) { .datang2 { grid-template-columns:minmax(0,1fr); } }
   .rkmx { width:auto !important; min-width:0; } .rkmx th:first-child, .rkmx td:first-child { min-width:260px; white-space:normal; } .rkmx th.r, .rkmx td.r { min-width:58px; text-align:center; } .rkmx th, .rkmx td { padding:7px 12px; white-space:nowrap; } .rkmx .mxv { font-weight:600; } .rkmx .mxn { color:var(--muted); opacity:.5; }
   .rkmx .rktot td { border-top:2px solid var(--stroke); background:rgba(0,0,0,.03); }
-  #iBaris select, #iBaris input { width:100%; min-width:0; } #iBaris select.im-jenis { min-width:105px; } #iBaris select.im-item { min-width:150px; } #iBaris td:nth-child(2) { min-width:105px; } #iBaris td:nth-child(4) { min-width:70px; } #iBaris td { padding-left:6px; padding-right:6px; } #iBaris select:disabled { opacity:.55; cursor:not-allowed; }
+  #iBaris select, #kcBaris select, #iBaris input, #kcBaris input { width:100%; min-width:0; } #iBaris select.im-jenis, #kcBaris select.im-jenis { min-width:105px; } #iBaris select.im-item, #kcBaris select.im-item { min-width:150px; } #iBaris td:nth-child(2), #kcBaris td:nth-child(2) { min-width:105px; } #iBaris td:nth-child(4), #kcBaris td:nth-child(4) { min-width:70px; } #iBaris td, #kcBaris td { padding-left:6px; padding-right:6px; } #iBaris select:disabled, #kcBaris select:disabled { opacity:.55; cursor:not-allowed; }
   .ukcell { display:flex; flex-wrap:wrap; gap:5px; min-width:190px; } .ukb { min-width:42px; padding:5px 9px; border:1px solid var(--stroke); border-radius:9px; background:#fff; cursor:pointer; font-size:.82rem; font-weight:600; color:var(--text); } .ukb:hover { border-color:var(--accent); } .ukb.on { background:var(--accent); border-color:var(--accent); color:#fff; }
   .dfilter { display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; } .dfilter label { display:flex; flex-direction:column; gap:4px; font-size:.76rem; font-weight:600; color:var(--muted); }
   .dfilter input { width:100%; padding:8px 10px; border:1px solid #CBD5E1; border-radius:10px; background:#fff; color:var(--text); font:inherit; font-size:.88rem; font-weight:400; }
-  #dBody td:first-child { white-space:nowrap; } .dtot { min-width:96px; } .dtot div { display:flex; justify-content:space-between; gap:12px; padding:2px 0; font-size:.84rem; } .dtot span { color:var(--muted); font-size:.76rem; font-weight:600; } .dtot b { font-size:.9rem; } .dit { padding:7px 0; border-bottom:1px solid var(--stroke); } .dit:last-child { border-bottom:0; } .dith { display:flex; justify-content:space-between; gap:10px; font-size:.86rem; } .dith span { color:var(--muted); font-size:.78rem; white-space:nowrap; } .djn { display:flex; flex-wrap:wrap; align-items:stretch; gap:5px; margin-top:6px; } .djl { display:flex; flex-direction:column; justify-content:center; min-width:62px; font-size:.72rem; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.03em; } .djl small { color:var(--muted); font-size:.7rem; font-weight:500; text-transform:none; letter-spacing:0; } .duk { display:flex; flex-direction:column; align-items:stretch; min-width:42px; border:1px solid var(--stroke); border-radius:8px; overflow:hidden; text-align:center; } .duk i { font-style:normal; padding:2px 6px; font-size:.72rem; font-weight:600; color:var(--muted); background:var(--lembut, #F4F7FB); border-bottom:1px solid var(--stroke); } .duk b { padding:3px 6px; font-size:.86rem; } .dbrg { padding:2px 0; border-bottom:1px dashed var(--stroke); font-size:.84rem; } .dbrg:last-child { border-bottom:0; } .dlain summary { cursor:pointer; color:var(--accent); font-size:.8rem; font-weight:600; padding:3px 0; } #dBody td { white-space:normal; vertical-align:top; } #dBody td:nth-child(3) { min-width:180px; }
+  #dBody td:first-child, #kcBody td:first-child { white-space:nowrap; } .dtot { min-width:96px; } .dtot div { display:flex; justify-content:space-between; gap:12px; padding:2px 0; font-size:.84rem; } .dtot span { color:var(--muted); font-size:.76rem; font-weight:600; } .dtot b { font-size:.9rem; } .dit { padding:7px 0; border-bottom:1px solid var(--stroke); } .dit:last-child { border-bottom:0; } .dith { display:flex; justify-content:space-between; gap:10px; font-size:.86rem; } .dith span { color:var(--muted); font-size:.78rem; white-space:nowrap; } .djn { display:flex; flex-wrap:wrap; align-items:stretch; gap:5px; margin-top:6px; } .djl { display:flex; flex-direction:column; justify-content:center; min-width:62px; font-size:.72rem; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.03em; } .djl small { color:var(--muted); font-size:.7rem; font-weight:500; text-transform:none; letter-spacing:0; } .duk { display:flex; flex-direction:column; align-items:stretch; min-width:42px; border:1px solid var(--stroke); border-radius:8px; overflow:hidden; text-align:center; } .duk i { font-style:normal; padding:2px 6px; font-size:.72rem; font-weight:600; color:var(--muted); background:var(--lembut, #F4F7FB); border-bottom:1px solid var(--stroke); } .duk b { padding:3px 6px; font-size:.86rem; } .dbrg { padding:2px 0; border-bottom:1px dashed var(--stroke); font-size:.84rem; } .dbrg:last-child { border-bottom:0; } .dlain summary { cursor:pointer; color:var(--accent); font-size:.8rem; font-weight:600; padding:3px 0; } #dBody td, #kcBody td { white-space:normal; vertical-align:top; } #dBody td:nth-child(3), #kcBody td:nth-child(3) { min-width:180px; }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.231">
+<link rel="stylesheet" href="../aset/tema.css?v=1.232">
 </head>
 <body>
 <div class="shell">
@@ -711,6 +711,33 @@
    </div>
 
    <div class="page" id="pg-kurang" hidden>
+    <header><div><h1>Kekurangan Vendor</h1><div class="sub" id="infoKc">Memuat data…</div></div>
+      <div class="bgact"><button class="btn" id="kcMuat">Muat ulang</button></div></header>
+    <div class="datang2">
+    <section class="card pcard" id="kcForm">
+      <h3>Catat kekurangan dari vendor</h3>
+      <div class="hint" style="margin:0 0 10px">Catat barang yang <b>belum dikirim vendor</b> (atau kurang dari pesanan), lengkap dengan jenis, ukuran, jumlah, dan estimasi kirimnya.</div>
+      <div class="fgrid" style="grid-template-columns:1fr 1fr">
+        <label>Tanggal dicatat<input type="date" id="kcTgl"></label><label>Vendor<select id="kcVendor"><option>Wahyu Ardianto</option></select></label>
+        <label>No. PO / surat jalan terkait<input id="kcRef" autocomplete="off" placeholder="opsional"></label><label>Estimasi kirim<input type="date" id="kcEst"></label>
+        <label style="grid-column:1/-1">Keterangan<input id="kcKet" autocomplete="off" placeholder="mis. menunggu bahan, janji kirim minggu depan"></label></div>
+      <div class="row" style="margin:16px 0 8px"><b>Barang yang kurang</b><button class="btn" id="kcTambah" type="button">+ Tambah baris</button></div>
+      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:150px">Barang</th><th style="min-width:105px">Jenis</th><th style="min-width:190px">Ukuran</th><th style="min-width:70px">Qty</th><th></th></tr></thead><tbody id="kcBaris"></tbody></table></div>
+      <div class="hint" id="kcPesan"></div>
+      <div class="bgact" style="margin-top:12px"><button class="cta" id="kcSimpan" type="button">Simpan kekurangan</button><button class="btn" id="kcBatal" type="button">Kosongkan form</button></div>
+    </section>
+    <section class="bawah card">
+      <div class="bar-top"><h3>Riwayat kekurangan vendor</h3></div>
+      <div class="chips" id="kcChips" style="margin-bottom:12px"></div>
+      <div class="fgrid dfilter">
+        <label>Dari tanggal<input type="date" id="kcDari"></label><label>Sampai tanggal<input type="date" id="kcSampai"></label>
+        <label style="grid-column:1/-1">Cari barang<input type="search" id="kcBarang" list="kcBarangList" placeholder="Ketik atau pilih barang" autocomplete="off"><datalist id="kcBarangList"></datalist></label>
+      </div>
+      <div class="bgact" style="margin:8px 0 12px"><button class="btn" id="kcReset" type="button">Reset filter</button></div>
+      <div class="wrap tabelminta"><table><thead><tr><th>Tanggal</th><th>Vendor &amp; keterangan</th><th>Barang yang kurang</th><th class="r">Total per jenis</th></tr></thead><tbody id="kcBody"></tbody></table></div>
+    </section>
+    </div>
+    <div id="kvLama" hidden>
     <header><div><h1>Kekurangan Vendor</h1><div class="sub" id="infoKurang">Memuat data…</div></div>
       <div class="bgact"><button class="btn" id="kvMuat">Muat ulang</button></div></header>
     <section class="card pcard" id="poPanel" hidden></section>
@@ -725,6 +752,7 @@
       <div id="kvIsi"></div>
     </section>
     <section class="card pcard" id="aksPanel" hidden></section>
+    </div>
    </div>
 
    <div class="page" id="pg-datang" hidden>
@@ -1450,7 +1478,7 @@
     window.scrollTo({ top: 0 });
     if (pg === 'permintaan' || pg === 'ploting' || pg === 'monitor') muatStatus();
     if (pg === 'rekap') { muatStatus(); muatRekapUkuran(); muatRekapVendor(); muatAntreanUkuran(); }
-    if (pg === 'kurang') muatKekurangan();
+    if (pg === 'kurang') { muatKekurangan(); muatKc(); }
     if (pg === 'datang') { muatStatus(); muatHilir(); }
     if (pg === 'inventaris' || pg === 'opname' || pg === 'pengiriman' || pg === 'penerimaan' || pg === 'tagihan') { muatStatus(); muatHilir(); }
     if (pg === 'laporan') { muatStatus(); muatHilir(); muatCatatan(); }
@@ -3116,7 +3144,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   $('kvVendor').onchange = e => { kvPilih = Number(e.target.value) || null; muatKekurangan(); };
   $('kvSemua').onchange = e => { kvSemua = e.target.checked; renderKekurangan(); };
   $('kvMuat').onclick = muatKekurangan;
-  window.addEventListener('masuk-ubah', () => { if (!$('pg-kurang').hidden) muatKekurangan(); });
+  window.addEventListener('masuk-ubah', () => { if (!$('pg-kurang').hidden) { muatKekurangan(); muatKc(); } });
 
   // ================= INVENTARIS · PENGIRIMAN · TAGIHAN =================
   // Stok disimpan sebagai buku besar gerak (masuk dari supplier, keluar karena pengiriman). Pengiriman membaca hasil ploting dan
@@ -3267,6 +3295,88 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   }
   $('dChips').onclick = e => { const d = e.target.dataset && e.target.dataset.d; if (d) { dSup = d; renderDatang(); } };
   ['dDari', 'dSampai', 'dBarang'].forEach(id => { $(id).oninput = renderDatang; }); $('dReset').onclick = () => { ['dDari', 'dSampai', 'dBarang'].forEach(id => { $(id).value = ''; }); dSup = 'semua'; renderDatang(); }; $('dMuat').onclick = muatHilir;
+
+  // --- halaman Kekurangan vendor: catatan kekurangan manual (barang, jenis, ukuran, qty, estimasi kirim) + riwayatnya ---
+  let kcRows = [], kcData = [], kcStat = 'semua';
+  const kcBaru = () => ({ no: '', jenis: '', ukuran: '', qty: '' });
+  function kcRender() {
+    $('kcBaris').innerHTML = kcRows.map((b, n) => {
+      const h = HARGA.find(x => String(x.no) === String(b.no)), js = h ? jenisItem(h.no, h.nama) : [];
+      return `<tr data-n="${n}"><td><select class="im-item">${opsiItemMasuk(b.no)}</select></td>
+        <td><select class="im-jenis" ${h ? '' : 'disabled'}>${js.length > 1 ? '<option value="">Pilih</option>' : ''}${js.map(j => `<option value="${j}" ${b.jenis === j ? 'selected' : ''}>${NAMA_JENIS[j]}</option>`).join('')}</select></td>
+        <td class="ukcell">${b.jenis === '-' ? '<span class="muted">Tanpa ukuran</span>' : b.jenis ? daftarUkuran(b.jenis).map(u => `<button type="button" class="ukb ${u === b.ukuran ? 'on' : ''}" data-u="${esc(u)}">${esc(u)}</button>`).join('') : '<span class="muted">Pilih jenis dulu</span>'}</td>
+        <td><input class="im-qty" type="number" min="1" inputmode="numeric" placeholder="0" value="${esc(b.qty)}"></td><td><button class="x" type="button" title="Hapus baris" aria-label="Hapus baris">✕</button></td></tr>`;
+    }).join('');
+  }
+  async function kcIsiVendor() {
+    let nama = ['Wahyu Ardianto'];
+    try { if (Masuk.kode()) { const v = (await rpcKode('admin_daftar_vendor', {})).filter(x => x.aktif).map(x => x.nama); if (v.length) nama = v; } } catch (e) { /* pakai bawaan */ }
+    $('kcVendor').innerHTML = nama.map(n => `<option>${esc(n)}</option>`).join('');
+  }
+  function kcKosongkan() { kcRows = [kcBaru()]; $('kcTgl').value = tgl0(); ['kcRef', 'kcEst', 'kcKet'].forEach(id => { $(id).value = ''; }); $('kcPesan').textContent = ''; kcRender(); kcIsiVendor(); }
+  $('kcBatal').onclick = kcKosongkan;
+  $('kcTambah').onclick = () => { kcRows.push(kcBaru()); kcRender(); };
+  $('kcBaris').onchange = e => {
+    const tr = e.target.closest('tr'); if (!tr) return; const b = kcRows[tr.dataset.n];
+    if (e.target.classList.contains('im-item')) { b.no = e.target.value; const h = HARGA.find(x => String(x.no) === String(b.no)), js = h ? jenisItem(h.no, h.nama) : []; b.jenis = js.length === 1 ? js[0] : ''; b.ukuran = b.jenis === '-' ? '-' : ''; kcRender(); }
+    else if (e.target.classList.contains('im-jenis')) { b.jenis = e.target.value; b.ukuran = b.jenis === '-' ? '-' : ''; kcRender(); }
+  };
+  $('kcBaris').oninput = e => { if (e.target.classList.contains('im-qty')) kcRows[e.target.closest('tr').dataset.n].qty = e.target.value; };
+  $('kcBaris').onclick = e => {
+    const ub = e.target.closest('.ukb'); if (ub) { kcRows[ub.closest('tr').dataset.n].ukuran = ub.dataset.u; kcRender(); return; }
+    if (!e.target.classList.contains('x')) return; if (kcRows.length === 1) kcRows = [kcBaru()]; else kcRows.splice(e.target.closest('tr').dataset.n, 1); kcRender();
+  };
+  $('kcSimpan').onclick = async () => {
+    const ps = $('kcPesan'), btn = $('kcSimpan'); ps.style.color = 'var(--bad)';
+    const baris = kcRows.filter(b => b.no || b.qty || b.jenis);
+    if (!baris.length || baris.some(b => !b.no || !b.jenis || (b.jenis !== '-' && !b.ukuran) || !(Number(b.qty) > 0))) { ps.textContent = 'Lengkapi barang, jenis, ukuran, dan qty di setiap baris.'; return; }
+    btn.disabled = true; btn.textContent = 'Menyimpan…'; ps.textContent = '';
+    try {
+      await rpcKode('catat_kekurangan', { p_tanggal: $('kcTgl').value || tgl0(), p_vendor: $('kcVendor').value.trim(), p_referensi: $('kcRef').value.trim(), p_estimasi: $('kcEst').value || null, p_keterangan: $('kcKet').value.trim(),
+        p_baris: baris.map(b => ({ item_no: Number(b.no), jenis_ukuran: b.jenis, ukuran: b.ukuran, qty: Number(b.qty) })) });
+      kcKosongkan(); ps.style.color = 'var(--ok)'; ps.textContent = 'Kekurangan tersimpan dan masuk riwayat.'; await muatKc();
+    } catch (e) { ps.textContent = 'Gagal: ' + e.message; }
+    btn.disabled = false; btn.textContent = 'Simpan kekurangan';
+  };
+  async function muatKc() {
+    if (!kcRows.length) kcKosongkan();
+    if (!Masuk.kode()) { kcData = []; $('infoKc').innerHTML = 'Riwayat kekurangan vendor dibuka setelah login. <button class="btn" id="kcMasuk" type="button">Masuk dan muat</button>'; $('kcMasuk').onclick = () => Masuk.wajib().then(muatKc).catch(() => {}); renderKc(); return; }
+    try { kcData = await rpc('daftar_kekurangan_catat', { kode: 'sesi' }); } catch (e) { $('infoKc').textContent = 'Gagal memuat: ' + e.message; return; }
+    renderKc();
+  }
+  function renderKc() {
+    const grup = new Map();
+    for (const r of kcData) {
+      if (!grup.has(r.id)) grup.set(r.id, { id: r.id, tgl: String(r.tanggal).slice(0, 10), vendor: r.vendor, ref: r.referensi || '', est: r.estimasi_kirim ? String(r.estimasi_kirim).slice(0, 10) : '', ket: r.keterangan || '', status: r.status, pcs: 0, rinci: new Map(), tj: new Map(), brg: new Set(), baris: [] });
+      const m = grup.get(r.id); m.brg.add(r.item_nama); m.pcs += Number(r.qty); m.tj.set(r.jenis_ukuran, (m.tj.get(r.jenis_ukuran) || 0) + Number(r.qty)); m.baris.push(r.item_nama);
+      const pj = m.rinci.get(r.item_nama) || m.rinci.set(r.item_nama, new Map()).get(r.item_nama), pu = pj.get(r.jenis_ukuran) || pj.set(r.jenis_ukuran, new Map()).get(r.jenis_ukuran); pu.set(r.ukuran, (pu.get(r.ukuran) || 0) + Number(r.qty));
+    }
+    const semua = [...grup.values()], dari = $('kcDari').value, sampai = $('kcSampai').value, qb = $('kcBarang').value.toLowerCase().trim();
+    const hariIni = wibIso(), NS = { terbuka: 'Menunggu vendor', terpenuhi: 'Terpenuhi', batal: 'Dibatalkan' };
+    $('kcChips').innerHTML = [['semua', 'Semua'], ['terbuka', 'Menunggu vendor'], ['terpenuhi', 'Terpenuhi'], ['batal', 'Dibatalkan']].map(([k, n]) => `<button class="chip ${kcStat === k ? 'on' : ''}" data-k="${k}">${n}</button>`).join('');
+    const sesuai = x => (kcStat === 'semua' || x.status === kcStat) && (!dari || x.tgl >= dari) && (!sampai || x.tgl <= sampai);
+    const namaBrg = [...new Set(semua.filter(sesuai).flatMap(x => [...x.brg]))].sort((a, b) => a.localeCompare(b, 'id')), dl = $('kcBarangList'), kunci = namaBrg.join('|');
+    if (dl.dataset.k !== kunci) { dl.dataset.k = kunci; dl.innerHTML = namaBrg.map(n => `<option value="${esc(n)}"></option>`).join(''); }
+    const f = semua.filter(x => sesuai(x) && (!qb || [...x.brg].join(' ').toLowerCase().includes(qb)));
+    const terbuka = semua.filter(x => x.status === 'terbuka');
+    if (Masuk.kode()) $('infoKc').textContent = `${idn(terbuka.length)} catatan menunggu vendor · ${idn(terbuka.reduce((a, x) => a + x.pcs, 0))} pcs belum dikirim · ${idn(semua.length)} catatan seluruhnya`;
+    $('kcBody').innerHTML = f.map(x => {
+      const telat = x.status === 'terbuka' && x.est && x.est < hariIni;
+      const est = x.est ? `<div class="${telat ? 'kurang' : 'muted'}">Estimasi kirim ${esc(tglPendek(x.est))}${telat ? ' · terlambat' : ''}</div>` : '';
+      const aksi = x.status === 'terbuka' ? `<button class="btn" data-kc="terpenuhi" data-id="${x.id}" type="button">Terpenuhi</button> <button class="btn" data-kc="batal" data-id="${x.id}" type="button">Batal</button>` : `<button class="btn" data-kc="terbuka" data-id="${x.id}" type="button">Buka lagi</button>`;
+      return `<tr><td>${tglPendek(x.tgl)}</td><td><b>${esc(x.vendor)}</b><div class="muted">${esc(x.ref || '-')}${x.ket ? ' · ' + esc(x.ket) : ''}</div>${est}<div style="margin-top:4px"><span class="badge ${x.status === 'terpenuhi' ? 'ok' : x.status === 'batal' ? '' : 'warn'}">${NS[x.status]}</span></div><div style="margin-top:6px">${aksi}</div></td><td>${htmlBarangDatang(x)}</td>
+        <td class="r dtot">${['baju', 'celana', 'sepatu', '-'].filter(j => x.tj.get(j)).map(j => `<div><span>${j === '-' ? 'Lainnya' : NAMA_JENIS[j]}</span><b>${idn(x.tj.get(j))}</b></div>`).join('')}</td></tr>`;
+    }).join('') || `<tr><td colspan="4" class="kosongnya">${Masuk.kode() ? 'Tidak ada catatan kekurangan yang cocok.' : 'Masuk dulu untuk melihat riwayat.'}</td></tr>`;
+  }
+  $('kcChips').onclick = e => { const k = e.target.dataset && e.target.dataset.k; if (k) { kcStat = k; renderKc(); } };
+  $('kcBody').onclick = async e => {
+    const b = e.target.closest('[data-kc]'); if (!b) return;
+    if (b.dataset.kc === 'batal' && !confirm('Batalkan catatan kekurangan ini?')) return;
+    b.disabled = true; try { await rpcKode('tutup_kekurangan', { p_id: Number(b.dataset.id), p_status: b.dataset.kc }); await muatKc(); } catch (x) { alert('Gagal: ' + x.message); b.disabled = false; }
+  };
+  ['kcDari', 'kcSampai', 'kcBarang'].forEach(id => { $(id).oninput = renderKc; });
+  $('kcReset').onclick = () => { ['kcDari', 'kcSampai', 'kcBarang'].forEach(id => { $(id).value = ''; }); kcStat = 'semua'; renderKc(); };
+  $('kcMuat').onclick = muatKc;
   // --- form barang masuk ---
   const opsiItemMasuk = no => '<option value="">Pilih barang</option>' + [...new Set(HARGA.map(h => h.kat))].map(k => `<optgroup label="${esc(k)}">` + HARGA.filter(h => h.kat === k).map(h => `<option value="${h.no}" ${String(h.no) === String(no) ? 'selected' : ''}>${esc(h.nama)}</option>`).join('') + '</optgroup>').join('');
   function renderBarisMasuk() {
