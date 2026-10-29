@@ -623,7 +623,7 @@
   @media (max-width: 1100px) { .datang2 { grid-template-columns:minmax(0,1fr); } }
   .rkmx { width:100% !important; min-width:0; } .rkmx { table-layout:auto; } .rkmx th:first-child, .rkmx td:first-child { min-width:0; width:34%; white-space:normal; } .rkmx th.r, .rkmx td.r { min-width:0; text-align:center; } .rkmx th, .rkmx td { padding:7px 6px; white-space:nowrap; } .rkmx th.r { white-space:normal; line-height:1.15; font-size:.68rem; } .rkmx .mxv { font-weight:600; } .rkmx .mxn { color:var(--muted); opacity:.5; }
   .rkmx .rktot td { border-top:2px solid var(--stroke); background:rgba(0,0,0,.03); }
-  #iBaris select, #kcBaris select, #rBaris select, #iBaris input, #kcBaris input, #rBaris input { width:100%; min-width:0; } #iBaris select.im-jenis, #kcBaris select.im-jenis, #rBaris select.im-jenis { min-width:105px; } #iBaris select.im-item, #kcBaris select.im-item, #rBaris select.im-item { min-width:150px; } #iBaris td:nth-child(2), #kcBaris td:nth-child(2), #rBaris td:nth-child(2) { min-width:105px; } #iBaris td:nth-child(4), #kcBaris td:nth-child(4), #rBaris td:nth-child(4) { min-width:70px; } #iBaris td, #kcBaris td, #rBaris td { padding-left:6px; padding-right:6px; } #iBaris select:disabled, #kcBaris select:disabled, #rBaris select:disabled { opacity:.55; cursor:not-allowed; }
+  #iBaris select, #kcBaris select, #rBaris select, #iBaris input, #kcBaris input, #rBaris input { width:100%; min-width:0; } #iBaris select.im-jenis, #kcBaris select.im-jenis, #rBaris select.im-jenis { min-width:92px; } #iBaris select.im-item, #kcBaris select.im-item, #rBaris select.im-item { min-width:120px; } #iBaris td:nth-child(2), #kcBaris td:nth-child(2), #rBaris td:nth-child(2) { min-width:92px; } #iBaris td:nth-child(4), #kcBaris td:nth-child(4), #rBaris td:nth-child(4) { min-width:60px; } #iBaris td, #kcBaris td, #rBaris td { padding-left:6px; padding-right:6px; } #iBaris select:disabled, #kcBaris select:disabled, #rBaris select:disabled { opacity:.55; cursor:not-allowed; }
   .ukcell { display:flex; flex-wrap:wrap; gap:5px; min-width:190px; } .ukb { min-width:42px; padding:5px 9px; border:1px solid var(--stroke); border-radius:9px; background:#fff; cursor:pointer; font-size:.82rem; font-weight:600; color:var(--text); } .ukb:hover { border-color:var(--accent); } .ukb.on { background:var(--accent); border-color:var(--accent); color:#fff; }
   .dfilter { display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; } .dfilter label { display:flex; flex-direction:column; gap:4px; font-size:.76rem; font-weight:600; color:var(--muted); }
   .dfilter input { width:100%; padding:8px 10px; border:1px solid #CBD5E1; border-radius:10px; background:#fff; color:var(--text); font:inherit; font-size:.88rem; font-weight:400; }
@@ -654,7 +654,7 @@
   .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
   @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); height:auto; } .rk2k > .card { height:auto; } .pmscroll { max-height:70vh; } .rktut { height:auto; overflow:visible; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.275">
+<link rel="stylesheet" href="../aset/tema.css?v=1.276">
 </head>
 <body>
 <div class="shell">
@@ -750,7 +750,7 @@
         <label>No. PO / surat jalan terkait<input id="kcRef" autocomplete="off" placeholder="opsional"></label><label>Estimasi kirim<input type="date" id="kcEst"></label>
         <label style="grid-column:1/-1">Keterangan<input id="kcKet" autocomplete="off" placeholder="mis. menunggu bahan, janji kirim minggu depan"></label></div>
       <div class="row" style="margin:16px 0 8px"><b>Barang yang kurang</b><button class="btn" id="kcTambah" type="button">+ Tambah baris</button></div>
-      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:150px">Barang</th><th style="min-width:105px">Jenis</th><th style="min-width:130px">Ukuran</th><th style="min-width:70px">Qty</th><th></th></tr></thead><tbody id="kcBaris"></tbody></table></div>
+      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:120px">Barang</th><th style="min-width:92px">Jenis</th><th style="min-width:110px">Ukuran</th><th style="min-width:60px">Qty</th><th></th></tr></thead><tbody id="kcBaris"></tbody></table></div>
       <div class="hint" id="kcPesan"></div>
       <div class="bgact" style="margin-top:12px"><button class="cta" id="kcSimpan" type="button">Simpan kekurangan</button><button class="btn" id="kcBatal" type="button">Kosongkan form</button></div>
     </section>
@@ -794,7 +794,7 @@
         <label>Tanggal<input type="date" id="iTgl"></label><label>Supplier<select id="iSup"><option>Wahyu Ardianto</option><option>Online</option></select></label>
         <label><span id="iDokL">No. surat jalan / faktur Wahyu Ardianto</span><input id="iDok"></label><label>Keterangan<input id="iKet" placeholder="opsional"></label></div>
       <div class="row" style="margin:16px 0 8px"><b>Barang yang masuk</b><button class="btn" id="iTambah">+ Tambah baris</button></div>
-      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:150px">Barang</th><th style="min-width:105px">Jenis</th><th style="min-width:130px">Ukuran</th><th style="min-width:70px">Qty</th><th></th></tr></thead><tbody id="iBaris"></tbody></table></div>
+      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:120px">Barang</th><th style="min-width:92px">Jenis</th><th style="min-width:110px">Ukuran</th><th style="min-width:60px">Qty</th><th></th></tr></thead><tbody id="iBaris"></tbody></table></div>
       <div class="hint" id="iPesan"></div>
       <div class="bgact" style="margin-top:12px"><button class="cta" id="iSimpan">Simpan barang masuk</button><button class="btn" id="iBatal">Kosongkan form</button></div>
     </section>
@@ -824,7 +824,7 @@
         <label><span id="rRefL">Surat jalan asal</span><select id="rRef"></select></label>
         <label>Alasan retur<input id="rAlasan" maxlength="200" placeholder="mis. salah ukuran, cacat"></label></div>
       <div class="row" style="margin:16px 0 8px"><b>Barang yang diretur</b><button class="btn" id="rTambah">+ Tambah baris</button></div>
-      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:150px">Barang</th><th style="min-width:105px">Jenis</th><th style="min-width:130px">Ukuran</th><th style="min-width:70px">Qty</th><th></th></tr></thead><tbody id="rBaris"></tbody></table></div>
+      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:120px">Barang</th><th style="min-width:92px">Jenis</th><th style="min-width:110px">Ukuran</th><th style="min-width:60px">Qty</th><th></th></tr></thead><tbody id="rBaris"></tbody></table></div>
       <div class="hint" id="rPesan"></div>
       <div class="bgact" style="margin-top:12px"><button class="cta" id="rSimpan">Simpan retur</button><button class="btn" id="rBatal">Kosongkan form</button></div>
     </section>

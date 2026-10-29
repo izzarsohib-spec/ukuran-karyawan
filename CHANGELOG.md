@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 29 Okt 2026
+- **v1.276** Form Catat barang datang, Catat kekurangan, dan Retur: lebar kolom Barang, Jenis, Ukuran, dan Qty dirapatkan supaya kolom Qty tidak terpotong setelah kartu tutorial dilebarkan.
 - **v1.275** Lebar semua kartu tutorial di halaman Pemesanan & Barang Datang disamakan dengan kartu "Cara mengisi permintaan" di halaman Permintaan (kolom kiri sekitar 27% lebar, minimal 270 px), di keempat chip.
 - **v1.274** (melengkapi v1.273) Judul halaman, sidebar modul, dan menu ponsel juga memakai nama Pemesanan & Barang Datang.
 - **v1.273** Menu dan judul halaman "Rekap Permintaan & Barang Datang" diganti menjadi **Pemesanan & Barang Datang** (bar atas portal, sidebar modul, menu ponsel, dan judul halaman).
