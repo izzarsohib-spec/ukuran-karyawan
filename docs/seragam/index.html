@@ -629,7 +629,7 @@
   .dfilter input { width:100%; padding:8px 10px; border:1px solid #CBD5E1; border-radius:10px; background:#fff; color:var(--text); font:inherit; font-size:.88rem; font-weight:400; }
   #dBody td:first-child { white-space:nowrap; } .dbrg { padding:2px 0; border-bottom:1px dashed var(--stroke); font-size:.84rem; } .dbrg:last-child { border-bottom:0; } .dlain summary { cursor:pointer; color:var(--accent); font-size:.8rem; font-weight:600; padding:3px 0; } #dBody td { white-space:normal; vertical-align:top; } #dBody td:nth-child(3) { min-width:180px; }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.224">
+<link rel="stylesheet" href="../aset/tema.css?v=1.225">
 </head>
 <body>
 <div class="shell">
@@ -747,7 +747,7 @@
       <div class="chips" id="dChips" style="margin-bottom:12px"></div>
       <div class="fgrid dfilter">
         <label>Dari tanggal<input type="date" id="dDari"></label><label>Sampai tanggal<input type="date" id="dSampai"></label>
-        <label style="grid-column:1/-1">Cari barang<input type="search" id="dBarang" placeholder="mis. sepatu PDL" autocomplete="off"></label>
+        <label style="grid-column:1/-1">Cari barang<input type="search" id="dBarang" list="dBarangList" placeholder="Ketik atau pilih barang" autocomplete="off"><datalist id="dBarangList"></datalist></label>
       </div>
       <div class="bgact" style="margin:8px 0 12px"><button class="btn" id="dReset" type="button">Reset filter</button></div>
       <div class="wrap tabelminta"><table><thead><tr><th>Tanggal</th><th>Supplier &amp; dokumen</th><th>Barang yang datang</th><th class="r">Total</th></tr></thead><tbody id="dBody"></tbody></table></div>
@@ -3245,6 +3245,8 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
       const m = grup.get(k); m.pcs += Number(g.qty); m.baris.push(`${g.item_nama}${g.jenis_ukuran === '-' ? '' : ' ' + g.ukuran} ×${g.qty}`);
     }
     const semua = [...grup.values()].sort((a, b) => b.tgl.localeCompare(a.tgl));
+    const namaBrg = [...new Set([...HARGA.map(h => h.nama), ...gerak.map(g => g.item_nama)].filter(Boolean))].sort((a, b) => a.localeCompare(b, 'id')), dl = $('dBarangList');
+    if (dl.childElementCount !== namaBrg.length) dl.innerHTML = namaBrg.map(n => `<option value="${esc(n)}"></option>`).join('');
     const online = x => String(x.sup).toLowerCase() === 'online';
     $('dChips').innerHTML = [['semua', 'Semua'], ['vendor', 'Dari vendor'], ['online', 'Online']].map(([k, n]) => `<button class="chip ${dSup === k ? 'on' : ''}" data-d="${k}">${n}</button>`).join('');
     const f = semua.filter(x => (dSup === 'semua' || (dSup === 'online') === online(x)) && (!dari || x.tgl >= dari) && (!sampai || x.tgl <= sampai) && (!qb || x.baris.join(' ').toLowerCase().includes(qb)));
