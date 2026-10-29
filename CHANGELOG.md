@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 29 Okt 2026
+- **v1.266** (perbaikan v1.265: perubahan sebelumnya belum benar-benar masuk) Kartu Rekap pesanan ke Mas Wahyu dan Belanja online kini benar-benar tidak tampil di chip Riwayat & monitoring.
 - **v1.265** Rekap Permintaan: dua kartu bawah (Rekap pesanan ke Mas Wahyu dan Belanja online) tidak lagi tampil di chip Riwayat & monitoring; hanya muncul di chip Belum selesai ditandai.
 - **v1.264** Halaman Barang datang dipindah menjadi chip di halaman Rekap permintaan, tepat di kiri chip Kekurangan vendor (urutan: Belum selesai ditandai, Riwayat & monitoring, Barang datang, Kekurangan vendor). Isi sama (form catat di kiri, riwayat di kanan). Sub-menu Rekap permintaan dan Barang datang dihapus karena semuanya kini satu halaman; tautan lama ke #datang otomatis membuka chip ini.
 - **v1.263** Halaman Kekurangan Vendor dipindah menjadi chip ketiga di halaman Rekap permintaan (Belum selesai ditandai, Riwayat & monitoring, Kekurangan vendor). Isinya sama (form Catat kekurangan di kiri, riwayat di kanan). Sub-menu Kekurangan vendor yang terpisah dihapus; tautan lama ke #kurang otomatis membuka chip ini.
