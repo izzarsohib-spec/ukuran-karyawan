@@ -637,8 +637,11 @@
   .seg { display:inline-flex; border:1px solid #CBD5E1; border-radius:10px; overflow:hidden; } .seg button { padding:6px 12px; border:0; background:#fff; cursor:pointer; font-size:.82rem; font-weight:600; color:var(--muted); } .seg button + button { border-left:1px solid #CBD5E1; }
   .seg button.on { background:var(--navy, #33475B); color:#fff; } .seg button.on.onl { background:var(--accent, #2F7F79); }
   .rkukw { margin-top:3px; display:flex; flex-direction:column; gap:1px; } .rkuk { font-size:.76rem; color:var(--muted); } .rkuk b { color:var(--accent); text-transform:uppercase; font-size:.68rem; margin-right:4px; } .rkuk i { font-style:normal; font-weight:700; color:var(--text); margin:0 6px 0 1px; }
+  .rk2 { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr); gap:16px; align-items:start; } .rk2k { min-width:0; } .rk2k > .card { margin:0; } .rktut { position:sticky; top:70px; margin:0; }
+  .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
+  @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); } .rktut { position:static; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.240">
+<link rel="stylesheet" href="../aset/tema.css?v=1.241">
 </head>
 <body>
 <div class="shell">
@@ -2957,6 +2960,18 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const semua = [...tot.values()].reduce((a, b) => a + b, 0);
     return `<section class="rk" style="margin-bottom:16px"><div class="rkh"><h4>${judul}</h4><b>${idn(semua)} pcs</b></div><div class="wrap rkt"><table class="rkmx"><thead><tr><th>Jenis barang</th>${kol.map(u => `<th class="r">${u === '?' ? 'Tanpa ukuran' : esc(u)}</th>`).join('')}<th class="r">Total</th></tr></thead><tbody>${baris}<tr class="rktot"><td><b>Total</b></td>${kol.map(u => `<td class="r"><b>${idn(tot.get(u) || 0)}</b></td>`).join('')}<td class="r"><b>${idn(semua)}</b></td></tr></tbody></table></div></section>`;
   }
+  // kartu tutorial di sisi kanan halaman Rekap Permintaan: urutan alur dan alasannya
+  const TUTORIAL_REKAP = `<aside class="card pcard rktut"><h3 style="margin:0 0 4px">Alur setelah memo disetujui</h3><p class="muted" style="margin:0 0 12px;font-size:.84rem">Kenapa halaman ini bekerja seperti ini:</p>
+    <ol class="tutl">
+      <li><b>Pimpinan menyetujui memo.</b> Pak Yasir dan Pak Ferry sama-sama setuju, lalu lokasinya otomatis muncul di kiri. <span>Kenapa: hanya permintaan yang sudah disetujui kedua pimpinan yang boleh dipesan, jadi tidak ada yang perlu dipilih atau disaring lagi.</span></li>
+      <li><b>Tandai tiap item: Mas Wahyu atau Online.</b> Seragam dan sepatu diusulkan ke Mas Wahyu, aksesoris diusulkan Online; ubah bila perlu. <span>Kenapa: dua jalur pemasok punya cara pesan dan bayar yang berbeda (vendor ditagih belakangan, online dibayar langsung), dan satu lokasi bisa memakai dua jalur sekaligus, sehingga penandaan dilakukan per item.</span></li>
+      <li><b>Simpan penandaan.</b> Tanda tersimpan, dan permintaan yang punya item ke Mas Wahyu otomatis ditandai <i>PO terkirim</i>. <span>Kenapa: sejak saat itu item itu dianggap sudah dipesan, dan masuk hitungan Kekurangan Vendor (dipesan dikurangi yang sudah datang).</span></li>
+      <li><b>Kirim rekap dan belanja.</b> Unduh PDF rekap untuk Mas Wahyu (per jenis dan ukuran), lalu salin daftar belanja online. <span>Kenapa: Mas Wahyu cukup menerima satu rekap gabungan per ukuran, tidak perlu satu surat per lokasi.</span></li>
+      <li><b>Catat barang datang.</b> Di halaman Barang datang, isi barang yang diterima dari Mas Wahyu atau dari online. <span>Kenapa: stok gudang bertambah dan kekurangan vendor berkurang otomatis.</span></li>
+      <li><b>Bila vendor belum lengkap,</b> catat di Kekurangan vendor beserta estimasi kirimnya. <span>Kenapa: statusnya (belum, sebagian, atau terpenuhi) dibandingkan sendiri dengan barang yang datang.</span></li>
+      <li><b>Setelah stok ada,</b> lanjut ke Ploting dan Pengiriman ke lokasi.</li>
+    </ol>
+    <div class="hint" style="margin-top:10px">Salah tandai? Ubah tombolnya lalu simpan lagi; tanda lama akan diganti.</div></aside>`;
   function kartuPermintaan(p) {
     const items = p.items || [], kotor = items.filter(i => kotorPm(p, i)).length, tersimpan = items.filter(i => pmSaved.has(pmKey(p.id, i.no))).length, lengkap = tersimpan === items.length && !kotor;
     const baris = items.map(i => {
@@ -2985,8 +3000,8 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const bar = `<div class="pmbar"><div><b>${idn(kotorN)}</b> item belum disimpan</div><label>Tanggal pemesanan<input type="date" id="pmTgl" value="${esc(pmTgl || wibIso())}"></label><button class="cta" id="pmSimpan" type="button" ${kotorN ? '' : 'disabled'}>Simpan penandaan</button></div>`;
     const matriksW = (['Baju', 'Celana', 'Sepatu'].map(j => { const g = dW.ukuran.find(x => x.jenis === j); return g ? matriksRk(g, j === 'Sepatu' ? 'Sepatu' : 'Seragam: ' + j) : ''; }).join('')) || '<div class="kosongnya">Belum ada seragam atau sepatu yang ditandai ke Mas Wahyu.</div>';
     const lainW = dW.aks.length ? `<section class="rk" style="margin-bottom:16px"><div class="rkh"><h4>Tanpa ukuran (ke Mas Wahyu)</h4><b>${idn(dW.aks.reduce((a, x) => a + x.qty, 0))} pcs</b></div><div class="wrap rkt"><table><tbody>${dW.aks.map(a => `<tr><td><b>${esc(namaRapi(a.nama))}</b></td><td class="r">${idn(a.qty)}</td></tr>`).join('')}</tbody></table></div></section>` : '';
-    $('rkIsi').innerHTML = bar + (tampil.length ? tampil.map(kartuPermintaan).join('') : `<div class="kosongnya">${semuaP.length ? 'Tidak ada lokasi yang cocok dengan filter ini.' : 'Belum ada lokasi yang disetujui kedua pimpinan. Setelah disetujui, lokasinya muncul di sini.'}</div>`)
-      + `<h3 class="rksub" style="margin-top:22px">Rekap pesanan ke Mas Wahyu</h3>${matriksW}${lainW}<h3 class="rksub">Daftar belanja online</h3><div id="pmOnline"></div>`;
+    $('rkIsi').innerHTML = '<div class="rk2"><div class="rk2k"><section class="card pcard"><h3 style="margin:0 0 12px">Tandai pemesanan per item</h3>' + bar + (tampil.length ? tampil.map(kartuPermintaan).join('') : `<div class="kosongnya">${semuaP.length ? 'Tidak ada lokasi yang cocok dengan filter ini.' : 'Belum ada lokasi yang disetujui kedua pimpinan. Setelah disetujui, lokasinya muncul di sini.'}</div>`)
+      + `<h3 class="rksub" style="margin-top:22px">Rekap pesanan ke Mas Wahyu</h3>${matriksW}${lainW}<h3 class="rksub">Daftar belanja online</h3><div id="pmOnline"></div></section></div>` + TUTORIAL_REKAP + '</div>';
     // daftar belanja online (digabung per item)
     const agg = new Map(); for (const p of dO.ps) for (const i of p.items) { const k = String(i.nama).toUpperCase(), e = agg.get(k) || { n: i.nama, q: 0, l: [] }; e.q += Number(i.qty) || 0; e.l.push(`${p.client} · ${namaRapi(p.bagian_kerja)} (${Number(i.qty) || 0})`); agg.set(k, e); }
     $('pmOnline').innerHTML = agg.size ? `<div class="wrap rkt"><table><thead><tr><th>Item</th><th class="r">Jumlah</th><th>Untuk lokasi</th></tr></thead><tbody>${[...agg.values()].sort((a, b) => a.n.localeCompare(b.n, 'id')).map(e => `<tr><td><b>${esc(namaRapi(e.n))}</b></td><td class="r">${idn(e.q)}</td><td>${e.l.map(t => `<small>${esc(t)}</small>`).join('')}</td></tr>`).join('')}</tbody></table></div><div class="bgact" style="margin-top:8px"><button class="btn" id="pmSalin" type="button">Salin daftar belanja online</button></div>` : '<div class="kosongnya">Belum ada item yang ditandai online.</div>';
