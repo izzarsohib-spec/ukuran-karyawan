@@ -645,16 +645,15 @@
   #rkDatang > header, #rkKurang > header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 12px; } #rkDatang > header h1, #rkKurang > header h1 { font-size:1.15rem; margin:0; } #rkDatang > header .sub, #rkKurang > header .sub { font-size:.82rem; }
   .tutbar { margin:0 0 14px !important; padding:12px 16px !important; } .tutbar > b { display:block; margin-bottom:6px; font-size:.9rem; }
   .tutrow { flex-direction:row !important; flex-wrap:wrap; gap:6px 26px !important; } .tutrow li { flex:1 1 230px; max-width:360px; }
-  #rkDatang:not([hidden]), #rkKurang:not([hidden]) { display:grid; grid-template-columns:minmax(210px,240px) minmax(0,1fr); gap:16px; align-items:start; } .rkw { min-width:0; } .rkw .datang2 { grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); } #rkDatang .tutl, #rkKurang .tutl { font-size:.82rem; }
+  #rkDatang:not([hidden]), #rkKurang:not([hidden]) { display:grid; grid-template-columns:minmax(210px,240px) minmax(0,1fr); gap:16px; align-items:stretch; } .rkw { min-width:0; display:flex; flex-direction:column; } .rkw > .datang2 { flex:1; align-items:stretch !important; } .rkw .datang2 > section { height:auto; } .rkw .datang2 { grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); } #rkDatang .tutl, #rkKurang .tutl { font-size:.82rem; }
   #rkDatang .rktut, #rkKurang .rktut { height:auto; min-height:0; overflow:visible; }
   @media (max-width: 1100px) { #rkDatang:not([hidden]), #rkKurang:not([hidden]) { grid-template-columns:minmax(0,1fr); } }
-  #rkDatang > .rkw > header, #rkKurang > .rkw > header { display:none; } #rkDatang .tutl, #rkKurang .tutl { margin-top:2px; } .rkw > .datang2 { align-items:start; }
-  #rkKpi, label.search[hidden] { display:none !important; }
+  #rkDatang > .rkw > header, #rkKurang > .rkw > header { display:none; } #rkDatang .tutl, #rkKurang .tutl { margin-top:2px; }   #rkKpi, label.search[hidden] { display:none !important; }
   .rk2 { display:grid; grid-template-columns:minmax(260px,1fr) minmax(0,1.7fr); gap:16px; align-items:stretch; height:clamp(580px, calc(100vh - 230px), 780px); } .rk2k { min-width:0; min-height:0; } .rk2k > .card { margin:0; height:100%; display:flex; flex-direction:column; min-height:0; } .pmscroll { flex:1; min-height:0; overflow-y:auto; padding-right:4px; } .rktut { margin:0; height:100%; overflow-y:auto; min-height:0; }
   .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
   @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); height:auto; } .rk2k > .card { height:auto; } .pmscroll { max-height:70vh; } .rktut { height:auto; overflow:visible; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.270">
+<link rel="stylesheet" href="../aset/tema.css?v=1.271">
 </head>
 <body>
 <div class="shell">

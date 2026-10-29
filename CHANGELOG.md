@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 29 Okt 2026
+- **v1.271** Chip Barang datang dan Kekurangan vendor: tinggi tiga kartu (tutorial, form, riwayat) disamakan sehingga rata di atas dan di bawah.
 - **v1.270** Chip Barang datang dan Kekurangan vendor: judul halaman di atas kartu kanan dihapus (sudah ada di tab) supaya kartu tutorial, form, dan riwayat sejajar dari garis atas yang sama. Tombol Masuk dan muat untuk riwayat kekurangan dipindah ke dalam kartu riwayat.
 - **v1.269** Chip Barang datang dan Kekurangan vendor: kolom tutorial di kiri dipersempit dan kartu form dilebarkan supaya kolom Qty pada form tidak terpotong.
 - **v1.268** Kartu tutorial di halaman Rekap permintaan dipindah ke kiri untuk semua chip (Belum selesai ditandai, Riwayat & monitoring, Barang datang, Kekurangan vendor); isi halaman di kanan. Di layar sempit (di bawah 1100 px) tutorial tampil di atas.
