@@ -113,3 +113,23 @@ select option, .bar select option, .fg select option, .massal select option { ba
 /* garis tepi halus untuk kotak ringkasan yang sebelumnya tanpa outline */
 .kpi, .sums div, .vk, .rsum div, .rwi { border:1px solid #E1E7EF; }
 .sums div, .rsum div { border-radius:12px; }
+
+/* sidebar dan bar tab atas: kartu biru mengambang dengan outline (rapi, tidak menempel ke tepi) */
+.side, .atas { border:1.5px solid #6F89A6; box-shadow:0 0 0 3px rgba(51,71,91,.10), 0 6px 18px rgba(15,35,60,.22), inset 0 1px 0 rgba(255,255,255,.10); }
+.atas { top:10px; left:10px; right:10px; height:48px; padding:0 8px; gap:12px; border-radius:16px; }
+.atas .tab { gap:4px; align-items:center; }
+.atas .tab button { height:34px; margin:0; padding:0 16px; border:1px solid transparent; border-radius:10px; font-size:.88rem; position:relative; transition:background .15s ease, color .15s ease; }
+.atas .tab button:hover { background:rgba(255,255,255,.10); }
+.atas .tab button.on { background:var(--navy2); border-color:#587089; color:#FFFFFF; box-shadow:inset 0 -2.5px 0 #7FD6C8; }
+.isi.beratas iframe { top:68px; height:calc(100% - 68px); }
+@media (min-width: 861px) {
+  .shell { grid-template-columns:68px minmax(0,1fr); }
+  .side { margin-top:10px; margin-bottom:10px; margin-left:10px; align-self:stretch; border-radius:16px; }
+  .side:hover, .side:focus-within { margin-right:-152px; }
+}
+@media (max-width: 860px) {
+  .side { margin:8px 8px 0; border-radius:14px; }
+  .atas { position:static; margin:8px; height:auto; border-radius:14px; }
+  .atas .tab { height:auto; padding:6px 0; overflow-x:auto; }
+  .isi.beratas iframe { top:auto; height:auto; }
+}

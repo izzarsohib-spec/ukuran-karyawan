@@ -4,6 +4,9 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
+## 29 Okt 2026
+- **v1.213** Sidebar biru dan bar tab atas dirapikan: keduanya jadi kartu mengambang dengan jarak dari tepi, sudut membulat, dan outline biru muda dengan bayangan halus. Tab di bar atas berbentuk tombol (tab aktif berlatar biru lebih terang dengan garis teal di bawah). Hanya tampilan.
+
 ## 28 Okt 2026
 - **v1.212** Warna navy (menu samping, bar tab atas, header matriks, header halaman tautan) diganti biru keabu-abuan lembut (slate #33475B) yang lebih tenang; teks dan penanda aktif disesuaikan. Hanya warna.
 - **v1.211** Seluruh warna dibuat lebih tenang dan senada dengan bar Monitoring: aksen teal diturunkan (#2F7F79), hijau, kuning, dan merah status (badge, angka, pesan) memakai nada lembut, cincin progres bergradasi mint ke teal, dan halaman tautan ringan ikut. Hanya warna.
