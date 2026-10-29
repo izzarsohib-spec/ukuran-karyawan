@@ -18,3 +18,21 @@ Tingkat temuan:
 - **INFO**: halaman bergulir melebihi layar, kartu `.k3` dengan ruang kosong besar atau sudut atau latar tidak sama dengan acuan (16px, putih), huruf kecil dari 10,5px.
 
 Acuan gaya: halaman **Monitoring pengisian** (kartu putih polos di atas latar halaman: sudut 16px, padding 20px 22px, garis tipis #DCE3EC, bayangan halus, judul 15px). Susunan kolom Barang datang dan kawan-kawan tetap tutorial di kiri. Jalankan sebelum push setelah mengubah halaman mana pun; temuan INFO "ruang kosong" pada kartu yang memang kosong (belum ada data) bisa diabaikan.
+
+## pasang-konfirmasi-vendor.ps1
+
+Memasang fitur konfirmasi Mas Wahyu lewat ntfy (rekap pesanan dan surat kekurangan) di Supabase. Dijalankan **oleh pemilik proyek** dari PowerShell (membutuhkan kunci `supabase` di keystore lokal; kunci tidak ada di repo):
+
+```
+powershell -ExecutionPolicy Bypass -File alat/pasang-konfirmasi-vendor.ps1 -TanpaTopik
+```
+
+Yang dilakukan:
+1. Menerapkan migrasi database `supabase/migrasi-konfirmasi-vendor.sql` dan `supabase/migrasi-kekurangan-surat.sql`.
+2. Men-deploy fungsi `supabase/functions/konfirmasi-vendor` (tanpa verify_jwt, karena tombol ntfy tidak bisa mengirim JWT; keamanan lewat token acak per pengiriman).
+3. Mengunggah tanda tangan vendor `Documents	td-wahyu.png` ke bucket privat `tanda-tangan/wahyu.png` (tidak ada di repo).
+4. Tanpa `-TanpaTopik`: membuat rahasia `NTFY_TOPIC_WAHYU` (topik ntfy vendor) dan menyimpannya di `Documents
+tfy-wahyu-topik.txt`.
+
+Skrip pemasangan lain (`pasang-*.ps1` untuk rekap, TTD, penambahan item) masih ada di `Documents` pemilik proyek.
+

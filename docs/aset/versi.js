@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.290', tanggal: '2026-10-29', catatan: 'Surat kekurangan ke Mas Wahyu lewat ntfy' };
+window.VERSI = { no: '1.291', tanggal: '2026-10-29', catatan: 'Dokumentasi pemasangan di repo' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
