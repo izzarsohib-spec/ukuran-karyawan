@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 29 Okt 2026
+- **v1.281** Barang datang dan Kekurangan vendor: kartu riwayat dipindah ke bawah selebar halaman (tutorial dan form berdampingan di atas), memakai tabel lebar (Tanggal, Supplier & dokumen, Barang, Total per jenis) tanpa geser ke samping, dengan gulir di dalam kartu. Retur tetap tiga kartu.
 - **v1.280** Kartu riwayat: tombol Reset filter dipindah ke pojok kanan atas kartu (sejajar judul) sehingga satu baris filter hemat.
 - **v1.279** Kartu riwayat (Barang datang, Kekurangan vendor, Retur) dipadatkan: label tanggal jadi "Dari" dan "Sampai" dengan dua kotak tanggal berdampingan yang muat tanpa terpotong, jarak filter dirapatkan, dan tombol Reset filter diperkecil, sehingga daftar riwayat mendapat ruang lebih besar.
 - **v1.278** Kartu riwayat di Barang datang, Kekurangan vendor, dan Retur: kotak tanggal disusun bertumpuk supaya tidak terpotong, dan tinggi kartu disesuaikan agar halaman tidak ikut bergulir di layar 1000 px.
