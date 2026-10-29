@@ -642,7 +642,7 @@
   .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
   @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); height:auto; } .rk2k > .card { height:auto; } .pmscroll { max-height:70vh; } .rktut { height:auto; overflow:visible; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.245">
+<link rel="stylesheet" href="../aset/tema.css?v=1.246">
 </head>
 <body>
 <div class="shell">
@@ -2962,17 +2962,17 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     return `<section class="rk" style="margin-bottom:16px"><div class="rkh"><h4>${judul}</h4><b>${idn(semua)} pcs</b></div><div class="wrap rkt"><table class="rkmx"><thead><tr><th>Jenis barang</th>${kol.map(u => `<th class="r">${u === '?' ? 'Tanpa ukuran' : esc(u)}</th>`).join('')}<th class="r">Total</th></tr></thead><tbody>${baris}<tr class="rktot"><td><b>Total</b></td>${kol.map(u => `<td class="r"><b>${idn(tot.get(u) || 0)}</b></td>`).join('')}<td class="r"><b>${idn(semua)}</b></td></tr></tbody></table></div></section>`;
   }
   // kartu tutorial di sisi kanan halaman Rekap Permintaan: urutan alur dan alasannya
-  const TUTORIAL_REKAP = `<aside class="card pcard rktut"><h3 style="margin:0 0 4px">Alur setelah memo disetujui</h3><p class="muted" style="margin:0 0 12px;font-size:.84rem">Kenapa halaman ini bekerja seperti ini:</p>
+  const TUTORIAL_REKAP = `<aside class="card pcard rktut"><h3 style="margin:0 0 4px">Alur setelah memo disetujui</h3><p class="muted" style="margin:0 0 12px;font-size:.84rem">Langkah singkat:</p>
     <ol class="tutl">
-      <li><b>Pimpinan menyetujui memo.</b> Pak Yasir dan Pak Ferry sama-sama setuju, lalu lokasinya otomatis muncul di kiri. <span>Kenapa: hanya permintaan yang sudah disetujui kedua pimpinan yang boleh dipesan, jadi tidak ada yang perlu dipilih atau disaring lagi.</span></li>
-      <li><b>Tandai tiap item: Mas Wahyu atau Online.</b> Seragam dan sepatu diusulkan ke Mas Wahyu, aksesoris diusulkan Online; ubah bila perlu. <span>Kenapa: dua jalur pemasok punya cara pesan dan bayar yang berbeda (vendor ditagih belakangan, online dibayar langsung), dan satu lokasi bisa memakai dua jalur sekaligus, sehingga penandaan dilakukan per item.</span></li>
-      <li><b>Simpan penandaan.</b> Tanda tersimpan, dan permintaan yang punya item ke Mas Wahyu otomatis ditandai <i>PO terkirim</i>. <span>Kenapa: sejak saat itu item itu dianggap sudah dipesan, dan masuk hitungan Kekurangan Vendor (dipesan dikurangi yang sudah datang).</span></li>
-      <li><b>Kirim rekap dan belanja.</b> Unduh PDF rekap untuk Mas Wahyu (per jenis dan ukuran), lalu salin daftar belanja online. <span>Kenapa: Mas Wahyu cukup menerima satu rekap gabungan per ukuran, tidak perlu satu surat per lokasi.</span></li>
-      <li><b>Catat barang datang.</b> Di halaman Barang datang, isi barang yang diterima dari Mas Wahyu atau dari online. <span>Kenapa: stok gudang bertambah dan kekurangan vendor berkurang otomatis.</span></li>
-      <li><b>Bila vendor belum lengkap,</b> catat di Kekurangan vendor beserta estimasi kirimnya. <span>Kenapa: statusnya (belum, sebagian, atau terpenuhi) dibandingkan sendiri dengan barang yang datang.</span></li>
-      <li><b>Setelah stok ada,</b> lanjut ke Ploting dan Pengiriman ke lokasi.</li>
+      <li><b>Memo disetujui.</b> Lokasi yang sudah disetujui kedua pimpinan otomatis muncul di kiri.</li>
+      <li><b>Tandai tiap item.</b> Pilih Mas Wahyu atau Online (seragam dan sepatu diusulkan Mas Wahyu, aksesoris Online).</li>
+      <li><b>Simpan penandaan.</b> PO ikut ditandai terkirim, dan item masuk hitungan kekurangan vendor.</li>
+      <li><b>Kirim rekap dan belanja.</b> Unduh PDF untuk Mas Wahyu, salin daftar belanja online.</li>
+      <li><b>Catat barang datang.</b> Stok bertambah dan kekurangan berkurang otomatis.</li>
+      <li><b>Belum lengkap?</b> Catat di Kekurangan vendor.</li>
+      <li><b>Stok siap.</b> Lanjut ke Ploting dan Pengiriman.</li>
     </ol>
-    <div class="hint" style="margin-top:10px">Salah tandai? Ubah tombolnya lalu simpan lagi; tanda lama akan diganti.</div></aside>`;
+    <div class="hint" style="margin-top:10px">Salah tandai? Ubah tombolnya lalu simpan lagi.</div></aside>`;
   function kartuPermintaan(p) {
     const items = p.items || [], kotor = items.filter(i => kotorPm(p, i)).length, tersimpan = items.filter(i => pmSaved.has(pmKey(p.id, i.no))).length, lengkap = tersimpan === items.length && !kotor;
     const baris = items.map(i => {

@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.245', tanggal: '2026-10-29', catatan: 'Rekap permintaan: kolom pencarian dihapus' };
+window.VERSI = { no: '1.246', tanggal: '2026-10-29', catatan: 'Tutorial rekap permintaan diringkas' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

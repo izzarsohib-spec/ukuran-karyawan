@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 29 Okt 2026
+- **v1.246** Kartu tutorial di Rekap Permintaan diringkas: penjelasan "Kenapa" dihapus, tiap langkah cukup satu kalimat pendek.
 - **v1.245** Rekap Permintaan: kolom pencarian lokasi di atas daftar dihapus (filter Belum selesai ditandai, Sudah ditandai, dan Semua tetap ada).
 - **v1.244** Rekap Permintaan: tinggi kartu Tandai pemesanan dan kartu tutorial diperpanjang (minimal 580 px, mengikuti tinggi layar, maksimal 780 px) supaya tidak terlalu pendek di layar kecil tetapi juga tidak terlalu panjang di layar besar.
 - **v1.243** Rekap Permintaan: deretan kartu angka (Lokasi disetujui, Item belum disimpan, Ke Mas Wahyu, Online, Permintaan terlibat) dihapus; kartu penandaan dan tutorial dibuat lebih tinggi mengisi ruang yang kosong.
