@@ -82,20 +82,23 @@ Deno.serve(async (req) => {
     if (!topik) return json({ error: 'Topik ntfy Mas Wahyu belum diatur (rahasia NTFY_TOPIC_WAHYU).' }, 412);
     let b: any; try { b = await req.json(); } catch { return json({ error: 'Isi permintaan tidak valid' }, 400); }
     const ids: number[] = Array.isArray(b?.permintaan_ids) ? b.permintaan_ids.map(Number).filter(Boolean) : [];
-    const ringkasan = b?.ringkasan ?? {}, pdf = String(b?.pdf ?? ''), vendor = String(b?.vendor ?? 'Wahyu Ardianto').slice(0, 80);
-    if (!ids.length || !pdf) return json({ error: 'Data pesanan atau PDF kosong' }, 400);
+    const ringkasan = b?.ringkasan ?? {}, pdf = String(b?.pdf ?? ''), vendor = String(b?.vendor ?? 'Wahyu Ardianto').slice(0, 80), jenis = b?.jenis === 'kekurangan' ? 'kekurangan' : 'pesanan', catatId = jenis === 'kekurangan' ? Number(b?.catat_id) || null : null;
+    if ((jenis === 'pesanan' && !ids.length) || (jenis === 'kekurangan' && !catatId) || !pdf) return json({ error: 'Data surat atau PDF kosong' }, 400);
     const token = acak();
     if (pdf.length > 6_000_000) return json({ error: 'PDF terlalu besar' }, 413);
-    const { data: baris, error } = await db.from('konfirmasi_vendor').insert({ token, vendor, permintaan_ids: ids, ringkasan, pdf, pdf_pos: b?.pdf_pos ?? null }).select('id').single();
+    const { data: baris, error } = await db.from('konfirmasi_vendor').insert({ token, vendor, permintaan_ids: ids, ringkasan, pdf, pdf_pos: b?.pdf_pos ?? null, jenis, catat_id: catatId }).select('id').single();
     if (error || !baris) return json({ error: 'Gagal menyimpan konfirmasi: ' + (error?.message ?? '') }, 500);
     const fn = `${Deno.env.get('SUPABASE_URL')}/functions/v1/konfirmasi-vendor`;
+    const kurang = jenis === 'kekurangan';
     const cepat = (hari: number, label: string) => `http, ${label} (${tgl(wib(hari))}), ${fn}?t=${token}&a=jawab&estimasi=${wib(hari)}, method=POST, clear=true`;
-    const aksi = [cepat(3, 'Siap 3 hari'), cepat(7, 'Siap 1 minggu'), `view, Pilih tanggal / catatan, ${BASE}/konfirmasi.html?t=${token}, clear=true`].join('; ');
+    const aksi = [cepat(3, kurang ? 'Kirim 3 hari' : 'Siap 3 hari'), cepat(7, kurang ? 'Kirim 1 minggu' : 'Siap 1 minggu'), `view, Pilih tanggal / catatan, ${BASE}/konfirmasi.html?t=${token}, clear=true`].join('; ');
     const rl = (ringkasan.lokasi ?? []) as { client: string; bagian: string; pcs: number }[];
     const linkPdf = `${fn}?t=${token}&pdf=1`, linkHal = `${BASE}/konfirmasi.html?t=${token}`;
-    const pesan = [`Pesanan ke ${vendor} (${ringkasan.total_pcs ?? '?'} pcs, ${rl.length} lokasi).`, `PDF rekap: ${linkPdf}`, '', 'Mohon konfirmasi kapan pesanan bisa selesai/datang:', '- ketuk "Siap 3 hari" atau "Siap 1 minggu", atau', '- "Pilih tanggal / catatan" untuk tanggal lain.',
+    const pesan = kurang
+      ? [`Berdasarkan pengiriman tanggal ${ringkasan.dasar ? tgl(String(ringkasan.dasar).slice(0, 10)) : '-'}, masih ada kekurangan ${ringkasan.total_pcs ?? '?'} pcs.`, `Surat: ${linkPdf}`, '', 'Mohon konfirmasi kapan kekurangan tersebut dikirim:', '- ketuk "Kirim 3 hari" atau "Kirim 1 minggu", atau', '- "Pilih tanggal / catatan" untuk tanggal lain.', '', ...((ringkasan.baris ?? []) as string[]).slice(0, 10)].join('\n')
+      : [`Pesanan ke ${vendor} (${ringkasan.total_pcs ?? '?'} pcs, ${rl.length} lokasi).`, `PDF rekap: ${linkPdf}`, '', 'Mohon konfirmasi kapan pesanan bisa selesai/datang:', '- ketuk "Siap 3 hari" atau "Siap 1 minggu", atau', '- "Pilih tanggal / catatan" untuk tanggal lain.',
       '', ...(ringkasan.jenis ?? []).map((j: any) => `${j.jenis}: ${j.total} pcs`)].join('\n');
-    const r = await fetch(`https://ntfy.sh/${topik}`, { method: 'POST', body: pesan, headers: { Title: kodekan(`Pesanan baru untuk ${vendor}`), Click: linkHal, Priority: '4', Tags: 'package', Actions: aksi } });
+    const r = await fetch(`https://ntfy.sh/${topik}`, { method: 'POST', body: pesan, headers: { Title: kodekan(kurang ? `Konfirmasi kekurangan untuk ${vendor}` : `Pesanan baru untuk ${vendor}`), Click: linkHal, Priority: '4', Tags: 'package', Actions: aksi } });
     if (!r.ok) { const m = (await r.text().catch(() => '')).slice(0, 200); await db.from('konfirmasi_vendor').delete().eq('id', baris.id); return json({ error: `ntfy menolak (${r.status}) ${m}` }, 502); }
     return json({ ok: true, id: baris.id });
   }
@@ -116,7 +119,7 @@ Deno.serve(async (req) => {
       if (!p?.pdf) return teks('Tautan tidak dikenali.', 403);
       return new Response(await pdfAkhir(p, await ambilTtd(db)), { headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename="Rekap pesanan ${wib()}.pdf"`, ...CORS } });
     }
-    const { data: k } = await db.from('konfirmasi_vendor').select('vendor,ringkasan,dikirim_pada,status,estimasi,catatan,dijawab_pada').eq('token', t).maybeSingle();
+    const { data: k } = await db.from('konfirmasi_vendor').select('vendor,jenis,ringkasan,dikirim_pada,status,estimasi,catatan,dijawab_pada').eq('token', t).maybeSingle();
     if (!k) return teks('Tautan tidak dikenali.', 403);
     return json(k);
   }
@@ -124,17 +127,17 @@ Deno.serve(async (req) => {
 
   // ---------- vendor: menjawab ----------
   if (t.length < 32 || (a !== 'jawab' && a !== 'tidak_bisa')) return teks('Permintaan tidak valid.', 400);
-  const { data: k } = await db.from('konfirmasi_vendor').select('id,vendor,ringkasan,jumlah_jawab').eq('token', t).maybeSingle();
+  const { data: k } = await db.from('konfirmasi_vendor').select('id,vendor,jenis,catat_id,ringkasan,jumlah_jawab').eq('token', t).maybeSingle();
   if (!k) return teks('Tautan tidak dikenali.', 403);
   let body: any = {}; try { body = await req.json(); } catch { /* tombol cepat tanpa body */ }
   const catatan = String(body?.catatan ?? '').trim().slice(0, 500) || null;
-  const total = k.ringkasan?.total_pcs ?? '?';
+  const total = k.ringkasan?.total_pcs ?? '?', kurang = k.jenis === 'kekurangan', barang = kurang ? 'Kekurangan' : 'Pesanan';
 
   if (a === 'tidak_bisa') {
     await db.from('konfirmasi_vendor').update({ status: 'tidak_bisa', estimasi: null, catatan, dijawab_pada: new Date().toISOString(), jumlah_jawab: k.jumlah_jawab + 1 }).eq('id', k.id);
     await siarkan();
-    await kabari(`${k.vendor}: tidak bisa memenuhi`, `Pesanan ${total} pcs.${catatan ? ' Catatan: ' + catatan : ''}`);
-    return teks('Tercatat: pesanan belum bisa dipenuhi. Terima kasih.');
+    await kabari(`${k.vendor}: tidak bisa memenuhi`, `${barang} ${total} pcs.${catatan ? ' Catatan: ' + catatan : ''}`);
+    return teks(`Tercatat: ${kurang ? 'kekurangan barang' : 'pesanan'} belum bisa dipenuhi. Terima kasih.`);
   }
   const est = String(u.searchParams.get('estimasi') ?? body?.estimasi ?? '');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(est) || isNaN(Date.parse(est))) return teks('Tanggal tidak valid.', 400);
@@ -143,7 +146,8 @@ Deno.serve(async (req) => {
   const ubah = { status: 'dikonfirmasi', estimasi: est, ...(catatan ? { catatan } : {}), dijawab_pada: new Date().toISOString(), jumlah_jawab: k.jumlah_jawab + 1 };
   const { error } = await db.from('konfirmasi_vendor').update(ubah).eq('id', k.id);
   if (error) return teks('Gagal menyimpan.', 500);
+  if (kurang && k.catat_id) await db.from('kekurangan_catat').update({ estimasi_kirim: est }).eq('id', k.catat_id); // jawaban vendor menjadi estimasi kirim pada catatan kekurangan
   await siarkan();
-  await kabari(`${k.vendor}: siap ${tgl(est)}`, `Pesanan ${total} pcs, estimasi datang ${tgl(est)}.${catatan ? ' Catatan: ' + catatan : ''}${k.jumlah_jawab ? ' (jawaban diperbarui)' : ''}`);
-  return teks(`Tercatat: estimasi pesanan siap ${tgl(est)}. Terima kasih.`);
+  await kabari(kurang ? `${k.vendor}: kekurangan dikirim ${tgl(est)}` : `${k.vendor}: siap ${tgl(est)}`, `${barang} ${total} pcs, estimasi ${kurang ? 'dikirim' : 'datang'} ${tgl(est)}.${catatan ? ' Catatan: ' + catatan : ''}${k.jumlah_jawab ? ' (jawaban diperbarui)' : ''}`);
+  return teks(kurang ? `Tercatat: kekurangan barang akan dikirim ${tgl(est)}. Terima kasih.` : `Tercatat: estimasi pesanan siap ${tgl(est)}. Terima kasih.`);
 });

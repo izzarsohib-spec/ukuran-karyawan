@@ -697,7 +697,7 @@
   .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
   @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); height:auto; } .rk2k > .card { height:auto; } .pmscroll { max-height:70vh; } .rktut { height:auto; overflow:visible; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.289">
+<link rel="stylesheet" href="../aset/tema.css?v=1.290">
 </head>
 <body>
 <div class="shell">
@@ -784,17 +784,17 @@
    <div class="page" id="pg-kurang" hidden>
     <header><div><h1>Kekurangan Vendor</h1><div class="sub" id="infoKc">Memuat data…</div></div>
       <div class="bgact"><button class="btn" id="kcMuat">Muat ulang</button></div></header>
-    <div class="layout"><div class="detail tiga"><div class="k3 kriw"><div class="k3h"><b>Cara memakai Kekurangan vendor</b></div><ol class="tuto"><li><b>Catat kekurangan:</b> barang, jenis, ukuran, dan jumlah yang belum dikirim vendor, beserta estimasi kirim dan keterangan.</li><li><b>Status otomatis.</b> Belum, Sebagian, atau Sudah terpenuhi, dihitung dari Barang datang vendor yang sama sejak tanggal catatan.</li><li><b>Tandai manual</b> dengan Tandai terpenuhi atau Batal bila perlu; Buka lagi untuk membatalkan penutupan.</li><li><b>Estimasi kirim lewat</b> ditandai merah supaya bisa Anda tagih ke vendor.</li></ol></div><div class="pcard k3" id="kcForm">
+    <div class="layout"><div class="detail tiga"><div class="k3 kriw"><div class="k3h"><b>Cara memakai Kekurangan vendor</b></div><ol class="tuto"><li><b>Isi kekurangan:</b> pilih pengiriman tanggal berapa yang menjadi dasar, lalu barang, jenis, ukuran, dan jumlah yang belum dikirim.</li><li><b>Simpan &amp; kirim surat ke Mas Wahyu.</b> Surat PDF berbunyi "berdasarkan pengiriman tanggal ..., masih ada kekurangan ..., mohon konfirmasi kapan dikirim" dikirim lewat ntfy.</li><li><b>Mas Wahyu menjawab</b> dengan ketukan atau memilih tanggal. Jawaban menjadi estimasi kirim dan tertulis di PDF beserta tanda tangannya; Anda mendapat pop-up.</li><li><b>Status otomatis:</b> Belum, Sebagian, atau Sudah terpenuhi, dihitung dari Barang datang vendor yang sama.</li><li><b>Estimasi kirim lewat</b> ditandai merah. Gunakan Tandai terpenuhi atau Batal bila perlu.</li></ol></div><div class="pcard k3" id="kcForm">
       <h3>Catat kekurangan dari vendor</h3>
-      <div class="hint" style="margin:0 0 10px">Catat barang yang <b>belum dikirim vendor</b> (atau kurang dari pesanan), lengkap dengan jenis, ukuran, jumlah, dan estimasi kirimnya.</div>
+      <div class="hint" style="margin:0 0 10px">Catat barang yang <b>belum dikirim vendor</b> berdasarkan pengiriman tanggal tertentu. Surat konfirmasi dikirim ke Mas Wahyu lewat ntfy; tanggal jawabannya menjadi estimasi kirim.</div>
       <div class="fgrid" style="grid-template-columns:1fr 1fr">
         <label>Tanggal dicatat<input type="date" id="kcTgl"></label><label>Vendor<select id="kcVendor"><option>Wahyu Ardianto</option></select></label>
-        <label>No. PO / surat jalan terkait<input id="kcRef" autocomplete="off" placeholder="opsional"></label><label>Estimasi kirim<input type="date" id="kcEst"></label>
-        <label style="grid-column:1/-1">Keterangan<input id="kcKet" autocomplete="off" placeholder="mis. menunggu bahan, janji kirim minggu depan"></label></div>
+        <label>Berdasarkan pengiriman tanggal<input type="date" id="kcDasar"></label><label>No. PO / surat jalan terkait<input id="kcRef" autocomplete="off" placeholder="opsional"></label>
+        <label>Estimasi kirim (opsional)<input type="date" id="kcEst"></label><label>Keterangan<input id="kcKet" autocomplete="off" placeholder="mis. menunggu bahan"></label></div>
       <div class="row" style="margin:16px 0 8px"><b>Barang yang kurang</b><button class="btn" id="kcTambah" type="button">+ Tambah baris</button></div>
       <div class="wrap tabelminta"><table><thead><tr><th style="min-width:120px">Barang</th><th style="min-width:92px">Jenis</th><th style="min-width:110px">Ukuran</th><th style="min-width:60px">Qty</th><th></th></tr></thead><tbody id="kcBaris"></tbody></table></div>
       <div class="hint" id="kcPesan"></div>
-      <div class="bgact" style="margin-top:12px"><button class="cta" id="kcSimpan" type="button">Simpan kekurangan</button><button class="btn" id="kcBatal" type="button">Kosongkan form</button></div>
+      <div class="bgact" style="margin-top:12px"><button class="cta" id="kcSimpanKirim" type="button">Simpan &amp; kirim surat ke Mas Wahyu</button><button class="btn" id="kcSimpan" type="button">Simpan saja</button><button class="btn" id="kcBatal" type="button">Kosongkan form</button></div>
     </div><div class="pcard k3 riw2 riw2w">
       <div class="bar-top"><h3>Riwayat kekurangan vendor</h3></div>
       <div class="chips" id="kcChips" style="margin-bottom:12px"></div>
@@ -2263,11 +2263,11 @@ Alasan (boleh kosong):`); if (alasan === null) return;
       const rows = await rpc('daftar_konfirmasi_vendor', { kode: 'sesi' }), kini = new Map(rows.map(k => [k.id, `${k.status}|${k.estimasi || ''}|${k.jumlah_jawab}`]));
       if (konfSebelum) for (const k of rows) {
         if (konfSebelum.get(k.id) === kini.get(k.id) || k.status === 'menunggu') continue;
-        const tujuan = `Rekap #${k.id} · ${idn((k.ringkasan || {}).total_pcs || 0)} pcs`;
-        if (k.status === 'dikonfirmasi') beritahu(`${k.vendor} mengonfirmasi pesanan`, `${tujuan}\nEstimasi datang: ${tglPendek(k.estimasi)}${k.catatan ? '\nCatatan: ' + k.catatan : ''}`, 'ok', 'rekap');
+        const tujuan = `${k.jenis === 'kekurangan' ? 'Surat kekurangan' : 'Rekap'} #${k.id} · ${idn((k.ringkasan || {}).total_pcs || 0)} pcs`;
+        if (k.status === 'dikonfirmasi') beritahu(k.jenis === 'kekurangan' ? `${k.vendor} mengonfirmasi kekurangan` : `${k.vendor} mengonfirmasi pesanan`, `${tujuan}\nEstimasi ${k.jenis === 'kekurangan' ? 'dikirim' : 'datang'}: ${tglPendek(k.estimasi)}${k.catatan ? '\nCatatan: ' + k.catatan : ''}`, 'ok', 'rekap');
         else if (k.status === 'tidak_bisa') beritahu(`${k.vendor}: belum bisa memenuhi`, `${tujuan}${k.catatan ? '\nCatatan: ' + k.catatan : ''}`, 'bad', 'rekap');
       }
-      konfSebelum = kini; pmKonf = rows; if (!$('pg-rekap').hidden) renderRekapPage();
+      konfSebelum = kini; pmKonf = rows; if (!$('pg-rekap').hidden) { renderRekapPage(); if (rkTab === 'kurang') renderKc(); }
     } catch (e) { /* abaikan; coba lagi pada putaran berikutnya */ }
     cekKonfBerjalan = false;
   }
@@ -3082,13 +3082,13 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const NS = { menunggu: ['warn', 'Menunggu estimasi dari Mas Wahyu'], dikonfirmasi: ['ok', '✓ Estimasi sudah diterima'], tidak_bisa: ['bad', 'Mas Wahyu: belum bisa dipenuhi'] };
     const kartu = pmKonf.map(k => {
       const [bk, lb] = NS[k.status] || ['', k.status], rg = k.ringkasan || {}, hari = lamaHari(k.dikirim_pada), telat = k.status === 'dikonfirmasi' && k.estimasi && String(k.estimasi).slice(0, 10) < wibIso();
-      return `<section class="rk pmk" style="margin-bottom:14px"><div class="rkh"><div><h4 style="margin:0">Rekap #${k.id} · ${idn(rg.total_pcs || 0)} pcs · ${(k.permintaan_ids || []).length} permintaan</h4><div class="muted" style="font-size:.8rem">Dikirim ${esc(wkt(k.dikirim_pada))} · ke ${esc(k.vendor)}</div></div>
+      return `<section class="rk pmk" style="margin-bottom:14px"><div class="rkh"><div><h4 style="margin:0">${k.jenis === 'kekurangan' ? 'Surat kekurangan #' + k.id + ' · ' + idn(rg.total_pcs || 0) + ' pcs' : 'Rekap #' + k.id + ' · ' + idn(rg.total_pcs || 0) + ' pcs · ' + (k.permintaan_ids || []).length + ' permintaan'}</h4><div class="muted" style="font-size:.8rem">Dikirim ${esc(wkt(k.dikirim_pada))} · ke ${esc(k.vendor)}</div></div>
         <div style="text-align:right"><span class="badge ${bk}">${lb}</span>${k.status === 'menunggu' ? `<div class="muted" style="font-size:.76rem;margin-top:3px">${hari ? 'sudah ' + hari + ' hari belum dijawab' : 'baru dikirim hari ini'}</div>` : ''}</div></div>
         ${k.estimasi ? `<div class="mnest ${telat ? 'telat' : ''}">Estimasi datang: <b>${esc(tglPendek(k.estimasi))}</b>${telat ? ' · sudah lewat' : ''}${k.dijawab_pada ? ` <span class="muted">(dijawab ${esc(wkt(k.dijawab_pada))}${k.jumlah_jawab > 1 ? ', diperbarui ' + (k.jumlah_jawab - 1) + 'x' : ''})</span>` : ''}</div>` : k.dijawab_pada ? `<div class="mnest telat">Dijawab ${esc(wkt(k.dijawab_pada))}</div>` : ''}
         ${k.catatan ? `<div class="mnest">Catatan Mas Wahyu: ${esc(k.catatan)}</div>` : ''}
         <div class="chips" style="margin:6px 0">${(rg.jenis || []).map(j => `<span class="chip" style="cursor:default">${esc(j.jenis)} <b>${idn(j.total)}</b></span>`).join('')}</div>
         <div style="margin:6px 0"><button class="btn" type="button" data-pdfkonf="${k.id}">Buka PDF rekap${k.status === 'dikonfirmasi' ? ' (dengan estimasi &amp; tanda tangan)' : ''}</button></div>
-        <details><summary class="muted" style="cursor:pointer;font-size:.82rem">Lihat isi pesanan per lokasi</summary>${blokLokasi(k.permintaan_ids || []) || '<div class="muted">Data lokasi tidak ditemukan.</div>'}</details></section>`;
+        <details><summary class="muted" style="cursor:pointer;font-size:.82rem">${k.jenis === 'kekurangan' ? 'Lihat kekurangan yang dikonfirmasi' : 'Lihat isi pesanan per lokasi'}</summary>${k.jenis === 'kekurangan' ? (rg.dasar ? '<div class="muted" style="margin:4px 0">Berdasarkan pengiriman ' + esc(tglPendek(rg.dasar)) + '</div>' : '') + (rg.baris || []).map(b => '<div class="mni"><span>' + esc(b) + '</span></div>').join('') : (blokLokasi(k.permintaan_ids || []) || '<div class="muted">Data lokasi tidak ditemukan.</div>')}</details></section>`;
     }).join('');
     const belumKirim = semuaP.filter(p => !terkirim.has(p.id) && (p.items || []).some(i => pmSaved.get(pmKey(p.id, i.no))?.via === 'wahyu'));
     const bk = belumKirim.length ? `<section class="rk" style="margin-bottom:14px"><div class="rkh"><h4>Sudah ditandai Mas Wahyu, belum dikirim rekapnya</h4><b>${belumKirim.length} lokasi</b></div>${belumKirim.map(p => `<div class="mnl"><b>${esc(p.client)}</b> <span class="muted">· ${esc(namaRapi(p.bagian_kerja))} · ${idn(itemsWahyu(p).reduce((a, i) => a + (Number(i.qty) || 0), 0))} pcs</span></div>`).join('')}<div class="muted" style="font-size:.78rem;margin-top:4px">Tekan <b>Kirim ke Mas Wahyu (ntfy)</b> di kartu rekap bawah untuk mengirim dan meminta estimasi.</div></section>` : '';
@@ -3583,7 +3583,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   ['dDari', 'dSampai', 'dBarang'].forEach(id => { $(id).oninput = renderDatang; }); $('dReset').onclick = () => { ['dDari', 'dSampai', 'dBarang'].forEach(id => { $(id).value = ''; }); dSup = 'semua'; renderDatang(); }; $('dMuat').onclick = muatHilir;
 
   // --- halaman Kekurangan vendor: catatan kekurangan manual (barang, jenis, ukuran, qty, estimasi kirim) + riwayatnya ---
-  let kcRows = [], kcData = [], kcStat = 'semua';
+  let kcRows = [], kcData = [], kcStat = 'semua', kcGrup = [];
   const kcBaru = () => ({ no: '', jenis: '', ukuran: '', qty: '' });
   function kcRender() {
     $('kcBaris').innerHTML = kcRows.map((b, n) => {
@@ -3594,12 +3594,16 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
         <td><input class="im-qty" type="number" min="1" inputmode="numeric" placeholder="Qty" value="${esc(b.qty)}"></td><td><button class="x" type="button" title="Hapus baris" aria-label="Hapus baris">✕</button></td></tr>`;
     }).join('');
   }
-  async function kcIsiVendor() {
+  async function kcIsiVendor() { // mengembalikan janji agar pemanggil bisa menunggu pilihan vendor terisi
     let nama = ['Wahyu Ardianto'];
     try { if (Masuk.kode()) { const v = (await rpcKode('admin_daftar_vendor', {})).filter(x => x.aktif).map(x => x.nama); if (v.length) nama = v; } } catch (e) { /* pakai bawaan */ }
     $('kcVendor').innerHTML = nama.map(n => `<option>${esc(n)}</option>`).join('');
   }
-  function kcKosongkan() { kcRows = [kcBaru()]; $('kcTgl').value = tgl0(); ['kcRef', 'kcEst', 'kcKet'].forEach(id => { $(id).value = ''; }); $('kcPesan').textContent = ''; kcRender(); kcIsiVendor(); }
+  // tanggal pengiriman terakhir dari vendor terpilih (barang datang) dipakai sebagai dasar surat; bisa diubah
+  const kcDasarTerakhir = () => { const v = $('kcVendor').value.trim().toLowerCase(); return gerak.filter(g => g.jenis === 'masuk' && !g.sumber && String(g.supplier || '').trim().toLowerCase() === v).map(g => String(g.tanggal).slice(0, 10)).sort().pop() || ''; };
+  const kcIsiDasar = () => { $('kcDasar').value = kcDasarTerakhir(); };
+  $('kcVendor').onchange = kcIsiDasar;
+  function kcKosongkan() { kcRows = [kcBaru()]; $('kcTgl').value = tgl0(); ['kcRef', 'kcEst', 'kcKet', 'kcDasar'].forEach(id => { $(id).value = ''; }); $('kcPesan').textContent = ''; kcRender(); kcIsiVendor().then(kcIsiDasar); }
   $('kcBatal').onclick = kcKosongkan;
   $('kcTambah').onclick = () => { kcRows.push(kcBaru()); kcRender(); };
   $('kcBaris').onchange = e => {
@@ -3613,32 +3617,69 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const ub = e.target.closest('.ukb'); if (ub) { kcRows[ub.closest('tr').dataset.n].ukuran = ub.dataset.u; kcRender(); return; }
     if (!e.target.classList.contains('x')) return; if (kcRows.length === 1) kcRows = [kcBaru()]; else kcRows.splice(e.target.closest('tr').dataset.n, 1); kcRender();
   };
-  $('kcSimpan').onclick = async () => {
-    const ps = $('kcPesan'), btn = $('kcSimpan'); ps.style.color = 'var(--bad)';
+  // simpan catatan kekurangan; bila kirim = true, lanjut membuat surat PDF dan mengirimnya ke vendor lewat ntfy
+  async function kcSimpanAksi(kirim) {
+    const ps = $('kcPesan'), tombol = [$('kcSimpan'), $('kcSimpanKirim')]; ps.style.color = 'var(--bad)';
     const baris = kcRows.filter(b => b.no || b.qty || b.jenis);
     if (!baris.length || baris.some(b => !b.no || !b.jenis || (b.jenis !== '-' && !b.ukuran) || !(Number(b.qty) > 0))) { ps.textContent = 'Lengkapi barang, jenis, ukuran, dan qty di setiap baris.'; return; }
-    btn.disabled = true; btn.textContent = 'Menyimpan…'; ps.textContent = '';
+    if (kirim) {
+      if (!$('kcDasar').value) { ps.textContent = 'Isi dulu "Berdasarkan pengiriman tanggal" untuk surat.'; return; }
+      if (!confirm(`Simpan dan kirim surat kekurangan ke ${$('kcVendor').value} lewat ntfy?\n\nBerdasarkan pengiriman ${tglPanjangIso($('kcDasar').value)}.\nMas Wahyu menerima notifikasi berisi surat PDF dan tombol untuk menjawab kapan kekurangan dikirim.\n\nIni mengirim pesan sungguhan ke Mas Wahyu.`)) return;
+    }
+    tombol.forEach(b => { b.disabled = true; }); ps.textContent = ''; $('kcSimpanKirim').textContent = 'Memproses…';
     try {
-      await rpcKode('catat_kekurangan', { p_tanggal: $('kcTgl').value || tgl0(), p_vendor: $('kcVendor').value.trim(), p_referensi: $('kcRef').value.trim(), p_estimasi: $('kcEst').value || null, p_keterangan: $('kcKet').value.trim(),
-        p_baris: baris.map(b => ({ item_no: Number(b.no), jenis_ukuran: b.jenis, ukuran: b.ukuran, qty: Number(b.qty) })) });
-      kcKosongkan(); ps.style.color = 'var(--ok)'; ps.textContent = 'Kekurangan tersimpan dan masuk riwayat.'; await muatKc();
+      const param = { p_tanggal: $('kcTgl').value || tgl0(), p_vendor: $('kcVendor').value.trim(), p_referensi: $('kcRef').value.trim(), p_estimasi: $('kcEst').value || null, p_keterangan: $('kcKet').value.trim(),
+        p_baris: baris.map(b => ({ item_no: Number(b.no), jenis_ukuran: b.jenis, ukuran: b.ukuran, qty: Number(b.qty) })) };
+      let idBaru; try { idBaru = Number(await rpcKode('catat_kekurangan', { ...param, p_tgl_pengiriman: $('kcDasar').value || null })); }
+      catch (e) { if (!/p_tgl_pengiriman|schema cache|PGRST202/i.test(e.message)) throw e; idBaru = Number(await rpcKode('catat_kekurangan', param)); } // database belum diperbarui (migrasi-kekurangan-surat.sql): simpan tanpa tanggal dasar
+      kcKosongkan(); await muatKc();
+      if (kirim) { await kirimSuratKekurangan(idBaru); ps.style.color = 'var(--ok)'; ps.textContent = 'Kekurangan tersimpan dan surat sudah dikirim ke Mas Wahyu.'; }
+      else { ps.style.color = 'var(--ok)'; ps.textContent = 'Kekurangan tersimpan dan masuk riwayat.'; }
     } catch (e) { ps.textContent = 'Gagal: ' + e.message; }
-    btn.disabled = false; btn.textContent = 'Simpan kekurangan';
-  };
+    tombol.forEach(b => { b.disabled = false; }); $('kcSimpanKirim').innerHTML = 'Simpan &amp; kirim surat ke Mas Wahyu';
+  }
+  $('kcSimpan').onclick = () => kcSimpanAksi(false); $('kcSimpanKirim').onclick = () => kcSimpanAksi(true);
+  // surat konfirmasi kekurangan (PDF): dasar pengiriman, daftar kekurangan, baris Estimasi pengiriman yang diisi vendor lewat ntfy, dan kolom tanda tangan
+  async function pdfSuratKekurangan(x) {
+    const k = await kertasKop(), { doc, PW, L, W } = k; k.pasang(); const dasar = x.dasar || x.tgl, NJ = j => (NAMA_JENIS[j] || j);
+    k.huruf('bold', 13); doc.text('SURAT KONFIRMASI KEKURANGAN BARANG', PW / 2, 104, { align: 'center' });
+    k.huruf(); [['Kepada', x.vendor], ['Tanggal surat', tglPanjangIso(wibIso())], ['Perihal', 'Konfirmasi kekurangan barang'], ['Dasar pengiriman', 'Pengiriman tanggal ' + tglPanjangIso(dasar)], ['Total kekurangan', `${idn(x.pcs)} pcs`]].forEach(([a, b], i) => { doc.text(a, L, 130 + i * 14); doc.text(': ' + b, L + 108, 130 + i * 14); });
+    doc.text('Estimasi pengiriman', L, 130 + 5 * 14); doc.text(':', L + 108, 130 + 5 * 14); // diisi vendor lewat ntfy; ditempel otomatis pada PDF setelah vendor menjawab
+    k.y = 224; const para = doc.splitTextToSize(`Berdasarkan pengiriman barang pada tanggal ${tglPanjangIso(dasar)}, masih terdapat kekurangan sebagaimana daftar di bawah ini. Mohon konfirmasi kapan kekurangan tersebut dapat dikirim; tanggal yang Anda konfirmasi dicatat pada baris Estimasi pengiriman di atas.`, W);
+    doc.text(para, L, k.y); k.y += para.length * 12 + 6;
+    const urut = [...x.items].sort((a, b) => String(a.item_nama).localeCompare(String(b.item_nama), 'id') || String(a.jenis_ukuran).localeCompare(String(b.jenis_ukuran)) || urutUkuran(a.ukuran, b.ukuran));
+    k.tabel({ startY: k.y, head: [['NO', 'NAMA BARANG', 'JENIS', 'UKURAN', 'JUMLAH KURANG']],
+      body: [...urut.map((r, i) => [{ content: i + 1, styles: { halign: 'center' } }, namaRapi(r.item_nama), r.jenis_ukuran === '-' ? '-' : NJ(r.jenis_ukuran), { content: r.ukuran === '-' ? '-' : r.ukuran, styles: { halign: 'center' } }, { content: r.qty, styles: { halign: 'right' } }]),
+        [{ content: 'TOTAL KEKURANGAN', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } }, { content: idn(x.pcs), styles: { halign: 'right', fontStyle: 'bold' } }]],
+      columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 70 }, 3: { cellWidth: 60 }, 4: { cellWidth: 90 } } });
+    k.y += 14; k.huruf(); doc.text('Atas perhatian dan kerja samanya kami ucapkan terima kasih.', L, k.y + 6); k.y += 34;
+    k.cek(100); k.ttd([{ x: L + W * 0.25, label: 'Pemesan,', t: TTD.pic }, { x: L + W * 0.75, label: 'Penyedia,', t: TTD.vendor }], k.y);
+    return { pdf: doc.output('datauristring').split(',')[1], pos: { est: { hal: 1, x: L + 114, y: 130 + 5 * 14 }, ttd: { hal: doc.internal.getCurrentPageInfo().pageNumber, x: L + W * 0.75, y: k.y } } };
+  }
+  async function kirimSuratKekurangan(id) {
+    const x = kcGrup.find(g => g.id === Number(id)); if (!x) throw new Error('Catatan kekurangan tidak ditemukan');
+    await Masuk.wajib(); const hasil = await pdfSuratKekurangan(x);
+    const ringkasan = { total_pcs: x.pcs, dasar: x.dasar || x.tgl, jenis: [...x.tj.entries()].map(([j, t]) => ({ jenis: j === '-' ? 'Lainnya' : NAMA_JENIS[j], total: t })), baris: x.items.map(r => `${r.item_nama}${r.jenis_ukuran === '-' ? '' : ' · ' + NAMA_JENIS[r.jenis_ukuran] + ' ' + r.ukuran} ×${r.qty}`) };
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/konfirmasi-vendor?a=kirim`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ jenis: 'kekurangan', catat_id: x.id, vendor: x.vendor, ringkasan, pdf: hasil.pdf, pdf_pos: hasil.pos }) });
+    const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
+    try { pmKonf = await rpc('daftar_konfirmasi_vendor', { kode: 'sesi' }); } catch (e) { /* abaikan */ } renderKc();
+  }
   async function muatKc() {
     if (!kcRows.length) kcKosongkan();
     if (!Masuk.kode()) { kcData = []; $('infoKc').innerHTML = 'Riwayat kekurangan vendor dibuka setelah login. <button class="btn" id="kcMasuk" type="button">Masuk dan muat</button>'; $('kcMasuk').onclick = () => Masuk.wajib().then(muatKc).catch(() => {}); renderKc(); return; }
     try { kcData = await rpc('daftar_kekurangan_catat', { kode: 'sesi' }); } catch (e) { $('infoKc').textContent = 'Gagal memuat: ' + e.message; return; }
+    try { pmKonf = await rpc('daftar_konfirmasi_vendor', { kode: 'sesi' }); } catch (e) { /* tabel konfirmasi belum ada */ }
+    if (!$('kcDasar').value) kcIsiDasar();
     renderKc();
   }
   function renderKc() {
     const grup = new Map();
     for (const r of kcData) {
-      if (!grup.has(r.id)) grup.set(r.id, { id: r.id, tgl: String(r.tanggal).slice(0, 10), vendor: r.vendor, ref: r.referensi || '', est: r.estimasi_kirim ? String(r.estimasi_kirim).slice(0, 10) : '', ket: r.keterangan || '', status: r.status, pcs: 0, rinci: new Map(), tj: new Map(), brg: new Set(), baris: [], items: [] });
+      if (!grup.has(r.id)) grup.set(r.id, { id: r.id, tgl: String(r.tanggal).slice(0, 10), vendor: r.vendor, ref: r.referensi || '', est: r.estimasi_kirim ? String(r.estimasi_kirim).slice(0, 10) : '', ket: r.keterangan || '', status: r.status, dasar: r.tgl_pengiriman ? String(r.tgl_pengiriman).slice(0, 10) : '', pcs: 0, rinci: new Map(), tj: new Map(), brg: new Set(), baris: [], items: [] });
       const m = grup.get(r.id); m.items.push(r); m.brg.add(r.item_nama); m.pcs += Number(r.qty); m.tj.set(r.jenis_ukuran, (m.tj.get(r.jenis_ukuran) || 0) + Number(r.qty)); m.baris.push(r.item_nama);
       const pj = m.rinci.get(r.item_nama) || m.rinci.set(r.item_nama, new Map()).get(r.item_nama), pu = pj.get(r.jenis_ukuran) || pj.set(r.jenis_ukuran, new Map()).get(r.jenis_ukuran); pu.set(r.ukuran, (pu.get(r.ukuran) || 0) + Number(r.qty));
     }
-    const semua = [...grup.values()], dari = $('kcDari').value, sampai = $('kcSampai').value, qb = $('kcBarang').value.toLowerCase().trim();
+    const semua = [...grup.values()], dari = $('kcDari').value, sampai = $('kcSampai').value, qb = $('kcBarang').value.toLowerCase().trim(); kcGrup = semua;
     const hariIni = wibIso(), NS = { belum: 'Belum terpenuhi', sebagian: 'Sebagian terpenuhi', terpenuhi: 'Sudah terpenuhi', batal: 'Dibatalkan' };
     const kunciBrg = (v, n, j, u) => [v, n, j, u].join('|').toLowerCase();
     const datang = gerak.filter(g => g.jenis === 'masuk' && !g.sumber).map(g => ({ tgl: String(g.tanggal).slice(0, 10), k: kunciBrg(g.supplier || '', g.item_nama, g.jenis_ukuran, g.ukuran), sisa: Number(g.qty) })).sort((a, b) => a.tgl.localeCompare(b.tgl));
@@ -3661,13 +3702,25 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     $('kcBody').innerHTML = f.map(x => {
       const telat = (x.efek === 'belum' || x.efek === 'sebagian') && x.est && x.est < hariIni;
       const est = x.est ? `<div class="${telat ? 'kurang' : 'muted'}">Estimasi kirim ${esc(tglPendek(x.est))}${telat ? ' · terlambat' : ''}</div>` : '';
+      const kon = pmKonf.find(k => k.catat_id === x.id && k.jenis === 'kekurangan'), NSK = { menunggu: ['warn', 'Surat terkirim, menunggu jawaban'], dikonfirmasi: ['ok', 'Dikonfirmasi Mas Wahyu'], tidak_bisa: ['bad', 'Mas Wahyu: belum bisa'] };
+      const surat = `<div style="margin-top:6px">${kon ? `<span class="badge ${(NSK[kon.status] || [''])[0]}">${esc((NSK[kon.status] || ['', kon.status])[1])}</span> <button class="btn" type="button" data-pdfkonf="${kon.id}">Buka surat (PDF)</button>` : ''} ${x.status === 'terbuka' ? `<button class="btn" type="button" data-kckirim="${x.id}">${kon ? 'Kirim ulang surat' : 'Kirim surat ke Mas Wahyu'}</button>` : ''}</div>`;
+      const dasarInfo = x.dasar ? `<div class="muted">Dasar pengiriman ${esc(tglPendek(x.dasar))}</div>` : '';
       const aksi = x.status === 'terbuka' ? `<button class="btn" data-kc="terpenuhi" data-id="${x.id}" type="button">Tandai terpenuhi</button> <button class="btn" data-kc="batal" data-id="${x.id}" type="button">Batal</button>` : `<button class="btn" data-kc="terbuka" data-id="${x.id}" type="button">Buka lagi</button>`;
-      return `<tr><td>${tglPendek(x.tgl)}</td><td><b>${esc(x.vendor)}</b><div class="muted">${esc(x.ref || '-')}${x.ket ? ' · ' + esc(x.ket) : ''}</div>${est}<div style="margin-top:6px"><span class="badge ${x.efek === 'terpenuhi' ? 'ok' : x.efek === 'batal' ? '' : x.efek === 'sebagian' ? 'warn' : 'bad'}">${x.efek === 'terpenuhi' ? '✓ ' : ''}${NS[x.efek]}</span></div>${x.efek === 'batal' ? '' : `<div class="kcprog" title="Dihitung dari barang datang vendor ini sejak ${esc(tglPendek(x.tgl))}"><i style="width:${Math.min(100, Math.round(x.got / x.pcs * 100))}%"></i></div><div class="muted" style="font-size:.76rem">Datang ${idn(x.got)} dari ${idn(x.pcs)} pcs${x.efek !== 'terpenuhi' ? ' · sisa <b>' + idn(x.pcs - x.got) + '</b>' : ''}${x.status === 'terpenuhi' && x.got === x.pcs ? ' (ditandai manual)' : ''}</div>`}<div style="margin-top:6px">${aksi}</div></td><td>${htmlBarangDatang(x)}</td>
+      return `<tr><td>${tglPendek(x.tgl)}</td><td><b>${esc(x.vendor)}</b><div class="muted">${esc(x.ref || '-')}${x.ket ? ' · ' + esc(x.ket) : ''}</div>${dasarInfo}${est}${surat}<div style="margin-top:6px"><span class="badge ${x.efek === 'terpenuhi' ? 'ok' : x.efek === 'batal' ? '' : x.efek === 'sebagian' ? 'warn' : 'bad'}">${x.efek === 'terpenuhi' ? '✓ ' : ''}${NS[x.efek]}</span></div>${x.efek === 'batal' ? '' : `<div class="kcprog" title="Dihitung dari barang datang vendor ini sejak ${esc(tglPendek(x.tgl))}"><i style="width:${Math.min(100, Math.round(x.got / x.pcs * 100))}%"></i></div><div class="muted" style="font-size:.76rem">Datang ${idn(x.got)} dari ${idn(x.pcs)} pcs${x.efek !== 'terpenuhi' ? ' · sisa <b>' + idn(x.pcs - x.got) + '</b>' : ''}${x.status === 'terpenuhi' && x.got === x.pcs ? ' (ditandai manual)' : ''}</div>`}<div style="margin-top:6px">${aksi}</div></td><td>${htmlBarangDatang(x)}</td>
         <td class="r dtot">${['baju', 'celana', 'sepatu', '-'].filter(j => x.tj.get(j)).map(j => `<div><span>${j === '-' ? 'Lainnya' : NAMA_JENIS[j]}</span><b>${idn(x.tj.get(j))}</b></div>`).join('')}</td></tr>`;
     }).join('') || `<tr><td colspan="4" class="kosongnya">${Masuk.kode() ? 'Tidak ada catatan kekurangan yang cocok.' : 'Masuk dulu untuk melihat riwayat. <button class="btn" type="button" onclick="Masuk.wajib().then(muatKc).catch(() => {})">Masuk dan muat</button>'}</td></tr>`;
   }
   $('kcChips').onclick = e => { const k = e.target.dataset && e.target.dataset.k; if (k) { kcStat = k; renderKc(); } };
   $('kcBody').onclick = async e => {
+    const pk = e.target.closest('[data-pdfkonf]'); if (pk) { bukaPdfKonfirmasi(pk); return; }
+    const kr = e.target.closest('[data-kckirim]');
+    if (kr) {
+      const x = kcGrup.find(g => g.id === Number(kr.dataset.kckirim)); if (!x) return;
+      if (!confirm(`Kirim surat kekurangan (${idn(x.pcs)} pcs) ke ${x.vendor} lewat ntfy?\n\nIni mengirim pesan sungguhan ke Mas Wahyu.`)) return;
+      const a = kr.textContent; kr.disabled = true; kr.textContent = 'Mengirim…';
+      try { await kirimSuratKekurangan(x.id); } catch (err) { alert('Gagal mengirim: ' + err.message); }
+      kr.disabled = false; kr.textContent = a; return;
+    }
     const b = e.target.closest('[data-kc]'); if (!b) return;
     if (b.dataset.kc === 'batal' && !confirm('Batalkan catatan kekurangan ini?')) return;
     b.disabled = true; try { await rpcKode('tutup_kekurangan', { p_id: Number(b.dataset.id), p_status: b.dataset.kc }); await muatKc(); } catch (x) { alert('Gagal: ' + x.message); b.disabled = false; }

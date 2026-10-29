@@ -29,17 +29,17 @@
   .status { margin-top:10px; padding:10px 12px; border-radius:12px; border:1px solid var(--garis); font-size:.9rem; }
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="aset/tema-ringan.css?v=1.289">
+<link rel="stylesheet" href="aset/tema-ringan.css?v=1.290">
 </head>
 <body>
 <main>
   <div class="kartu">
-    <h1>Konfirmasi pesanan</h1>
+    <h1 id="judul">Konfirmasi pesanan</h1>
     <p class="sub" id="sub">Memuat ringkasan…</p>
     <div id="isi"></div>
     <div id="status" class="status" hidden></div>
     <form id="form" hidden>
-      <label for="tgl">Pesanan bisa selesai / datang pada tanggal</label>
+      <label for="tgl" id="lbTgl">Pesanan bisa selesai / datang pada tanggal</label>
       <input id="tgl" type="date" required>
       <label for="cat">Catatan (opsional), misalnya ukuran yang belum ada</label>
       <textarea id="cat" maxlength="500"></textarea>
@@ -69,11 +69,14 @@
       const r = await fetch(`${FN}?t=${encodeURIComponent(t)}`);
       if (!r.ok) { $('sub').textContent = ''; $('pesan').innerHTML = '<span class="gagal">Tautan tidak dikenali.</span>'; return; }
       const x = await r.json(), rg = x.ringkasan || {};
-      $('sub').textContent = `Untuk ${x.vendor}. Mohon periksa pesanan, lalu isi tanggal kapan bisa selesai.`;
+      const kurang = x.jenis === 'kekurangan';
+      $('judul').textContent = kurang ? 'Konfirmasi kekurangan barang' : 'Konfirmasi pesanan'; $('lbTgl').textContent = kurang ? 'Kekurangan barang bisa dikirim pada tanggal' : 'Pesanan bisa selesai / datang pada tanggal';
+      $('sub').textContent = kurang ? `Untuk ${x.vendor}. Mohon periksa kekurangan berikut, lalu isi tanggal kapan bisa dikirim.` : `Untuk ${x.vendor}. Mohon periksa pesanan, lalu isi tanggal kapan bisa selesai.`;
       const isi = $('isi'); isi.textContent = '';
-      isi.append(baris('Jumlah pesanan', `${rg.total_pcs ?? '-'} pcs`), baris('Jumlah lokasi', String((rg.lokasi || []).length)));
-      for (const j of rg.jenis || []) { const d = document.createElement('div'); d.className = 'item'; d.textContent = `${j.jenis}: ${j.total} pcs`; isi.append(d); }
-      const pa = document.createElement('a'); pa.href = `${FN}?t=${encodeURIComponent(t)}&pdf=1`; pa.target = '_blank'; pa.rel = 'noopener'; pa.textContent = 'Buka PDF rekap pesanan'; pa.style.cssText = 'display:inline-block;margin-top:10px;font-weight:600'; isi.append(pa);
+      if (kurang) isi.append(baris('Berdasarkan pengiriman', rg.dasar ? tglID(String(rg.dasar).slice(0, 10)) : '-'), baris('Total kekurangan', `${rg.total_pcs ?? '-'} pcs`));
+      else isi.append(baris('Jumlah pesanan', `${rg.total_pcs ?? '-'} pcs`), baris('Jumlah lokasi', String((rg.lokasi || []).length)));
+      for (const j of kurang ? (rg.baris || []) : (rg.jenis || [])) { const d = document.createElement('div'); d.className = 'item'; d.textContent = kurang ? String(j) : `${j.jenis}: ${j.total} pcs`; isi.append(d); }
+      const pa = document.createElement('a'); pa.href = `${FN}?t=${encodeURIComponent(t)}&pdf=1`; pa.target = '_blank'; pa.rel = 'noopener'; pa.textContent = kurang ? 'Buka surat kekurangan (PDF)' : 'Buka PDF rekap pesanan'; pa.style.cssText = 'display:inline-block;margin-top:10px;font-weight:600'; isi.append(pa);
       tampilStatus(x);
       const tg = $('tgl'); tg.min = wib(); tg.max = wib(180); if (x.estimasi) tg.value = String(x.estimasi).slice(0, 10);
       $('form').hidden = false;
