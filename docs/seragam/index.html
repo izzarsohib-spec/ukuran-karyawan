@@ -645,7 +645,7 @@
   .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
   @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); height:auto; } .rk2k > .card { height:auto; } .pmscroll { max-height:70vh; } .rktut { height:auto; overflow:visible; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.251">
+<link rel="stylesheet" href="../aset/tema.css?v=1.252">
 </head>
 <body>
 <div class="shell">
@@ -2882,7 +2882,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     for (const k of jum.keys()) if (!k.startsWith('Aksesoris|') && !per.has(k)) per.set(k, new Map());
     return ['Baju', 'Celana', 'Sepatu'].map(j => ({ jenis: j, baris: [...per.entries()].filter(([k]) => k.startsWith(j + '|')).map(([k, m]) => [k.slice(j.length + 1), [...m.entries()].sort((a, b) => urutUkuran(a[0], b[0])), Math.max(0, (jum.get(k) || 0) - [...m.values()].reduce((a, b) => a + b, 0))]).sort((a, b) => a[0].localeCompare(b[0], 'id')) })).filter(x => x.baris.length);
   }
-  const barisUkuranRk = g => g.flatMap(x => x.baris.flatMap(([n, m, sisa]) => [...m.map(([u, q]) => [x.jenis, namaRapi(n), u, q]), ...(sisa ? [[x.jenis, namaRapi(n), '(belum ada data ukuran)', sisa]] : [])]));
+  const barisUkuranRk = g => g.flatMap(x => x.baris.flatMap(([n, m, sisa]) => [...m.map(([u, q]) => [x.jenis, namaRapi(n), u, q]), ...(sisa ? [[x.jenis, namaRapi(n), '(ukuran belum dibagikan per karyawan)', sisa]] : [])]));
   function dataVendor() {
     const ps = rkVendorPs(), jenis = rekapBarang(ps.flatMap(p => (p.items || []).map(i => ({ no: i.no, nama: i.nama, qty: i.qty })))), ukuran = hitungUkuranRk(ps, rkUkV), m = new Map();
     for (const p of ps) { const k = p.lokasi_form + '|' + p.bagian_kerja; if (!m.has(k)) m.set(k, { client: p.client, bagian: p.bagian_kerja, n: 0, pcs: 0, beli: 0 }); const x = m.get(k); x.n++; x.pcs += pcsPermintaan(p); x.beli += Number(p.total_beli || 0); }
@@ -2901,7 +2901,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     judul('A. Rekap per jenis barang (setelan dipecah menjadi baju + celana)');
     k.tabel({ startY: k.y, head: [['NO', 'JENIS', 'NAMA BARANG', 'JUMLAH (PCS)']], body: d.jenis.flatMap((x, i) => x.baris.map(([n, q], j) => [{ content: j === 0 ? i + 1 : '', styles: { halign: 'center' } }, j === 0 ? x.jenis : '', namaRapi(n), { content: q, styles: { halign: 'right' } }])), columnStyles: { 0: { cellWidth: 30 }, 1: { cellWidth: 80 }, 3: { cellWidth: 80 } } });
     k.y += 10; judul('B. Rekap per ukuran');
-    k.tabel({ startY: k.y, head: [['JENIS', 'NAMA BARANG', 'UKURAN', 'JUMLAH']], body: d.baris.length ? d.baris.map(([j, n, u, q]) => [j, n, { content: u, styles: { halign: 'center' } }, { content: q, styles: { halign: 'right' } }]) : [[{ content: 'Belum ada data ukuran.', colSpan: 4, styles: { halign: 'center', fontStyle: 'italic' } }]], columnStyles: { 0: { cellWidth: 60 }, 2: { cellWidth: 110 }, 3: { cellWidth: 60 } } });
+    k.tabel({ startY: k.y, head: [['JENIS', 'NAMA BARANG', 'UKURAN', 'JUMLAH']], body: d.baris.length ? d.baris.map(([j, n, u, q]) => [j, n, { content: u, styles: { halign: 'center' } }, { content: q, styles: { halign: 'right' } }]) : [[{ content: 'Ukuran belum dibagikan per karyawan.', colSpan: 4, styles: { halign: 'center', fontStyle: 'italic' } }]], columnStyles: { 0: { cellWidth: 60 }, 2: { cellWidth: 110 }, 3: { cellWidth: 60 } } });
     k.y += 10; judul('C. Daftar PO yang dikirim');
     k.tabel({ startY: k.y, head: [['NO', 'TGL PO', 'LOKASI', 'BAGIAN KERJA', 'PCS', 'NILAI BELI']], body: d.daftar.map((p, i) => [{ content: i + 1, styles: { halign: 'center' } }, tglPanjangIso(o.tglBaris ? o.tglBaris(p) : tglPo(p)), p.client, namaRapi(p.bagian_kerja), { content: pcsPermintaan(p), styles: { halign: 'right' } }, { content: rp(Number(p.total_beli || 0)), styles: { halign: 'right' } }]), columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 82 }, 4: { cellWidth: 36 }, 5: { cellWidth: 70 } } });
     k.y += 26; k.cek(100); k.ttd([{ x: L + W * 0.25, label: 'Pemesan,', t: TTD.pic }, { x: L + W * 0.75, label: 'Penyedia,', t: TTD.vendor }], k.y);
@@ -2962,7 +2962,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const sel = v => v ? `<td class="r mxv">${idn(v)}</td>` : '<td class="r mxn">·</td>';
     const baris = g.baris.map(b => { const t = kol.reduce((a, u) => a + nilai(b, u), 0); kol.forEach(u => tot.set(u, (tot.get(u) || 0) + nilai(b, u))); return `<tr><td><b>${esc(namaRapi(b[0]))}</b></td>${kol.map(u => sel(nilai(b, u))).join('')}<td class="r"><b>${idn(t)}</b></td></tr>`; }).join('');
     const semua = [...tot.values()].reduce((a, b) => a + b, 0);
-    return `<section class="rk" style="margin-bottom:16px"><div class="rkh"><h4>${judul}</h4><b>${idn(semua)} pcs</b></div><div class="wrap rkt"><table class="rkmx"><thead><tr><th>Jenis barang</th>${kol.map(u => `<th class="r">${u === '?' ? 'Tanpa ukuran' : esc(u)}</th>`).join('')}<th class="r">Total</th></tr></thead><tbody>${baris}<tr class="rktot"><td><b>Total</b></td>${kol.map(u => `<td class="r"><b>${idn(tot.get(u) || 0)}</b></td>`).join('')}<td class="r"><b>${idn(semua)}</b></td></tr></tbody></table></div></section>`;
+    return `<section class="rk" style="margin-bottom:16px"><div class="rkh"><h4>${judul}</h4><b>${idn(semua)} pcs</b></div><div class="wrap rkt"><table class="rkmx"><thead><tr><th>Jenis barang</th>${kol.map(u => `<th class="r">${u === '?' ? 'Ukuran belum dibagi' : esc(u)}</th>`).join('')}<th class="r">Total</th></tr></thead><tbody>${baris}<tr class="rktot"><td><b>Total</b></td>${kol.map(u => `<td class="r"><b>${idn(tot.get(u) || 0)}</b></td>`).join('')}<td class="r"><b>${idn(semua)}</b></td></tr></tbody></table></div>${adaSisa ? '<div class="muted" style="font-size:.76rem;margin-top:6px">Kolom <b>Ukuran belum dibagi</b>: jumlah barang yang belum dibagikan ke nama karyawan (beserta ukurannya) di form permintaan.</div>' : ''}</section>`;
   }
   // kartu tutorial di sisi kanan halaman Rekap Permintaan: urutan alur dan alasannya
   const TUTORIAL_REKAP = `<aside class="card pcard rktut"><h3 style="margin:0 0 4px">Alur setelah memo disetujui</h3><p class="muted" style="margin:0 0 12px;font-size:.84rem">Langkah singkat:</p>
