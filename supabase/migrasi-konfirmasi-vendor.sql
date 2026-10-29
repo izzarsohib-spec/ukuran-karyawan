@@ -13,8 +13,10 @@ create table if not exists public.konfirmasi_vendor (
   estimasi date,
   catatan text,
   dijawab_pada timestamptz,
-  jumlah_jawab int not null default 0
+  jumlah_jawab int not null default 0,
+  pdf text                                        -- PDF rekap (base64); dibuka vendor lewat tautan, bukan lampiran ntfy (batas ukuran ntfy.sh)
 );
+alter table public.konfirmasi_vendor add column if not exists pdf text;
 alter table public.konfirmasi_vendor enable row level security;
 revoke all on public.konfirmasi_vendor from anon, authenticated;
 

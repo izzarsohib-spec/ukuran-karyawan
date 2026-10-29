@@ -29,7 +29,7 @@
   .status { margin-top:10px; padding:10px 12px; border-radius:12px; border:1px solid var(--garis); font-size:.9rem; }
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="aset/tema-ringan.css?v=1.253">
+<link rel="stylesheet" href="aset/tema-ringan.css?v=1.254">
 </head>
 <body>
 <main>
@@ -73,6 +73,7 @@
       const isi = $('isi'); isi.textContent = '';
       isi.append(baris('Jumlah pesanan', `${rg.total_pcs ?? '-'} pcs`), baris('Jumlah lokasi', String((rg.lokasi || []).length)));
       for (const j of rg.jenis || []) { const d = document.createElement('div'); d.className = 'item'; d.textContent = `${j.jenis}: ${j.total} pcs`; isi.append(d); }
+      const pa = document.createElement('a'); pa.href = `${FN}?t=${encodeURIComponent(t)}&pdf=1`; pa.target = '_blank'; pa.rel = 'noopener'; pa.textContent = 'Buka PDF rekap pesanan'; pa.style.cssText = 'display:inline-block;margin-top:10px;font-weight:600'; isi.append(pa);
       tampilStatus(x);
       const tg = $('tgl'); tg.min = wib(); tg.max = wib(180); if (x.estimasi) tg.value = String(x.estimasi).slice(0, 10);
       $('form').hidden = false;

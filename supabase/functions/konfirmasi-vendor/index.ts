@@ -45,23 +45,29 @@ Deno.serve(async (req) => {
     const ringkasan = b?.ringkasan ?? {}, pdf = String(b?.pdf ?? ''), vendor = String(b?.vendor ?? 'Wahyu Ardianto').slice(0, 80);
     if (!ids.length || !pdf) return json({ error: 'Data pesanan atau PDF kosong' }, 400);
     const token = acak();
-    const { data: baris, error } = await db.from('konfirmasi_vendor').insert({ token, vendor, permintaan_ids: ids, ringkasan }).select('id').single();
+    if (pdf.length > 6_000_000) return json({ error: 'PDF terlalu besar' }, 413);
+    const { data: baris, error } = await db.from('konfirmasi_vendor').insert({ token, vendor, permintaan_ids: ids, ringkasan, pdf }).select('id').single();
     if (error || !baris) return json({ error: 'Gagal menyimpan konfirmasi: ' + (error?.message ?? '') }, 500);
     const fn = `${Deno.env.get('SUPABASE_URL')}/functions/v1/konfirmasi-vendor`;
     const cepat = (hari: number, label: string) => `http, ${label} (${tgl(wib(hari))}), ${fn}?t=${token}&a=jawab&estimasi=${wib(hari)}, method=POST, clear=true`;
     const aksi = [cepat(3, 'Siap 3 hari'), cepat(7, 'Siap 1 minggu'), `view, Pilih tanggal / catatan, ${BASE}/konfirmasi.html?t=${token}, clear=true`].join('; ');
     const rl = (ringkasan.lokasi ?? []) as { client: string; bagian: string; pcs: number }[];
-    const pesan = [`Pesanan ke ${vendor} (${ringkasan.total_pcs ?? '?'} pcs, ${rl.length} lokasi). PDF rekap terlampir.`, 'Mohon konfirmasi kapan pesanan bisa selesai/datang:', '- ketuk "Siap 3 hari" atau "Siap 1 minggu", atau', '- "Pilih tanggal / catatan" untuk tanggal lain.',
+    const linkPdf = `${fn}?t=${token}&pdf=1`, linkHal = `${BASE}/konfirmasi.html?t=${token}`;
+    const pesan = [`Pesanan ke ${vendor} (${ringkasan.total_pcs ?? '?'} pcs, ${rl.length} lokasi).`, `PDF rekap: ${linkPdf}`, '', 'Mohon konfirmasi kapan pesanan bisa selesai/datang:', '- ketuk "Siap 3 hari" atau "Siap 1 minggu", atau', '- "Pilih tanggal / catatan" untuk tanggal lain.',
       '', ...(ringkasan.jenis ?? []).map((j: any) => `${j.jenis}: ${j.total} pcs`)].join('\n');
-    const bytes = Uint8Array.from(atob(pdf), (c) => c.charCodeAt(0));
-    const r = await fetch(`https://ntfy.sh/${topik}`, { method: 'PUT', body: bytes, headers: { Filename: `Rekap pesanan ${wib()}.pdf`, Title: kodekan(`Pesanan baru untuk ${vendor}`), Message: kodekan(pesan), Priority: '4', Tags: 'package', Actions: aksi } });
-    if (!r.ok) { await db.from('konfirmasi_vendor').delete().eq('id', baris.id); return json({ error: `ntfy menolak (${r.status}). Periksa topik dan ukuran PDF.` }, 502); }
+    const r = await fetch(`https://ntfy.sh/${topik}`, { method: 'POST', body: pesan, headers: { Title: kodekan(`Pesanan baru untuk ${vendor}`), Click: linkHal, Priority: '4', Tags: 'package', Actions: aksi } });
+    if (!r.ok) { const m = (await r.text().catch(() => '')).slice(0, 200); await db.from('konfirmasi_vendor').delete().eq('id', baris.id); return json({ error: `ntfy menolak (${r.status}) ${m}` }, 502); }
     return json({ ok: true, id: baris.id });
   }
 
-  // ---------- vendor: lihat ringkasan ----------
+  // ---------- vendor: lihat ringkasan / buka PDF ----------
   if (req.method === 'GET') {
     if (t.length < 32) return teks('Tautan tidak valid.', 400);
+    if (u.searchParams.get('pdf')) {
+      const { data: p } = await db.from('konfirmasi_vendor').select('pdf,vendor').eq('token', t).maybeSingle();
+      if (!p?.pdf) return teks('Tautan tidak dikenali.', 403);
+      return new Response(Uint8Array.from(atob(p.pdf), (c) => c.charCodeAt(0)), { headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename="Rekap pesanan ${wib()}.pdf"`, ...CORS } });
+    }
     const { data: k } = await db.from('konfirmasi_vendor').select('vendor,ringkasan,dikirim_pada,status,estimasi,catatan,dijawab_pada').eq('token', t).maybeSingle();
     if (!k) return teks('Tautan tidak dikenali.', 403);
     return json(k);
