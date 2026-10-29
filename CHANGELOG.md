@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 29 Okt 2026
+- **v1.224** Riwayat barang datang: filter Cari supplier dihapus (browser mengisinya otomatis dengan email; supplier sudah bisa disaring lewat chip Dari vendor / Online). Kotak Cari barang kini selebar kartu dan menonaktifkan isi otomatis browser.
 - **v1.223** Perbaikan cache: berkas versi.js di portal kini dimuat dengan penanda waktu (per menit), sehingga browser tidak lagi memakai nomor versi lama dan menampilkan halaman Seragam versi lama dari cache setelah ada pembaruan.
 - **v1.222** Riwayat barang datang dirapikan: label filter di atas kotaknya dengan kotak seragam selebar kolom, tanggal tidak patah baris, dan daftar barang ditampilkan satu per baris (3 teratas, sisanya dilipat "+ N barang lainnya") menggantikan kalimat panjang berkoma.
 - **v1.221** Riwayat barang datang: kolom pencarian tunggal diganti filter terpisah, yaitu rentang tanggal (Dari/Sampai), Cari barang, dan Cari supplier, ditambah tombol Reset filter. Tabel dipadatkan jadi empat kolom (Tanggal, Supplier & dokumen, Barang, Total) supaya muat di kartu tanpa harus digeser.

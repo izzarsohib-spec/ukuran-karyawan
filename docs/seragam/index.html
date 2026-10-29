@@ -629,7 +629,7 @@
   .dfilter input { width:100%; padding:8px 10px; border:1px solid #CBD5E1; border-radius:10px; background:#fff; color:var(--text); font:inherit; font-size:.88rem; font-weight:400; }
   #dBody td:first-child { white-space:nowrap; } .dbrg { padding:2px 0; border-bottom:1px dashed var(--stroke); font-size:.84rem; } .dbrg:last-child { border-bottom:0; } .dlain summary { cursor:pointer; color:var(--accent); font-size:.8rem; font-weight:600; padding:3px 0; } #dBody td { white-space:normal; vertical-align:top; } #dBody td:nth-child(3) { min-width:180px; }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.223">
+<link rel="stylesheet" href="../aset/tema.css?v=1.224">
 </head>
 <body>
 <div class="shell">
@@ -747,7 +747,7 @@
       <div class="chips" id="dChips" style="margin-bottom:12px"></div>
       <div class="fgrid dfilter">
         <label>Dari tanggal<input type="date" id="dDari"></label><label>Sampai tanggal<input type="date" id="dSampai"></label>
-        <label>Cari barang<input type="search" id="dBarang" placeholder="mis. sepatu PDL"></label><label>Cari supplier<input type="search" id="dSupQ" placeholder="mis. Wahyu"></label>
+        <label style="grid-column:1/-1">Cari barang<input type="search" id="dBarang" placeholder="mis. sepatu PDL" autocomplete="off"></label>
       </div>
       <div class="bgact" style="margin:8px 0 12px"><button class="btn" id="dReset" type="button">Reset filter</button></div>
       <div class="wrap tabelminta"><table><thead><tr><th>Tanggal</th><th>Supplier &amp; dokumen</th><th>Barang yang datang</th><th class="r">Total</th></tr></thead><tbody id="dBody"></tbody></table></div>
@@ -3238,7 +3238,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   // --- halaman Barang datang: riwayat dikelompokkan per tanggal + supplier + dokumen ---
   let dSup = 'semua';
   function renderDatang() {
-    const qb = $('dBarang').value.toLowerCase().trim(), qs = $('dSupQ').value.toLowerCase().trim(), dari = $('dDari').value, sampai = $('dSampai').value, grup = new Map();
+    const qb = $('dBarang').value.toLowerCase().trim(), dari = $('dDari').value, sampai = $('dSampai').value, grup = new Map();
     for (const g of gerak) if (g.jenis === 'masuk' && !g.sumber) {
       const k = `${String(g.tanggal).slice(0, 10)}|${g.supplier || ''}|${g.no_dokumen || ''}`;
       if (!grup.has(k)) grup.set(k, { tgl: String(g.tanggal).slice(0, 10), sup: g.supplier || '-', dok: g.no_dokumen || '', ket: g.keterangan || '', pcs: 0, baris: [] });
@@ -3247,12 +3247,12 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const semua = [...grup.values()].sort((a, b) => b.tgl.localeCompare(a.tgl));
     const online = x => String(x.sup).toLowerCase() === 'online';
     $('dChips').innerHTML = [['semua', 'Semua'], ['vendor', 'Dari vendor'], ['online', 'Online']].map(([k, n]) => `<button class="chip ${dSup === k ? 'on' : ''}" data-d="${k}">${n}</button>`).join('');
-    const f = semua.filter(x => (dSup === 'semua' || (dSup === 'online') === online(x)) && (!dari || x.tgl >= dari) && (!sampai || x.tgl <= sampai) && (!qs || x.sup.toLowerCase().includes(qs)) && (!qb || x.baris.join(' ').toLowerCase().includes(qb)));
+    const f = semua.filter(x => (dSup === 'semua' || (dSup === 'online') === online(x)) && (!dari || x.tgl >= dari) && (!sampai || x.tgl <= sampai) && (!qb || x.baris.join(' ').toLowerCase().includes(qb)));
     $('infoDatang').textContent = `${idn(semua.length)} penerimaan tercatat · ${idn(semua.reduce((a, x) => a + x.pcs, 0))} pcs${gerak.length >= 1000 ? ' (dari 1000 gerak stok terakhir)' : ''}`;
     $('dBody').innerHTML = f.map(x => `<tr><td>${tglPendek(x.tgl)}</td><td><b>${esc(x.sup)}</b><div class="muted">${esc(x.dok || '-')}${x.ket ? ' · ' + esc(x.ket) : ''}</div></td><td>${(n => x.baris.slice(0, n).map(b => `<div class="dbrg">${esc(b)}</div>`).join('') + (x.baris.length > n ? `<details class="dlain"><summary>+ ${x.baris.length - n} barang lainnya</summary>${x.baris.slice(n).map(b => `<div class="dbrg">${esc(b)}</div>`).join('')}</details>` : ''))(3)}</td><td class="r"><b>${idn(x.pcs)}</b> pcs</td></tr>`).join('') || '<tr><td colspan="4" class="kosongnya">Tidak ada barang datang yang cocok.</td></tr>';
   }
   $('dChips').onclick = e => { const d = e.target.dataset && e.target.dataset.d; if (d) { dSup = d; renderDatang(); } };
-  ['dDari', 'dSampai', 'dBarang', 'dSupQ'].forEach(id => { $(id).oninput = renderDatang; }); $('dReset').onclick = () => { ['dDari', 'dSampai', 'dBarang', 'dSupQ'].forEach(id => { $(id).value = ''; }); dSup = 'semua'; renderDatang(); }; $('dMuat').onclick = muatHilir;
+  ['dDari', 'dSampai', 'dBarang'].forEach(id => { $(id).oninput = renderDatang; }); $('dReset').onclick = () => { ['dDari', 'dSampai', 'dBarang'].forEach(id => { $(id).value = ''; }); dSup = 'semua'; renderDatang(); }; $('dMuat').onclick = muatHilir;
   // --- form barang masuk ---
   const opsiItemMasuk = no => '<option value="">Pilih barang</option>' + [...new Set(HARGA.map(h => h.kat))].map(k => `<optgroup label="${esc(k)}">` + HARGA.filter(h => h.kat === k).map(h => `<option value="${h.no}" ${String(h.no) === String(no) ? 'selected' : ''}>${esc(h.nama)}</option>`).join('') + '</optgroup>').join('');
   function renderBarisMasuk() {
