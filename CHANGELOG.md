@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 29 Okt 2026
+- **v1.228** Form Catat barang datang: lebar kolom Barang, Jenis, Ukuran, dan Qty disesuaikan supaya semuanya muat di kartu (kolom Qty sebelumnya terdorong keluar kartu).
 - **v1.227** Riwayat barang datang: isi tiap penerimaan dipecah per barang. Satu barang satu blok dengan jumlah totalnya, di bawahnya per jenis (Baju, Celana, Sepatu) dengan jumlah tiap ukuran, misalnya Baju M x6, L x8 dan Celana 34 x4, 36 x6. Tiga barang pertama langsung tampil, sisanya dilipat.
 - **v1.226** Riwayat barang datang: daftar dropdown Cari barang kini mengikuti filter di atasnya. Pada Semua berisi barang dari vendor maupun online, pada Dari vendor hanya barang dari vendor, pada Online hanya barang online (dan ikut menyempit sesuai rentang tanggal). Hasil riwayat juga tersaring sesuai chip yang aktif.
 - **v1.225** Riwayat barang datang: kotak Cari barang bisa diketik sekaligus dipilih dari daftar (dropdown berisi semua nama barang; daftar menyempit saat mengetik).

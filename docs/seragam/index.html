@@ -623,13 +623,13 @@
   @media (max-width: 1100px) { .datang2 { grid-template-columns:minmax(0,1fr); } }
   .rkmx { width:auto !important; min-width:0; } .rkmx th:first-child, .rkmx td:first-child { min-width:260px; white-space:normal; } .rkmx th.r, .rkmx td.r { min-width:58px; text-align:center; } .rkmx th, .rkmx td { padding:7px 12px; white-space:nowrap; } .rkmx .mxv { font-weight:600; } .rkmx .mxn { color:var(--muted); opacity:.5; }
   .rkmx .rktot td { border-top:2px solid var(--stroke); background:rgba(0,0,0,.03); }
-  #iBaris select, #iBaris input { width:100%; min-width:0; } #iBaris select.im-jenis { min-width:130px; } #iBaris select.im-item { min-width:190px; } #iBaris td:nth-child(2) { min-width:130px; } #iBaris select:disabled { opacity:.55; cursor:not-allowed; }
-  .ukcell { display:flex; flex-wrap:wrap; gap:5px; min-width:260px; } .ukb { min-width:42px; padding:5px 9px; border:1px solid var(--stroke); border-radius:9px; background:#fff; cursor:pointer; font-size:.82rem; font-weight:600; color:var(--text); } .ukb:hover { border-color:var(--accent); } .ukb.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+  #iBaris select, #iBaris input { width:100%; min-width:0; } #iBaris select.im-jenis { min-width:105px; } #iBaris select.im-item { min-width:150px; } #iBaris td:nth-child(2) { min-width:105px; } #iBaris td:nth-child(4) { min-width:70px; } #iBaris td { padding-left:6px; padding-right:6px; } #iBaris select:disabled { opacity:.55; cursor:not-allowed; }
+  .ukcell { display:flex; flex-wrap:wrap; gap:5px; min-width:190px; } .ukb { min-width:42px; padding:5px 9px; border:1px solid var(--stroke); border-radius:9px; background:#fff; cursor:pointer; font-size:.82rem; font-weight:600; color:var(--text); } .ukb:hover { border-color:var(--accent); } .ukb.on { background:var(--accent); border-color:var(--accent); color:#fff; }
   .dfilter { display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; } .dfilter label { display:flex; flex-direction:column; gap:4px; font-size:.76rem; font-weight:600; color:var(--muted); }
   .dfilter input { width:100%; padding:8px 10px; border:1px solid #CBD5E1; border-radius:10px; background:#fff; color:var(--text); font:inherit; font-size:.88rem; font-weight:400; }
   #dBody td:first-child { white-space:nowrap; } .dit { padding:7px 0; border-bottom:1px solid var(--stroke); } .dit:last-child { border-bottom:0; } .dith { display:flex; justify-content:space-between; gap:10px; font-size:.86rem; } .dith span { color:var(--muted); font-size:.78rem; white-space:nowrap; } .djn { display:flex; flex-wrap:wrap; align-items:center; gap:4px 6px; margin-top:4px; } .djl { min-width:52px; font-size:.72rem; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.03em; } .duk { padding:2px 8px; border:1px solid var(--stroke); border-radius:8px; background:rgba(0,0,0,.025); font-size:.78rem; } .dbrg { padding:2px 0; border-bottom:1px dashed var(--stroke); font-size:.84rem; } .dbrg:last-child { border-bottom:0; } .dlain summary { cursor:pointer; color:var(--accent); font-size:.8rem; font-weight:600; padding:3px 0; } #dBody td { white-space:normal; vertical-align:top; } #dBody td:nth-child(3) { min-width:180px; }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.227">
+<link rel="stylesheet" href="../aset/tema.css?v=1.228">
 </head>
 <body>
 <div class="shell">
@@ -738,7 +738,7 @@
         <label>Tanggal<input type="date" id="iTgl"></label><label>Supplier<select id="iSup"><option>Wahyu Ardianto</option><option>Online</option></select></label>
         <label><span id="iDokL">No. surat jalan / faktur Wahyu Ardianto</span><input id="iDok"></label><label>Keterangan<input id="iKet" placeholder="opsional"></label></div>
       <div class="row" style="margin:16px 0 8px"><b>Barang yang masuk</b><button class="btn" id="iTambah">+ Tambah baris</button></div>
-      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:200px">Barang</th><th style="min-width:130px">Jenis</th><th style="min-width:260px">Ukuran</th><th style="min-width:80px">Qty</th><th></th></tr></thead><tbody id="iBaris"></tbody></table></div>
+      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:150px">Barang</th><th style="min-width:105px">Jenis</th><th style="min-width:190px">Ukuran</th><th style="min-width:70px">Qty</th><th></th></tr></thead><tbody id="iBaris"></tbody></table></div>
       <div class="hint" id="iPesan"></div>
       <div class="bgact" style="margin-top:12px"><button class="cta" id="iSimpan">Simpan barang masuk</button><button class="btn" id="iBatal">Kosongkan form</button></div>
     </section>
