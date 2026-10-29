@@ -628,11 +628,11 @@
   .dfilter { display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; } .dfilter label { display:flex; flex-direction:column; gap:4px; font-size:.76rem; font-weight:600; color:var(--muted); }
   .dfilter input { width:100%; padding:8px 10px; border:1px solid #CBD5E1; border-radius:10px; background:#fff; color:var(--text); font:inherit; font-size:.88rem; font-weight:400; }
   #dBody td:first-child, #kcBody td:first-child { white-space:nowrap; } .dtot { min-width:96px; } .dtot div { display:flex; justify-content:space-between; gap:12px; padding:2px 0; font-size:.84rem; } .dtot span { color:var(--muted); font-size:.76rem; font-weight:600; } .dtot b { font-size:.9rem; } .dit { padding:7px 0; border-bottom:1px solid var(--stroke); } .dit:last-child { border-bottom:0; } .dith { display:flex; justify-content:space-between; gap:10px; font-size:.86rem; } .dith span { color:var(--muted); font-size:.78rem; white-space:nowrap; } .djn { display:flex; flex-wrap:wrap; align-items:stretch; gap:5px; margin-top:6px; } .djl { display:flex; flex-direction:column; justify-content:center; min-width:62px; font-size:.72rem; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.03em; } .djl small { color:var(--muted); font-size:.7rem; font-weight:500; text-transform:none; letter-spacing:0; } .duk { display:flex; flex-direction:column; align-items:stretch; min-width:42px; border:1px solid var(--stroke); border-radius:8px; overflow:hidden; text-align:center; } .duk i { font-style:normal; padding:2px 6px; font-size:.72rem; font-weight:600; color:var(--muted); background:var(--lembut, #F4F7FB); border-bottom:1px solid var(--stroke); } .duk b { padding:3px 6px; font-size:.86rem; } .dbrg { padding:2px 0; border-bottom:1px dashed var(--stroke); font-size:.84rem; } .dbrg:last-child { border-bottom:0; } .dlain summary { cursor:pointer; color:var(--accent); font-size:.8rem; font-weight:600; padding:3px 0; } #dBody td, #kcBody td { white-space:normal; vertical-align:top; } #dBody td:nth-child(3), #kcBody td:nth-child(3) { min-width:180px; }
-  .ifil { position:relative; display:inline-block; } .ipanel { position:absolute; z-index:25; top:calc(100% + 6px); left:0; min-width:250px; padding:8px; background:#fff; border:1px solid var(--stroke); border-radius:14px; box-shadow:0 12px 32px rgba(15,23,42,.18); }
+  .ifil { position:relative; display:inline-block; margin-right:8px; } .ipanel { position:absolute; z-index:25; top:calc(100% + 6px); left:0; min-width:250px; padding:8px; background:#fff; border:1px solid var(--stroke); border-radius:14px; box-shadow:0 12px 32px rgba(15,23,42,.18); }
   .ijudul { padding:6px 8px 4px; font-size:.7rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); } .ifo { display:flex; align-items:center; gap:10px; width:100%; padding:7px 8px; border:0; border-radius:9px; background:none; cursor:pointer; text-align:left; font-size:.88rem; color:var(--text); } .ifo:hover { background:rgba(0,0,0,.05); } .ifo.on { font-weight:600; }
   .ifo .ck, .ifo .rd { display:inline-grid; place-items:center; width:18px; height:18px; border:1.5px solid #94A3B8; font-size:.72rem; color:#fff; flex:none; } .ifo .ck { border-radius:5px; } .ifo .rd { border-radius:50%; } .ifo.on .ck, .ifo.on .rd { background:var(--navy, #33475B); border-color:var(--navy, #33475B); }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.233">
+<link rel="stylesheet" href="../aset/tema.css?v=1.234">
 </head>
 <body>
 <div class="shell">
@@ -3201,7 +3201,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   }
 
   // ----------------- INVENTARIS -----------------
-  let iFilBuka = false, iTab = 'stok', iKat = 'semua', iAda = true, iJenis = 'semua', iBaris = [], iView = 'daftar';
+  let iFilBuka = '', iTab = 'stok', iKat = 'semua', iAda = true, iJenis = 'semua', iBaris = [], iView = 'daftar';
   const saldoItem = no => stok.filter(s => s.item_no === no);
   // urutan ukuran yang wajar: S M L XL ... untuk baju, angka naik untuk celana dan sepatu
   const URUT_BAJU = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL', 'L6', 'L7'];
@@ -3241,10 +3241,11 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     $('iTab').innerHTML = [['stok', 'Stok gudang'], ['riwayat', 'Riwayat masuk & keluar']].map(([t, n]) => `<button class="chip ${iTab === t ? 'on' : ''}" data-t="${t}">${n}</button>`).join('');
     if (iTab === 'stok') {
       const kats = ['semua', ...new Set(HARGA.map(h => h.kat))];
-      // satu tombol Filter: kategori, hanya yang ada stok, dan tampilan matriks ada di dalam panelnya
-      const ringkas = [iKat === 'semua' ? 'Semua kategori' : iKat, iAda ? 'ada stok' : '', iView === 'matriks' ? 'matriks' : ''].filter(Boolean).join(' · ');
+      // dua tombol filter terpisah: Kategori dan Tampilan (masing-masing membuka panel pilihan sendiri)
+      const tmp = [iAda ? 'ada stok' : '', iView === 'matriks' ? 'matriks' : ''].filter(Boolean).join(' · ') || 'Standar';
       const opsi = (att, aktif, teks, cek) => `<button type="button" class="ifo ${aktif ? 'on' : ''}" ${att}><span class="${cek ? 'ck' : 'rd'}">${aktif ? '✓' : ''}</span>${teks}</button>`;
-      $('iChips').innerHTML = `<div class="ifil"><button type="button" class="chip on" data-buka="1" aria-expanded="${iFilBuka}">Filter: ${esc(ringkas)} ▾</button>${iFilBuka ? `<div class="ipanel"><div class="ijudul">Kategori</div>${kats.map(k => opsi(`data-k="${esc(k)}"`, iKat === k, k === 'semua' ? 'Semua kategori' : esc(k), false)).join('')}<div class="ijudul">Tampilan</div>${opsi('data-ada="1"', iAda, 'Hanya yang ada stok', true)}${opsi('data-v="matriks"', iView === 'matriks', 'Matriks ukuran', true)}</div>` : ''}</div>`;
+      $('iChips').innerHTML = `<div class="ifil"><button type="button" class="chip on" data-buka="kat" aria-expanded="${iFilBuka === 'kat'}">Kategori: ${esc(iKat === 'semua' ? 'Semua' : iKat)} ▾</button>${iFilBuka === 'kat' ? `<div class="ipanel">${kats.map(k => opsi(`data-k="${esc(k)}"`, iKat === k, k === 'semua' ? 'Semua kategori' : esc(k), false)).join('')}</div>` : ''}</div>`
+        + `<div class="ifil"><button type="button" class="chip on" data-buka="tmp" aria-expanded="${iFilBuka === 'tmp'}">Tampilan: ${esc(tmp)} ▾</button>${iFilBuka === 'tmp' ? `<div class="ipanel">${opsi('data-ada="1"', iAda, 'Hanya yang ada stok', true)}${opsi('data-v="matriks"', iView === 'matriks', 'Matriks ukuran', true)}</div>` : ''}</div>`;
       $('iHead').innerHTML = '<tr><th style="min-width:230px">Barang</th><th>Stok per ukuran</th><th class="r">Total</th></tr>';
       const baris = HARGA.filter(h => (iKat === 'semua' || h.kat === iKat) && q.every(w => h.nama.toLowerCase().includes(w))).map(h => ({ h, s: saldoItem(h.no) })).filter(x => !iAda || x.s.some(s => s.saldo > 0));
       if (iView === 'matriks') { $('iHead').innerHTML = ''; $('iBody').innerHTML = `<tr><td colspan="3" style="padding:0">${htmlMatriksStok(matriksStok(baris))}</td></tr>`; return; }
@@ -3267,8 +3268,8 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     }
   }
   $('iTab').onclick = e => { const t = e.target.dataset && e.target.dataset.t; if (t) { iTab = t; renderInventaris(); } };
-  $('iChips').onclick = e => { const el = e.target.closest('[data-buka],[data-k],[data-v],[data-ada],[data-j]'); const d = el && el.dataset; if (!d) return; if (d.buka) iFilBuka = !iFilBuka; else if (d.k) iKat = d.k; else if (d.v) iView = iView === d.v ? 'daftar' : d.v; else if (d.ada) iAda = !iAda; else if (d.j) iJenis = d.j; else return; renderInventaris(); };
-  document.addEventListener('click', e => { if (iFilBuka && !e.target.closest('.ifil')) { iFilBuka = false; renderInventaris(); } });
+  $('iChips').onclick = e => { const el = e.target.closest('[data-buka],[data-k],[data-v],[data-ada],[data-j]'); const d = el && el.dataset; if (!d) return; if (d.buka) iFilBuka = iFilBuka === d.buka ? '' : d.buka; else if (d.k) iKat = d.k; else if (d.v) iView = iView === d.v ? 'daftar' : d.v; else if (d.ada) iAda = !iAda; else if (d.j) iJenis = d.j; else return; renderInventaris(); };
+  document.addEventListener('click', e => { if (iFilBuka && !e.target.closest('.ifil')) { iFilBuka = ''; renderInventaris(); } });
   $('iCari').oninput = renderInventaris; $('iMuat').onclick = muatHilir;
   // --- halaman Barang datang: riwayat dikelompokkan per tanggal + supplier + dokumen ---
   let dSup = 'semua';
