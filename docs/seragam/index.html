@@ -633,7 +633,7 @@
   .ifo .ck, .ifo .rd { display:inline-grid; place-items:center; width:18px; height:18px; border:1.5px solid #94A3B8; font-size:.72rem; color:#fff; flex:none; } .ifo .ck { border-radius:5px; } .ifo .rd { border-radius:50%; } .ifo.on .ck, .ifo.on .rd { background:var(--navy, #33475B); border-color:var(--navy, #33475B); }
   .kcprog { height:6px; margin:6px 0 3px; max-width:220px; border-radius:99px; background:rgba(0,0,0,.09); overflow:hidden; } .kcprog i { display:block; height:100%; border-radius:99px; background:var(--ok, #3F7F6B); }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.237">
+<link rel="stylesheet" href="../aset/tema.css?v=1.238">
 </head>
 <body>
 <div class="shell">
@@ -727,7 +727,7 @@
         <label>No. PO / surat jalan terkait<input id="kcRef" autocomplete="off" placeholder="opsional"></label><label>Estimasi kirim<input type="date" id="kcEst"></label>
         <label style="grid-column:1/-1">Keterangan<input id="kcKet" autocomplete="off" placeholder="mis. menunggu bahan, janji kirim minggu depan"></label></div>
       <div class="row" style="margin:16px 0 8px"><b>Barang yang kurang</b><button class="btn" id="kcTambah" type="button">+ Tambah baris</button></div>
-      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:150px">Barang</th><th style="min-width:105px">Jenis</th><th style="min-width:190px">Ukuran</th><th style="min-width:70px">Qty</th><th></th></tr></thead><tbody id="kcBaris"></tbody></table></div>
+      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:150px">Barang</th><th style="min-width:105px">Jenis</th><th style="min-width:130px">Ukuran</th><th style="min-width:70px">Qty</th><th></th></tr></thead><tbody id="kcBaris"></tbody></table></div>
       <div class="hint" id="kcPesan"></div>
       <div class="bgact" style="margin-top:12px"><button class="cta" id="kcSimpan" type="button">Simpan kekurangan</button><button class="btn" id="kcBatal" type="button">Kosongkan form</button></div>
     </section>
@@ -771,7 +771,7 @@
         <label>Tanggal<input type="date" id="iTgl"></label><label>Supplier<select id="iSup"><option>Wahyu Ardianto</option><option>Online</option></select></label>
         <label><span id="iDokL">No. surat jalan / faktur Wahyu Ardianto</span><input id="iDok"></label><label>Keterangan<input id="iKet" placeholder="opsional"></label></div>
       <div class="row" style="margin:16px 0 8px"><b>Barang yang masuk</b><button class="btn" id="iTambah">+ Tambah baris</button></div>
-      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:150px">Barang</th><th style="min-width:105px">Jenis</th><th style="min-width:190px">Ukuran</th><th style="min-width:70px">Qty</th><th></th></tr></thead><tbody id="iBaris"></tbody></table></div>
+      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:150px">Barang</th><th style="min-width:105px">Jenis</th><th style="min-width:130px">Ukuran</th><th style="min-width:70px">Qty</th><th></th></tr></thead><tbody id="iBaris"></tbody></table></div>
       <div class="hint" id="iPesan"></div>
       <div class="bgact" style="margin-top:12px"><button class="cta" id="iSimpan">Simpan barang masuk</button><button class="btn" id="iBatal">Kosongkan form</button></div>
     </section>
@@ -801,7 +801,7 @@
         <label><span id="rRefL">Surat jalan asal</span><select id="rRef"></select></label>
         <label>Alasan retur<input id="rAlasan" maxlength="200" placeholder="mis. salah ukuran, cacat"></label></div>
       <div class="row" style="margin:16px 0 8px"><b>Barang yang diretur</b><button class="btn" id="rTambah">+ Tambah baris</button></div>
-      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:150px">Barang</th><th style="min-width:105px">Jenis</th><th style="min-width:190px">Ukuran</th><th style="min-width:70px">Qty</th><th></th></tr></thead><tbody id="rBaris"></tbody></table></div>
+      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:150px">Barang</th><th style="min-width:105px">Jenis</th><th style="min-width:130px">Ukuran</th><th style="min-width:70px">Qty</th><th></th></tr></thead><tbody id="rBaris"></tbody></table></div>
       <div class="hint" id="rPesan"></div>
       <div class="bgact" style="margin-top:12px"><button class="cta" id="rSimpan">Simpan retur</button><button class="btn" id="rBatal">Kosongkan form</button></div>
     </section>
@@ -3332,7 +3332,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
       const h = HARGA.find(x => String(x.no) === String(b.no)), js = h ? jenisItem(h.no, h.nama) : [];
       return `<tr data-n="${n}"><td><select class="im-item">${opsiItemMasuk(b.no)}</select></td>
         <td><select class="im-jenis" ${h ? '' : 'disabled'}>${js.length > 1 ? '<option value="">Pilih</option>' : ''}${js.map(j => `<option value="${j}" ${b.jenis === j ? 'selected' : ''}>${NAMA_JENIS[j]}</option>`).join('')}</select></td>
-        <td class="ukcell">${b.jenis === '-' ? '<span class="muted">Tanpa ukuran</span>' : b.jenis ? daftarUkuran(b.jenis).map(u => `<button type="button" class="ukb ${u === b.ukuran ? 'on' : ''}" data-u="${esc(u)}">${esc(u)}</button>`).join('') : '<span class="muted">Pilih jenis dulu</span>'}</td>
+        <td><select class="im-uk" ${b.jenis && b.jenis !== '-' ? '' : 'disabled'}>${b.jenis === '-' ? '<option value="-">Tanpa ukuran</option>' : b.jenis ? opsiUk(daftarUkuran(b.jenis), b.ukuran) : '<option value="">Pilih jenis dulu</option>'}</select></td>
         <td><input class="im-qty" type="number" min="1" inputmode="numeric" placeholder="0" value="${esc(b.qty)}"></td><td><button class="x" type="button" title="Hapus baris" aria-label="Hapus baris">✕</button></td></tr>`;
     }).join('');
   }
@@ -3348,6 +3348,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const tr = e.target.closest('tr'); if (!tr) return; const b = kcRows[tr.dataset.n];
     if (e.target.classList.contains('im-item')) { b.no = e.target.value; const h = HARGA.find(x => String(x.no) === String(b.no)), js = h ? jenisItem(h.no, h.nama) : []; b.jenis = js.length === 1 ? js[0] : ''; b.ukuran = b.jenis === '-' ? '-' : ''; kcRender(); }
     else if (e.target.classList.contains('im-jenis')) { b.jenis = e.target.value; b.ukuran = b.jenis === '-' ? '-' : ''; kcRender(); }
+    else if (e.target.classList.contains('im-uk')) b.ukuran = e.target.value;
   };
   $('kcBaris').oninput = e => { if (e.target.classList.contains('im-qty')) kcRows[e.target.closest('tr').dataset.n].qty = e.target.value; };
   $('kcBaris').onclick = e => {
@@ -3423,7 +3424,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
       const h = HARGA.find(x => String(x.no) === String(b.no)), js = h ? jenisItem(h.no, h.nama) : [];
       return `<tr data-n="${n}"><td><select class="im-item">${opsiItemMasuk(b.no)}</select></td>
         <td><select class="im-jenis" ${h ? '' : 'disabled'}>${js.length > 1 ? '<option value="">Pilih</option>' : ''}${js.map(j => `<option value="${j}" ${b.jenis === j ? 'selected' : ''}>${NAMA_JENIS[j]}</option>`).join('')}</select></td>
-        <td class="ukcell">${b.jenis === '-' ? '<span class="muted">Tanpa ukuran</span>' : b.jenis ? daftarUkuran(b.jenis).map(u => `<button type="button" class="ukb ${u === b.ukuran ? 'on' : ''}" data-u="${esc(u)}">${esc(u)}</button>`).join('') : '<span class="muted">Pilih jenis dulu</span>'}</td>
+        <td><select class="im-uk" ${b.jenis && b.jenis !== '-' ? '' : 'disabled'}>${b.jenis === '-' ? '<option value="-">Tanpa ukuran</option>' : b.jenis ? opsiUk(daftarUkuran(b.jenis), b.ukuran) : '<option value="">Pilih jenis dulu</option>'}</select></td>
         <td><input class="im-qty" type="number" min="1" inputmode="numeric" placeholder="0" value="${esc(b.qty)}"></td><td><button class="x" title="Hapus baris" aria-label="Hapus baris">✕</button></td></tr>`;
     }).join('');
   }
@@ -3473,7 +3474,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
         const h = HARGA.find(x => String(x.no) === String(b.no)), js = h ? jenisItem(h.no, h.nama) : [];
         return `<tr data-n="${n}"><td><select class="im-item">${opsiItemMasuk(b.no)}</select></td>
           <td><select class="im-jenis" ${h ? '' : 'disabled'}>${js.length > 1 ? '<option value="">Pilih</option>' : ''}${js.map(j => `<option value="${j}" ${b.jenis === j ? 'selected' : ''}>${NAMA_JENIS[j]}</option>`).join('')}</select></td>
-          <td class="ukcell">${b.jenis === '-' ? '<span class="muted">Tanpa ukuran</span>' : b.jenis ? daftarUkuran(b.jenis).map(u => `<button type="button" class="ukb ${u === b.ukuran ? 'on' : ''}" data-u="${esc(u)}">${esc(u)}</button>`).join('') : '<span class="muted">Pilih jenis dulu</span>'}</td>
+          <td><select class="im-uk" ${b.jenis && b.jenis !== '-' ? '' : 'disabled'}>${b.jenis === '-' ? '<option value="-">Tanpa ukuran</option>' : b.jenis ? opsiUk(daftarUkuran(b.jenis), b.ukuran) : '<option value="">Pilih jenis dulu</option>'}</select></td>
           <td><input class="im-qty" type="number" min="1" inputmode="numeric" placeholder="0" value="${esc(b.qty)}"></td><td><button class="x" title="Hapus baris" aria-label="Hapus baris">✕</button></td></tr>`;
       }).join('');
     };
