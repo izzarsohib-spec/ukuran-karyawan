@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.222', tanggal: '2026-10-29', catatan: 'Riwayat barang datang: filter dan daftar barang dirapikan' };
+window.VERSI = { no: '1.223', tanggal: '2026-10-29', catatan: 'Perbaikan cache: versi terbaru selalu dimuat' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
