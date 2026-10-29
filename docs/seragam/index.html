@@ -652,10 +652,11 @@
   /* ---- kerangka acuan (meniru halaman Permintaan): kartu luar + tiga kartu dalam .k3, tinggi tetap, gulir di dalam kartu ---- */
   #rkDatang:not([hidden]), #rkKurang:not([hidden]) { display:block; } .rkw { display:block; }
   #rkDatang .layout, #rkKurang .layout, #pg-retur .layout { grid-template-columns:minmax(0,1fr); }
-  #rkDatang .detail.tiga, #rkKurang .detail.tiga, #pg-retur .detail.tiga { height:clamp(560px, calc(100vh - 250px), 780px); }
+  #rkDatang .detail.tiga, #rkKurang .detail.tiga, #pg-retur .detail.tiga { height:clamp(540px, calc(100vh - 305px), 760px); }
   #rkDatang .tiga .k3, #rkKurang .tiga .k3, #pg-retur .tiga .k3 { overflow:auto; min-height:0; }
   .rk2.detail.tiga { grid-template-columns:minmax(270px,.95fr) minmax(0,2.6fr); } .rk2.detail.tiga > .k3 { overflow:auto; min-height:0; }
   .rk3.detail.tiga { grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr); align-items:stretch; margin-top:14px; } .rk3.detail.tiga > .k3 { display:flex; flex-direction:column; height:clamp(380px, 56vh, 600px); }
+  .riw2 .dfilter { grid-template-columns:minmax(0,1fr) !important; } .riw2 .dfilter input[type=date] { width:100%; }
   /* kartu riwayat: daftar bertumpuk (tanpa geser ke samping) di kolom sempit */
   .riw2 { display:flex; flex-direction:column; overflow:hidden !important; } .riw2 > .bar-top { flex:none; } .riw2 .wrap { flex:1; min-height:0; overflow:auto; }
   .riw2 table, .riw2 tbody, .riw2 tr, .riw2 td { display:block; width:100%; } .riw2 thead { display:none; }
@@ -673,7 +674,7 @@
   .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
   @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); height:auto; } .rk2k > .card { height:auto; } .pmscroll { max-height:70vh; } .rktut { height:auto; overflow:visible; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.277">
+<link rel="stylesheet" href="../aset/tema.css?v=1.278">
 </head>
 <body>
 <div class="shell">
