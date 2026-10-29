@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 29 Okt 2026
+- **v1.288** Stock opname: deretan kartu angka (Opname dilakukan, Opname terakhir, Total kekurangan, Total kelebihan, Barang pernah selisih) dihapus.
 - **v1.287** Stock opname: kartu tutorial dan kartu kanan kini mulai dari garis atas yang sama.
 - **v1.286** Halaman Stock opname diberi kartu tutorial "Cara memakai Stock opname" di kolom kiri (lima langkah: mulai hitung, isi Fisik, periksa Selisih, simpan, lihat riwayat), dengan form dan riwayat di kolom kanan.
 - **v1.285** Inventaris, tab Riwayat masuk & keluar: chip **Retur** dan **Penyesuaian opname** dihapus, dan riwayat ini kini hanya berisi barang masuk dari supplier dan barang keluar (pengiriman). Retur dan penyesuaian opname dilihat di halaman Retur dan Stock opname masing-masing.
