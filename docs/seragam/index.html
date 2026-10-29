@@ -632,7 +632,7 @@
   .ijudul { padding:6px 8px 4px; font-size:.7rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); } .ifo { display:flex; align-items:center; gap:10px; width:100%; padding:7px 8px; border:0; border-radius:9px; background:none; cursor:pointer; text-align:left; font-size:.88rem; color:var(--text); } .ifo:hover { background:rgba(0,0,0,.05); } .ifo.on { font-weight:600; }
   .ifo .ck, .ifo .rd { display:inline-grid; place-items:center; width:18px; height:18px; border:1.5px solid #94A3B8; font-size:.72rem; color:#fff; flex:none; } .ifo .ck { border-radius:5px; } .ifo .rd { border-radius:50%; } .ifo.on .ck, .ifo.on .rd { background:var(--navy, #33475B); border-color:var(--navy, #33475B); }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.235">
+<link rel="stylesheet" href="../aset/tema.css?v=1.236">
 </head>
 <body>
 <div class="shell">
@@ -640,7 +640,7 @@
     <a class="home" href="../" title="Halaman Utama" aria-label="Halaman Utama"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span>Halaman Utama</span></a>
     <button class="on" data-pg="ringkasan" title="Dashboard Utama" aria-label="Dashboard Utama"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Dashboard Utama</span></button>
     <button data-pg="monitor" title="Monitoring & Permintaan" aria-label="Monitoring & Permintaan"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span>Monitoring & Permintaan</span></button>
-    <button data-pg="rekap" title="Rekap Permintaan" aria-label="Rekap Permintaan"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg><span>Rekap Permintaan</span></button>
+    <button data-pg="rekap" title="Rekap Permintaan & Barang Datang" aria-label="Rekap Permintaan & Barang Datang"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg><span>Rekap Permintaan & Barang Datang</span></button>
     <button data-pg="inventaris" title="Inventaris & Monitoring Stok Gudang" aria-label="Inventaris & Monitoring Stok Gudang"><svg viewBox="0 0 24 24"><path d="M3 9 12 4l9 5v11H3z"/><path d="M8 20v-6h8v6M8 14h8"/></svg><span>Inventaris & Stok Gudang</span></button>
     <button data-pg="ploting" title="Ploting & Pengiriman" aria-label="Ploting & Pengiriman"><svg viewBox="0 0 24 24"><path d="M2 6h12v10H2zM14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg><span>Ploting & Pengiriman</span></button>
     <button data-pg="tagihan" title="Tagihan" aria-label="Tagihan"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg><span>Tagihan</span></button>
@@ -648,7 +648,7 @@
   </aside>
 
   <div class="content">
-   <nav class="mobnav" id="mobnav"><a class="mobhome" href="../">‹ Utama</a><button class="on" data-pg="ringkasan">Dashboard</button><button data-pg="monitor">Monitoring &amp; Permintaan</button><button data-pg="rekap">Rekap Permintaan</button><button data-pg="inventaris">Inventaris &amp; Stok</button><button data-pg="ploting">Ploting &amp; Kirim</button><button data-pg="tagihan">Tagihan</button></nav>
+   <nav class="mobnav" id="mobnav"><a class="mobhome" href="../">‹ Utama</a><button class="on" data-pg="ringkasan">Dashboard</button><button data-pg="monitor">Monitoring &amp; Permintaan</button><button data-pg="rekap">Rekap &amp; Barang Datang</button><button data-pg="inventaris">Inventaris &amp; Stok</button><button data-pg="ploting">Ploting &amp; Kirim</button><button data-pg="tagihan">Tagihan</button></nav>
    <nav class="chips subtabs" id="subtabs" hidden></nav>
 
    <div class="page" id="pg-ringkasan">
