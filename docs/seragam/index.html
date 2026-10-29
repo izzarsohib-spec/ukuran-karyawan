@@ -692,7 +692,7 @@
   .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
   @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); height:auto; } .rk2k > .card { height:auto; } .pmscroll { max-height:70vh; } .rktut { height:auto; overflow:visible; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.284">
+<link rel="stylesheet" href="../aset/tema.css?v=1.285">
 </head>
 <body>
 <div class="shell">
@@ -3521,9 +3521,10 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
           <td class="mxt"><b>${idn(total)}</b><span class="muted">pcs</span></td></tr>`;
       }).join('') || '<tr><td colspan="3" class="kosongnya">Tidak ada barang yang cocok.</td></tr>';
     } else {
-      $('iChips').innerHTML = [['semua', 'Semua'], ['masuk', 'Masuk dari supplier'], ['keluar', 'Keluar (pengiriman)'], ['retur', 'Retur'], ['opname', 'Penyesuaian opname']].map(([k, n]) => `<button class="chip ${iJenis === k ? 'on' : ''}" data-j="${k}">${n}</button>`).join('');
+      $('iChips').innerHTML = [['semua', 'Semua'], ['masuk', 'Masuk dari supplier'], ['keluar', 'Keluar (pengiriman)']].map(([k, n]) => `<button class="chip ${iJenis === k ? 'on' : ''}" data-j="${k}">${n}</button>`).join('');
       $('iHead').innerHTML = '<tr><th>Tanggal</th><th>Jenis</th><th>Barang</th><th>Ukuran</th><th class="r">Qty</th><th>Supplier / tujuan</th><th>Dokumen</th></tr>';
-      const cocokJenis = g => iJenis === 'semua' || (iJenis === 'retur' || iJenis === 'opname' ? g.sumber === iJenis : g.jenis === iJenis && !g.sumber);
+      // retur dan penyesuaian opname punya halaman dan riwayat sendiri (Retur, Stock opname), jadi tidak ikut di riwayat masuk & keluar ini
+      const cocokJenis = g => !g.sumber && (iJenis === 'semua' || g.jenis === iJenis);
       const f = gerak.filter(g => cocokJenis(g) && q.every(w => [g.item_nama, g.supplier, g.tujuan, g.no_dokumen, g.ukuran].join(' ').toLowerCase().includes(w)));
       const labelGerak = g => g.sumber === 'retur' ? 'Retur' : g.sumber === 'opname' ? 'Opname' : g.jenis === 'masuk' ? 'Masuk' : 'Keluar';
       $('iBody').innerHTML = f.map(g => `<tr><td>${tglPendek(g.tanggal)}</td><td><span class="badge ${g.jenis === 'masuk' ? 'ok' : 'warn'}">${labelGerak(g)}</span></td><td>${esc(g.item_nama)}</td>
