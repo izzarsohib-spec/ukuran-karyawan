@@ -623,10 +623,10 @@
   @media (max-width: 1100px) { .datang2 { grid-template-columns:minmax(0,1fr); } }
   .rkmx { width:auto !important; min-width:0; } .rkmx th:first-child, .rkmx td:first-child { min-width:260px; white-space:normal; } .rkmx th.r, .rkmx td.r { min-width:58px; text-align:center; } .rkmx th, .rkmx td { padding:7px 12px; white-space:nowrap; } .rkmx .mxv { font-weight:600; } .rkmx .mxn { color:var(--muted); opacity:.5; }
   .rkmx .rktot td { border-top:2px solid var(--stroke); background:rgba(0,0,0,.03); }
-  #iBaris select, #iBaris input { width:100%; min-width:0; } #iBaris select:disabled { opacity:.55; cursor:not-allowed; }
+  #iBaris select, #iBaris input { width:100%; min-width:0; } #iBaris select.im-jenis { min-width:130px; } #iBaris select.im-item { min-width:190px; } #iBaris td:nth-child(2) { min-width:130px; } #iBaris select:disabled { opacity:.55; cursor:not-allowed; }
   .ukcell { display:flex; flex-wrap:wrap; gap:5px; min-width:260px; } .ukb { min-width:42px; padding:5px 9px; border:1px solid var(--stroke); border-radius:9px; background:#fff; cursor:pointer; font-size:.82rem; font-weight:600; color:var(--text); } .ukb:hover { border-color:var(--accent); } .ukb.on { background:var(--accent); border-color:var(--accent); color:#fff; }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.219">
+<link rel="stylesheet" href="../aset/tema.css?v=1.220">
 </head>
 <body>
 <div class="shell">
@@ -735,7 +735,7 @@
         <label>Tanggal<input type="date" id="iTgl"></label><label>Supplier<select id="iSup"><option>Wahyu Ardianto</option><option>Online</option></select></label>
         <label><span id="iDokL">No. surat jalan / faktur Wahyu Ardianto</span><input id="iDok"></label><label>Keterangan<input id="iKet" placeholder="opsional"></label></div>
       <div class="row" style="margin:16px 0 8px"><b>Barang yang masuk</b><button class="btn" id="iTambah">+ Tambah baris</button></div>
-      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:200px">Barang</th><th style="min-width:100px">Jenis</th><th style="min-width:260px">Ukuran</th><th style="min-width:80px">Qty</th><th></th></tr></thead><tbody id="iBaris"></tbody></table></div>
+      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:200px">Barang</th><th style="min-width:130px">Jenis</th><th style="min-width:260px">Ukuran</th><th style="min-width:80px">Qty</th><th></th></tr></thead><tbody id="iBaris"></tbody></table></div>
       <div class="hint" id="iPesan"></div>
       <div class="bgact" style="margin-top:12px"><button class="cta" id="iSimpan">Simpan barang masuk</button><button class="btn" id="iBatal">Kosongkan form</button></div>
     </section>

@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.219', tanggal: '2026-10-29', catatan: 'Form barang datang: ukuran berupa tombol lengkap' };
+window.VERSI = { no: '1.220', tanggal: '2026-10-29', catatan: 'Form barang datang: kolom Jenis dilebarkan' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

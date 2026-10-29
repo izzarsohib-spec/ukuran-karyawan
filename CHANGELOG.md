@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 29 Okt 2026
+- **v1.220** Form Barang datang: kolom Jenis dilebarkan (minimal 130 px) supaya pilihan "Baju", "Celana", atau "Sepatu" terbaca penuh di kotaknya; kolom Barang juga diberi lebar minimum.
 - **v1.219** Form Barang datang: pilihan Ukuran diganti deretan tombol yang tampil penuh (baju S sampai XXXXL, L6, L7; celana 28 sampai 50; sepatu 37 sampai 46), bukan dropdown yang terpotong. Ukuran terpilih berwarna teal.
 - **v1.218** Form Barang datang: kolom Ukuran terlalu sempit di kartu setengah lebar (hanya terlihat "P") dan tampak tidak bisa diklik. Kolom Barang, Jenis, Ukuran, dan Qty diberi lebar minimum, dan saat Jenis belum dipilih kolom Ukuran menampilkan "Pilih jenis dulu" (urutan isi: Barang, Jenis, lalu Ukuran).
 - **v1.217** Rekap Permintaan dirapikan: kolom ukuran pada tabel matriks dirapatkan ke nama barang (tidak lagi tersebar selebar kartu), angka diratakan di tengah, dan kotak Aksesoris yang kosong dipadatkan jadi satu baris.
