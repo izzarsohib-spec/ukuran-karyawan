@@ -618,7 +618,7 @@
   }
   @media (max-width: 980px) { .duo { grid-template-columns:minmax(0,1fr); } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.213">
+<link rel="stylesheet" href="../aset/tema.css?v=1.214">
 </head>
 <body>
 <div class="shell">
@@ -716,6 +716,27 @@
     <section class="card pcard" id="aksPanel" hidden></section>
    </div>
 
+   <div class="page" id="pg-datang" hidden>
+    <header><div><h1>Barang Datang</h1><div class="sub" id="infoDatang">Memuat data…</div></div>
+      <div class="bgact"><button class="btn" id="dMuat">Muat ulang</button></div></header>
+    <section class="card pcard" id="iForm">
+      <h3>Catat barang datang</h3>
+      <div class="hint" style="margin:0 0 10px">Isi setiap kali ada barang datang: dari vendor <b>Wahyu Ardianto</b> (seragam, baju, sepatu) atau pembelian <b>Online</b> (aksesoris). Stok di Inventaris dan hitungan kekurangan vendor ikut bertambah.</div>
+      <div class="fgrid" style="grid-template-columns:1fr 1.4fr 1.4fr 1.6fr">
+        <label>Tanggal<input type="date" id="iTgl"></label><label>Supplier<select id="iSup"><option>Wahyu Ardianto</option><option>Online</option></select></label>
+        <label><span id="iDokL">No. surat jalan / faktur Wahyu Ardianto</span><input id="iDok"></label><label>Keterangan<input id="iKet" placeholder="opsional"></label></div>
+      <div class="row" style="margin:16px 0 8px"><b>Barang yang masuk</b><button class="btn" id="iTambah">+ Tambah baris</button></div>
+      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:250px">Barang</th><th>Jenis</th><th>Ukuran</th><th style="width:96px">Qty</th><th></th></tr></thead><tbody id="iBaris"></tbody></table></div>
+      <div class="hint" id="iPesan"></div>
+      <div class="bgact" style="margin-top:12px"><button class="cta" id="iSimpan">Simpan barang masuk</button><button class="btn" id="iBatal">Kosongkan form</button></div>
+    </section>
+    <section class="bawah card">
+      <div class="bar-top"><h3>Riwayat barang datang</h3><label class="search"><span aria-hidden="true">🔍</span><input id="dCari" type="search" placeholder="Cari barang, supplier, atau no. dokumen"></label></div>
+      <div class="chips" id="dChips" style="margin-bottom:12px"></div>
+      <div class="wrap tabelminta"><table><thead><tr><th>Tanggal</th><th>Supplier</th><th>No. dokumen</th><th>Barang yang datang</th><th class="r">Total</th></tr></thead><tbody id="dBody"></tbody></table></div>
+    </section>
+   </div>
+
    <div class="page" id="pg-opname" hidden>
     <header><div><h1>Stock Opname</h1><div class="sub" id="infoOp">Memuat data…</div></div>
       <div class="bgact"><button class="btn" id="opMuat">Muat ulang</button><button class="cta" id="opMulai">Mulai hitung stok</button></div></header>
@@ -741,17 +762,6 @@
     <header><div><h1>Inventaris</h1><div class="sub" id="infoInv">Memuat data…</div></div>
       <div class="bgact"><button class="btn" id="iMuat">Muat ulang</button><button class="btn" id="iOpnameBtn">Stock opname</button><button class="btn" id="iReturBtn">Retur barang</button><button class="cta" id="iMasukBtn" style="padding:8px 18px">+ Barang masuk dari supplier</button></div></header>
     <section class="top mini" id="md-inventaris"></section>
-    <section class="card pcard" id="iForm" hidden>
-      <h3>Barang masuk dari supplier</h3>
-      <div class="hint" style="margin:0 0 10px">Seragam, baju, dan sepatu dipesan ke vendor <b>Wahyu Ardianto</b>. Aksesoris dipesan <b>Online</b>.</div>
-      <div class="fgrid" style="grid-template-columns:1fr 1.4fr 1.4fr 1.6fr">
-        <label>Tanggal<input type="date" id="iTgl"></label><label>Supplier<select id="iSup"><option>Wahyu Ardianto</option><option>Online</option></select></label>
-        <label><span id="iDokL">No. surat jalan / faktur Wahyu Ardianto</span><input id="iDok"></label><label>Keterangan<input id="iKet" placeholder="opsional"></label></div>
-      <div class="row" style="margin:16px 0 8px"><b>Barang yang masuk</b><button class="btn" id="iTambah">+ Tambah baris</button></div>
-      <div class="wrap tabelminta"><table><thead><tr><th style="min-width:250px">Barang</th><th>Jenis</th><th>Ukuran</th><th style="width:96px">Qty</th><th></th></tr></thead><tbody id="iBaris"></tbody></table></div>
-      <div class="hint" id="iPesan"></div>
-      <div class="bgact" style="margin-top:12px"><button class="cta" id="iSimpan">Simpan barang masuk</button><button class="btn" id="iBatal">Batal</button></div>
-    </section>
     <section class="card pcard" id="rForm" hidden>
       <h3>Retur barang</h3>
       <div class="hint" style="margin:0 0 10px"><b>Dari lokasi</b>: barang kembali ke gudang, stok bertambah. <b>Ke supplier</b>: barang dikembalikan ke vendor, stok berkurang (ditolak bila stok tidak cukup).</div>
@@ -1401,15 +1411,15 @@
   $('detail').onchange = e => { if (e.target.id === 'fb') { fBagian = e.target.value; renderDetail(); } };
 
   // ---- sub halaman ----
-  const HALAMAN = ['ringkasan', 'monitor', 'permintaan', 'rekap', 'kurang', 'ploting', 'inventaris', 'opname', 'pengiriman', 'penerimaan', 'tagihan', 'laporan'];
+  const HALAMAN = ['ringkasan', 'monitor', 'permintaan', 'rekap', 'datang', 'kurang', 'ploting', 'inventaris', 'opname', 'pengiriman', 'penerimaan', 'tagihan', 'laporan'];
   let dashSiap = false;
   function renderRingkasan() { if (dashSiap) { renderDash(); renderMini(); renderLaporan(); } }
   // lima halaman: Dashboard Utama; Monitoring & Permintaan; Rekap Permintaan & Inventaris; Ploting & Pengiriman (+ penerimaan); Tagihan.
   // Halaman gabungan memakai sub-tab. Laporan Harian tidak ada di sidebar: dibuka dari halaman Administrator.
   if (window.top !== window.self) document.body.classList.add('dalam');
   if (window.top !== window.self && location.hash === '#laporan') document.body.classList.add('embed');
-  const GRUP = { ringkasan: 'ringkasan', monitor: 'monitor', permintaan: 'monitor', rekap: 'rekap', kurang: 'rekap', inventaris: 'rekap', opname: 'rekap', ploting: 'ploting', pengiriman: 'ploting', penerimaan: 'ploting', tagihan: 'tagihan' };
-  const SUB = { monitor: [['monitor', 'Monitoring pengisian'], ['permintaan', 'Permintaan seragam']], rekap: [['rekap', 'Rekap permintaan'], ['kurang', 'Kekurangan vendor'], ['inventaris', 'Inventaris'], ['opname', 'Stock opname']], ploting:[['ploting', 'Koreksi ploting'], ['pengiriman', 'Pengiriman'], ['penerimaan', 'Penerimaan']] };
+  const GRUP = { ringkasan: 'ringkasan', monitor: 'monitor', permintaan: 'monitor', rekap: 'rekap', datang: 'rekap', kurang: 'rekap', inventaris: 'rekap', opname: 'rekap', ploting: 'ploting', pengiriman: 'ploting', penerimaan: 'ploting', tagihan: 'tagihan' };
+  const SUB = { monitor: [['monitor', 'Monitoring pengisian'], ['permintaan', 'Permintaan seragam']], rekap: [['rekap', 'Rekap permintaan'], ['datang', 'Barang datang'], ['kurang', 'Kekurangan vendor'], ['inventaris', 'Inventaris'], ['opname', 'Stock opname']], ploting:[['ploting', 'Koreksi ploting'], ['pengiriman', 'Pengiriman'], ['penerimaan', 'Penerimaan']] };
   function tampil(pg) {
     if (!HALAMAN.includes(pg)) pg = 'ringkasan';
     for (const h of HALAMAN) $('pg-' + h).hidden = h !== pg;
@@ -1423,6 +1433,7 @@
     if (pg === 'permintaan' || pg === 'ploting' || pg === 'monitor') muatStatus();
     if (pg === 'rekap') { muatStatus(); muatRekapUkuran(); muatRekapVendor(); muatAntreanUkuran(); }
     if (pg === 'kurang') muatKekurangan();
+    if (pg === 'datang') { muatStatus(); muatHilir(); }
     if (pg === 'inventaris' || pg === 'opname' || pg === 'pengiriman' || pg === 'penerimaan' || pg === 'tagihan') { muatStatus(); muatHilir(); }
     if (pg === 'laporan') { muatStatus(); muatHilir(); muatCatatan(); }
   }
@@ -3138,8 +3149,8 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     try {
       const [s, g, k, p, t, o, orc, keb, trm] = await Promise.all([rpc('daftar_stok', {}), rpc('daftar_stok_gerak', { p_batas: 1000 }), rpc('daftar_pengiriman', {}), rpc('daftar_progres_kirim', {}), rpc('daftar_tagihan', {}), rpc('daftar_opname', {}).catch(() => []), rpc('daftar_opname_rinci', {}).catch(() => []), rpc('kebutuhan_kirim', {}).catch(() => []), rpc('daftar_penerimaan_ringkas', {}).catch(() => [])]);
       stok = s; gerak = g; kirimAll = k.filter(x => Saring.boleh(x.lokasi_form)); opnameAll = o; opnameRinci = orc; kebutuhan = keb.filter(x => true); ringkasTerima = new Map(trm.map(x => [x.pengiriman_id, x])); progres = new Map(p.map(x => [x.permintaan_id, x])); tagihanAll = t.filter(x => Saring.boleh(x.lokasi_form)); hilirMuat = true;
-    } catch (e) { hilirMuat = false; ['infoInv', 'infoKirim', 'infoTag'].forEach(id => { $(id).textContent = 'Gagal memuat: ' + e.message; }); return; }
-    renderInventaris(); renderOpnamePage(); renderKirimList(); renderBoardKirim(); renderPenerimaan(); renderTagihanList(); renderRingkasan();
+    } catch (e) { hilirMuat = false; ['infoInv', 'infoDatang', 'infoKirim', 'infoTag'].forEach(id => { $(id).textContent = 'Gagal memuat: ' + e.message; }); return; }
+    renderInventaris(); renderDatang(); if (!iBaris.length) resetFormMasuk(); renderOpnamePage(); renderKirimList(); renderBoardKirim(); renderPenerimaan(); renderTagihanList(); renderRingkasan();
   }
   // panggilan yang menulis data: kode akses diminta sekali per sesi
   async function rpcKode(nama, body) {
@@ -3244,6 +3255,24 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   $('iTab').onclick = e => { const t = e.target.dataset && e.target.dataset.t; if (t) { iTab = t; renderInventaris(); } };
   $('iChips').onclick = e => { const d = e.target.dataset; if (!d) return; if (d.k) iKat = d.k; else if (d.v) iView = iView === d.v ? 'daftar' : d.v; else if (d.ada) iAda = !iAda; else if (d.j) iJenis = d.j; else return; renderInventaris(); };
   $('iCari').oninput = renderInventaris; $('iMuat').onclick = muatHilir;
+  // --- halaman Barang datang: riwayat dikelompokkan per tanggal + supplier + dokumen ---
+  let dSup = 'semua';
+  function renderDatang() {
+    const q = $('dCari').value.toLowerCase().split(/\s+/).filter(Boolean), grup = new Map();
+    for (const g of gerak) if (g.jenis === 'masuk' && !g.sumber) {
+      const k = `${String(g.tanggal).slice(0, 10)}|${g.supplier || ''}|${g.no_dokumen || ''}`;
+      if (!grup.has(k)) grup.set(k, { tgl: String(g.tanggal).slice(0, 10), sup: g.supplier || '-', dok: g.no_dokumen || '', ket: g.keterangan || '', pcs: 0, baris: [] });
+      const m = grup.get(k); m.pcs += Number(g.qty); m.baris.push(`${g.item_nama}${g.jenis_ukuran === '-' ? '' : ' ' + g.ukuran} ×${g.qty}`);
+    }
+    const semua = [...grup.values()].sort((a, b) => b.tgl.localeCompare(a.tgl));
+    const online = x => String(x.sup).toLowerCase() === 'online';
+    $('dChips').innerHTML = [['semua', 'Semua'], ['vendor', 'Dari vendor'], ['online', 'Online']].map(([k, n]) => `<button class="chip ${dSup === k ? 'on' : ''}" data-d="${k}">${n}</button>`).join('');
+    const f = semua.filter(x => (dSup === 'semua' || (dSup === 'online') === online(x)) && q.every(w => [x.sup, x.dok, x.ket, x.baris.join(' ')].join(' ').toLowerCase().includes(w)));
+    $('infoDatang').textContent = `${idn(semua.length)} penerimaan tercatat · ${idn(semua.reduce((a, x) => a + x.pcs, 0))} pcs${gerak.length >= 1000 ? ' (dari 1000 gerak stok terakhir)' : ''}`;
+    $('dBody').innerHTML = f.map(x => `<tr><td>${tglPendek(x.tgl)}</td><td>${esc(x.sup)}</td><td>${esc(x.dok || '-')}${x.ket ? `<div class="muted">${esc(x.ket)}</div>` : ''}</td><td>${x.baris.map(esc).join(', ')}</td><td class="r"><b>${idn(x.pcs)}</b> pcs</td></tr>`).join('') || '<tr><td colspan="5" class="kosongnya">Belum ada barang datang yang tercatat.</td></tr>';
+  }
+  $('dChips').onclick = e => { const d = e.target.dataset && e.target.dataset.d; if (d) { dSup = d; renderDatang(); } };
+  $('dCari').oninput = renderDatang; $('dMuat').onclick = muatHilir;
   // --- form barang masuk ---
   const opsiItemMasuk = no => '<option value="">Pilih barang</option>' + [...new Set(HARGA.map(h => h.kat))].map(k => `<optgroup label="${esc(k)}">` + HARGA.filter(h => h.kat === k).map(h => `<option value="${h.no}" ${String(h.no) === String(no) ? 'selected' : ''}>${esc(h.nama)}</option>`).join('') + '</optgroup>').join('');
   function renderBarisMasuk() {
@@ -3259,12 +3288,13 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   // pilihan supplier = vendor aktif di Administrator (ejaan baku, dipakai menghitung kekurangan) + Online untuk aksesoris
   async function isiSupplier() {
     let nama = ['Wahyu Ardianto'];
-    try { const v = (await rpcKode('admin_daftar_vendor', {})).filter(x => x.aktif).map(x => x.nama); if (v.length) nama = v; } catch (e) { /* pakai bawaan */ }
+    try { if (!Masuk.kode()) throw 0; const v = (await rpcKode('admin_daftar_vendor', {})).filter(x => x.aktif).map(x => x.nama); if (v.length) nama = v; } catch (e) { /* pakai bawaan */ }
     $('iSup').innerHTML = [...nama, 'Online'].map(n => `<option>${esc(n)}</option>`).join('');
   }
-  function bukaFormMasuk() { $('rForm').hidden = true; $('oForm').hidden = true; iBaris = [barisMasukBaru()]; $('iTgl').value = tgl0(); ['iDok', 'iKet'].forEach(id => { $(id).value = ''; }); isiSupplier(); $('iDokL').textContent = 'No. surat jalan / faktur supplier'; $('iPesan').textContent = ''; renderBarisMasuk(); $('iForm').hidden = false; $('iForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  function resetFormMasuk() { iBaris = [barisMasukBaru()]; $('iTgl').value = tgl0(); ['iDok', 'iKet'].forEach(id => { $(id).value = ''; }); isiSupplier(); $('iDokL').textContent = 'No. surat jalan / faktur supplier'; $('iPesan').textContent = ''; renderBarisMasuk(); }
+  const bukaFormMasuk = () => tampil('datang');
   $('iSup').onchange = () => { $('iDokL').textContent = $('iSup').value === 'Online' ? 'No. pesanan / invoice online' : 'No. surat jalan / faktur Wahyu Ardianto'; };
-  $('iMasukBtn').onclick = bukaFormMasuk; $('iBatal').onclick = () => { $('iForm').hidden = true; };
+  $('iMasukBtn').onclick = bukaFormMasuk; $('iBatal').onclick = resetFormMasuk;
   $('iTambah').onclick = () => { iBaris.push(barisMasukBaru()); renderBarisMasuk(); };
   $('iBaris').onchange = e => {
     const tr = e.target.closest('tr'); if (!tr) return; const b = iBaris[tr.dataset.n];
@@ -3287,7 +3317,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
       if (catatan.length && !confirm('Periksa dulu:\n\n' + catatan.slice(0, 12).map(x => '- ' + x.pesan).join('\n') + '\n\nTetap simpan?')) { btn.disabled = false; btn.textContent = 'Simpan barang masuk'; return; }
       const n = await rpcKode('catat_barang_masuk', { p_tanggal: $('iTgl').value || tgl0(), p_supplier: $('iSup').value.trim(), p_no_dokumen: $('iDok').value.trim(), p_keterangan: $('iKet').value.trim(),
         p_baris: baris.map(b => ({ item_no: Number(b.no), jenis_ukuran: b.jenis, ukuran: b.ukuran, qty: Number(b.qty) })) });
-      $('iForm').hidden = true; iTab = 'riwayat'; iJenis = 'masuk'; await muatHilir();
+      resetFormMasuk(); ps.style.color = 'var(--ok)'; ps.textContent = 'Barang datang tersimpan. Stok sudah bertambah.'; await muatHilir();
     } catch (e) { ps.textContent = 'Gagal: ' + e.message; }
     btn.disabled = false; btn.textContent = 'Simpan barang masuk';
   };
@@ -4383,7 +4413,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
         ringkasan(); renderDaftar(); renderDaftarMinta();
       }
       muatStatus(true);
-      const pg = location.hash.slice(1), formTerbuka = ['iForm', 'oForm', 'rForm'].some(id => $(id) && !$(id).hidden) || kTerbuka || tTerbuka || terbukaPlot;
+      const pg = location.hash.slice(1), formTerbuka = (['oForm', 'rForm'].some(id => $(id) && !$(id).hidden)) || pg === 'datang' || kTerbuka || tTerbuka || terbukaPlot;
       if (['inventaris', 'opname', 'pengiriman', 'penerimaan', 'tagihan', 'ploting', 'laporan'].includes(pg) && !formTerbuka) muatHilir(); // halaman stok/pengiriman/tagihan; tidak disentuh saat form atau editor terbuka
       $('segar').textContent = `Diperbarui otomatis tiap ${SEGAR_DETIK} detik · terakhir ${new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
     } catch (e) { $('segar').textContent = 'Pembaruan otomatis tertunda (jaringan), mencoba lagi…'; }

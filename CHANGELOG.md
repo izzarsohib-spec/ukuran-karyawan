@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 29 Okt 2026
+- **v1.214** Halaman baru **Barang datang** di antara Rekap permintaan dan Kekurangan vendor (grup Rekap Permintaan & Inventaris). Berisi form pencatatan barang datang (dari vendor Wahyu Ardianto atau pembelian Online; formnya dipindah dari Inventaris, tombol "+ Barang masuk" di Inventaris kini membuka halaman ini) dan riwayat penerimaan per tanggal, supplier, dan dokumen dengan pencarian dan filter Dari vendor / Online. Stok dan hitungan kekurangan vendor tetap memakai pencatatan yang sama.
 - **v1.213** Sidebar biru dan bar tab atas dirapikan: keduanya jadi kartu mengambang dengan jarak dari tepi, sudut membulat, dan outline biru muda dengan bayangan halus. Tab di bar atas berbentuk tombol (tab aktif berlatar biru lebih terang dengan garis teal di bawah). Hanya tampilan.
 
 ## 28 Okt 2026
