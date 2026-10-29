@@ -647,7 +647,7 @@
   .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
   @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); height:auto; } .rk2k > .card { height:auto; } .pmscroll { max-height:70vh; } .rktut { height:auto; overflow:visible; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.258">
+<link rel="stylesheet" href="../aset/tema.css?v=1.259">
 </head>
 <body>
 <div class="shell">
@@ -2948,10 +2948,10 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     return [...per.entries()].map(([j, m]) => `<span class="rkuk"><b>${NAMA_JENIS[j] || j}</b> ${[...m.entries()].sort((a, b) => urutUkuran(a[0], b[0])).map(([u, q]) => `${esc(u)}<i>×${idn(q)}</i>`).join(' ')}</span>`).join('');
   };
   // data rekap untuk satu jalur (Mas Wahyu / Online) dari penandaan yang sedang tampil (termasuk usulan yang belum disimpan)
-  function dataPesan(via) {
+  function dataPesan(via, saring) {
     const q0 = $('rkCari').value; $('rkCari').value = '';
     try {
-      const psV = disetujuiSemua().map(p => ({ ...p, items: (p.items || []).filter(i => viaDraft(p, i) === via) })).filter(p => p.items.length), pasang = new Set(psV.flatMap(p => p.items.map(i => pmKey(p.id, i.no))));
+      const psV = disetujuiSemua().map(p => ({ ...p, items: (p.items || []).filter(i => viaDraft(p, i) === via && (!saring || saring(p, i))) })).filter(p => p.items.length), pasang = new Set(psV.flatMap(p => p.items.map(i => pmKey(p.id, i.no))));
       const jenis = rekapBarang(psV.flatMap(p => p.items.map(i => ({ no: i.no, nama: i.nama, qty: i.qty })))), ukuran = hitungUkuranRk(psV, rkUkAll.filter(r => pasang.has(pmKey(r.permintaan_id, r.item_no))));
       const lok = new Map(); for (const p of psV) { const k = p.lokasi_form + '|' + p.bagian_kerja; if (!lok.has(k)) lok.set(k, { client: p.client, bagian: p.bagian_kerja, n: 0, pcs: 0, beli: 0 }); const x = lok.get(k); x.n++; x.pcs += p.items.reduce((a, i) => a + (Number(i.qty) || 0), 0); x.beli += p.items.reduce((a, i) => a + (Number(i.beli) || 0) * (Number(i.qty) || 0), 0); }
       return { ps: psV, jenis, ukuran, lokasi: [...lok.values()].sort((a, b) => a.client.localeCompare(b.client)), daftar: psV, aks: hitungAks(psV), pcs: psV.reduce((a, p) => a + pcsPermintaan({ items: p.items }), 0), kepala: ['Jenis', 'Barang', 'Ukuran', 'Jumlah'], baris: barisUkuranRk(ukuran) };
@@ -3025,12 +3025,12 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const nBelum = semuaP.filter(p => !selesaiP(p)).length;
     $('rkTab').innerHTML = [['belum', `Belum selesai ditandai (${nBelum})`], ['selesai', `Riwayat & monitoring (${pmKonf.length})`], ['semua', 'Semua']].map(([k, t]) => `<button class="chip ${tab === k ? 'on' : ''}" data-t="${k}">${t}</button>`).join('');
     const tampil = semuaP.filter(p => rkCocok(p.client || p.lokasi_form, p.bagian_kerja) && tab !== 'selesai' && (tab === 'semua' || (tab === 'belum') === !selesaiP(p))).sort((a, b) => (selesaiP(a) - selesaiP(b)) || (tglDisetujui(b) - tglDisetujui(a)));
-    const dW = dataPesan('wahyu'), dO = dataPesan('online'), kotorN = semuaP.reduce((a, p) => a + (p.items || []).filter(i => kotorPm(p, i)).length, 0);
+    const dW = dataPesan('wahyu', kotorPm), dO = dataPesan('online'), kotorN = semuaP.reduce((a, p) => a + (p.items || []).filter(i => kotorPm(p, i)).length, 0);
     $('infoRekap').textContent = (semuaP.length ? `${idn(semuaP.length)} lokasi sudah disetujui kedua pimpinan · ${idn(nBelum)} belum selesai ditandai` : 'Belum ada permintaan yang disetujui Pak Yasir dan Pak Ferry') + (Saring.aktif() ? ' · ' + Saring.label() : '');
     $('rkKpi').innerHTML = '';
     const dirtyVia = v => semuaP.reduce((a, p) => a + (p.items || []).filter(i => kotorPm(p, i) && viaDraft(p, i) === v).length, 0), nDirtyW = dirtyVia('wahyu'), nDirtyO = dirtyVia('online');
     const bar = `<div class="pmbar"><div><b>${idn(kotorN)}</b> item belum disimpan</div><label>Tanggal pemesanan<input type="date" id="pmTgl" value="${esc(pmTgl || wibIso())}"></label></div>`;
-    const matriksW = (['Baju', 'Celana', 'Sepatu'].map(j => { const g = dW.ukuran.find(x => x.jenis === j); return g ? matriksRk(g, j === 'Sepatu' ? 'Sepatu' : 'Seragam: ' + j) : ''; }).join('')) || '<div class="kosongnya">Belum ada seragam atau sepatu yang ditandai ke Mas Wahyu.</div>';
+    const matriksW = (['Baju', 'Celana', 'Sepatu'].map(j => { const g = dW.ukuran.find(x => x.jenis === j); return g ? matriksRk(g, j === 'Sepatu' ? 'Sepatu' : 'Seragam: ' + j) : ''; }).join('')) || '<div class="kosongnya">Tidak ada item yang menunggu dikirim ke Mas Wahyu. Rekap yang sudah di-submit ada di chip Riwayat &amp; monitoring.</div>';
     const lainW = dW.aks.length ? `<section class="rk" style="margin-bottom:16px"><div class="rkh"><h4>Tanpa ukuran (ke Mas Wahyu)</h4><b>${idn(dW.aks.reduce((a, x) => a + x.qty, 0))} pcs</b></div><div class="wrap rkt"><table><tbody>${dW.aks.map(a => `<tr><td><b>${esc(namaRapi(a.nama))}</b></td><td class="r">${idn(a.qty)}</td></tr>`).join('')}</tbody></table></div></section>` : '';
     const monitor = tab === 'selesai';
     $('rkIsi').innerHTML = '<div class="rk2"><div class="rk2k"><section class="card pcard"><h3 style="margin:0 0 12px">' + (monitor ? 'Monitoring pesanan ke Mas Wahyu' : 'Tandai pemesanan per item') + '</h3>' + (monitor ? '' : bar) + '<div class="pmscroll">' + (monitor ? htmlMonitoring(semuaP) : tampil.length ? tampil.map(kartuPermintaan).join('') : `<div class="kosongnya">${semuaP.length ? 'Tidak ada lokasi yang cocok dengan filter ini.' : 'Belum ada lokasi yang disetujui kedua pimpinan. Setelah disetujui, lokasinya muncul di sini.'}</div>`)
@@ -3066,8 +3066,8 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     } catch (x) { alert('Gagal: ' + x.message); renderRekapPage(); return false; }
   }
   // Kirim rekap ke Mas Wahyu lewat ntfy: PDF terlampir, tombol cepat estimasi datang, dan halaman konfirmasi (fungsi server konfirmasi-vendor).
-  async function kirimKonfirmasiWahyu(btn, diam = false) {
-    const d = dataPesan('wahyu'); if (!d.ps.length) { alert('Belum ada item yang ditandai ke Mas Wahyu.'); return; }
+  async function kirimKonfirmasiWahyu(btn, diam = false, keys = null) {
+    const d = dataPesan('wahyu', keys ? (p, i) => keys.has(pmKey(p.id, i.no)) : null); if (!d.ps.length) { alert('Belum ada item yang ditandai ke Mas Wahyu.'); return; }
     if (!diam && !confirm(`Kirim rekap ke Mas Wahyu lewat ntfy?\n\n${idn(d.pcs)} pcs · ${idn(d.lokasi.length)} lokasi.\nMas Wahyu menerima notifikasi berisi PDF rekap dan tombol untuk menjawab kapan pesanan bisa datang.\n\nIni mengirim pesan sungguhan ke Mas Wahyu.`)) return;
     const a = btn.textContent; btn.disabled = true; btn.textContent = 'Mengirim…';
     try {
@@ -3084,12 +3084,13 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   let pmSedangKirim = false;
   async function submitKirimWahyu(btn) {
     if (pmSedangKirim) return;
-    const d0 = dataPesan('wahyu'); if (!d0.ps.length) { alert('Belum ada item yang ditandai ke Mas Wahyu.'); return; }
+    const d0 = dataPesan('wahyu', kotorPm); if (!d0.ps.length) { alert('Tidak ada item baru yang menunggu dikirim ke Mas Wahyu.'); return; }
+    const kirimKeys = new Set(d0.ps.flatMap(p => p.items.map(i => pmKey(p.id, i.no))));
     const dirty = disetujuiSemua().reduce((a, p) => a + (p.items || []).filter(i => kotorPm(p, i) && viaDraft(p, i) === 'wahyu').length, 0);
     const terkirim = new Set(pmKonf.flatMap(k => k.permintaan_ids || [])), sudah = d0.ps.every(p => terkirim.has(p.id));
     if (!confirm(`Submit dan kirim PDF ke Mas Wahyu?\n\n${dirty ? `- Simpan penandaan ${dirty} item dan tandai PO terkirim\n` : ''}- Kirim rekap ${idn(d0.pcs)} pcs (${idn(d0.lokasi.length)} lokasi) lewat ntfy dan minta estimasi datang\n${sudah ? '\nRekap ini sudah pernah dikirim; ini akan mengirim lagi.\n' : ''}\nIni mengirim pesan sungguhan ke Mas Wahyu.`)) return;
     pmSedangKirim = true; btn.disabled = true; btn.textContent = 'Memproses…';
-    try { if (dirty && !(await simpanPemesanan('wahyu', true))) return; await kirimKonfirmasiWahyu(btn, true); }
+    try { if (dirty && !(await simpanPemesanan('wahyu', true))) return; await kirimKonfirmasiWahyu(btn, true, kirimKeys); }
     finally { pmSedangKirim = false; renderRekapPage(); }
   }
   // PDF pengajuan anggaran belanja online: dibawa menghadap pimpinan untuk meminta anggaran (pembelian online tidak kontan seperti ke Mas Wahyu)
