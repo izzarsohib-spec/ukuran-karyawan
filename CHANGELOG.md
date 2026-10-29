@@ -5,6 +5,7 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
 ## 29 Okt 2026
+- **v1.243** Rekap Permintaan: deretan kartu angka (Lokasi disetujui, Item belum disimpan, Ke Mas Wahyu, Online, Permintaan terlibat) dihapus; kartu penandaan dan tutorial dibuat lebih tinggi mengisi ruang yang kosong.
 - **v1.242** Rekap Permintaan: bar Simpan penandaan tidak lagi menempel dan ikut bergulir; bar tetap di atas kartu, dan yang bergulir hanya daftar lokasi (beserta rekap di bawahnya) di dalam kartu Tandai pemesanan. Kedua kartu kini setinggi layar, sehingga halaman tidak ikut bergulir; kartu tutorial bergulir sendiri bila isinya panjang. Di layar sempit (di bawah 1100 px) kartu kembali bertumpuk.
 - **v1.241** Rekap Permintaan dibagi dua kartu berdampingan: kiri **Tandai pemesanan per item** (bar simpan, kartu lokasi, rekap Mas Wahyu, daftar belanja online), kanan **Alur setelah memo disetujui**, yaitu tutorial 7 langkah (disetujui pimpinan, tandai Mas Wahyu atau Online, simpan dan PO terkirim, kirim rekap dan belanja, catat barang datang, kekurangan vendor, ploting dan pengiriman) beserta alasan tiap langkah. Kartu tutorial menempel saat digulir; di layar sempit (di bawah 1100 px) kartu bertumpuk.
 - **v1.240** Rekap Permintaan: tombol "Unduh PDF ke vendor" diganti nama menjadi "Unduh PDF ke Mas Wahyu" (isinya rekap item yang ditandai ke Mas Wahyu).
