@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light">
+<title>Konfirmasi Pesanan</title>
+<style>
+  :root { --bg:#e9e9ec; --kartu:#fff; --teks:#1b1b1f; --redup:#6b6b73; --garis:#c9c9d0; --bahaya:#c0392b; --ok:#1e8e4e; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#121214; --kartu:#1c1c20; --teks:#ececf0; --redup:#9a9aa4; --garis:#3a3a42; --bahaya:#ef6b5b; --ok:#4cc27f; } }
+  * { box-sizing:border-box; }
+  html, body { margin:0; background:var(--bg); color:var(--teks); font:16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width:560px; margin:0 auto; padding:18px 16px 40px; }
+  .kartu { background:var(--kartu); border:1px solid var(--garis); border-radius:16px; padding:18px; }
+  h1 { font-size:1.15rem; margin:0 0 4px; }
+  .sub { color:var(--redup); font-size:.88rem; margin:0 0 14px; }
+  .rl { display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-bottom:1px solid var(--garis); font-size:.92rem; }
+  .rl span:first-child { color:var(--redup); } .rl span:last-child { text-align:right; font-weight:600; }
+  .item { font-size:.88rem; color:var(--redup); padding:2px 0; }
+  label { display:block; margin-top:14px; font-size:.86rem; color:var(--redup); }
+  input, textarea { width:100%; margin-top:4px; padding:12px; border-radius:12px; border:1px solid var(--garis); background:transparent; color:inherit; font:inherit; }
+  textarea { min-height:70px; resize:vertical; }
+  .tombol { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+  button { flex:1; min-width:140px; padding:13px 16px; border-radius:12px; border:1px solid var(--garis); background:transparent; color:inherit; font:inherit; font-weight:600; cursor:pointer; }
+  button.utama { background:var(--ok); border-color:var(--ok); color:#fff; }
+  button:disabled { opacity:.6; cursor:default; }
+  #pesan { margin-top:12px; font-size:.92rem; } .gagal { color:var(--bahaya); } .sukses { color:var(--ok); font-weight:600; }
+  .status { margin-top:10px; padding:10px 12px; border-radius:12px; border:1px solid var(--garis); font-size:.9rem; }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="aset/tema-ringan.css?v=1.253">
+</head>
+<body>
+<main>
+  <div class="kartu">
+    <h1>Konfirmasi pesanan</h1>
+    <p class="sub" id="sub">Memuat ringkasan…</p>
+    <div id="isi"></div>
+    <div id="status" class="status" hidden></div>
+    <form id="form" hidden>
+      <label for="tgl">Pesanan bisa selesai / datang pada tanggal</label>
+      <input id="tgl" type="date" required>
+      <label for="cat">Catatan (opsional), misalnya ukuran yang belum ada</label>
+      <textarea id="cat" maxlength="500"></textarea>
+      <div class="tombol">
+        <button class="utama" id="ya" type="submit">Konfirmasi tanggal</button>
+        <button id="tidak" type="button">Belum bisa dipenuhi</button>
+      </div>
+    </form>
+    <div id="pesan" role="status"></div>
+  </div>
+</main>
+<script>
+  // Parameter dari tombol di notifikasi ntfy: t = token pengiriman (acak, hanya dimiliki vendor).
+  const FN = 'https://vqcusagijiavaoljfrib.supabase.co/functions/v1/konfirmasi-vendor';
+  const t = new URLSearchParams(location.search).get('t') || '', $ = i => document.getElementById(i);
+  const baris = (k, v) => { const d = document.createElement('div'); d.className = 'rl'; const a = document.createElement('span'), b = document.createElement('span'); a.textContent = k; b.textContent = v; d.append(a, b); return d; };
+  const tglID = iso => new Date(iso + 'T00:00:00Z').toLocaleDateString('id-ID', { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' });
+  const wib = (n = 0) => new Date(Date.now() + 7 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+  function tampilStatus(x) {
+    const s = $('status'); s.hidden = true;
+    if (x.status === 'dikonfirmasi') { s.hidden = false; s.textContent = `Jawaban tercatat: siap ${tglID(String(x.estimasi).slice(0, 10))}${x.catatan ? ' · ' + x.catatan : ''}. Anda masih bisa mengubahnya di bawah.`; }
+    else if (x.status === 'tidak_bisa') { s.hidden = false; s.textContent = `Jawaban tercatat: belum bisa dipenuhi${x.catatan ? ' · ' + x.catatan : ''}. Anda masih bisa mengubahnya di bawah.`; }
+  }
+  async function muat() {
+    if (t.length < 32) { $('sub').textContent = ''; $('pesan').innerHTML = '<span class="gagal">Tautan tidak valid.</span>'; return; }
+    try {
+      const r = await fetch(`${FN}?t=${encodeURIComponent(t)}`);
+      if (!r.ok) { $('sub').textContent = ''; $('pesan').innerHTML = '<span class="gagal">Tautan tidak dikenali.</span>'; return; }
+      const x = await r.json(), rg = x.ringkasan || {};
+      $('sub').textContent = `Untuk ${x.vendor}. Mohon periksa pesanan, lalu isi tanggal kapan bisa selesai.`;
+      const isi = $('isi'); isi.textContent = '';
+      isi.append(baris('Jumlah pesanan', `${rg.total_pcs ?? '-'} pcs`), baris('Jumlah lokasi', String((rg.lokasi || []).length)));
+      for (const j of rg.jenis || []) { const d = document.createElement('div'); d.className = 'item'; d.textContent = `${j.jenis}: ${j.total} pcs`; isi.append(d); }
+      tampilStatus(x);
+      const tg = $('tgl'); tg.min = wib(); tg.max = wib(180); if (x.estimasi) tg.value = String(x.estimasi).slice(0, 10);
+      $('form').hidden = false;
+    } catch (e) { $('sub').textContent = ''; $('pesan').innerHTML = '<span class="gagal">Tidak bisa terhubung. Periksa koneksi lalu muat ulang.</span>'; }
+  }
+  async function kirim(aksi, body, tombol) {
+    const teksAsal = tombol.textContent; $('ya').disabled = $('tidak').disabled = true; tombol.textContent = 'Menyimpan…'; $('pesan').textContent = '';
+    try {
+      const r = await fetch(`${FN}?t=${encodeURIComponent(t)}&a=${aksi}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const s = await r.text(), el = document.createElement('span'); el.className = r.ok ? 'sukses' : 'gagal'; el.textContent = s || (r.ok ? 'Tercatat.' : 'Gagal menyimpan.'); $('pesan').textContent = ''; $('pesan').append(el);
+      if (r.ok) await muat();
+    } catch (e) { $('pesan').innerHTML = '<span class="gagal">Tidak bisa terhubung. Periksa koneksi lalu coba lagi.</span>'; }
+    $('ya').disabled = $('tidak').disabled = false; tombol.textContent = teksAsal;
+  }
+  $('form').onsubmit = e => { e.preventDefault(); if (!$('tgl').value) { $('pesan').innerHTML = '<span class="gagal">Pilih tanggal dulu.</span>'; return; } kirim('jawab', { estimasi: $('tgl').value, catatan: $('cat').value }, $('ya')); };
+  $('tidak').onclick = () => { if (confirm('Kirim jawaban bahwa pesanan belum bisa dipenuhi?')) kirim('tidak_bisa', { catatan: $('cat').value }, $('tidak')); };
+  muat();
+</script>
+</body>
+</html>
