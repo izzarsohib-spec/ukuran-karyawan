@@ -648,12 +648,13 @@
   #rkDatang:not([hidden]), #rkKurang:not([hidden]) { display:grid; grid-template-columns:minmax(210px,240px) minmax(0,1fr); gap:16px; align-items:stretch; } .rkw { min-width:0; display:flex; flex-direction:column; } .rkw > .datang2 { flex:1; align-items:stretch !important; } .rkw .datang2 > section { height:auto; } .rkw .datang2 { grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); } #rkDatang .tutl, #rkKurang .tutl { font-size:.82rem; }
   #rkDatang .rktut, #rkKurang .rktut { height:auto; min-height:0; overflow:visible; }
   @media (max-width: 1100px) { #rkDatang:not([hidden]), #rkKurang:not([hidden]) { grid-template-columns:minmax(0,1fr); } }
-  #rkDatang > .rkw > header, #rkKurang > .rkw > header { display:none; } #rkDatang .tutl, #rkKurang .tutl { margin-top:2px; }   #rkKpi, label.search[hidden] { display:none !important; }
+  #rkDatang > .rkw > header, #rkKurang > .rkw > header { display:none; } #rkDatang .tutl, #rkKurang .tutl { margin-top:2px; }   #subtabs[hidden] { display:none !important; }
+  #rkKpi, label.search[hidden] { display:none !important; }
   .rk2 { display:grid; grid-template-columns:minmax(260px,1fr) minmax(0,1.7fr); gap:16px; align-items:stretch; height:clamp(580px, calc(100vh - 230px), 780px); } .rk2k { min-width:0; min-height:0; } .rk2k > .card { margin:0; height:100%; display:flex; flex-direction:column; min-height:0; } .pmscroll { flex:1; min-height:0; overflow-y:auto; padding-right:4px; } .rktut { margin:0; height:100%; overflow-y:auto; min-height:0; }
   .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
   @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); height:auto; } .rk2k > .card { height:auto; } .pmscroll { max-height:70vh; } .rktut { height:auto; overflow:visible; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.271">
+<link rel="stylesheet" href="../aset/tema.css?v=1.272">
 </head>
 <body>
 <div class="shell">
@@ -1517,7 +1518,7 @@
     const g = GRUP[pg], sub = SUB[g];
     document.querySelectorAll('.side button[data-pg], .mobnav button[data-pg]').forEach(b => b.classList.toggle('on', b.dataset.pg === g));
     $('subtabs').hidden = !sub;
-    if (sub) $('subtabs').innerHTML = sub.map(([k, t]) => `<button class="chip ${k === pg ? 'on' : ''}" data-pg="${k}">${t}</button>`).join('');
+    $('subtabs').innerHTML = sub ? sub.map(([k, t]) => `<button class="chip ${k === pg ? 'on' : ''}" data-pg="${k}">${t}</button>`).join('') : ''; // kosongkan bila halaman tanpa sub-tab (jangan sisakan sub-tab halaman sebelumnya)
     if (location.hash !== '#' + pg) history.replaceState(null, '', '#' + pg);
     if (window.parent !== window) window.parent.postMessage({ tipe: 'halaman', modul: 'seragam', pg: g }, location.origin); // sorotan menu portal ikut
     window.scrollTo({ top: 0 });
