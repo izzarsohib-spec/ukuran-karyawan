@@ -59,6 +59,12 @@ async function adalahAdmin(db: any, req: Request): Promise<boolean> {
   return !!a;
 }
 
+// sinyal ringan ke saluran realtime "permintaan-seragam" (didengarkan web administrasi) supaya pop-up jawaban vendor muncul seketika
+async function siarkan() {
+  const url = Deno.env.get('SUPABASE_URL'), kunci = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'); if (!url || !kunci) return;
+  try { await fetch(`${url}/realtime/v1/api/broadcast`, { method: 'POST', headers: { apikey: kunci, Authorization: `Bearer ${kunci}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: [{ topic: 'permintaan-seragam', event: 'berubah', payload: { aksi: 'konfirmasi' }, private: false }] }) }); } catch { /* abaikan */ }
+}
+
 async function kabari(judul: string, isi: string) {
   const topik = Deno.env.get('NTFY_TOPIC_ADMIN'); if (!topik) return;
   try { await fetch(`https://ntfy.sh/${topik}`, { method: 'POST', headers: { Title: kodekan(judul), Priority: '3', Tags: 'handshake' }, body: isi }); } catch { /* abaikan */ }
@@ -126,6 +132,7 @@ Deno.serve(async (req) => {
 
   if (a === 'tidak_bisa') {
     await db.from('konfirmasi_vendor').update({ status: 'tidak_bisa', estimasi: null, catatan, dijawab_pada: new Date().toISOString(), jumlah_jawab: k.jumlah_jawab + 1 }).eq('id', k.id);
+    await siarkan();
     await kabari(`${k.vendor}: tidak bisa memenuhi`, `Pesanan ${total} pcs.${catatan ? ' Catatan: ' + catatan : ''}`);
     return teks('Tercatat: pesanan belum bisa dipenuhi. Terima kasih.');
   }
@@ -136,6 +143,7 @@ Deno.serve(async (req) => {
   const ubah = { status: 'dikonfirmasi', estimasi: est, ...(catatan ? { catatan } : {}), dijawab_pada: new Date().toISOString(), jumlah_jawab: k.jumlah_jawab + 1 };
   const { error } = await db.from('konfirmasi_vendor').update(ubah).eq('id', k.id);
   if (error) return teks('Gagal menyimpan.', 500);
+  await siarkan();
   await kabari(`${k.vendor}: siap ${tgl(est)}`, `Pesanan ${total} pcs, estimasi datang ${tgl(est)}.${catatan ? ' Catatan: ' + catatan : ''}${k.jumlah_jawab ? ' (jawaban diperbarui)' : ''}`);
   return teks(`Tercatat: estimasi pesanan siap ${tgl(est)}. Terima kasih.`);
 });

@@ -647,7 +647,7 @@
   .tutl { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px; font-size:.86rem; } .tutl li::marker { font-weight:700; color:var(--accent); } .tutl li > span { display:block; margin-top:2px; color:var(--muted); font-size:.8rem; }
   @media (max-width: 1100px) { .rk2 { grid-template-columns:minmax(0,1fr); height:auto; } .rk2k > .card { height:auto; } .pmscroll { max-height:70vh; } .rktut { height:auto; overflow:visible; } }
 </style>
-<link rel="stylesheet" href="../aset/tema.css?v=1.260">
+<link rel="stylesheet" href="../aset/tema.css?v=1.261">
 </head>
 <body>
 <div class="shell">
@@ -2202,6 +2202,24 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     terbaru = new Map();
     for (const p of daftarMinta) { const k = p.lokasi_form + '|' + p.bagian_kerja; if (!terbaru.has(k)) terbaru.set(k, p); }
   }
+  // ---- NOTIFIKASI JAWABAN MAS WAHYU (konfirmasi estimasi lewat ntfy) ----
+  // Membandingkan daftar konfirmasi dengan pemeriksaan sebelumnya; jawaban baru atau yang diperbarui tampil sebagai pop-up kanan atas. Hanya untuk admin yang sedang login.
+  let konfSebelum = null, cekKonfBerjalan = false;
+  async function cekKonfirmasi() {
+    if (cekKonfBerjalan || typeof Masuk === 'undefined' || !Masuk.kode()) return;
+    cekKonfBerjalan = true;
+    try {
+      const rows = await rpc('daftar_konfirmasi_vendor', { kode: 'sesi' }), kini = new Map(rows.map(k => [k.id, `${k.status}|${k.estimasi || ''}|${k.jumlah_jawab}`]));
+      if (konfSebelum) for (const k of rows) {
+        if (konfSebelum.get(k.id) === kini.get(k.id) || k.status === 'menunggu') continue;
+        const tujuan = `Rekap #${k.id} · ${idn((k.ringkasan || {}).total_pcs || 0)} pcs`;
+        if (k.status === 'dikonfirmasi') beritahu(`${k.vendor} mengonfirmasi pesanan`, `${tujuan}\nEstimasi datang: ${tglPendek(k.estimasi)}${k.catatan ? '\nCatatan: ' + k.catatan : ''}`, 'ok', 'rekap');
+        else if (k.status === 'tidak_bisa') beritahu(`${k.vendor}: belum bisa memenuhi`, `${tujuan}${k.catatan ? '\nCatatan: ' + k.catatan : ''}`, 'bad', 'rekap');
+      }
+      konfSebelum = kini; pmKonf = rows; if (!$('pg-rekap').hidden) renderRekapPage();
+    } catch (e) { /* abaikan; coba lagi pada putaran berikutnya */ }
+    cekKonfBerjalan = false;
+  }
   // ---- REALTIME + NOTIFIKASI KEPUTUSAN PIMPINAN ----
   // Database menyiarkan sinyal ringan ({id, aksi}) ke saluran publik "permintaan-seragam" tiap permintaan dibuat/berubah (trigger di migrasi-realtime.sql).
   // Halaman mendengarkan lewat WebSocket Supabase Realtime, lalu memuat ulang data lewat daftar_permintaan (tanpa refresh manual).
@@ -2223,23 +2241,23 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     putusanSebelum = kini;
   }
   // di dalam portal: kirim ke portal supaya tampil walau yang sedang dibuka modul lain; berdiri sendiri: tampil di halaman ini
-  function beritahu(judul, teks, jenis) {
-    if (window.parent !== window) { try { parent.postMessage({ tipe: 'notifikasi', judul, teks, jenis, modul: 'seragam', pg: 'monitor' }, location.origin); return; } catch (e) { /* tampil lokal */ } }
-    tampilToast(judul, teks, jenis);
+  function beritahu(judul, teks, jenis, pg = 'monitor') {
+    if (window.parent !== window) { try { parent.postMessage({ tipe: 'notifikasi', judul, teks, jenis, modul: 'seragam', pg }, location.origin); return; } catch (e) { /* tampil lokal */ } }
+    tampilToast(judul, teks, jenis, pg);
   }
-  function tampilToast(judul, teks, jenis) {
+  function tampilToast(judul, teks, jenis, pg = 'monitor') {
     let kotak = document.getElementById('toastBox');
     if (!kotak) { kotak = document.createElement('div'); kotak.id = 'toastBox'; kotak.setAttribute('role', 'status'); kotak.setAttribute('aria-live', 'polite'); document.body.appendChild(kotak); }
     const t = document.createElement('div'); t.className = 'toast ' + (jenis || ''); t.tabIndex = 0;
     const h = document.createElement('b'); h.textContent = judul; const p = document.createElement('span'); p.textContent = teks;
     const x = document.createElement('button'); x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', 'Tutup'); x.onclick = e => { e.stopPropagation(); t.remove(); };
-    t.append(h, p, x); t.onclick = () => { try { tampil('monitor'); } catch (e) { /* abaikan */ } t.remove(); };
+    t.append(h, p, x); t.onclick = () => { try { tampil(pg); } catch (e) { /* abaikan */ } t.remove(); };
     kotak.prepend(t); while (kotak.children.length > 5) kotak.lastChild.remove(); setTimeout(() => t.remove(), 20000);
   }
   (function realtimeStatus() {
     let ws, hb, tunda, coba = 0, ref = 0;
     const kirim = (event, payload, topic = 'realtime:permintaan-seragam') => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ topic, event, payload, ref: String(++ref) })); };
-    const muatUlang = () => { clearTimeout(tunda); tunda = setTimeout(() => muatStatus(true), 700); };
+    const muatUlang = () => { clearTimeout(tunda); tunda = setTimeout(() => { muatStatus(true); cekKonfirmasi(); }, 700); };
     function sambung() {
       try { ws = new WebSocket(SUPABASE_URL.replace(/^http/, 'ws') + '/realtime/v1/websocket?apikey=' + SUPABASE_ANON_KEY + '&vsn=1.0.0'); } catch (e) { return; }
       ws.onopen = () => { coba = 0; kirim('phx_join', { config: { broadcast: { self: false }, presence: { key: '' }, postgres_changes: [], private: false }, access_token: SUPABASE_ANON_KEY }); hb = setInterval(() => kirim('heartbeat', {}, 'phoenix'), 25000); };
@@ -2249,7 +2267,10 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     sambung();
     // jaring pengaman bila sambungan realtime tertahan (jaringan kantor/proxy): muat ulang tiap 2 menit dan saat tab dibuka lagi
     setInterval(() => { if (!document.hidden && statusMuat) muatStatus(true); }, 120000);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden && statusMuat) muatStatus(true); });
+    setInterval(() => { if (!document.hidden) cekKonfirmasi(); }, 30000); // jawaban Mas Wahyu lewat ntfy: pop-up kanan atas dalam <= 30 detik (langsung bila fungsi server menyiarkan sinyal)
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && statusMuat) { muatStatus(true); cekKonfirmasi(); } });
+    window.addEventListener('masuk-ubah', () => setTimeout(cekKonfirmasi, 800));
+    setTimeout(cekKonfirmasi, 4000);
   })();
   function infoLok(l) {
     const per = l.bagian.map(b => terbaru.get(l.lokasi + '|' + b.nama)), ada = per.filter(Boolean);
