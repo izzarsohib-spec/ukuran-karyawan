@@ -6,6 +6,7 @@ Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permin
 
 ## 30 Okt 2026
 
+- **v1.302** Ploting: kartu tutorial dan kartu Daftar lokasi kini **sama tinggi** (bagian bawah sejajar). Panel daftar dan detail mengisi tinggi kartu, dan daftar lokasi bergulir di dalamnya (minimal 360 px).
 - **v1.301** Ploting: tinggi kartu daftar lokasi dan detail dinaikkan (maksimal 88% tinggi layar, paling banyak 860 px) dan dibuat sejajar, supaya form ploting karyawan tidak terpotong pendek. Isi yang lebih panjang tetap bergulir di dalam kartu.
 - **v1.300** Ploting: fungsi lipat (minimize) kartu tutorial dihapus. Kartu **Cara mengisi Ploting** kini selalu berada di kiri, berdampingan dengan kartu Daftar lokasi (lebar 260 px; kartu daftar memakai sisanya). Hanya di layar di bawah 1000 px tutorial pindah ke atas (dua kolom, satu kolom di HP).
 - **v1.299** Ploting: kartu Daftar lokasi dan kartu detail **digabung menjadi satu kartu besar**, berdampingan dengan kartu tutorial (yang bisa dilipat). Bagian atas kartu: judul, kolom cari, PDF gudang, Muat ulang dalam satu baris, lalu chip Semua/Belum/Sudah/Riwayat; di bawahnya daftar lokasi dan detail dipisah garis tipis. Mengikuti acuan Monitoring pengisian: item daftar ringkas (nama satu baris), tinggi daftar dibatasi sekitar 440 px dan detail sekitar 620 px dengan gulir di dalam kartu, jadi kartu tidak memanjang. Tombol Plot seragam tidak lagi keluar dari kartu pada layar sempit. Layar di bawah 1360 px: tutorial terbuka pindah ke atas.

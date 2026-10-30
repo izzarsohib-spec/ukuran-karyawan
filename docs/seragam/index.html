@@ -453,7 +453,7 @@
   .tiga .kriw .dhead { border-bottom:1px solid var(--stroke); }
   /* Ploting: tutorial (kiri, bisa dilipat) + SATU kartu besar berisi daftar lokasi dan detail berdampingan; gaya kartu putih acuan Monitoring */
   #pg-ploting .bawah { padding:0; margin-top:14px; }
-  .plot3 { display:grid; grid-template-columns:260px minmax(0,1fr); gap:14px; align-items:start; }
+  .plot3 { display:grid; grid-template-columns:260px minmax(0,1fr); gap:14px; align-items:stretch; }
   .plot3 > .p3k { min-width:0; background:#FFFFFF; border:1px solid #DCE3EC; border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,.04), 0 6px 18px rgba(15,23,42,.05); padding:18px 20px; }
   .plot3 .ptuto .k3h { font-size:1.12rem; font-weight:700; }
   .plot3 .ptuto .tuto { display:block; margin:10px 0 0; padding-left:18px; font-size:.92rem; line-height:1.55; } .plot3 .ptuto .tuto li { margin-bottom:7px; break-inside:avoid; }
@@ -461,9 +461,10 @@
   .plot3 .pmain .bar-top { margin-bottom:12px; } .plot3 .pmain .bar-top .btn { padding:7px 15px; font-size:.86rem; white-space:nowrap; }
   .plot3 .pmain .bar-top .search { flex:1 1 260px; max-width:420px; }
   .plot3 .pmain .chip { font-size:.86rem; padding:6px 15px; cursor:pointer; }
-  .plot3 .pwrap { display:grid; grid-template-columns:minmax(300px,360px) minmax(0,1fr); align-items:start; border-top:1px solid #DCE3EC; margin:0 -20px -18px; }
-  .plot3 .plist { padding:16px 18px 18px 20px; min-width:0; }
-  .plot3 .plist .scroll { max-height:calc(min(88vh,860px) - 100px); }
+  .plot3 .pwrap { display:grid; grid-template-columns:minmax(300px,360px) minmax(0,1fr); align-items:stretch; flex:1 1 auto; border-top:1px solid #DCE3EC; margin:0 -20px -18px; }
+  .plot3 .pmain { display:flex; flex-direction:column; }
+  .plot3 .plist { padding:16px 18px 18px 20px; min-width:0; display:flex; flex-direction:column; }
+  .plot3 .plist .scroll { flex:1 1 0; min-height:360px; max-height:calc(min(88vh,860px) - 100px); }
   .plot3 .plist #pUrut { font-size:.9rem; padding:6px 8px; }
   .plot3 .plist .item { padding:11px 14px; border-radius:14px; margin-bottom:6px; }
   .plot3 .plist .item .nm { font-size:.92rem; line-height:1.3; } /* satu baris, dipotong titik-titik seperti daftar Monitoring */
