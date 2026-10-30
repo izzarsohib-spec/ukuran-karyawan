@@ -451,6 +451,17 @@
   .riwlist { max-height:340px; overflow:auto; scrollbar-width:thin; }
   @media (max-width: 1180px) { .tiga .kriw .riwlist { flex:none; max-height:340px; } }
   .tiga .kriw .dhead { border-bottom:1px solid var(--stroke); }
+  .tutoploting { margin-top:14px; }
+  .tutoploting .tiga { align-items:start; }
+  .tutoploting .tiga > .k3 { background:#FFFFFF; border:1px solid #DCE3EC; border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,.04), 0 6px 18px rgba(15,23,42,.05); }
+  .tiga .span2 { grid-column:span 2; }
+  @media (max-width: 1180px) { .tiga .span2 { grid-column:auto; } }
+  .rwp h3 { margin:0 0 4px; } .rwp .rwps { font-size:.82rem; color:var(--muted); margin:0 0 10px; }
+  .rwpl { max-height:340px; overflow:auto; }
+  .rwpb { display:flex; justify-content:space-between; align-items:baseline; gap:12px; width:100%; padding:9px 4px; border:0; border-top:1px solid var(--stroke); background:none; color:inherit; font:inherit; text-align:left; cursor:pointer; }
+  .rwpb:first-child { border-top:0; } .rwpb:hover { background:rgba(127,127,127,.08); }
+  .rwpb .rwpt { font-size:.82rem; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .rwpb .rwpn { min-width:0; font-size:.92rem; } .rwpb .rwpn small { display:block; color:var(--muted); font-size:.8rem; }
   .tiga .k3kosong { padding:22px 6px; text-align:center; color:var(--muted); font-size:.84rem; }
   .lokhead { margin-bottom:12px; } .lokbox { position:relative; margin-bottom:12px; z-index:6; }
   .pilihlok { display:block; font-size:.76rem; color:var(--muted); } .cb { display:flex; gap:6px; margin-top:5px; } .cb input { margin-top:0 !important; flex:1; min-width:0; }
@@ -735,8 +746,19 @@
    </div>
 
    <div class="page" id="pg-ploting" hidden>
-    <header><div><h1>Ploting Seragam</h1><div class="sub" id="infoPlot">Memuat data…</div><div class="sub">Pembagian seragam per karyawan dibuat di form permintaan. Halaman ini untuk mengoreksinya setelah disetujui (selama belum ada pengiriman).</div></div></header>
+    <header><div><h1>Ploting Seragam</h1><div class="sub" id="infoPlot">Memuat data…</div><div class="sub">Bagi seragam yang sudah disetujui ke tiap karyawan beserta ukurannya. Bisa diubah lagi selama belum ada pengiriman.</div></div></header>
     <section class="top mini" id="md-ploting"></section>
+    <section class="tutoploting"><div class="detail tiga">
+      <div class="k3 kriw"><div class="k3h"><b>Cara mengisi Ploting</b></div><ol class="tuto">
+        <li><b>Pilih lokasi</b> di daftar. Saring dengan chip <i>Belum diploting</i> atau <i>Sudah diploting</i>, atau ketik nama lokasi di kolom cari.</li>
+        <li><b>Tekan Plot seragam</b> (atau Ubah ploting) pada bagian kerja. Daftar karyawan memuat nama, jadi perlu login.</li>
+        <li><b>Centang seragam</b> yang diterima tiap karyawan dan isi jumlahnya. <i>Bagi rata</i> membagi satu item ke semua karyawan, <i>Kosongkan</i> membatalkannya.</li>
+        <li><b>Pilih ukuran</b> baju, celana, atau sepatu. Awalnya terisi dari isian Google Form; pilihan merah berarti belum diisi.</li>
+        <li><b>Cocokkan kuota:</b> angka pada kartu kuota harus sama dengan jumlah permintaan sebelum bisa disimpan.</li>
+        <li><b>Periksa Rekap ukuran untuk gudang</b> (jumlah per ukuran), lalu tekan <i>Simpan ploting</i>. Waktunya tercatat di Riwayat ploting.</li>
+        <li><b>Terkunci</b> setelah ada pengiriman. Bila PO sudah dikirim ke vendor, perubahan ukuran wajib disertai alasan.</li></ol></div>
+      <div class="pcard k3 span2" id="pRiwayat"></div>
+    </div></section>
     <section class="bawah card">
       <div class="bar-top">
         <h3>Daftar lokasi</h3>
@@ -2255,6 +2277,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
       daftarMinta = (await r.json()).filter(p => Saring.boleh(p.lokasi_form)); statusMuat = true;
       cekKeputusan();
       try { peralatanDiSeragam = new Map((await rpc('peralatan_terpakai_seragam', {})).map(x => [x.lokasi_form + '' + x.bagian_kerja, Number(x.jual)])); } catch (e) { peralatanDiSeragam = new Map(); }
+      try { plRiwayat = await rpc('daftar_riwayat_ploting', {}); } catch (e) { plRiwayat = null; } // null = migrasi riwayat belum diterapkan
       try { cakupan = new Map((await rpc('cakupan_permintaan', {})).map(x => [x.lokasi_form + '|' + x.bagian_kerja, x.penerima])); } catch (e) { cakupan = new Map(); }
     } catch (e) { if (senyap === true && statusMuat) return; daftarMinta = []; susunStatus(); renderDaftarMinta(); $('infoMinta').textContent = 'Gagal memuat status: ' + e.message; return; }
     susunStatus(); renderDaftarMinta(); renderPlotList(); renderKirimList(); renderTagihanList(); renderRingkasan(); gambarPantau(); renderDetail(); renderRekapPage(); renderPoVendor();
@@ -2519,7 +2542,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     const g = rekapBarang(baris.map(b => ({ no: b.no, nama: (hargaDari(b.no) || {}).nama, qty: b.qty })));
     $('mRekap').innerHTML = g.length ? g.map(x => `<div class="rk"><div class="rkh"><h4>${x.jenis}</h4><b>${x.total} pcs</b></div>${x.baris.map(([n, q]) => `<div class="rl"><span>${esc(namaRapi(n))}</span><b>${q}</b></div>`).join('')}</div>`).join('') : '<div class="hint" style="margin:0">Belum ada seragam yang dibagikan.</div>';
   }
-  let pSel = '', pBagian = '', terbukaPlot = false, pStatusF = 'semua', pData = null;
+  let pSel = '', pBagian = '', terbukaPlot = false, pStatusF = 'semua', pData = null, plRiwayat = null, plRiwayatSemua = false;
   const kodePlot = () => Masuk.kode(); // 'sesi' bila sudah login, kosong bila belum
   async function rpc(nama, body) {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${nama}`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -2547,14 +2570,14 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     const semua = lokMinta().map(l => { l.pi = infoPlot(l, setuju); return l; }).filter(l => l.pi.s !== 'kosong');
     const q = $('pCari').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const banding = (a, b) => q.length ? a.client.localeCompare(b.client) : pUrut === 'sedikit' ? (a.pi.pcs - b.pi.pcs) || a.client.localeCompare(b.client) : pUrut === 'banyak' ? (b.pi.pcs - a.pi.pcs) || a.client.localeCompare(b.client) : (urutPrioritasPlot(a.pi) - urutPrioritasPlot(b.pi)) || a.client.localeCompare(b.client);
-    const cocokF = l => pStatusF === 'semua' || (pStatusF === 'siap' ? !l.pi.menunggu && l.pi.s !== 'selesai' : pStatusF === 'menunggu' ? l.pi.menunggu > 0 : l.pi.s === pStatusF);
+    const cocokF = l => pStatusF === 'semua' || (pStatusF === 'sudah' ? l.pi.s === 'selesai' : l.pi.s !== 'selesai'); // belum = belum atau baru sebagian diploting
     const f = semua.filter(l => q.every(w => l.kunci.includes(w)) && cocokF(l))
       .sort(banding);
     if (!f.some(l => l.lokasi === pSel)) { pSel = f.length ? f[0].lokasi : ''; pBagian = ''; pData = null; }
-    const n = s => s === 'semua' ? semua.length : s === 'siap' ? semua.filter(l => !l.pi.menunggu && l.pi.s !== 'selesai').length : s === 'menunggu' ? semua.filter(l => l.pi.menunggu > 0).length : semua.filter(l => l.pi.s === s).length;
-    $('pChips').innerHTML = [['semua', 'Semua'], ['siap', 'Semua pekerjaan siap diplot'], ['menunggu', 'Menunggu pekerjaan lain'], ['belum', 'Belum diplot'], ['sebagian', 'Sebagian diplot'], ['selesai', 'Sudah diplot']]
+    const n = s => s === 'semua' ? semua.length : s === 'sudah' ? semua.filter(l => l.pi.s === 'selesai').length : semua.filter(l => l.pi.s !== 'selesai').length;
+    $('pChips').innerHTML = [['semua', 'Semua'], ['belum', 'Belum diploting'], ['sudah', 'Sudah diploting']]
       .map(([s, t]) => `<button class="chip ${pStatusF === s ? 'on' : ''}" data-s="${s}">${t} ${n(s)}</button>`).join('');
-    $('infoPlot').textContent = statusMuat ? (semua.length ? `${semua.length} lokasi punya permintaan yang sudah disetujui · ${n('belum') + n('sebagian')} belum selesai diplot` : 'Belum ada permintaan yang disetujui Pak Yasir dan Pak Ferry') : 'Memuat data…';
+    $('infoPlot').textContent = statusMuat ? (semua.length ? `${semua.length} lokasi punya permintaan yang sudah disetujui · ${n('belum')} belum selesai diploting` : 'Belum ada permintaan yang disetujui Pak Yasir dan Pak Ferry') : 'Memuat data…';
     const kartuPlot = l => {
       const [lbl, cls] = LP[l.pi.s], pct = l.pi.total ? 100 * l.pi.sudah / l.pi.total : 0;
 const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
@@ -2571,8 +2594,27 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
       const tot = ls => ls.reduce((x, l) => x + l.pi.pcs, 0), urut = [...g.entries()].sort((x, y) => pUrut === 'sedikit' ? tot(x[1]) - tot(y[1]) : pUrut === 'banyak' ? tot(y[1]) - tot(x[1]) : x[0].localeCompare(y[0], 'id'));
       $('pDaftar').innerHTML = urut.map(([nama, ls]) => `<div class="muted" style="margin:12px 4px 6px;font-size:.78rem;font-weight:600;letter-spacing:.02em">${esc(nama.toUpperCase())} · ${ls.length} lokasi · ${idn(tot(ls))} pcs</div>${ls.map(kartuPlot).join('')}`).join('');
     }
-    renderPlotDetail();
+    renderPlotDetail(); renderRiwayatPloting();
   }
+  const tglRw = d => new Date(d).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  function renderRiwayatPloting() {
+    const el = $('pRiwayat'); if (!el) return;
+    const ada = new Set(lokMinta().map(l => l.lokasi)), data = (plRiwayat || []).filter(r => ada.has(r.lokasi_form)); // ikut filter PIC/area yang aktif
+    let isi;
+    if (plRiwayat === null) isi = '<div class="kosongnya">Riwayat belum tersedia.</div>';
+    else if (!data.length) isi = '<div class="kosongnya">Belum ada lokasi yang diploting.</div>';
+    else { const t = plRiwayatSemua ? data : data.slice(0, 30);
+      isi = '<div class="rwpl">' + t.map(r => `<button class="rwpb" type="button" data-lok="${esc(r.lokasi_form)}"><span class="rwpn"><b>${esc(r.client || r.lokasi_form)}</b><small>${esc(r.bagian_kerja)} · ${r.aksi === 'diubah' ? 'Ploting diubah' : 'Diploting'}</small></span><span class="rwpt">${tglRw(r.waktu)}</span></button>`).join('') + '</div>'
+        + (data.length > t.length ? `<button class="btn" id="pRwSemua" type="button" style="margin-top:10px">Tampilkan semua (${data.length})</button>` : ''); }
+    el.classList.add('rwp');
+    el.innerHTML = '<h3>Riwayat ploting</h3><p class="rwps">Kapan tiap bagian kerja diploting atau diubah, terbaru di atas. Ketuk baris untuk membuka lokasinya.</p>' + isi;
+  }
+  $('pRiwayat').onclick = e => {
+    if (e.target.id === 'pRwSemua') { plRiwayatSemua = true; return renderRiwayatPloting(); }
+    const b = e.target.closest('.rwpb'); if (!b) return;
+    pStatusF = 'semua'; $('pCari').value = ''; pSel = b.dataset.lok; pData = null; $('pEditor').hidden = true; terbukaPlot = true; renderPlotList();
+    const d = $('pDetail'); if (d) d.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
   $('pUrut').onchange = e => { pUrut = e.target.value; renderPlotList(); };
   $('pGrup').onchange = e => { pGrup = e.target.checked; renderPlotList(); };
   function renderPlotDetail() {
@@ -4730,7 +4772,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   const gulirKe = id => { const el = document.querySelector(`#pg-${id} .bawah`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
   function aksiMini(k, a, arg) {
     if (k === 'permintaan') { if (a === 'menunggu') { MP.yasir.st = MP.ferry.st = 'menunggu'; renderMini(); return; } terbukaMinta = true; setLokasiMinta(arg); renderDaftarMinta(); renderMini(); gulirKe('permintaan'); }
-    else if (k === 'ploting') { if (a === 'belum') { const sj = setujuTerakhir(), ada = lokMinta().map(l => infoPlot(l, sj).s); pStatusF = ada.includes('belum') ? 'belum' : 'sebagian'; terbukaPlot = false; } else { pStatusF = 'semua'; $('pCari').value = ''; pSel = arg; pData = null; terbukaPlot = true; } renderPlotList(); gulirKe('ploting'); }
+    else if (k === 'ploting') { if (a === 'belum') { pStatusF = 'belum'; terbukaPlot = false; } else { pStatusF = 'semua'; $('pCari').value = ''; pSel = arg; pData = null; terbukaPlot = true; } renderPlotList(); gulirKe('ploting'); }
     else if (k === 'inventaris') { if (a === 'masuk') return bukaFormMasuk(); iTab = 'stok'; iAda = false; iKat = 'semua'; $('iCari').value = arg; renderInventaris(); gulirKe('inventaris'); }
     else if (k === 'pengiriman') { if (a === 'belum') { const sj = setujuTerakhir(), ada = lokMinta().map(l => infoKirim(l, sj).s); kStatusF = ada.includes('belum') ? 'belum' : 'sebagian'; kTerbuka = false; } else { kStatusF = 'semua'; $('kCari').value = ''; kSel = arg; kData = null; kTerbuka = true; } renderKirimList(); gulirKe('pengiriman'); }
     else if (k === 'tagihan') { if (a === 'siap') { tStatusF = 'siap'; tTerbuka = false; } else { tStatusF = 'semua'; $('tCari').value = ''; tSel = Number(arg); tTerbuka = true; } renderTagihanList(); gulirKe('tagihan'); }

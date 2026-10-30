@@ -36,3 +36,10 @@ tfy-wahyu-topik.txt`.
 
 Skrip pemasangan lain (`pasang-*.ps1` untuk rekap, TTD, penambahan item) masih ada di `Documents` pemilik proyek.
 
+## pasang-riwayat-ploting.ps1
+
+Menerapkan `supabase/migrasi-riwayat-ploting.sql` (tabel `ploting_riwayat`, trigger, fungsi `daftar_riwayat_ploting`) untuk kartu Riwayat ploting. Dijalankan **oleh pemilik proyek** (butuh kunci `supabase` di keystore lokal):
+
+```
+powershell -ExecutionPolicy Bypass -File alat/pasang-riwayat-ploting.ps1
+```
