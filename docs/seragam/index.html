@@ -458,10 +458,16 @@
   .plot3 > .pdetail { padding:0; overflow:hidden; }
   .plot3 .pdetail .dbody, .plot3 .pdetail .dhead { padding-left:20px; padding-right:20px; }
   .plot3 .pdetail > .formminta { margin:14px; }
-  .plot3 .ptuto .k3h { font-size:1.12rem; font-weight:700; }
+  .plot3 .ptuto .k3h { font-size:1.12rem; font-weight:700; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .plot3 .ptuto .tmin { padding:2px 10px; line-height:1.4; font-size:1rem; flex:none; }
+  .plot3 .ptuto .trail { display:block; width:100%; border:0; background:none; color:var(--text); font:inherit; font-weight:600; cursor:pointer; padding:12px 0; writing-mode:vertical-rl; text-align:left; letter-spacing:.02em; }
+  .plot3 .ptuto .trail:hover { color:var(--accent); }
+  /* terlipat: tutorial jadi rel sempit di kiri, daftar lokasi dan detail memakai sisa lebar */
+  .plot3.tmin { grid-template-columns:44px minmax(300px,1fr) minmax(0,2.4fr); }
+  .plot3.tmin > .ptuto { padding:4px 0; }
   .plot3 .ptuto .tuto { margin:10px 0 0; padding-left:18px; }
   .plot3 .pdaftar .list .scroll { max-height:620px; }
-  @media (max-width: 1180px) { .plot3 { grid-template-columns:minmax(280px,360px) minmax(0,1fr); } .plot3 > .ptuto { grid-column:1 / -1; } .plot3 .ptuto .tuto { columns:2; column-gap:32px; } .plot3 .ptuto .tuto li { break-inside:avoid; margin-bottom:6px; } }
+  @media (max-width: 1180px) { .plot3, .plot3.tmin { grid-template-columns:minmax(280px,360px) minmax(0,1fr); } .plot3.tmin > .ptuto { padding:4px 16px; } .plot3 .ptuto .trail { writing-mode:horizontal-tb; padding:10px 0; } .plot3 > .ptuto { grid-column:1 / -1; } .plot3 .ptuto .tuto { columns:2; column-gap:32px; } .plot3 .ptuto .tuto li { break-inside:avoid; margin-bottom:6px; } }
   @media (max-width: 980px) { .plot3 { display:block; } .plot3 > .ptuto, .plot3 > .pdaftar { margin-bottom:14px; } .plot3 .ptuto .tuto { columns:1; } .plot3 > .pdetail { border-radius:0; border:0; } }
   .rwp .rwps { font-size:.82rem; color:var(--muted); margin:0 0 10px; }
   .rwpl { max-height:520px; overflow:auto; }
@@ -755,7 +761,7 @@
    <div class="page" id="pg-ploting" hidden>
     <header><div><h1>Ploting Seragam</h1><div class="sub" id="infoPlot">Memuat data…</div><div class="sub">Bagi seragam yang sudah disetujui ke tiap karyawan beserta ukurannya. Bisa diubah lagi selama belum ada pengiriman.</div></div></header>
     <section class="top mini" id="md-ploting"></section>
-    <section class="bawah" id="pBawah"><div class="plot3">
+    <section class="bawah" id="pBawah"><div class="plot3" id="pPlot3">
       <div class="p3k ptuto" id="pTuto"></div>
       <div class="p3k pdaftar">
         <div class="bar-top" style="margin-bottom:10px"><h3>Daftar lokasi</h3><button class="btn" id="pCetakBtn">PDF gudang</button><button class="btn" id="pMuat">Muat ulang</button></div>
@@ -2573,7 +2579,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     const n = s => s === 'riwayat' ? riwayatPlot().length : s === 'semua' ? semua.length : s === 'sudah' ? semua.filter(l => l.pi.s === 'selesai').length : semua.filter(l => l.pi.s !== 'selesai').length;
     $('pChips').innerHTML = [['semua', 'Semua'], ['belum', 'Belum diploting'], ['sudah', 'Sudah diploting'], ['riwayat', 'Riwayat ploting']]
       .map(([s, t]) => `<button class="chip ${pStatusF === s ? 'on' : ''}" data-s="${s}">${t} ${n(s)}</button>`).join('');
-    $('pIsiLokasi').hidden = pStatusF === 'riwayat'; $('pRiwayat').hidden = pStatusF !== 'riwayat'; $('pTuto').innerHTML = tutorialPlot(pStatusF);
+    $('pIsiLokasi').hidden = pStatusF === 'riwayat'; $('pRiwayat').hidden = pStatusF !== 'riwayat'; $('pPlot3').classList.toggle('tmin', pTutoMin); $('pTuto').innerHTML = tutorialPlot(pStatusF);
     $('infoPlot').textContent = statusMuat ? (semua.length ? `${semua.length} lokasi punya permintaan yang sudah disetujui · ${n('belum')} belum selesai diploting` : 'Belum ada permintaan yang disetujui Pak Yasir dan Pak Ferry') : 'Memuat data…';
     const kartuPlot = l => {
       const [lbl, cls] = LP[l.pi.s], pct = l.pi.total ? 100 * l.pi.sudah / l.pi.total : 0;
@@ -2599,7 +2605,17 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     sudah: ['Lokasi yang sudah diploting', [['Daftar ini', 'berisi lokasi yang semua bagian kerjanya sudah diploting.'], ['Ubah ploting', 'untuk mengoreksi pembagian atau ukuran. Hanya bisa selama belum ada pengiriman.'], ['Bila PO sudah dikirim ke vendor,', 'perubahan wajib disertai alasan dan perlu diberitahukan ke vendor.'], ['Catatan perakitan 1 stel (PDF)', 'dipakai admin gudang untuk menyatukan baju dan celana per karyawan.'], ['PDF gudang', 'mencetak beberapa lokasi sekaligus. Lihat jumlah per ukuran di Rekap ukuran saat membuka bagian kerja.']]],
     riwayat: ['Cara membaca Riwayat ploting', [['Tiap baris', 'adalah satu kali ploting: lokasi, bagian kerja, jenisnya (Diploting atau Ploting diubah), dan waktunya.'], ['Urutan terbaru di atas.', 'Awalnya 30 baris; tekan Tampilkan semua untuk sisanya.'], ['Kolom cari', 'dan filter area atau PIC ikut menyaring riwayat.'], ['Ketuk sebuah baris', 'untuk membuka lokasinya di daftar.'], ['Riwayat dicatat otomatis', 'tiap kali ploting disimpan; ploting yang sudah ada sebelum fitur ini diberi satu baris awal.']]]
   };
-  const tutorialPlot = tab => { const [judul, langkah] = TUT_PLOT[tab] || TUT_PLOT.semua; return `<div class="k3h"><b>${judul}</b></div><ol class="tuto">${langkah.map(([a, b]) => `<li><b>${a}</b> ${b}</li>`).join('')}</ol>`; };
+  let pTutoMin = false; try { pTutoMin = localStorage.getItem('ploting-tuto-min') === '1'; } catch (e) {}
+  const tutorialPlot = tab => {
+    if (pTutoMin) return '<button class="trail" id="pTutoBtn" type="button" aria-expanded="false" title="Tampilkan cara mengisi">▸ Cara mengisi</button>';
+    const [judul, langkah] = TUT_PLOT[tab] || TUT_PLOT.semua;
+    return `<div class="k3h"><b>${judul}</b><button class="btn tmin" id="pTutoBtn" type="button" aria-expanded="true" title="Sembunyikan cara mengisi">–</button></div><ol class="tuto">${langkah.map(([a, b]) => `<li><b>${a}</b> ${b}</li>`).join('')}</ol>`;
+  };
+  $('pTuto').onclick = e => {
+    if (!e.target.closest('#pTutoBtn')) return;
+    pTutoMin = !pTutoMin; try { localStorage.setItem('ploting-tuto-min', pTutoMin ? '1' : '0'); } catch (x) {}
+    $('pPlot3').classList.toggle('tmin', pTutoMin); $('pTuto').innerHTML = tutorialPlot(pStatusF);
+  };
   function riwayatPlot() { // riwayat yang lokasinya tampil (filter area/PIC) dan cocok dengan kolom cari
     const ada = new Map(lokMinta().map(l => [l.lokasi, l])), q = $('pCari').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
     return (plRiwayat || []).filter(r => ada.has(r.lokasi_form) && q.every(w => (ada.get(r.lokasi_form).kunci + ' ' + String(r.bagian_kerja).toLowerCase()).includes(w)));
