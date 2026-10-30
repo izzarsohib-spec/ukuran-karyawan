@@ -291,6 +291,16 @@
   .pplot tr.sudah td { opacity:.7; }
   /* halaman Rekap Permintaan dan rekap barang di form */
   .rekap { display:grid; grid-template-columns:repeat(auto-fit, minmax(290px, 1fr)); gap:14px; align-items:start; }
+  .ruk { margin-top:14px; }
+  .ruk .rukj { font-size:.82rem; color:var(--muted); margin:0 0 10px; }
+  .ruk .rukg { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+  .ruk .rk { padding:14px 16px 12px; }
+  .ruk .rkh { padding-bottom:8px; }
+  .ruk .rkh h4 { letter-spacing:.06em; }
+  .ruk .rkuk { display:flex; flex-wrap:wrap; gap:6px 8px; padding-top:6px; }
+  .ruk .rkuk span { border:1px solid var(--stroke); border-radius:999px; padding:4px 12px; font-size:.95rem; font-variant-numeric:tabular-nums; }
+  .ruk .rkuk span b { margin-left:4px; }
+  .ruk .rkuk .kosongsiz { border-color:var(--bad); color:var(--bad); }
   .rk { border:1px solid var(--stroke); border-radius:18px; padding:16px 18px 10px; background:rgba(255,255,255,.04); }
   .rkh { display:flex; justify-content:space-between; align-items:baseline; gap:10px; padding-bottom:10px; margin-bottom:4px; border-bottom:1px solid var(--stroke); }
   .rk h4 { margin:0; font-size:.82rem; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-family:inherit; font-weight:700; }
@@ -2637,14 +2647,38 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
       <div class="kuotas">${items.map(it => `<div class="kq" id="kq-${it.no}"><b>${esc(it.nama)}</b><span class="kv"><span class="kt">0</span> / ${it.qty}</span>
         <div class="kb"><button class="btn" data-auto="${it.no}">Bagi rata</button><button class="btn" data-kosong="${it.no}">Kosongkan</button></div></div>`).join('')}</div>
       <div class="wrap pplot"><table><thead><tr><th style="min-width:200px">Karyawan</th><th>Seragam yang diterima</th></tr></thead><tbody>${kar.length ? kar.map(barisKar).join('') : '<tr><td colspan="2" class="kosongnya">Belum ada karyawan yang mengisi ukuran di Google Form untuk bagian ini.</td></tr>'}</tbody></table></div>
+      <div class="ruk" id="pRekapUk"></div>
       <div class="hint" id="pPesan"></div>
       <button class="cta" id="pSimpan" style="width:100%;margin-top:14px" disabled>Selesaikan kuota dulu</button>
       <div class="hint" id="pStatus" role="status"></div>
       <button class="btn" id="pPo" style="width:100%;margin-top:10px;border-radius:14px;padding:10px" disabled>Unduh PO &amp; Lampiran Ukuran (PDF)</button>`;
     hitungPlot();
   }
+  // Rekap jumlah per ukuran untuk admin gudang: tiap barang (baju, celana, sepatu) dihitung dari ploting yang sedang terisi.
+  // Contoh: BAJU PDH  L: 5 · M: 6 · XL: 7   |   CELANA PDH  30: 4 · 32: 6
+  function rekapUkuranPlot() {
+    const { items, kar, l, bagian } = pData, grup = new Map(); // kunci jenis|label -> { jenis, label, ukuran: Map }
+    for (const it of items) {
+      const komp = komponenBarang(it.no, it.nama);
+      for (const jenis of ['baju', 'celana', 'sepatu']) {
+        if (!it.uk[jenis]) continue;
+        const ent = komp.find(([g]) => g.toLowerCase() === jenis); if (!ent) continue;
+        const kunci = jenis + '|' + ent[1]; if (!grup.has(kunci)) grup.set(kunci, { jenis, label: ent[1], ukuran: new Map() });
+        const m = grup.get(kunci).ukuran;
+        for (const k of kar) { const a = k.alloc[it.no]; if (!a) continue; const u = String(a[jenis] || '').trim() || '?'; m.set(u, (m.get(u) || 0) + (Number(a.qty) || 0)); }
+      }
+    }
+    const urutJenis = { baju: 0, celana: 1, sepatu: 2 };
+    const kartu = [...grup.values()].filter(g => g.ukuran.size).sort((a, b) => urutJenis[a.jenis] - urutJenis[b.jenis] || a.label.localeCompare(b.label, 'id')).map(g => {
+      const ents = [...g.ukuran.entries()].sort((a, b) => (a[0] === '?') - (b[0] === '?') || urutUkuran(a[0], b[0]));
+      const tot = ents.reduce((s, [, q]) => s + q, 0);
+      return `<div class="rk"><div class="rkh"><h4>${esc(namaRapi(g.label))}</h4><b>${tot} pcs</b></div><div class="rkuk">${ents.map(([u, q]) => u === '?' ? `<span class="kosongsiz">Ukuran belum diisi: <b>${q}</b></span>` : `<span>${esc(u)}: <b>${q}</b></span>`).join('')}</div></div>`;
+    });
+    $('pRekapUk').innerHTML = kartu.length ? `<h3 style="margin:0 0 4px">Rekap ukuran untuk gudang</h3><p class="rukj">${esc(l.client)} · ${esc(bagian)}</p><div class="rukg">${kartu.join('')}</div>` : '';
+  }
   function hitungPlot() {
     const { items, kar } = pData; let pas = true, kosongUk = 0;
+    rekapUkuranPlot();
     for (const it of items) {
       const tot = kar.reduce((a, k) => a + (k.alloc[it.no] ? Number(k.alloc[it.no].qty) || 0 : 0), 0), kartu = $('kq-' + it.no);
       kartu.querySelector('.kt').textContent = tot; kartu.className = 'kq ' + (tot < it.qty ? 'kurang' : tot > it.qty ? 'lebih' : 'pas');
