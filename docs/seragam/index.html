@@ -451,10 +451,18 @@
   .riwlist { max-height:340px; overflow:auto; scrollbar-width:thin; }
   @media (max-width: 1180px) { .tiga .kriw .riwlist { flex:none; max-height:340px; } }
   .tiga .kriw .dhead { border-bottom:1px solid var(--stroke); }
-  .detail.tiga.tutop { grid-template-columns:minmax(0,1fr); margin-bottom:14px; }
-  .tutop .tuto { display:block; columns:2; column-gap:32px; } .tutop .tuto li { break-inside:avoid; margin-bottom:6px; }
-  @media (max-width: 900px) { .tutop .tuto { columns:1; } }
-  .tutop > .k3 { background:#FFFFFF; border:1px solid #DCE3EC; border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,.04), 0 6px 18px rgba(15,23,42,.05); }
+  /* Ploting: tiga kartu berdampingan (tutorial | daftar lokasi | detail dan form), gaya kartu putih acuan Monitoring */
+  #pg-ploting .bawah { padding:0; margin-top:14px; }
+  .plot3 { display:grid; grid-template-columns:minmax(230px,.8fr) minmax(300px,1fr) minmax(0,1.9fr); gap:14px; align-items:start; }
+  .plot3 > .p3k { min-width:0; background:#FFFFFF; border:1px solid #DCE3EC; border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,.04), 0 6px 18px rgba(15,23,42,.05); padding:18px 20px; }
+  .plot3 > .pdetail { padding:0; overflow:hidden; }
+  .plot3 .pdetail .dbody, .plot3 .pdetail .dhead { padding-left:20px; padding-right:20px; }
+  .plot3 .pdetail > .formminta { margin:14px; }
+  .plot3 .ptuto .k3h { font-size:1.12rem; font-weight:700; }
+  .plot3 .ptuto .tuto { margin:10px 0 0; padding-left:18px; }
+  .plot3 .pdaftar .list .scroll { max-height:620px; }
+  @media (max-width: 1180px) { .plot3 { grid-template-columns:minmax(280px,360px) minmax(0,1fr); } .plot3 > .ptuto { grid-column:1 / -1; } .plot3 .ptuto .tuto { columns:2; column-gap:32px; } .plot3 .ptuto .tuto li { break-inside:avoid; margin-bottom:6px; } }
+  @media (max-width: 980px) { .plot3 { display:block; } .plot3 > .ptuto, .plot3 > .pdaftar { margin-bottom:14px; } .plot3 .ptuto .tuto { columns:1; } .plot3 > .pdetail { border-radius:0; border:0; } }
   .rwp .rwps { font-size:.82rem; color:var(--muted); margin:0 0 10px; }
   .rwpl { max-height:520px; overflow:auto; }
   .rwpb { display:flex; justify-content:space-between; align-items:baseline; gap:12px; width:100%; padding:9px 4px; border:0; border-top:1px solid var(--stroke); background:none; color:inherit; font:inherit; text-align:left; cursor:pointer; }
@@ -747,25 +755,21 @@
    <div class="page" id="pg-ploting" hidden>
     <header><div><h1>Ploting Seragam</h1><div class="sub" id="infoPlot">Memuat data…</div><div class="sub">Bagi seragam yang sudah disetujui ke tiap karyawan beserta ukurannya. Bisa diubah lagi selama belum ada pengiriman.</div></div></header>
     <section class="top mini" id="md-ploting"></section>
-    <section class="bawah card">
-      <div class="bar-top">
-        <h3>Daftar lokasi</h3>
-        <label class="search"><span aria-hidden="true">🔍</span><input id="pCari" type="search" placeholder="Cari lokasi, mis. bps cilacap"></label>
-        <button class="btn" id="pCetakBtn">PDF gudang (beberapa lokasi)</button>
-        <button class="btn" id="pMuat">Muat ulang</button>
+    <section class="bawah" id="pBawah"><div class="plot3">
+      <div class="p3k ptuto" id="pTuto"></div>
+      <div class="p3k pdaftar">
+        <div class="bar-top" style="margin-bottom:10px"><h3>Daftar lokasi</h3><button class="btn" id="pCetakBtn">PDF gudang</button><button class="btn" id="pMuat">Muat ulang</button></div>
+        <div class="row" style="margin-bottom:12px"><label class="search" style="flex:1 1 auto;max-width:none"><span aria-hidden="true">🔍</span><input id="pCari" type="search" placeholder="Cari lokasi, mis. bps cilacap"></label></div>
+        <div class="pcard" id="pCetak" hidden style="margin-bottom:14px"></div>
+        <div class="chips" id="pChips" style="margin-bottom:10px"></div>
+        <div id="pRiwayat" hidden></div>
+        <div id="pIsiLokasi">
+          <div class="row" style="flex-wrap:wrap;gap:8px 12px;margin-bottom:10px;font-size:.82rem"><label class="muted">Urutkan <select id="pUrut" style="margin-left:6px;max-width:100%"><option value="prioritas">Prioritas (lengkap dulu)</option><option value="sedikit">Permintaan paling sedikit</option><option value="banyak">Permintaan paling banyak</option></select></label><label class="kcek"><input type="checkbox" id="pGrup"> Kelompokkan per PIC</label></div>
+          <div class="list"><div class="scroll" id="pDaftar"></div></div>
+        </div>
       </div>
-      <div class="pcard" id="pCetak" hidden style="margin-bottom:14px"></div>
-      <div class="chips" id="pChips" style="margin-bottom:10px"></div>
-      <div class="detail tiga tutop"><div class="k3 kriw" id="pTuto"></div></div>
-      <div id="pRiwayat" hidden></div>
-      <div id="pIsiLokasi">
-      <div class="row" style="flex-wrap:wrap;gap:12px;margin-bottom:14px;font-size:.82rem"><label class="muted">Urutkan <select id="pUrut" style="margin-left:6px"><option value="prioritas">Prioritas (pekerjaan lengkap dulu)</option><option value="sedikit">Permintaan paling sedikit dulu</option><option value="banyak">Permintaan paling banyak dulu</option></select></label><label class="kcek"><input type="checkbox" id="pGrup"> Kelompokkan per PIC</label></div>
-      <div class="layout">
-        <div class="list"><div class="scroll" id="pDaftar"></div></div>
-        <div class="detail" id="pDetail"><div id="pHead"></div><div class="pcard formminta" id="pEditor" hidden></div></div>
-      </div>
-      </div>
-    </section>
+      <div class="detail p3k pdetail" id="pDetail"><div id="pHead"></div><div class="pcard formminta" id="pEditor" hidden></div></div>
+    </div></section>
    </div>
 
    <div class="page" id="pg-penerimaan" hidden>
