@@ -735,7 +735,7 @@
    </div>
 
    <div class="page" id="pg-ploting" hidden>
-    <header><div><h1>Koreksi Ploting Seragam</h1><div class="sub" id="infoPlot">Memuat data…</div><div class="sub">Pembagian seragam per karyawan dibuat di form permintaan. Halaman ini untuk mengoreksinya setelah disetujui (selama belum ada pengiriman).</div></div></header>
+    <header><div><h1>Ploting Seragam</h1><div class="sub" id="infoPlot">Memuat data…</div><div class="sub">Pembagian seragam per karyawan dibuat di form permintaan. Halaman ini untuk mengoreksinya setelah disetujui (selama belum ada pengiriman).</div></div></header>
     <section class="top mini" id="md-ploting"></section>
     <section class="bawah card">
       <div class="bar-top">
@@ -1562,7 +1562,7 @@
   if (window.top !== window.self) document.body.classList.add('dalam');
   if (window.top !== window.self && location.hash === '#laporan') document.body.classList.add('embed');
   const GRUP = { ringkasan: 'ringkasan', monitor: 'monitor', permintaan: 'monitor', rekap: 'rekap', datang: 'rekap', kurang: 'rekap', inventaris: 'inventaris', opname: 'inventaris', retur: 'inventaris', ploting: 'ploting', pengiriman: 'ploting', penerimaan: 'ploting', tagihan: 'tagihan' };
-  const SUB = { monitor: [['monitor', 'Monitoring pengisian'], ['permintaan', 'Permintaan seragam']], inventaris: [['inventaris', 'Inventaris'], ['opname', 'Stock opname'], ['retur', 'Retur']], ploting:[['ploting', 'Koreksi ploting'], ['pengiriman', 'Pengiriman'], ['penerimaan', 'Penerimaan']] };
+  const SUB = { monitor: [['monitor', 'Monitoring pengisian'], ['permintaan', 'Permintaan seragam']], inventaris: [['inventaris', 'Inventaris'], ['opname', 'Stock opname'], ['retur', 'Retur']], ploting:[['ploting', 'Ploting'], ['pengiriman', 'Pengiriman'], ['penerimaan', 'Penerimaan']] };
   function tampil(pg) {
     if (pg === 'kurang' || pg === 'datang') { rkTab = pg; pg = 'rekap'; } // Barang datang dan Kekurangan vendor kini chip di halaman Rekap permintaan
     if (!HALAMAN.includes(pg)) pg = 'ringkasan';

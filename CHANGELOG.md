@@ -6,6 +6,7 @@ Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permin
 
 ## 30 Okt 2026
 
+- **v1.293** Nama halaman "Koreksi ploting" diganti menjadi "Ploting" (tab dan judul halaman).
 - **v1.292** Ploting: di bawah daftar karyawan muncul **Rekap ukuran untuk gudang**, dihitung langsung dari ploting yang sedang diisi dan berubah saat centang, jumlah, atau ukuran diganti. Satu kartu per barang (baju, celana, sepatu), berisi jumlah per ukuran, misalnya BAJU PDH: L: 5, M: 6, XL: 7 dan CELANA PDH: 30: 4, 32: 6. Setelan dipecah jadi kartu baju dan celana; ukuran baju diurut S sampai L7, celana dan sepatu menurut angka; pilihan yang ukurannya belum diisi ditandai merah. Hanya perubahan tampilan di docs/seragam/index.html, tanpa perubahan database.
 
 ## 29 Okt 2026
