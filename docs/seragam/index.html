@@ -453,7 +453,7 @@
   .tiga .kriw .dhead { border-bottom:1px solid var(--stroke); }
   /* Ploting: tutorial (kiri, bisa dilipat) + SATU kartu besar berisi daftar lokasi dan detail berdampingan; gaya kartu putih acuan Monitoring */
   #pg-ploting .bawah { padding:0; margin-top:14px; }
-  .plot3 { display:grid; grid-template-columns:260px minmax(0,1fr); gap:14px; align-items:stretch; }
+  .plot3 { display:grid; grid-template-columns:240px minmax(0,1fr); gap:14px; align-items:stretch; }
   .plot3 > .p3k { min-width:0; background:#FFFFFF; border:1px solid #DCE3EC; border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,.04), 0 6px 18px rgba(15,23,42,.05); padding:18px 20px; }
   .plot3 .ptuto .k3h { font-size:1.12rem; font-weight:700; }
   .plot3 .ptuto .tuto { display:block; margin:10px 0 0; padding-left:18px; font-size:.92rem; line-height:1.55; } .plot3 .ptuto .tuto li { margin-bottom:7px; break-inside:avoid; }
@@ -461,7 +461,7 @@
   .plot3 .pmain .bar-top { margin-bottom:12px; } .plot3 .pmain .bar-top .btn { padding:7px 15px; font-size:.86rem; white-space:nowrap; }
   .plot3 .pmain .bar-top .search { flex:1 1 260px; max-width:420px; }
   .plot3 .pmain .chip { font-size:.86rem; padding:6px 15px; cursor:pointer; }
-  .plot3 .pwrap { display:grid; grid-template-columns:minmax(300px,360px) minmax(0,1fr); align-items:stretch; grid-template-rows:minmax(0,1fr); flex:1 1 auto; contain:size; min-height:clamp(520px,78vh,800px); border-top:1px solid #DCE3EC; margin:0 -20px -18px; }
+  .plot3 .pwrap { display:grid; grid-template-columns:minmax(260px,300px) minmax(0,1fr); align-items:stretch; grid-template-rows:minmax(0,1fr); flex:1 1 auto; contain:size; min-height:clamp(520px,78vh,800px); border-top:1px solid #DCE3EC; margin:0 -20px -18px; }
   .plot3 .pmain { display:flex; flex-direction:column; }
   .plot3 .plist { padding:16px 18px 18px 20px; min-width:0; min-height:0; display:flex; flex-direction:column; }
   .plot3 .plist .scroll { flex:1 1 0; min-height:0; max-height:none; overflow-y:auto; }
@@ -478,6 +478,14 @@
   .plot3 .pdetail .bgr { padding-top:14px; padding-bottom:14px; } .plot3 .pdetail .bgr b { font-size:.98rem; } .plot3 .pdetail .bgr .muted { font-size:.86rem; }
   .plot3 .pdetail .badge { font-size:.8rem; } .plot3 .pdetail .btn { font-size:.88rem; }
   .plot3 .pdetail > .formminta { margin:14px 14px 14px 24px; }
+  /* form ploting di panel detail: kartu kuota dan baris karyawan disusun ke bawah supaya muat tanpa geser ke samping */
+  .plot3 .formminta .kuotas { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); }
+  .plot3 .formminta .pplot { overflow-x:hidden; }
+  .plot3 .formminta .pplot table, .plot3 .formminta .pplot tbody, .plot3 .formminta .pplot tr, .plot3 .formminta .pplot td { display:block; width:100%; min-width:0; }
+  .plot3 .formminta .pplot thead { display:none; }
+  .plot3 .formminta .pplot tr { padding:8px 0; border-bottom:1px solid var(--stroke); }
+  .plot3 .formminta .pplot td, .plot3 .formminta .pplot td.kn { min-width:0; padding:6px 4px; }
+  .plot3 .formminta .pil { flex:1 1 150px; }
   .plot3 #pRiwayat:not([hidden]) { flex:1 1 auto; display:flex; flex-direction:column; contain:size; min-height:clamp(420px,70vh,720px); }
   .plot3 #pRiwayat .rwpl { flex:1 1 0; min-height:0; max-height:none; }
   @media (max-width: 1000px) { .plot3 { grid-template-columns:minmax(0,1fr); } .plot3 .ptuto .tuto { columns:2; column-gap:32px; } }

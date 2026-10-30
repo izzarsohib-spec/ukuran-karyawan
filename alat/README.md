@@ -10,6 +10,7 @@ node alat/cek-tata-letak.mjs --halaman datang,kurang,retur     # sebagian halama
 node alat/cek-tata-letak.mjs --lebar 1366 --tinggi 768         # ukuran layar lain
 node alat/cek-tata-letak.mjs --url http://localhost:8000/seragam/   # versi lokal
 node alat/cek-tata-letak.mjs --keluar alat/hasil --json alat/hasil/laporan.json   # simpan tangkapan layar dan laporan
+node alat/cek-tata-letak.mjs --halaman ploting --editor --tinggi 1300 --keluar alat/hasil   # buka form ploting (10 karyawan palsu, login palsu, penulisan ke server diblokir)
 ```
 
 Tingkat temuan:

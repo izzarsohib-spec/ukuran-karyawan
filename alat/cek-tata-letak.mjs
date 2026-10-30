@@ -9,6 +9,7 @@
 // Pakai:  node alat/cek-tata-letak.mjs                       (situs langsung, semua halaman, layar 1500x1000)
 //         node alat/cek-tata-letak.mjs --url http://localhost:8000/seragam/ --halaman datang,kurang --lebar 1366 --tinggi 768
 //         node alat/cek-tata-letak.mjs --keluar alat/hasil     (simpan tangkapan layar tiap halaman)
+//         node alat/cek-tata-letak.mjs --halaman ploting --editor --tinggi 1300 --keluar alat/hasil   (buka form ploting dengan data palsu; ada editor-atas.png dan ploting.png)
 // Kode keluar 1 bila ada temuan KRITIS (bisa dipakai sebelum push).
 import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync, mkdtempSync, existsSync } from 'node:fs';
@@ -81,13 +82,21 @@ let n = 0, galat = []; const tunda = new Map();
 ws.onmessage = e => { const m = JSON.parse(e.data); if (m.id && tunda.has(m.id)) { tunda.get(m.id)(m); tunda.delete(m.id); } else if (m.method === 'Runtime.exceptionThrown') galat.push((m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text || '').split('\n')[0].slice(0, 160)); };
 const kirim = (method, params = {}) => new Promise(r => { const id = ++n; tunda.set(id, r); ws.send(JSON.stringify({ id, method, params })); });
 const ev = async js => { const r = await kirim('Runtime.evaluate', { expression: js, returnByValue: true, awaitPromise: true }); return r.result?.result?.value ?? { galatEval: r.result?.exceptionDetails?.exception?.description || r.result?.exceptionDetails?.text }; };
-await kirim('Page.enable'); await kirim('Runtime.enable'); await kirim('Emulation.setDeviceMetricsOverride', { width: LEBAR, height: TINGGI, deviceScaleFactor: 1, mobile: false });
+await kirim('Page.enable'); await kirim('Runtime.enable');
+// --editor: membuka form ploting sungguhan dengan 10 karyawan PALSU dan login palsu; semua penulisan ke server (rpc simpan_/catat_/kirim/...) diblokir
+const NAMA=['Budi Rahayu','Imam Lestari','Prabowo Subianto','Siti Aminah','Joko Widodo','Dewi Lestari','Agus Salim','Rina Marlina','Hendra Gunawan','Putri Ayu'];
+const FAKE=NAMA.map((n,i)=>({nama:n,ukuran_baju:['S','M','L','XL','XXL'][i%5],ukuran_celana:String(30+(i%6)*2),ukuran_sepatu:String(39+(i%5)),peran:'Anggota'}));
+if (arg.editor) await kirim('Page.addScriptToEvaluateOnNewDocument',{source:'(()=>{const f=window.fetch;const ok=b=>Promise.resolve(new Response(JSON.stringify(b),{status:200,headers:{"Content-Type":"application/json"}}));window.fetch=(u,o)=>{const s=String(u);if(s.includes("rpc/daftar_ukuran"))return ok('+JSON.stringify(FAKE)+');if(s.includes("rpc/ambil_ploting"))return ok([]);if(["simpan_","catat_","kirim","tandai_","batal","po_"].some(k=>s.includes("rpc/"+k)))return Promise.reject(new Error("diblokir oleh uji"));return f(u,o);};})()'}); await kirim('Emulation.setDeviceMetricsOverride', { width: LEBAR, height: TINGGI, deviceScaleFactor: 1, mobile: false });
 if (KELUAR) mkdirSync(KELUAR, { recursive: true });
 
 const urutan = { KRITIS: 0, PERINGATAN: 1, INFO: 2 }, ringkas = { KRITIS: 0, PERINGATAN: 0, INFO: 0 }, hasil = [];
 for (const hal of DAFTAR) {
   galat = []; await kirim('Page.navigate', { url: URL_DASAR + '?cek=' + Date.now() + '#' + hal.h }); await tunggu(TUNGGU);
   if (hal.klik) { await ev(`(() => { const b = [...document.querySelectorAll('.page:not([hidden]) .chip, .page:not([hidden]) button')].find(x => x.textContent.trim().startsWith(${JSON.stringify(hal.klik)})); if (b) b.click(); return !!b; })()`); await tunggu(1500); }
+  if (hal.h === 'ploting' && arg.editor) {
+    console.log('editor:', JSON.stringify(await ev("(async()=>{ if(typeof Masuk!=='undefined') Masuk.kode=()=>'sesi'; const w=ms=>new Promise(r=>setTimeout(r,ms)); const lok=[...document.querySelectorAll('#pDaftar .item')].find(b=>b.textContent.includes('BALAI TEKNIK SABO')); if(!lok) return 'lokasi tidak ketemu'; lok.click(); await w(600); const t=document.querySelector('#pHead [data-plot]'); if(!t) return 'tombol plot tidak ketemu'; t.click(); await w(2000); const a=[...document.querySelectorAll('#pEditor [data-auto]')]; a.forEach(x=>x.click()); await w(500); return 'item='+a.length+' baris='+document.querySelectorAll('#pEditor tbody tr').length+' rekap='+(document.querySelector('#pRekapUk')||{}).innerText?.slice(0,80); })()")));
+  }
+  if (hal.h === 'ploting' && arg.editor && KELUAR) { const s0 = await kirim('Page.captureScreenshot', { format: 'png' }); mkdirSync(KELUAR, { recursive: true }); writeFileSync(join(KELUAR, 'editor-atas.png'), Buffer.from(s0.result.data, 'base64')); await ev("(()=>{const d=document.querySelector('#pDetail'); d.scrollTop=d.scrollHeight; return 1})()"); await tunggu(400); }
   const r = await ev(PERIKSA);
   if (r.galatEval) { console.log('\n' + hal.n + ': pemeriksaan gagal: ' + r.galatEval); continue; }
   const t = r.temuan; for (const e of galat) t.push({ jenis: 'error-js', tingkat: 'KRITIS', el: 'konsol', pesan: e });
