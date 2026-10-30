@@ -451,13 +451,12 @@
   .riwlist { max-height:340px; overflow:auto; scrollbar-width:thin; }
   @media (max-width: 1180px) { .tiga .kriw .riwlist { flex:none; max-height:340px; } }
   .tiga .kriw .dhead { border-bottom:1px solid var(--stroke); }
-  .tutoploting { margin-top:14px; }
-  .tutoploting .tiga { align-items:start; }
-  .tutoploting .tiga > .k3 { background:#FFFFFF; border:1px solid #DCE3EC; border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,.04), 0 6px 18px rgba(15,23,42,.05); }
-  .tiga .span2 { grid-column:span 2; }
-  @media (max-width: 1180px) { .tiga .span2 { grid-column:auto; } }
-  .rwp h3 { margin:0 0 4px; } .rwp .rwps { font-size:.82rem; color:var(--muted); margin:0 0 10px; }
-  .rwpl { max-height:340px; overflow:auto; }
+  .detail.tiga.tutop { grid-template-columns:minmax(0,1fr); margin-bottom:14px; }
+  .tutop .tuto { display:block; columns:2; column-gap:32px; } .tutop .tuto li { break-inside:avoid; margin-bottom:6px; }
+  @media (max-width: 900px) { .tutop .tuto { columns:1; } }
+  .tutop > .k3 { background:#FFFFFF; border:1px solid #DCE3EC; border-radius:16px; box-shadow:0 1px 2px rgba(15,23,42,.04), 0 6px 18px rgba(15,23,42,.05); }
+  .rwp .rwps { font-size:.82rem; color:var(--muted); margin:0 0 10px; }
+  .rwpl { max-height:520px; overflow:auto; }
   .rwpb { display:flex; justify-content:space-between; align-items:baseline; gap:12px; width:100%; padding:9px 4px; border:0; border-top:1px solid var(--stroke); background:none; color:inherit; font:inherit; text-align:left; cursor:pointer; }
   .rwpb:first-child { border-top:0; } .rwpb:hover { background:rgba(127,127,127,.08); }
   .rwpb .rwpt { font-size:.82rem; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
@@ -748,17 +747,6 @@
    <div class="page" id="pg-ploting" hidden>
     <header><div><h1>Ploting Seragam</h1><div class="sub" id="infoPlot">Memuat data…</div><div class="sub">Bagi seragam yang sudah disetujui ke tiap karyawan beserta ukurannya. Bisa diubah lagi selama belum ada pengiriman.</div></div></header>
     <section class="top mini" id="md-ploting"></section>
-    <section class="tutoploting"><div class="detail tiga">
-      <div class="k3 kriw"><div class="k3h"><b>Cara mengisi Ploting</b></div><ol class="tuto">
-        <li><b>Pilih lokasi</b> di daftar. Saring dengan chip <i>Belum diploting</i> atau <i>Sudah diploting</i>, atau ketik nama lokasi di kolom cari.</li>
-        <li><b>Tekan Plot seragam</b> (atau Ubah ploting) pada bagian kerja. Daftar karyawan memuat nama, jadi perlu login.</li>
-        <li><b>Centang seragam</b> yang diterima tiap karyawan dan isi jumlahnya. <i>Bagi rata</i> membagi satu item ke semua karyawan, <i>Kosongkan</i> membatalkannya.</li>
-        <li><b>Pilih ukuran</b> baju, celana, atau sepatu. Awalnya terisi dari isian Google Form; pilihan merah berarti belum diisi.</li>
-        <li><b>Cocokkan kuota:</b> angka pada kartu kuota harus sama dengan jumlah permintaan sebelum bisa disimpan.</li>
-        <li><b>Periksa Rekap ukuran untuk gudang</b> (jumlah per ukuran), lalu tekan <i>Simpan ploting</i>. Waktunya tercatat di Riwayat ploting.</li>
-        <li><b>Terkunci</b> setelah ada pengiriman. Bila PO sudah dikirim ke vendor, perubahan ukuran wajib disertai alasan.</li></ol></div>
-      <div class="pcard k3 span2" id="pRiwayat"></div>
-    </div></section>
     <section class="bawah card">
       <div class="bar-top">
         <h3>Daftar lokasi</h3>
@@ -768,10 +756,14 @@
       </div>
       <div class="pcard" id="pCetak" hidden style="margin-bottom:14px"></div>
       <div class="chips" id="pChips" style="margin-bottom:10px"></div>
+      <div class="detail tiga tutop"><div class="k3 kriw" id="pTuto"></div></div>
+      <div id="pRiwayat" hidden></div>
+      <div id="pIsiLokasi">
       <div class="row" style="flex-wrap:wrap;gap:12px;margin-bottom:14px;font-size:.82rem"><label class="muted">Urutkan <select id="pUrut" style="margin-left:6px"><option value="prioritas">Prioritas (pekerjaan lengkap dulu)</option><option value="sedikit">Permintaan paling sedikit dulu</option><option value="banyak">Permintaan paling banyak dulu</option></select></label><label class="kcek"><input type="checkbox" id="pGrup"> Kelompokkan per PIC</label></div>
       <div class="layout">
         <div class="list"><div class="scroll" id="pDaftar"></div></div>
         <div class="detail" id="pDetail"><div id="pHead"></div><div class="pcard formminta" id="pEditor" hidden></div></div>
+      </div>
       </div>
     </section>
    </div>
@@ -2570,13 +2562,14 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     const semua = lokMinta().map(l => { l.pi = infoPlot(l, setuju); return l; }).filter(l => l.pi.s !== 'kosong');
     const q = $('pCari').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const banding = (a, b) => q.length ? a.client.localeCompare(b.client) : pUrut === 'sedikit' ? (a.pi.pcs - b.pi.pcs) || a.client.localeCompare(b.client) : pUrut === 'banyak' ? (b.pi.pcs - a.pi.pcs) || a.client.localeCompare(b.client) : (urutPrioritasPlot(a.pi) - urutPrioritasPlot(b.pi)) || a.client.localeCompare(b.client);
-    const cocokF = l => pStatusF === 'semua' || (pStatusF === 'sudah' ? l.pi.s === 'selesai' : l.pi.s !== 'selesai'); // belum = belum atau baru sebagian diploting
+    const cocokF = l => pStatusF === 'sudah' ? l.pi.s === 'selesai' : pStatusF === 'belum' ? l.pi.s !== 'selesai' : true; // belum = belum atau baru sebagian diploting; semua dan riwayat tidak menyaring
     const f = semua.filter(l => q.every(w => l.kunci.includes(w)) && cocokF(l))
       .sort(banding);
     if (!f.some(l => l.lokasi === pSel)) { pSel = f.length ? f[0].lokasi : ''; pBagian = ''; pData = null; }
-    const n = s => s === 'semua' ? semua.length : s === 'sudah' ? semua.filter(l => l.pi.s === 'selesai').length : semua.filter(l => l.pi.s !== 'selesai').length;
-    $('pChips').innerHTML = [['semua', 'Semua'], ['belum', 'Belum diploting'], ['sudah', 'Sudah diploting']]
+    const n = s => s === 'riwayat' ? riwayatPlot().length : s === 'semua' ? semua.length : s === 'sudah' ? semua.filter(l => l.pi.s === 'selesai').length : semua.filter(l => l.pi.s !== 'selesai').length;
+    $('pChips').innerHTML = [['semua', 'Semua'], ['belum', 'Belum diploting'], ['sudah', 'Sudah diploting'], ['riwayat', 'Riwayat ploting']]
       .map(([s, t]) => `<button class="chip ${pStatusF === s ? 'on' : ''}" data-s="${s}">${t} ${n(s)}</button>`).join('');
+    $('pIsiLokasi').hidden = pStatusF === 'riwayat'; $('pRiwayat').hidden = pStatusF !== 'riwayat'; $('pTuto').innerHTML = tutorialPlot(pStatusF);
     $('infoPlot').textContent = statusMuat ? (semua.length ? `${semua.length} lokasi punya permintaan yang sudah disetujui · ${n('belum')} belum selesai diploting` : 'Belum ada permintaan yang disetujui Pak Yasir dan Pak Ferry') : 'Memuat data…';
     const kartuPlot = l => {
       const [lbl, cls] = LP[l.pi.s], pct = l.pi.total ? 100 * l.pi.sudah / l.pi.total : 0;
@@ -2596,18 +2589,29 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     }
     renderPlotDetail(); renderRiwayatPloting();
   }
+  const TUT_PLOT = {
+    semua: ['Cara mengisi Ploting', [['Pilih lokasi', 'di daftar. Ketik nama lokasi di kolom cari, atau pakai chip Belum diploting dan Sudah diploting.'], ['Tekan Plot seragam', '(atau Ubah ploting) pada bagian kerja. Daftar karyawan memuat nama, jadi perlu login.'], ['Centang seragam', 'yang diterima tiap karyawan dan isi jumlahnya. Bagi rata membagi satu item ke semua karyawan, Kosongkan membatalkannya.'], ['Pilih ukuran', 'baju, celana, atau sepatu. Awalnya terisi dari isian Google Form; pilihan merah berarti belum diisi.'], ['Cocokkan kuota:', 'angka pada kartu kuota harus sama dengan jumlah permintaan sebelum bisa disimpan.'], ['Periksa Rekap ukuran untuk gudang', '(jumlah per ukuran), lalu tekan Simpan ploting. Waktunya tercatat di Riwayat ploting.']]],
+    belum: ['Lokasi yang belum diploting', [['Daftar ini', 'berisi lokasi yang masih punya bagian kerja belum diploting, termasuk yang baru sebagian.'], ['Urutan Prioritas', 'mendahulukan lokasi yang semua pekerjaannya sudah disetujui, jadi bisa dirakit lengkap sekaligus. Lokasi berlabel Menunggu pekerjaan lain masih menunggu persetujuan bagian kerja yang lain.'], ['Pilih lokasi, lalu tekan Plot seragam', 'pada bagian kerja yang belum diploting.'], ['Bagikan seragam ke karyawan', 'sampai kartu kuota pas, isi ukurannya, lalu Simpan ploting.'], ['Setelah tersimpan,', 'lokasi pindah ke chip Sudah diploting.']]],
+    sudah: ['Lokasi yang sudah diploting', [['Daftar ini', 'berisi lokasi yang semua bagian kerjanya sudah diploting.'], ['Ubah ploting', 'untuk mengoreksi pembagian atau ukuran. Hanya bisa selama belum ada pengiriman.'], ['Bila PO sudah dikirim ke vendor,', 'perubahan wajib disertai alasan dan perlu diberitahukan ke vendor.'], ['Catatan perakitan 1 stel (PDF)', 'dipakai admin gudang untuk menyatukan baju dan celana per karyawan.'], ['PDF gudang', 'mencetak beberapa lokasi sekaligus. Lihat jumlah per ukuran di Rekap ukuran saat membuka bagian kerja.']]],
+    riwayat: ['Cara membaca Riwayat ploting', [['Tiap baris', 'adalah satu kali ploting: lokasi, bagian kerja, jenisnya (Diploting atau Ploting diubah), dan waktunya.'], ['Urutan terbaru di atas.', 'Awalnya 30 baris; tekan Tampilkan semua untuk sisanya.'], ['Kolom cari', 'dan filter area atau PIC ikut menyaring riwayat.'], ['Ketuk sebuah baris', 'untuk membuka lokasinya di daftar.'], ['Riwayat dicatat otomatis', 'tiap kali ploting disimpan; ploting yang sudah ada sebelum fitur ini diberi satu baris awal.']]]
+  };
+  const tutorialPlot = tab => { const [judul, langkah] = TUT_PLOT[tab] || TUT_PLOT.semua; return `<div class="k3h"><b>${judul}</b></div><ol class="tuto">${langkah.map(([a, b]) => `<li><b>${a}</b> ${b}</li>`).join('')}</ol>`; };
+  function riwayatPlot() { // riwayat yang lokasinya tampil (filter area/PIC) dan cocok dengan kolom cari
+    const ada = new Map(lokMinta().map(l => [l.lokasi, l])), q = $('pCari').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    return (plRiwayat || []).filter(r => ada.has(r.lokasi_form) && q.every(w => (ada.get(r.lokasi_form).kunci + ' ' + String(r.bagian_kerja).toLowerCase()).includes(w)));
+  }
   const tglRw = d => new Date(d).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   function renderRiwayatPloting() {
     const el = $('pRiwayat'); if (!el) return;
-    const ada = new Set(lokMinta().map(l => l.lokasi)), data = (plRiwayat || []).filter(r => ada.has(r.lokasi_form)); // ikut filter PIC/area yang aktif
+    const data = riwayatPlot();
     let isi;
     if (plRiwayat === null) isi = '<div class="kosongnya">Riwayat belum tersedia.</div>';
-    else if (!data.length) isi = '<div class="kosongnya">Belum ada lokasi yang diploting.</div>';
+    else if (!data.length) isi = '<div class="kosongnya">' + (plRiwayat.length ? 'Tidak ada riwayat yang cocok dengan pencarian ini.' : 'Belum ada lokasi yang diploting.') + '</div>';
     else { const t = plRiwayatSemua ? data : data.slice(0, 30);
       isi = '<div class="rwpl">' + t.map(r => `<button class="rwpb" type="button" data-lok="${esc(r.lokasi_form)}"><span class="rwpn"><b>${esc(r.client || r.lokasi_form)}</b><small>${esc(r.bagian_kerja)} · ${r.aksi === 'diubah' ? 'Ploting diubah' : 'Diploting'}</small></span><span class="rwpt">${tglRw(r.waktu)}</span></button>`).join('') + '</div>'
         + (data.length > t.length ? `<button class="btn" id="pRwSemua" type="button" style="margin-top:10px">Tampilkan semua (${data.length})</button>` : ''); }
     el.classList.add('rwp');
-    el.innerHTML = '<h3>Riwayat ploting</h3><p class="rwps">Kapan tiap bagian kerja diploting atau diubah, terbaru di atas. Ketuk baris untuk membuka lokasinya.</p>' + isi;
+    el.innerHTML = '<p class="rwps">Kapan tiap bagian kerja diploting atau diubah, terbaru di atas.</p>' + isi;
   }
   $('pRiwayat').onclick = e => {
     if (e.target.id === 'pRwSemua') { plRiwayatSemua = true; return renderRiwayatPloting(); }
