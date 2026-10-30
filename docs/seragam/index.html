@@ -461,26 +461,27 @@
   .plot3 .pmain .bar-top { margin-bottom:12px; } .plot3 .pmain .bar-top .btn { padding:7px 15px; font-size:.86rem; white-space:nowrap; }
   .plot3 .pmain .bar-top .search { flex:1 1 260px; max-width:420px; }
   .plot3 .pmain .chip { font-size:.86rem; padding:6px 15px; cursor:pointer; }
-  .plot3 .pwrap { display:grid; grid-template-columns:minmax(300px,360px) minmax(0,1fr); align-items:stretch; flex:1 1 auto; border-top:1px solid #DCE3EC; margin:0 -20px -18px; }
+  .plot3 .pwrap { display:grid; grid-template-columns:minmax(300px,360px) minmax(0,1fr); align-items:stretch; grid-template-rows:minmax(0,1fr); flex:1 1 auto; contain:size; min-height:clamp(520px,78vh,800px); border-top:1px solid #DCE3EC; margin:0 -20px -18px; }
   .plot3 .pmain { display:flex; flex-direction:column; }
-  .plot3 .plist { padding:16px 18px 18px 20px; min-width:0; display:flex; flex-direction:column; }
-  .plot3 .plist .scroll { flex:1 1 0; min-height:360px; max-height:calc(min(88vh,860px) - 100px); }
+  .plot3 .plist { padding:16px 18px 18px 20px; min-width:0; min-height:0; display:flex; flex-direction:column; }
+  .plot3 .plist .scroll { flex:1 1 0; min-height:0; max-height:none; overflow-y:auto; }
   .plot3 .plist #pUrut { font-size:.9rem; padding:6px 8px; }
   .plot3 .plist .item { padding:11px 14px; border-radius:14px; margin-bottom:6px; }
   .plot3 .plist .item .nm { font-size:.92rem; line-height:1.3; } /* satu baris, dipotong titik-titik seperti daftar Monitoring */
   .plot3 .plist .item .muted { font-size:.8rem !important; }
   .plot3 .plist .item .mt { flex-wrap:wrap; align-items:center; gap:4px 8px; font-size:.8rem; margin-top:6px; }
   .plot3 .plist .item .badge { font-size:.74rem; white-space:nowrap; }
-  .plot3 .pwrap .pdetail { background:none; border:0; border-left:1px solid #DCE3EC; border-radius:0; box-shadow:none; padding:0; min-width:0; max-height:min(88vh,860px); overflow-y:auto; }
+  .plot3 .pwrap .pdetail { background:none; border:0; border-left:1px solid #DCE3EC; border-radius:0; box-shadow:none; padding:0; min-width:0; min-height:0; max-height:none; overflow-y:auto; }
   .plot3 .pdetail .dhead, .plot3 .pdetail .dbody { padding-left:24px; padding-right:24px; }
   .plot3 .pdetail .dhead h2 { font-size:1.25rem; }
   .plot3 .pdetail .bgr .row { flex-wrap:wrap; gap:8px 12px; } .plot3 .pdetail .bgact { flex-wrap:wrap; }
   .plot3 .pdetail .bgr { padding-top:14px; padding-bottom:14px; } .plot3 .pdetail .bgr b { font-size:.98rem; } .plot3 .pdetail .bgr .muted { font-size:.86rem; }
   .plot3 .pdetail .badge { font-size:.8rem; } .plot3 .pdetail .btn { font-size:.88rem; }
   .plot3 .pdetail > .formminta { margin:14px 14px 14px 24px; }
-  .plot3 #pRiwayat .rwpl { max-height:calc(min(88vh,860px) - 100px); }
+  .plot3 #pRiwayat:not([hidden]) { flex:1 1 auto; display:flex; flex-direction:column; contain:size; min-height:clamp(420px,70vh,720px); }
+  .plot3 #pRiwayat .rwpl { flex:1 1 0; min-height:0; max-height:none; }
   @media (max-width: 1000px) { .plot3 { grid-template-columns:minmax(0,1fr); } .plot3 .ptuto .tuto { columns:2; column-gap:32px; } }
-  @media (max-width: 980px) { .plot3 .ptuto .tuto { columns:1; } .plot3 .pwrap { display:block; } .plot3 .pwrap .pdetail { background:#FFFFFF; border:0; max-height:none; } }
+  @media (max-width: 980px) { .plot3 .ptuto .tuto { columns:1; } .plot3 .pwrap { display:block; contain:none; min-height:0; } .plot3 .plist .scroll { flex:none; max-height:440px; } .plot3 #pRiwayat:not([hidden]) { contain:none; min-height:0; display:block; } .plot3 #pRiwayat .rwpl { max-height:440px; } .plot3 .pwrap .pdetail { background:#FFFFFF; border:0; max-height:none; } }
   /* layar menengah: tutorial terbuka pindah ke atas (dua kolom); yang terlipat tetap jadi rel di kiri */
   .rwp .rwps { font-size:.82rem; color:var(--muted); margin:0 0 10px; }
   .rwpl { max-height:520px; overflow:auto; }
