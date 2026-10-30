@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.297', tanggal: '2026-10-30', catatan: 'Tutorial Ploting bisa dilipat' };
+window.VERSI = { no: '1.298', tanggal: '2026-10-30', catatan: 'Ploting: lebar kartu seimbang' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
