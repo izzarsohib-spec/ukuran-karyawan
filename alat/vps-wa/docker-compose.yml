@@ -1,0 +1,45 @@
+# n8n + WAHA + Caddy untuk VPS (Ubuntu 24.04). Nilai rahasia dibaca dari berkas .env (tidak ada di repo).
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [n8n]
+  n8n:
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    environment:
+      N8N_HOST: ${DOMAIN}
+      N8N_PROTOCOL: https
+      N8N_PORT: "5678"
+      WEBHOOK_URL: https://${DOMAIN}/
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      GENERIC_TIMEZONE: Asia/Jakarta
+      TZ: Asia/Jakarta
+      N8N_PROXY_HOPS: "1"
+    volumes:
+      - n8n_data:/home/node/.n8n
+  waha:
+    image: devlikeapro/waha:latest
+    restart: unless-stopped
+    # hanya dapat dijangkau dari VPS sendiri (QR dibuka lewat terowongan SSH) dan dari kontainer n8n
+    ports: ["127.0.0.1:3001:3000"]
+    environment:
+      WHATSAPP_API_KEY: ${WAHA_API_KEY}
+      WAHA_DASHBOARD_ENABLED: "true"
+      WAHA_DASHBOARD_USERNAME: admin
+      WAHA_DASHBOARD_PASSWORD: ${WAHA_API_KEY}
+      TZ: Asia/Jakarta
+    volumes:
+      - waha_sessions:/app/.sessions
+volumes:
+  caddy_data:
+  caddy_config:
+  n8n_data:
+  waha_sessions:

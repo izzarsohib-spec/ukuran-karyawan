@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.309', tanggal: '2026-10-31', catatan: 'Permintaan: angka KPI rata tengah' };
+window.VERSI = { no: '1.310', tanggal: '2026-10-31', catatan: 'Alat pasang n8n + WAHA di VPS' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

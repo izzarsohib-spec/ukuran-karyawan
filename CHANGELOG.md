@@ -6,6 +6,8 @@ Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permin
 
 ## 31 Okt 2026
 
+- **v1.310** Persiapan migrasi WhatsApp bot dari PC ke VPS Hostinger: folder `alat/vps-wa/` (docker-compose n8n + WAHA + Caddy HTTPS, Caddyfile, `.env.example`, `pasang.sh`). Rahasia dibuat acak di VPS dan tidak masuk repo.
+
 - **v1.309** Permintaan: empat angka KPI (dibuat, menunggu, disetujui, ditolak) dan labelnya dibuat rata tengah di tiap kolom.
 
 - **v1.308** Permintaan: angka persen gauge tidak lagi menimpa busur (ditaruh di dalam lengkung, ukuran mengikuti lebar gauge) dan label tidak terpotong.
