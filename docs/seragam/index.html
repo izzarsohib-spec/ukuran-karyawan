@@ -650,6 +650,7 @@
   .pimp .bg { display:inline-flex; align-items:center; gap:5px; } .pimp .bg i { width:7px; height:7px; margin:0; }
   .pimp .ps { grid-column:1 / -1; display:flex; align-items:center; gap:6px; border:1px solid var(--stroke); background:var(--solid); border-radius:10px; padding:0 8px; font-size:.74rem; }
   .pimp .ps input { flex:1; min-width:0; border:0; background:none; color:var(--text); font:inherit; padding:6px 0; outline:none; }
+  .psel { border:1px solid var(--stroke); background:var(--solid); color:var(--text); border-radius:999px; padding:9px 14px; font:inherit; font-size:.86rem; min-width:150px; max-width:100%; }
   .pimp .pf { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
   .pimp .pf select { width:100%; min-width:0; border:1px solid var(--stroke); background:var(--solid); color:var(--text); border-radius:10px; padding:5px 6px; font:inherit; font-size:.74rem; }
   /* Permintaan: tiga kartu atas dibuat lebih panjang supaya daftar lokasi pimpinan memuat lebih banyak baris */
@@ -1050,6 +1051,7 @@
         <label class="search"><span aria-hidden="true">🔍</span>
           <input id="cari" type="search" placeholder="Cari lokasi, mis. pengadilan negeri kudus">
         </label>
+        <select id="fPic" class="psel" aria-label="Filter PIC"></select>
       </div>
       <div class="chips" id="chips" style="margin-bottom:14px"></div>
       <div class="layout">
@@ -1357,13 +1359,27 @@
     gambarTop(); if (window.Saring) Saring.siap.then(() => { gambarTop(); renderDaftar(); }); renderRingkasan();
   }
 
+  // filter PIC di Daftar lokasi: '' = semua PIC, '-' = belum ada PIC, selain itu id PIC
+  let fPicDaftar = '';
+  const cocokPic = l => { if (!fPicDaftar) return true; const p = window.Saring && Saring.picDari(l.lokasi); return fPicDaftar === '-' ? !p : !!p && String(p.id) === fPicDaftar; };
+  function renderPilihPic() {
+    const el = $('fPic'); if (!el || !window.Saring) return;
+    const cnt = new Map(); let tanpa = 0;
+    for (const l of lokasi) { const p = Saring.picDari(l.lokasi); if (p) cnt.set(String(p.id), (cnt.get(String(p.id)) || 0) + 1); else tanpa++; }
+    const pics = Saring.picSemua().filter(x => cnt.has(String(x.id))).sort((a, b) => a.nama.localeCompare(b.nama, 'id'));
+    const h = `<option value="">Semua PIC (${lokasi.length})</option>` + pics.map(x => `<option value="${x.id}">${esc(x.nama)} (${cnt.get(String(x.id))})</option>`).join('') + (tanpa ? `<option value="-">Belum ada PIC (${tanpa})</option>` : '');
+    if (el.dataset.h !== h) { el.innerHTML = h; el.dataset.h = h; }
+    if (!pics.some(x => String(x.id) === fPicDaftar) && fPicDaftar !== '-') fPicDaftar = '';
+    el.value = fPicDaftar;
+  }
   function tersaring() {
     const q = $('cari').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    return lokasi.filter(l => q.every(w => l.kunci.includes(w)) && (status === 'semua' || l.status === status))
+    return lokasi.filter(l => cocokPic(l) && q.every(w => l.kunci.includes(w)) && (status === 'semua' || l.status === status))
       .sort((a, b) => q.length ? a.client.localeCompare(b.client) : (URUT[a.status] - URUT[b.status]) || (a.persen - b.persen) || a.client.localeCompare(b.client));
   }
   function renderChips() {
-    const jml = s => s === 'semua' ? lokasi.length : lokasi.filter(l => l.status === s).length;
+    renderPilihPic();
+    const dasar = lokasi.filter(cocokPic), jml = s => s === 'semua' ? dasar.length : dasar.filter(l => l.status === s).length;
     $('chips').innerHTML = [['semua', 'Semua'], ['kurang', 'Kurang'], ['kosong', 'Kosong'], ['lengkap', 'Lengkap']]
       .map(([s, t]) => `<button class="chip ${status === s ? 'on' : ''}" data-s="${s}">${t} ${jml(s)}</button>`).join('');
   }
@@ -1459,6 +1475,7 @@
   $('btnKode').onclick = async () => { if (punyaNama) return kunciNama(); try { await Masuk.wajib(); } catch (e) { return; } bukaNama('sesi', false); };
   $('kode').onkeydown = e => { if (e.key === 'Enter') $('btnKode').click(); };
   $('cari').oninput = () => { terbukaHP = false; renderDaftar(); };
+  $('fPic').onchange = e => { fPicDaftar = e.target.value; terbukaHP = false; renderDaftar(); };
   $('chips').onclick = e => { const s = e.target.dataset && e.target.dataset.s; if (s) { status = s; terbukaHP = false; renderDaftar(); } };
   // ---- Ingatkan PIC: lokasi yang masih kurang/kosong dikelompokkan per PIC lapangan, lengkap dengan rekap nama yang sudah mengisi.
   // Satu panel untuk semua lokasi (tombol di atas), dan satu jendela untuk SATU lokasi atau SATU bagian kerja (tombol di rincian lokasi).

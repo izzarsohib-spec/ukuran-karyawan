@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.313', tanggal: '2026-10-31', catatan: 'Lokasi dibagi rata ke 12 PIC (data contoh)' };
+window.VERSI = { no: '1.314', tanggal: '2026-10-31', catatan: 'Monitoring: filter per PIC di Daftar lokasi' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
