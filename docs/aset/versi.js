@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.311', tanggal: '2026-10-31', catatan: 'n8n + WAHA terpasang di VPS' };
+window.VERSI = { no: '1.312', tanggal: '2026-10-31', catatan: 'WhatsApp bot pindah ke VPS' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');

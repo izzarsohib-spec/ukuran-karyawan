@@ -6,6 +6,8 @@ Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permin
 
 ## 31 Okt 2026
 
+- **v1.312** WhatsApp bot (Ingatkan PIC, pengingat vendor, pantau sesi) pindah dari PC ke VPS Hostinger: tiga workflow n8n diimpor dan diaktifkan di VPS (alamat WAHA diganti ke `http://waha:3000`), sesi WhatsApp ditautkan ulang di WAHA VPS, secret `N8N_WEBHOOK_URL` diarahkan ke `https://n8n.72-61-143-71.sslip.io/webhook/ingatkan-pic`. Workflow di PC dimatikan. Tunnel PC tidak diperlukan lagi.
+
 - **v1.311** n8n dan WAHA terpasang di VPS Hostinger (`/opt/wa`), menumpang di Caddy ntfy yang sudah ada dengan alamat `n8n.72-61-143-71.sslip.io` (HTTPS gratis lewat sslip.io, tanpa domain). Berkas pasang disesuaikan (tanpa Caddy kedua). WAHA hanya bisa dibuka lewat terowongan SSH. Workflow dan sesi WhatsApp belum dipindah.
 
 - **v1.310** Persiapan migrasi WhatsApp bot dari PC ke VPS Hostinger: folder `alat/vps-wa/` (docker-compose n8n + WAHA + Caddy HTTPS, Caddyfile, `.env.example`, `pasang.sh`). Rahasia dibuat acak di VPS dan tidak masuk repo.
