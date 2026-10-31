@@ -6,6 +6,8 @@ Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permin
 
 ## 31 Okt 2026
 
+- **v1.315** Migrasi WhatsApp bot ke VPS selesai dan teruji dari web (Ingatkan PIC sampai ke WhatsApp). Kunci API WAHA di VPS diganti dan tiga workflow n8n diperbarui; kontainer n8n dan WAHA di PC dihentikan.
+
 - **v1.314** Monitoring pengisian: Daftar lokasi punya pilihan **filter per PIC** di sebelah kolom cari (Semua PIC, tiap PIC dengan jumlah lokasinya, dan Belum ada PIC bila ada). Angka di chip Semua/Kurang/Kosong/Lengkap ikut menyesuaikan PIC yang dipilih, dan bisa digabung dengan kolom cari.
 
 - **v1.313** Data contoh: 231 lokasi dibagi rata ke 12 PIC (19-20 lokasi per PIC) karena Purwito, izzar, dan Haryanto belum memegang lokasi. Perpindahan dibuat sesedikit mungkin (yang kelebihan menyerahkan sisanya), dan area lokasi ikut area PIC barunya. Hanya data di database, tanpa perubahan kode.
