@@ -656,10 +656,11 @@
   #md-permintaan { min-height:470px; }
   #md-permintaan .hero { padding:22px 24px; } #md-permintaan .hero h2 { font-size:1.5rem; margin:6px 0 12px; } #md-permintaan .rabtotal b { font-size:1.9rem; } #md-permintaan .cta { padding:12px 26px; }
   #md-permintaan .ringhero { width:146px; } #md-permintaan .ringhero b { font-size:1.6rem; } #md-permintaan .ringhero span { font-size:.74rem; }
-  .mini .gauges { grid-area:ring; display:flex; flex-direction:column; gap:10px; width:168px; align-self:center; }
+  .mini .hero.g { grid-template-columns:minmax(0,1fr); grid-template-areas:"txt" "kpi"; } .mini .hero.g h2 { max-width:none; }
+  .mini .gauges { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:16px; }
   .gg { position:relative; text-align:center; line-height:1.15; } .gg svg { display:block; margin:0 auto; max-width:110px; }
   .gg b { display:block; margin-top:-26px; font-family:var(--head); font-size:1.35rem; color:var(--text); } .gg span { display:block; font-size:.76rem; font-weight:600; color:var(--text); } .gg small { display:block; font-size:.66rem; color:var(--muted); }
-  @media (max-width: 620px) { .mini .gauges { width:140px; } }
+  @media (max-width: 620px) { .mini .gauges { grid-template-columns:1fr; } }
   #md-permintaan .kpi { padding:14px 18px; } #md-permintaan .kpi b { font-size:1.55rem; } #md-permintaan .kpi span { font-size:.76rem; }
   #md-permintaan .pimp .plist { min-height:200px; }
   @media (max-width: 980px) { .top.mini { grid-template-columns:1fr; } }
@@ -4741,9 +4742,9 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   }
   function miniHtml(m) {
     const w = m.gap.worst;
-    return `<div class="hero card"><div><small>${esc(m.kecil)}</small><h2>${esc(m.judul)}</h2>
-        <div class="rabtotal"><small>${esc(m.labelAngka)}</small><b class="num">${esc(m.angka)}</b></div><button class="cta" ${aksiAttr(m.key, m.cta[1], m.cta[2])}>${esc(m.cta[0])}</button></div>
-      ${m.gauges ? `<div class="gauges">${m.gauges.map(gaugeHtml).join('')}</div>` : `<div class="ringhero">${cincin(m.key, m.persen)}<div class="t"><b>${m.persen.toFixed(1).replace('.', ',')}%</b><span>${esc(m.labelRing)}</span></div></div>`}
+    return `<div class="hero card${m.gauges ? ' g' : ''}"><div><small>${esc(m.kecil)}</small><h2>${esc(m.judul)}</h2>
+        <div class="rabtotal"><small>${esc(m.labelAngka)}</small><b class="num">${esc(m.angka)}</b></div><button class="cta" ${aksiAttr(m.key, m.cta[1], m.cta[2])}>${esc(m.cta[0])}</button>${m.gauges ? `<div class="gauges">${m.gauges.map(gaugeHtml).join('')}</div>` : ''}</div>
+      ${m.gauges ? '' : `<div class="ringhero">${cincin(m.key, m.persen)}<div class="t"><b>${m.persen.toFixed(1).replace('.', ',')}%</b><span>${esc(m.labelRing)}</span></div></div>`}
       <div class="kpi">${m.kpi.map(([a, b, c]) => `<div><b>${esc(a)}</b><span><i style="background:${c}"></i>${esc(b)}</span></div>`).join('')}</div></div>
       <div class="rcol${m.pimpinan ? ' dua' : ''}">${m.pimpinan ? m.pimpinan.map(kartuPimpinan).join('') : `<div class="chartcard card"><div class="ttl"><b>${esc(m.grafik.judul)}</b></div>${grafikGaris('md-' + m.key, m.grafik.sumbu, m.grafik.seri, m.grafik.fmt)}</div>`}
         ${m.pimpinan ? '' : `<div class="gap card"><div><div class="lbl">${esc(m.gap.label)}</div><div class="big">${esc(m.gap.besar)}</div><span class="pill">${esc(m.gap.pill)}</span><div class="muted" style="margin-top:6px">${esc(m.gap.ket)}</div></div>

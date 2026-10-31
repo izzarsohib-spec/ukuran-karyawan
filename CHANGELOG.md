@@ -6,6 +6,8 @@ Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permin
 
 ## 31 Okt 2026
 
+- **v1.306** Permintaan: tiga gauge dipindah ke bawah tombol "Lihat yang menunggu" (berjajar tiga kolom, satu kolom di HP) dan judul kartu melebar ke kanan selebar kartu.
+
 - **v1.305** Permintaan: mini dashboard diganti namanya menjadi **Pantau pembuatan surat dan persetujuan pimpinan**. Cincin persen diganti tiga gauge setengah lingkaran: (1) surat dibuat = bagian kerja semua lokasi yang sudah punya surat, (2) disetujui pimpinan = persen dari surat yang sudah dibuat, (3) ditolak/revisi = persen dari surat yang sudah dibuat.
 
 ## 30 Okt 2026
