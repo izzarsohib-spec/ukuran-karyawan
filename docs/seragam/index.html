@@ -1082,15 +1082,7 @@
       <div class="layout">
         <div class="detail tiga" id="mDetail">
           <div class="k3 kriw">
-            <div class="k3h"><b>Cara mengisi permintaan</b></div>
-            <ol class="tuto">
-              <li>Tekan <b>+ Buat baru</b> lalu pilih lokasi di form pengisian (atau klik lokasinya di kartu Pak Yasir atau Pak Ferry).</li>
-              <li>Pilih <b>Bagian kerja</b> di form pengisian (atau klik bagiannya di daftar bawah).</li>
-              <li>Di <b>Atas nama siapa</b>: klik <i>Masuk dan muat karyawan</i>, centang nama, lalu <i>Beri seragam ke yang dicentang</i> dan pilih seragam serta jumlahnya. Nama dan ukuran diambil dari isian Google Form.</li>
-              <li>Cek <b>Ringkasan pesanan</b> dan <b>Sisa RAB</b> di kartu Rekap &amp; kirim. Sisa merah berarti melebihi anggaran.</li>
-              <li>Opsional: isi memo, lampirkan RAB (PDF), lalu <b>Preview surat</b>.</li>
-              <li>Tekan <b>Kirim ke Pak Yasir &amp; Pak Ferry</b>. Statusnya tampil di kartu pimpinan.</li>
-            </ol>
+            <div class="k3h"><b>Riwayat pemesanan lokasi</b></div>
             <div id="mDHead"></div>
           </div>
           <div class="pcard k3 formminta" id="mForm">
@@ -2468,7 +2460,7 @@ Alasan (boleh kosong):`); if (alasan === null) return;
     $('mDetail').classList.toggle('open', terbukaMinta && (!!l || mPilih));
     if (document.activeElement !== $('mPilihLok')) $('mPilihLok').value = l ? l.client : '';
     for (const x of ['B', 'C']) { $('mIsi' + x).hidden = !l; $('mKosong' + x).hidden = !!l; }
-    if (!l) { $('mDHead').innerHTML = '<div class="kosongnya">Tekan + Buat baru, atau klik lokasi di kartu Pak Yasir atau Pak Ferry di atas, untuk melihat riwayat pemesanan dan membuat permintaan.</div>'; return; }
+    if (!l) { $('mDHead').innerHTML = '<div class="kosongnya">Tekan + Buat baru, atau klik lokasi di kartu pimpinan di atas, untuk melihat riwayat pemesanan dan membuat permintaan.</div>'; return; }
     const mi = l.mi || infoLok(l), [lbl, cls] = LS[mi.s], ang = anggaran && anggaran.peta.get(l.lokasi);
     let totLalu = 0;
     const bagian = l.bagian.map((b, i) => {
@@ -4764,13 +4756,13 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
       <div class="plist"><div class="plin">${dp}</div></div></div>`;
   }
   // kartu tutorial di sebelah kartu pimpinan (halaman Permintaan)
-  const kartuTutorialMinta = () => `<div class="pimp card tutor"><div class="ph"><b>Cara memakai kartu ini</b></div>
-      <ol class="tuto"><li><b>Pilih pimpinan</b> di bagian atas kartu kiri (Pak Yasir atau Pak Ferry). Angka, bilah warna, dan daftar hanya milik pimpinan itu.</li>
-        <li><b>Persempit daftar</b> dengan kolom cari, status, area, atau PIC. Pilihan ini ikut terbawa saat Anda berpindah pimpinan.</li>
-        <li><b>Arti warna:</b> <i>hijau</i> = disetujui, <i>oranye</i> = menunggu keputusan, <i>merah</i> = ditolak atau perlu revisi. Satu baris = satu lokasi, bagian kerjanya tampil di bawah namanya.</li>
-        <li><b>Ketuk sebuah lokasi</b> untuk membuka lokasi itu di form pemesanan di bawah.</li>
-        <li><b>Aturan persetujuan:</b> surat dianggap disetujui bila <i>kedua pimpinan</i> setuju. Bila salah satu menolak, surat berstatus ditolak/revisi.</li>
-        <li><b>Mencari yang belum diputuskan:</b> tekan tombol "Lihat yang menunggu" di kartu sebelah kiri, atau pilih status Menunggu.</li></ol></div>`;
+  const kartuTutorialMinta = () => `<div class="pimp card tutor"><div class="ph"><b>Cara mengisi permintaan</b></div>
+      <ol class="tuto"><li>Tekan <b>+ Buat baru</b> lalu pilih lokasi di form pengisian (atau klik lokasinya di kartu pimpinan di sebelah kiri).</li>
+        <li>Pilih <b>Bagian kerja</b> di form pengisian (atau klik bagiannya di daftar bawah).</li>
+        <li>Di <b>Atas nama siapa</b>: klik <i>Masuk dan muat karyawan</i>, centang nama, lalu <i>Beri seragam ke yang dicentang</i> dan pilih seragam serta jumlahnya. Nama dan ukuran diambil dari isian Google Form.</li>
+        <li>Cek <b>Ringkasan pesanan</b> dan <b>Sisa RAB</b> di kartu Rekap &amp; kirim. Sisa merah berarti melebihi anggaran.</li>
+        <li>Opsional: isi memo, lampirkan RAB (PDF), lalu <b>Preview surat</b>.</li>
+        <li>Tekan <b>Kirim ke Pak Yasir &amp; Pak Ferry</b>. Statusnya tampil di kartu pimpinan: <i>hijau</i> disetujui, <i>oranye</i> menunggu, <i>merah</i> ditolak atau revisi. Surat disetujui bila kedua pimpinan setuju.</li></ol></div>`;
   function miniHtml(m) {
     const w = m.gap.worst;
     return `<div class="hero card${m.gauges ? ' g' : ''}"><div><small>${esc(m.kecil)}</small><h2>${esc(m.judul)}</h2>
