@@ -4,6 +4,10 @@ Ringkasan perubahan sistem pengadaan (seragam, peralatan, chemical), dikelompokk
 
 Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permintaan perubahan yang selesai; sumbernya `docs/aset/versi.js`.
 
+## 31 Okt 2026
+
+- **v1.305** Permintaan: mini dashboard diganti namanya menjadi **Pantau pembuatan surat dan persetujuan pimpinan**. Cincin persen diganti tiga gauge setengah lingkaran: (1) surat dibuat = bagian kerja semua lokasi yang sudah punya surat, (2) disetujui pimpinan = persen dari surat yang sudah dibuat, (3) ditolak/revisi = persen dari surat yang sudah dibuat.
+
 ## 30 Okt 2026
 
 - **v1.304** Ploting: form ploting karyawan yang terbuka di panel detail dirapikan setelah diuji langsung (10 karyawan palsu). Tidak ada lagi bilah geser ke samping: kartu kuota dua per baris, baris karyawan disusun ke bawah. Kolom tutorial 240 px dan daftar lokasi 260-300 px agar panel detail lebih lebar. Pemeriksa tata letak punya opsi baru **--editor** (membuka form ploting dengan data dan login palsu, semua penulisan ke server diblokir) dan menyimpan tangkapan editor-atas.png.
