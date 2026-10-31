@@ -6,6 +6,8 @@ Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permin
 
 ## 31 Okt 2026
 
+- **v1.308** Permintaan: angka persen gauge tidak lagi menimpa busur (ditaruh di dalam lengkung, ukuran mengikuti lebar gauge) dan label tidak terpotong.
+
 - **v1.307** Permintaan: blok "Nilai jual permintaan" di mini dashboard dihapus, dan tiga gauge diperbesar (lebar penuh kolom, angka dan label lebih besar).
 
 - **v1.306** Permintaan: tiga gauge dipindah ke bawah tombol "Lihat yang menunggu" (berjajar tiga kolom, satu kolom di HP) dan judul kartu melebar ke kanan selebar kartu.
