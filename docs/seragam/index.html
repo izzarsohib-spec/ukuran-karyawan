@@ -651,6 +651,9 @@
   .pimp .ps { grid-column:1 / -1; display:flex; align-items:center; gap:6px; border:1px solid var(--stroke); background:var(--solid); border-radius:10px; padding:0 8px; font-size:.74rem; }
   .pimp .ps input { flex:1; min-width:0; border:0; background:none; color:var(--text); font:inherit; padding:6px 0; outline:none; }
   .psel { border:1px solid var(--stroke); background:var(--solid); color:var(--text); border-radius:999px; padding:9px 14px; font:inherit; font-size:.86rem; min-width:150px; max-width:100%; }
+  .pimp .pilihp { display:flex; align-items:center; gap:10px; width:100%; } .pimp .pilihp b { font-size:.92rem; white-space:nowrap; }
+  .pimp .pilihp select { flex:1; min-width:0; border:1px solid var(--stroke); background:var(--solid); color:var(--text); border-radius:10px; padding:6px 8px; font:inherit; font-size:.86rem; font-weight:600; }
+  .pimp.tutor .tuto { margin:4px 0 0; padding-left:18px; font-size:.84rem; }
   .pimp .pf { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
   .pimp .pf select { width:100%; min-width:0; border:1px solid var(--stroke); background:var(--solid); color:var(--text); border-radius:10px; padding:5px 6px; font:inherit; font-size:.74rem; }
   /* Permintaan: tiga kartu atas dibuat lebih panjang supaya daftar lokasi pimpinan memuat lebih banyak baris */
@@ -4714,7 +4717,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
   const gaugeHtml = g => `<div class="gg" style="color:${g.warna}" role="img" aria-label="${esc(g.label)} ${g.persen.toFixed(1)} persen${g.ket ? ', ' + esc(g.ket) : ''}"><div class="gw">${gaugeSvg(g.persen)}<b>${g.persen.toFixed(1).replace('.', ',')}%</b></div><span>${esc(g.label)}</span><small>${esc(g.ket || '')}</small></div>`;
   const aksiAttr = (k, a, arg) => `data-md="${k}|${a}|${encodeURIComponent(arg || '')}"`;
   // Kartu persetujuan per pimpinan (halaman Permintaan): hitungan dari status tiap pimpinan, disaring status / area / PIC per kartu
-  const MP = { yasir: { st: 'semua', area: '', pic: '', q: '' }, ferry: { st: 'semua', area: '', pic: '', q: '' } };
+  const MP = { sel: 'yasir', yasir: { st: 'semua', area: '', pic: '', q: '' }, ferry: { st: 'semua', area: '', pic: '', q: '' } };
   const PIMP = { yasir: { nama: 'Pak Yasir', jab: 'Direktur', st: p => stYasir(p) }, ferry: { nama: 'Pak Ferry', jab: 'Direktur Utama', st: p => stFerry(p) } };
   const PIMP_ST = [['semua', 'Semua status'], ['disetujui', 'Disetujui'], ['menunggu', 'Menunggu'], ['ditolak', 'Ditolak / revisi']];
   const areaPermintaan = p => areaLokasi(p.lokasi_form);
@@ -4750,7 +4753,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     const opt = (v, t, cur) => `<option value="${esc(v)}" ${String(cur) === String(v) ? 'selected' : ''}>${esc(t)}</option>`;
     const dp = daftarPimp(who, dasar, nm, warna);
     const areas = S ? S.areaUtama() : [], pics = S ? S.picSemua().filter(x => !f.area || x.area === f.area) : [];
-    return `<div class="pimp card" data-who="${who}"><div class="ph"><b>${inf.nama}</b><small>${inf.jab}</small></div>
+    return `<div class="pimp card" data-who="${who}"><div class="ph"><label class="pilihp"><b>Persetujuan</b><select data-pf="sel|who" aria-label="Pilih pimpinan">${Object.entries(PIMP).map(([k, v]) => opt(k, `${v.nama} · ${v.jab}`, who)).join('')}</select></label></div>
       <div class="pf"><label class="ps"><span aria-hidden="true">🔍</span><input type="search" data-pq="${who}" value="${esc(f.q)}" placeholder="Cari lokasi, mis. pengadilan negeri kudus" autocomplete="off" aria-label="Cari lokasi ${inf.nama}"></label>
         <select data-pf="${who}|st" aria-label="Status ${inf.nama}">${PIMP_ST.map(([v, t]) => opt(v, t, f.st)).join('')}</select>
         <select data-pf="${who}|area" aria-label="Area ${inf.nama}">${opt('', 'Semua area', f.area)}${areas.map(a => opt(a.id, a.nama, f.area)).join('')}</select>
@@ -4760,13 +4763,21 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
       <div class="pleg">${['disetujui', 'menunggu', 'ditolak'].map(k => `<span><i style="background:${warna[k]}"></i>${nm[k]} <b>${idn(c[k])}</b></span>`).join('')}</div>
       <div class="plist"><div class="plin">${dp}</div></div></div>`;
   }
+  // kartu tutorial di sebelah kartu pimpinan (halaman Permintaan)
+  const kartuTutorialMinta = () => `<div class="pimp card tutor"><div class="ph"><b>Cara memakai kartu ini</b></div>
+      <ol class="tuto"><li><b>Pilih pimpinan</b> di bagian atas kartu kiri (Pak Yasir atau Pak Ferry). Angka, bilah warna, dan daftar hanya milik pimpinan itu.</li>
+        <li><b>Persempit daftar</b> dengan kolom cari, status, area, atau PIC. Pilihan ini ikut terbawa saat Anda berpindah pimpinan.</li>
+        <li><b>Arti warna:</b> <i>hijau</i> = disetujui, <i>oranye</i> = menunggu keputusan, <i>merah</i> = ditolak atau perlu revisi. Satu baris = satu lokasi, bagian kerjanya tampil di bawah namanya.</li>
+        <li><b>Ketuk sebuah lokasi</b> untuk membuka lokasi itu di form pemesanan di bawah.</li>
+        <li><b>Aturan persetujuan:</b> surat dianggap disetujui bila <i>kedua pimpinan</i> setuju. Bila salah satu menolak, surat berstatus ditolak/revisi.</li>
+        <li><b>Mencari yang belum diputuskan:</b> tekan tombol "Lihat yang menunggu" di kartu sebelah kiri, atau pilih status Menunggu.</li></ol></div>`;
   function miniHtml(m) {
     const w = m.gap.worst;
     return `<div class="hero card${m.gauges ? ' g' : ''}"><div><small>${esc(m.kecil)}</small><h2>${esc(m.judul)}</h2>
         ${m.gauges ? '' : `<div class="rabtotal"><small>${esc(m.labelAngka)}</small><b class="num">${esc(m.angka)}</b></div>`}<button class="cta" ${aksiAttr(m.key, m.cta[1], m.cta[2])}>${esc(m.cta[0])}</button>${m.gauges ? `<div class="gauges">${m.gauges.map(gaugeHtml).join('')}</div>` : ''}</div>
       ${m.gauges ? '' : `<div class="ringhero">${cincin(m.key, m.persen)}<div class="t"><b>${m.persen.toFixed(1).replace('.', ',')}%</b><span>${esc(m.labelRing)}</span></div></div>`}
       <div class="kpi">${m.kpi.map(([a, b, c]) => `<div><b>${esc(a)}</b><span><i style="background:${c}"></i>${esc(b)}</span></div>`).join('')}</div></div>
-      <div class="rcol${m.pimpinan ? ' dua' : ''}">${m.pimpinan ? m.pimpinan.map(kartuPimpinan).join('') : `<div class="chartcard card"><div class="ttl"><b>${esc(m.grafik.judul)}</b></div>${grafikGaris('md-' + m.key, m.grafik.sumbu, m.grafik.seri, m.grafik.fmt)}</div>`}
+      <div class="rcol${m.pimpinan ? ' dua' : ''}">${m.pimpinan ? kartuPimpinan(MP.sel) + kartuTutorialMinta() : `<div class="chartcard card"><div class="ttl"><b>${esc(m.grafik.judul)}</b></div>${grafikGaris('md-' + m.key, m.grafik.sumbu, m.grafik.seri, m.grafik.fmt)}</div>`}
         ${m.pimpinan ? '' : `<div class="gap card"><div><div class="lbl">${esc(m.gap.label)}</div><div class="big">${esc(m.gap.besar)}</div><span class="pill">${esc(m.gap.pill)}</span><div class="muted" style="margin-top:6px">${esc(m.gap.ket)}</div></div>
           ${w ? `<button class="worst" ${aksiAttr(m.key, w.aksi, w.arg)}><small>${esc(w.kecil)}</small><b>${esc(w.nama)}</b><small>${esc(w.detail)}</small></button>` : '<button class="worst" disabled><small>Tidak ada yang tertunda</small><b>Semua beres ✓</b></button>'}</div>`}</div>`;
   }
@@ -4855,7 +4866,7 @@ const pic = Saring.picDari(l.lokasi), area = Saring.areaDari(l.lokasi);
     el.addEventListener('input', e => { const w = e.target.dataset && e.target.dataset.pq; if (!w) return; MP[w].q = e.target.value; const c = e.target.closest('.pimp'); if (!c) return; const f = MP[w], S = window.Saring;
       const dasar = daftarMinta.filter(p => (!f.area || areaPermintaan(p) === f.area) && (!f.pic || (S && S.picDari(p.lokasi_form) && String(S.picDari(p.lokasi_form).id) === f.pic)));
       c.querySelector('.plin').innerHTML = daftarPimp(w, dasar, { disetujui: 'Disetujui', menunggu: 'Menunggu', ditolak: 'Ditolak / revisi' }, { disetujui: BULAT.ok, menunggu: BULAT.jingga, ditolak: BULAT.bahaya }); });
-    el.addEventListener('change', e => { const x = e.target.dataset && e.target.dataset.pf; if (!x) return; const [who, k] = x.split('|'); MP[who][k] = e.target.value; if (k === 'area') MP[who].pic = ''; renderMini(); });
+    el.addEventListener('change', e => { const x = e.target.dataset && e.target.dataset.pf; if (!x) return; const [who, k] = x.split('|'); if (who === 'sel') { Object.assign(MP[e.target.value], { st: MP[MP.sel].st, area: MP[MP.sel].area, pic: MP[MP.sel].pic, q: MP[MP.sel].q }); MP.sel = e.target.value; renderMini(); return; } MP[who][k] = e.target.value; if (k === 'area') MP[who].pic = ''; renderMini(); });
     el.addEventListener('click', e => { const b = e.target.closest('[data-md]'); if (b && !b.disabled) { const [k, a, arg] = b.dataset.md.split('|'); aksiMini(k, a, decodeURIComponent(arg || '')); } });
   });
   renderMini();

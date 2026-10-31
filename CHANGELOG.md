@@ -6,6 +6,8 @@ Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permin
 
 ## 31 Okt 2026
 
+- **v1.316** Permintaan: kartu Pak Yasir dan Pak Ferry digabung menjadi **satu kartu** dengan pilihan pimpinan di bagian atas (cari, status, area, dan PIC ikut terbawa saat berpindah pimpinan). Kartu di kanan diganti **kartu tutorial** (cara memakai kartu, arti warna, aturan persetujuan dua pimpinan).
+
 - **v1.315** Migrasi WhatsApp bot ke VPS selesai dan teruji dari web (Ingatkan PIC sampai ke WhatsApp). Kunci API WAHA di VPS diganti dan tiga workflow n8n diperbarui; kontainer n8n dan WAHA di PC dihentikan.
 
 - **v1.314** Monitoring pengisian: Daftar lokasi punya pilihan **filter per PIC** di sebelah kolom cari (Semua PIC, tiap PIC dengan jumlah lokasinya, dan Belum ada PIC bila ada). Angka di chip Semua/Kurang/Kosong/Lengkap ikut menyesuaikan PIC yang dipilih, dan bisa digabung dengan kolom cari.
