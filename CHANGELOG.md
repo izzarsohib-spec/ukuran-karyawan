@@ -6,6 +6,8 @@ Nomor versi tampil di sidebar portal (kiri bawah) dan naik 1 untuk setiap permin
 
 ## 31 Okt 2026
 
+- **v1.318** Administrator: tombol aksi di tiap baris tabel (Keluar, Riwayat, Ubah, Hapus) kini **sebaris ke kanan**, tidak lagi bertumpuk ke bawah, sehingga baris tabel lebih pendek.
+
 - **v1.317** Permintaan: tutorial "Cara mengisi permintaan" dipindah ke kartu kanan atas (menggantikan tutorial kartu pimpinan), dan dihapus dari samping Form pengisian. Kartu di samping form kini hanya memuat riwayat pemesanan lokasi.
 
 - **v1.316** Permintaan: kartu Pak Yasir dan Pak Ferry digabung menjadi **satu kartu** dengan pilihan pimpinan di bagian atas (cari, status, area, dan PIC ikut terbawa saat berpindah pimpinan). Kartu di kanan diganti **kartu tutorial** (cara memakai kartu, arti warna, aturan persetujuan dua pimpinan).
