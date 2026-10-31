@@ -1,5 +1,5 @@
 // Versi aplikasi. Naik 1 untuk setiap permintaan perubahan yang diselesaikan (angka sama dengan jumlah perubahan sejak awal, lihat CHANGELOG.md).
-window.VERSI = { no: '1.306', tanggal: '2026-10-31', catatan: 'Permintaan: gauge di bawah tombol, judul melebar' };
+window.VERSI = { no: '1.307', tanggal: '2026-10-31', catatan: 'Permintaan: angka nilai jual dihapus, gauge diperbesar' };
 (function () {
   function pasang() {
     var el = document.getElementById('versi');
